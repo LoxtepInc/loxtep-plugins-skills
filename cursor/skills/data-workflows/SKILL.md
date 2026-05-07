@@ -55,8 +55,8 @@ End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **d
 ### Flow C — Omnichannel data product (S2)
 
 1. Ensure **project** exists; add **connections** per channel (see **`create-connector`** skill).
-2. `loxtep_workflows` → `create_workflow` / `patch_workflow_graph` to model transforms and joins.
-3. `loxtep_data_products` → `create_data_product` (project-scoped where applicable).
+2. `loxtep_workflows` → `create_workflow` to create the workflow entity.
+3. `loxtep_workflows` → `patch_workflow_graph` to add nodes (connection + data product) and wire edges. **See Flow E below for the exact format.**
 4. `get_data_product` / `get_data_product_lexicon` to verify; `update_data_product` as needed.
 
 ### Flow D — Webhook for data product updates (S3)
@@ -64,6 +64,104 @@ End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **d
 1. Obtain `data_product_id` (`list_data_products` / `get_data_product`).
 2. `loxtep_data_products` → `create_consumption` with `data_product_id`, `endpoint_url`, optional `headers`, `secret_token`, `filters`, `delivery_method` (default webhook per platform).
 3. Optional: `list_consumptions` to audit active subscriptions.
+
+### Flow E — Wiring a workflow graph with `patch_workflow_graph` (CRITICAL)
+
+`patch_workflow_graph` is the **only** way to add connection nodes, data product nodes, and edges to a workflow. It requires a **two-step sequential process** because you need the entity IDs returned from step 1 to create edges in step 2.
+
+**Step 1 — Add nodes (connection + data product):**
+
+```json
+{
+  "operation": "patch_workflow_graph",
+  "project_id": "<project_id>",
+  "workflow_id": "<workflow_id>",
+  "operations": [
+    {
+      "op": "add_node",
+      "entity_type": "connections",
+      "entity": {
+        "name": "SDK Input",
+        "connector_type": "sdk",
+        "configuration": {
+          "sdk_type": "nodejs",
+          "event_type": "my_event_type"
+        }
+      }
+    },
+    {
+      "op": "add_node",
+      "entity_type": "data-products",
+      "entity": {
+        "name": "my_data_product",
+        "description": "Data product for my_event_type",
+        "status": "draft",
+        "governance": {
+          "classification": "internal",
+          "pii_fields": [],
+          "compliance_requirements": [],
+          "tags": []
+        }
+      }
+    }
+  ]
+}
+```
+
+The response returns `created` with the generated `entity_id` for each node:
+```json
+{
+  "success": true,
+  "created": [
+    { "entity_type": "connections", "entity_id": "<connection_id>" },
+    { "entity_type": "data-products", "entity_id": "<data_product_id>" }
+  ]
+}
+```
+
+**Step 2 — Connect nodes and mark workflow as wired:**
+
+Use the entity IDs from step 1 to create the edge and update workflow metadata:
+
+```json
+{
+  "operation": "patch_workflow_graph",
+  "project_id": "<project_id>",
+  "workflow_id": "<workflow_id>",
+  "operations": [
+    {
+      "op": "connect_nodes",
+      "from_entity_id": "<connection_id>",
+      "to_entity_id": "<data_product_id>"
+    },
+    {
+      "op": "update_workflow",
+      "patch": { "metadata": { "graph_wired": true } }
+    }
+  ]
+}
+```
+
+**Supported operations:**
+
+| Op | Purpose | Required fields |
+|----|---------|-----------------|
+| `add_node` | Add a connection, data product, transformation, validation, schema, export, contract, or quality-rule | `entity_type`, `entity` (body; ID auto-generated if omitted) |
+| `update_node` | Patch an existing node | `entity_id` (UUID), `patch` (partial body) |
+| `remove_node` | Delete a node (no-op if missing) | `entity_id` (UUID) |
+| `connect_nodes` | Create an edge (sets `upstream_entity_id` on target) | `from_entity_id`, `to_entity_id` (both UUIDs) |
+| `disconnect_nodes` | Remove an edge (nulls `upstream_entity_id`) | `from_entity_id`, `to_entity_id` (both UUIDs) |
+| `update_workflow` | Patch the root workflow entity | `patch` (partial body) |
+
+**Valid `entity_type` values:** `connections`, `transformations`, `validations`, `data-products`, `schemas`, `contracts`, `quality-rules`, `exports`
+
+**Key rules:**
+- `add_node` with an existing entity_id is idempotent (becomes an update).
+- `remove_node` on a missing entity is a no-op.
+- Edges are directional: `from_entity_id` → `to_entity_id` (upstream → downstream).
+- You **must** call `patch_workflow_graph` twice sequentially: first to add nodes (to get IDs), then to connect them.
+- Always include `"op": "update_workflow"` with `{ "metadata": { "graph_wired": true } }` in the second patch so the UI shows the workflow as configured.
+- Use `dry_run: true` to validate operations without persisting.
 
 ## MCP mapping (operations and scope)
 
@@ -81,6 +179,9 @@ End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **d
 ## Pitfalls
 
 - Missing **`project_id`** on project-scoped workflow/connection ops.
+- **`patch_workflow_graph` requires two sequential calls** — you cannot add nodes and connect them in a single call because you need the returned entity IDs for `connect_nodes`. Attempting to guess or pre-generate IDs will fail validation.
+- **`patch_workflow_graph` operations format** — The `operations` field is an **array of operation objects**, not a single operation. Each object must have an `op` field. Do NOT pass `type` instead of `op` (though the backend normalizes both, prefer `op`).
+- **`entity_type` must use hyphens** — Use `data-products` (not `data_products`), `quality-rules` (not `quality_rules`).
 - **`apply_template`** requires `project_id` — not the same as org-only template list.
 - **`test_connection`** — Loads connection from workspace storage; runs an optional **HTTP GET** probe only when the saved configuration includes a URL-like field (`base_url`, `url`, `host`, …). Otherwise it confirms the entity exists without a live probe.
 - **`create_transformation`** / **`create_validation`** — Require an **existing workflow graph** (`get_workflow_graph` / prior `patch_workflow_graph`). If the graph is missing, the tool fails with a not-found style error.
