@@ -22,11 +22,12 @@ This directory lives in the [loxtep-plugins-skills](https://github.com/symmatiq/
    ```
    Open the printed URL in your browser, sign in to Loxtep, and complete the OAuth flow.
 
-3. **Use the tools** — Kiro’s MCP panel lists `loxtep_projects`, `loxtep_workflows`, etc. Pass **`operation`** (flat action name) and the fields that action needs.
+3. **Use the tools** — Kiro's MCP panel lists `loxtep_projects`, `loxtep_workflows`, etc. Pass **`operation`** (flat action name) and the fields that action needs.
 
 ## What you get
 
-- **Loxtep Customer MCP** — `npx @loxtep/customer-mcp-server` (grouped `loxtep_*` + `operation`; projects, workflows, data products, connectors, templates, catalog, schemas, and more). Kiro uses MCP tools only; there is no separate “skills” bundle.
+- **Loxtep Customer MCP** — `npx @loxtep/customer-mcp-server` (grouped `loxtep_*` + `operation`; projects, workflows, data products, connectors, templates, catalog, schemas, and more).
+- **Skills** — Story-first playbooks (see [docs/skills-user-stories.md](../docs/skills-user-stories.md)): `loxtep-auth`, `loxtep-instances`, `create-connector`, `data-workflows`, `discover-govern-lineage`, `org-semantics-quality`, `loxtep-analytics`, `loxtep-workspace`, `loxtep-process-intel`, `loxtep-procedures`, `loxtep-agent-workspace`, `loxtep-mcp-session`, `loxtep-sdk`. Each lives under `kiro/skills/<slug>/SKILL.md` with MCP mapping tables where applicable.
 
 ## Environment variables (optional)
 
@@ -35,7 +36,7 @@ This directory lives in the [loxtep-plugins-skills](https://github.com/symmatiq/
 - `LOXTEP_API_BASE_URL` — Override API endpoint.
 - `LOXTEP_TOKEN_FILE` — Custom path to token file (default `~/.loxtep/customer-mcp.json`).
 
-Add these under the `loxtep` server’s `env` object in your MCP config if needed. See the [Customer MCP Server README](https://github.com/symmatiq/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for full details.
+Add these under the `loxtep` server's `env` object in your MCP config if needed. See the [Customer MCP Server README](https://github.com/symmatiq/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for full details.
 
 ## License
 

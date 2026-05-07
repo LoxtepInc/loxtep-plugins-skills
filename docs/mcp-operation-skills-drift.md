@@ -11,7 +11,7 @@ After the Customer MCP adds, renames, or removes an `operation` on any `loxtep_*
 
 1. Compare against [`mcp-facades.ts`](https://github.com/symmatiq/loxtep/blob/main/platform-backend/ai/lib/tools/mcp-facades.ts) (or the generated README table in `_customer-mcp-server`).
 2. Update **skills-user-stories.md** (index + operation table + any affected story section).
-3. Update the affected **skill(s)** in both `claude/skills/<slug>/SKILL.md` and `cursor/skills/<slug>/SKILL.md`.
+3. Update the affected **skill(s)** in `claude/skills/<slug>/SKILL.md`, `cursor/skills/<slug>/SKILL.md`, `kiro/skills/<slug>/SKILL.md`, `antigravity/skills/<slug>/SKILL.md`, and `codex/skills/<slug>/SKILL.md`.
 4. Refresh **skills-roadmap.md** if a new skill slug or facade ownership changes.
 
 ## Optional automation

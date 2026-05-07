@@ -2,7 +2,7 @@
 
 Canonical MCP grouping: **16** `loxtep_*` tools; each call sets **`operation`** to a flat tool name plus arguments. See the [Customer MCP Server README](https://github.com/symmatiq/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md).
 
-**Pick a goal first:** use the [user story catalog](skills-user-stories.md) (S0–S12) to map intent → primary skill → facades. Skills in `claude/skills/` and `cursor/skills/` are kept in parity.
+**Pick a goal first:** use the [user story catalog](skills-user-stories.md) (S0–S12) to map intent → primary skill → facades. Skills in `claude/skills/`, `cursor/skills/`, `kiro/skills/`, `antigravity/skills/`, and `codex/skills/` are kept in parity.
 
 ---
 

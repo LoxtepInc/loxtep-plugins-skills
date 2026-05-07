@@ -37,6 +37,7 @@ args = ["@loxtep/customer-mcp-server"]
 ## What you get
 
 - **Loxtep Customer MCP** — `npx @loxtep/customer-mcp-server` (grouped tools + `operation`; projects, workflows, data products, connectors, templates, catalog, schemas, and more).
+- **Skills** — Story-first playbooks (see [docs/skills-user-stories.md](../docs/skills-user-stories.md)): `loxtep-auth`, `loxtep-instances`, `create-connector`, `data-workflows`, `discover-govern-lineage`, `org-semantics-quality`, `loxtep-analytics`, `loxtep-workspace`, `loxtep-process-intel`, `loxtep-procedures`, `loxtep-agent-workspace`, `loxtep-mcp-session`, `loxtep-sdk`. Each lives under `codex/skills/<slug>/SKILL.md` with MCP mapping tables where applicable.
 
 ## Environment variables (optional)
 
