@@ -193,16 +193,20 @@ Design-time configuration (Flows A–E above) creates the **graph definition** o
 4. Registers **queues**: `{msId}-queue-{container_id}-{direction}` where direction = `in`|`out`|`err`
 5. Stores a **`runtime_mapping`** on the deployment record (containers → entity_id, bot_ids, queue_ids)
 
-**After deployment**, the SDK can write events via:
-- `POST /workflows/{workflow_id}/events?project_id={project_id}` (resolves queue automatically)
-- Or directly to a queue using `get_runtime_mapping`
+**After deployment**, use the SDK to write events — **not** HTTP directly. The agent must resolve the runtime configuration so the SDK client knows which bot and queue to target:
+
+1. `loxtep_deployments` → `get_runtime_mapping` with `workflow_id` + `project_id`
+2. From the response, identify the **connection entity's container** (match by `entity_id`)
+3. Extract the `bot_ids[0]` (the deployed bot) and `queue_ids` (input queue) for that container
+4. Configure the `@loxtep/sdk` client with `instance_id`, `bot_id`, and the resolved queue — then write events via the SDK's stream bus
 
 **Recommended agent sequence for SDK ingestion:**
 1. Complete Flows B/C/E (project + workflow + graph with connection + data product)
 2. Ensure user has an instance (`loxtep_instances` → `list_instances`)
 3. `loxtep_deployments` → `deploy_project` with `project_id` + `instance_id`
 4. Poll `get_deployment` until status = `deployed`
-5. Use **`loxtep-sdk`** skill for SDK client bootstrap and event writing
+5. `loxtep_deployments` → `get_runtime_mapping` with `workflow_id` + `project_id` — returns the deployed bot ID and queue names
+6. Use **`loxtep-sdk`** skill to bootstrap the SDK client with the resolved `bot_id` and queue, then write events via the stream bus
 
 **Runtime naming convention reference:** See the **`loxtep-sdk`** skill for the full naming hierarchy and how to resolve queue/bot names from the runtime-mapping API.
 

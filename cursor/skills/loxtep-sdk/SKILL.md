@@ -111,15 +111,24 @@ Response:
 
 Use `entity_id` to find the container for your connection/transform/data product, then read its `queue_ids[0]` (input queue) for writing events.
 
-### 6. SDK events endpoint (simplified)
+### 6. SDK event writing (via stream bus)
 
-The SDK's `flows.get_writer()` internally calls:
+The SDK writes events through the **stream bus** — not via HTTP. To write events:
 
+1. Resolve the runtime mapping (via MCP `get_runtime_mapping` or CLI `loxtep config export`)
+2. Configure the SDK client with the deployed `bot_id` and target queue
+3. Use `flows.get_writer()` which writes directly to the stream bus queue
+
+The **workflow must be deployed** before the SDK can write. The `get_runtime_mapping` response tells you which `bot_id` and queue to target for a given connection/data product entity.
+
+**Quick path — export config from a deployed connector:**
+
+```bash
+# Resolves the deployed bot_id and queue from the runtime mapping
+loxtep config export --from-connector "<connector_id>" --format env
 ```
-POST /workflows/{workflow_id}/events?project_id={project_id}
-```
 
-This endpoint resolves the deployment → runtime_mapping → first ingestion queue automatically. You don't need to know the queue name if using the SDK client — but the **workflow must be deployed**.
+Then the SDK client picks up `LOXTEP_BOT_ID` and queue configuration automatically.
 
 ## Auth (single mental model)
 
