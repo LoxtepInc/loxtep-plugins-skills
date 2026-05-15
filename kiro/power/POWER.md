@@ -1,7 +1,7 @@
 ---
 name: "loxtep"
 displayName: "Loxtep Data Mesh Platform"
-description: "Build and operate data mesh pipelines with Loxtep — connect SaaS sources, build workflow graphs, create data products, run SQL analytics, manage governance, and deploy to runtime instances. 16 grouped MCP tools with per-call operation."
+description: "Build and operate data mesh pipelines with Loxtep — connect SaaS sources, build workflow graphs, create data products, run SQL analytics, manage governance, and deploy to runtime instances. 17 grouped MCP tools with per-call operation."
 keywords: ["loxtep", "data-mesh", "data-product", "workflow", "connector", "pipeline", "catalog", "governance", "analytics", "ingestion"]
 author: "Loxtep"
 ---
@@ -10,7 +10,7 @@ author: "Loxtep"
 
 ## Overview
 
-Loxtep is a data mesh platform that lets you connect external systems (Shopify, Salesforce, APIs), build workflow graphs, create unified data products, and expose them via webhooks or SQL analytics. The Customer MCP provides **16 grouped tools** (`loxtep_*`) — each call sets `operation` to a flat action name plus arguments.
+Loxtep is a data mesh platform that lets you connect external systems (Shopify, Salesforce, APIs), build workflow graphs, create unified data products, and expose them via webhooks or SQL analytics. The Customer MCP provides **17 grouped tools** (`loxtep_*`) — each call sets `operation` to a flat action name plus arguments.
 
 This power covers the full platform lifecycle:
 - **Authentication** and session management
@@ -33,8 +33,9 @@ Each steering file covers an independent workflow area. Load the one matching us
 - **org-semantics-quality** — Org-level schemas, PII tagging, schema versions, quality rules (Story S4)
 - **loxtep-analytics** — SQL analytics, list tables, table schema, execute queries (Story S6)
 - **loxtep-workspace** — Snapshots, version compare/restore, reindex, queue info, replay (Story S7)
-- **loxtep-process-intel** — Entity context, decision traces, ontology relationships, thesaurus (Story S8)
-- **loxtep-procedures** — Business procedures in the process graph (Story S9)
+- **loxtep-process-intel** — Entity context, decision traces (Story S8)
+- **loxtep-procedures** — Business procedures in the process graph, import/export, dependencies (Story S9)
+- **loxtep-ontology** — Ontology concepts, vocabulary/thesaurus CRUD, namespace mappings (Story S13)
 - **loxtep-agent-workspace** — Agent orchestration: issues, goals, agent projects (Story S10)
 - **loxtep-instances** — Runtime instance provisioning: shared, managed, self-hosted (Story S11)
 - **loxtep-sdk** — @loxtep/sdk Node bootstrap, queue readers/writers, runtime naming conventions
@@ -87,7 +88,7 @@ Before any project work, confirm identity and org:
 
 ## How MCP Calls Work
 
-All 16 tools follow the same pattern:
+All 17 tools follow the same pattern:
 
 1. **Tool name** — e.g. `loxtep_projects`, `loxtep_workflows`, `loxtep_connectors`
 2. **`operation`** — flat action name (e.g. `list_projects`, `create_workflow`)
@@ -118,8 +119,9 @@ Example:
 | `loxtep_catalog` | `search_catalog`, `get_catalog_entry`, `get_evidence`, `get_lineage_impact`, `get_governance_flags`, `run_discovery`, `list_domains`, `list_tags` | catalog |
 | `loxtep_analytics` | `execute_query`, `list_tables`, `get_table_schema`, `get_query_results` | organization |
 | `loxtep_workspace` | `list_versions`, `create_snapshot`, `restore_version`, `compare_versions`, `reindex_workspace`, `get_queue_info`, `replay_events` | project / organization |
-| `loxtep_process_intel` | `get_entity_context`, `query_entity_context`, `list_decision_traces`, `get_ontology_relationships`, `list_thesaurus_terms`, `resolve_canonical_key` | organization |
-| `loxtep_procedures` | `list_procedures`, `get_procedure_workflow`, `create_procedure`, `update_procedure`, `delete_procedure` | organization |
+| `loxtep_process_intel` | `get_entity_context`, `query_entity_context`, `create_entity_context`, `list_decision_traces`, `record_decision_trace` | organization |
+| `loxtep_procedures` | `list_procedures`, `get_procedure`, `create_procedure`, `update_procedure`, `delete_procedure`, `import_process_graph`, `export_process_graph`, `get_procedure_dependencies` | organization |
+| `loxtep_ontology` | `list_thesaurus_terms`, `get_thesaurus_term`, `create_thesaurus_term`, `update_thesaurus_term`, `delete_thesaurus_term`, `sync_vocabulary`, `resolve_canonical_key`, `get_ontology_relationships`, `create_ontology_concept`, `create_ontology_relationship`, `update_ontology_concept`, `delete_ontology_concept`, `register_namespace_mapping`, `list_namespace_mappings`, `get_namespace_mapping` | organization |
 | `loxtep_agent_workspace` | `agent_orchestration_create_issue`, `agent_orchestration_list_issues`, `agent_orchestration_get_issue`, `agent_orchestration_create_goal`, `agent_orchestration_list_goals`, `agent_orchestration_get_goal`, `agent_orchestration_list_projects`, `agent_orchestration_create_project`, `agent_orchestration_get_project`, `agent_orchestration_list_agents`, `agent_orchestration_get_agent` | organization |
 
 ## Story Index
@@ -139,6 +141,7 @@ Example:
 | S10 | Agent issues/goals/projects | loxtep-agent-workspace |
 | S11 | Runtime instances | loxtep-instances |
 | S12 | Auth recovery | (this file — Onboarding section) |
+| S13 | Ontology, vocabulary, and namespace management | loxtep-ontology |
 
 ## Troubleshooting
 
@@ -173,3 +176,6 @@ Example:
 - Use `dry_run: true` on `patch_workflow_graph` to validate before persisting
 - Deploy projects to an instance before attempting SDK event writes
 - Use `entity_type` values with hyphens: `data-products`, `quality-rules` (not underscores)
+- For ontology/vocabulary management, use `loxtep_ontology` (not `loxtep_process_intel`). Process intel is for runtime entity context and decision traces only.
+- Use `sync_vocabulary` with `dry_run: true` to preview vocabulary diffs before applying bulk changes
+- Register namespace mappings via `register_namespace_mapping` before importing graphs that use external ontologies (W3C PKO is pre-registered)

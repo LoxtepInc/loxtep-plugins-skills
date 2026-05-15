@@ -18,11 +18,12 @@ Each story lists **primary skill** (where the narrative lives) and **supporting 
 | S5 | **Discover** assets, lineage, evidence, governance; run discovery | `discover-govern-lineage` |
 | S6 | **Query** mesh data with SQL / analytics | `loxtep-analytics` |
 | S7 | **Snapshots**, compare versions, reindex workspace, inspect queues | `loxtep-workspace` |
-| S8 | **Entity / decision** intelligence, ontology paths, thesaurus | `loxtep-process-intel` |
-| S9 | **Procedures** (process graph) — list, CRUD, procedure workflow | `loxtep-procedures` |
+| S8 | **Entity / decision** intelligence — runtime context and decision traces | `loxtep-process-intel` |
+| S9 | **Procedures** (process graph) — CRUD, import/export, dependencies | `loxtep-procedures` |
 | S10 | **Agent** issues/goals/projects (not data-mesh workflow projects) | `loxtep-agent-workspace` |
 | S11 | **Provision** or list runtime instances (shared playground vs managed paid) | `loxtep-instances` |
 | S12 | Recover from **auth** failures on MCP | `loxtep-auth` |
+| S13 | Manage **ontology**, vocabulary, and namespace mappings | `loxtep-ontology` |
 
 ---
 
@@ -87,7 +88,7 @@ Each story lists **primary skill** (where the narrative lives) and **supporting 
 | **Happy path** | `create_schema` / `update_schema` / `get_schema` / `list_schema_versions` / `tag_pii_fields` → `create_quality_rule` / `test_quality_rule` / `list_quality_rules` |
 | **MCP** | `loxtep_schemas`, `loxtep_quality` |
 | **Primary skill** | `org-semantics-quality` |
-| **Related** | S5 (catalog), S8 (ontology relationships, thesaurus) |
+| **Related** | S5 (catalog), S13 (ontology/vocabulary management) |
 
 ---
 
@@ -129,9 +130,10 @@ Each story lists **primary skill** (where the narrative lives) and **supporting 
 | Field | Detail |
 |-------|--------|
 | **Persona** | Ops / analytics investigating entities |
-| **Happy path** | `get_entity_context` / `query_entity_context` → `list_decision_traces` → `get_ontology_relationships` / `list_thesaurus_terms` / `resolve_canonical_key` |
-| **MCP** | `loxtep_process_intel` |
+| **Happy path** | `get_entity_context` / `query_entity_context` → `create_entity_context` → `list_decision_traces` → `record_decision_trace` |
+| **MCP** | `loxtep_process_intel` (5 ops) |
 | **Primary skill** | `loxtep-process-intel` |
+| **Related** | S13 (ontology/vocabulary/namespace management) |
 
 ---
 
@@ -140,9 +142,10 @@ Each story lists **primary skill** (where the narrative lives) and **supporting 
 | Field | Detail |
 |-------|--------|
 | **Persona** | Process owner |
-| **Happy path** | `list_procedures` → `get_procedure_workflow` → `create_procedure` / `update_procedure` / `delete_procedure` |
-| **MCP** | `loxtep_procedures` |
+| **Happy path** | `list_procedures` → `get_procedure` → `create_procedure` / `update_procedure` / `delete_procedure` → `import_process_graph` / `export_process_graph` → `get_procedure_dependencies` |
+| **MCP** | `loxtep_procedures` (8 ops) |
 | **Primary skill** | `loxtep-procedures` |
+| **Related** | S13 (ontology/namespace for imported graphs) |
 
 ---
 
@@ -174,6 +177,19 @@ Each story lists **primary skill** (where the narrative lives) and **supporting 
 
 ---
 
+## S13 — Ontology, vocabulary, and namespace management
+
+| Field | Detail |
+|-------|--------|
+| **Persona** | Data architect, process documentation pipeline |
+| **Preconditions** | Org permissions for ontology/vocabulary management |
+| **Happy path** | `sync_vocabulary` → `create_ontology_concept` → `register_namespace_mapping` → `import_process_graph` |
+| **MCP** | `loxtep_ontology` (15 ops) |
+| **Primary skill** | `loxtep-ontology` |
+| **Related** | S8 (runtime intelligence), S9 (procedures) |
+
+---
+
 ## Skill clusters (maintenance view)
 
 | Skill `name` | Stories | Facades (MCP tools) |
@@ -186,8 +202,9 @@ Each story lists **primary skill** (where the narrative lives) and **supporting 
 | `org-semantics-quality` | S4 | `loxtep_schemas`, `loxtep_quality` |
 | `loxtep-analytics` | S6 | `loxtep_analytics` |
 | `loxtep-workspace` | S7 | `loxtep_workspace` |
-| `loxtep-process-intel` | S8 | `loxtep_process_intel` |
-| `loxtep-procedures` | S9 | `loxtep_procedures` |
+| `loxtep-process-intel` | S8 | `loxtep_process_intel` (5 ops: entity context, decision traces) |
+| `loxtep-procedures` | S9 | `loxtep_procedures` (8 ops: CRUD + import/export/dependencies) |
+| `loxtep-ontology` | S13 | `loxtep_ontology` (15 ops: vocabulary + ontology + namespace mappings) |
 | `loxtep-agent-workspace` | S10 | `loxtep_agent_workspace` |
 
 ---
@@ -209,7 +226,8 @@ Regenerate mentally from [`mcp-facades.ts`](https://github.com/symmatiq/loxtep/b
 | All `loxtep_schemas` / `loxtep_quality` ops | `org-semantics-quality` |
 | All `loxtep_analytics` ops | `loxtep-analytics` |
 | All `loxtep_workspace` ops | `loxtep-workspace` |
-| All `loxtep_process_intel` ops | `loxtep-process-intel` |
-| All `loxtep_procedures` ops | `loxtep-procedures` |
+| `get_entity_context`, `query_entity_context`, `create_entity_context`, `list_decision_traces`, `record_decision_trace` | `loxtep-process-intel` |
+| `list_procedures`, `get_procedure`, `create_procedure`, `update_procedure`, `delete_procedure`, `import_process_graph`, `export_process_graph`, `get_procedure_dependencies` | `loxtep-procedures` |
+| `list_thesaurus_terms`, `get_thesaurus_term`, `create_thesaurus_term`, `update_thesaurus_term`, `delete_thesaurus_term`, `sync_vocabulary`, `resolve_canonical_key`, `get_ontology_relationships`, `create_ontology_concept`, `create_ontology_relationship`, `update_ontology_concept`, `delete_ontology_concept`, `register_namespace_mapping`, `list_namespace_mappings`, `get_namespace_mapping` | `loxtep-ontology` |
 | All `agent_orchestration_*` | `loxtep-agent-workspace` |
 | `list_instances`, `create_instance` | `loxtep-instances` |
