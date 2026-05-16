@@ -165,11 +165,21 @@ Design-time configuration (Flows A–E above) creates the **graph definition** o
 | Step | Action | Tool | `operation` | Key args |
 |------|--------|------|-------------|----------|
 | 1 | Ensure instance exists | `loxtep_instances` | `list_instances` | — |
-| 2 | Trigger deployment | `loxtep_deployments` | `deploy_project` | `project_id`, `instance_id` |
+| 2a | Deploy full project | `loxtep_deployments` | `deploy_project` | `project_id`, `instance_id` |
+| 2b | Deploy single workflow | `loxtep_deployments` | `deploy_workflow` | `project_id`, `workflow_id`, `instance_id` |
 | 3 | Poll status | `loxtep_deployments` | `get_deployment` | `deployment_id` (from step 2) |
 | 4 | Resolve queues | `loxtep_deployments` | `get_runtime_mapping` | `workflow_id`, `project_id` |
 
-**Example — deploy_project:**
+**Choosing `deploy_project` vs `deploy_workflow`:**
+
+| Use case | Operation | Why |
+|----------|-----------|-----|
+| First deploy / production release | `deploy_project` | Snapshots entire workspace (all workflows, connections, schemas) and deploys atomically. Creates a version for rollback. |
+| Iterating on a single workflow | `deploy_workflow` | Faster — targets one workflow without snapshotting the full project. Ideal during development. |
+| After changing multiple workflows | `deploy_project` | Ensures all changes deploy together with a consistent snapshot. |
+| Redeploying after a graph change | `deploy_workflow` | Quick redeploy of just the affected workflow. |
+
+**Example — deploy_project (full project):**
 ```json
 {
   "operation": "deploy_project",
@@ -179,10 +189,42 @@ Design-time configuration (Flows A–E above) creates the **graph definition** o
 }
 ```
 
+**Example — deploy_workflow (single workflow):**
+```json
+{
+  "operation": "deploy_workflow",
+  "project_id": "<project_id>",
+  "workflow_id": "<workflow_id>",
+  "instance_id": "<instance_id>",
+  "force_redeploy": false,
+  "skip_validation": false
+}
+```
+
+**`deploy_workflow` parameters:**
+- `project_id` (required) — UUID of the project containing the workflow.
+- `workflow_id` (required) — UUID of the specific workflow to deploy.
+- `instance_id` (required) — UUID of the target runtime instance.
+- `force_redeploy` (optional, default `false`) — Override an existing in-progress deployment for this workflow.
+- `skip_validation` (optional, default `false`) — Skip code bundle validation (use during development only).
+
+**What deployment does:**
+1. Creates a **microservice identifier** (namespace): `{instance_id_8}-{project_id_8}-{workflow_id_8}` (first 8 chars of each UUID, hyphens stripped)
+2. For each connection/transformation/data product in the graph, derives a **container_id**: `{prefix}-{entity_uuid_8}` (prefixes: `conn`, `xfm`, `val`, `dp`, `exp`, `pipe`)
+3. Registers **bots**: `{msId}-bot-{container_id}-{role}` (e.g. `a1b2c3d4-e5f6g7h8-i9j0k1l2-bot-conn-e5f6g7h8-handler`)
+4. Registers **queues**: `{msId}-queue-{container_id}-{direction}` where direction = `in`|`out`|`err`
+5. Stores a **`runtime_mapping`** on the deployment record (containers → entity_id, bot_ids, queue_ids)
+
+**Versioning behavior:**
+- `deploy_project` — When `version_id` is omitted (default via MCP), automatically creates a project snapshot before deploying. This snapshot is immutable and can be used for rollback via `restore_version`. Each deployment also creates a `deployment_version` record tracking validation, approval, and deployment history per workflow.
+- `deploy_workflow` — Creates a `deployment_version` record for the targeted workflow (version_number auto-increments per workflow+instance). Does **not** create a full project snapshot — use `create_snapshot` manually if you need a restore point.
+
 **Recommended agent sequence for SDK ingestion:**
 1. Complete Flows B/C/E (project + workflow + graph with connection + data product)
 2. Ensure user has an instance (`loxtep_instances` → `list_instances`)
-3. `loxtep_deployments` → `deploy_project` with `project_id` + `instance_id`
+3. Deploy:
+   - **Quick iteration:** `loxtep_deployments` → `deploy_workflow` with `project_id` + `workflow_id` + `instance_id`
+   - **Production release:** `loxtep_deployments` → `deploy_project` with `project_id` + `instance_id`
 4. Poll `get_deployment` until status = `deployed`
 5. `loxtep_deployments` → `get_runtime_mapping` with `workflow_id` + `project_id` — returns the deployed bot ID and queue names
 6. Use **`loxtep-sdk`** skill to bootstrap the SDK client with the resolved `bot_id` and queue, then write events via the stream bus
@@ -200,6 +242,7 @@ Design-time configuration (Flows A–E above) creates the **graph definition** o
 | 7 | Data products | `loxtep_data_products` | `create_data_product`, `update_data_product`, `delete_data_product`, `list_data_products`, `get_data_product`, `get_data_product_lexicon` | **project** or org per op | `project_id` where required |
 | 8 | Webhook consumptions | `loxtep_data_products` | `list_consumptions`, `create_consumption` | **organization** | `data_product_id`, `endpoint_url`, … |
 | 9 | Deploy project | `loxtep_deployments` | `deploy_project` | **project** | `project_id`, `instance_id`, optional `force_redeploy` |
+| 9b | Deploy single workflow | `loxtep_deployments` | `deploy_workflow` | **project** | `project_id`, `workflow_id`, `instance_id`, optional `force_redeploy`, `skip_validation` |
 | 10 | List/get deployments | `loxtep_deployments` | `list_deployments`, `get_deployment` | **organization** | `deployment_id`, optional filters |
 | 11 | Runtime mapping | `loxtep_deployments` | `get_runtime_mapping` | **project** | `workflow_id`, `project_id` |
 
@@ -207,6 +250,8 @@ Design-time configuration (Flows A–E above) creates the **graph definition** o
 
 - Missing **`project_id`** on project-scoped workflow/connection ops.
 - **Deployment required before SDK ingestion** — Creating workflows, connections, and data products via MCP only defines the graph. Queues and bots are **not provisioned** until the project is deployed to an instance.
+- **`deploy_workflow` vs `deploy_project`** — Use `deploy_workflow` for fast iteration on a single workflow during development. Use `deploy_project` for production releases or when multiple workflows changed (it creates a full project snapshot for rollback). `deploy_workflow` does **not** create a project snapshot — call `create_snapshot` first if you need a restore point.
+- **`deploy_workflow` requires `workflow_id`** — Unlike `deploy_project` which deploys all workflows in the project, `deploy_workflow` targets exactly one. Pass all three: `project_id`, `workflow_id`, `instance_id`.
 - **`patch_workflow_graph` requires two sequential calls** — you cannot add nodes and connect them in a single call because you need the returned entity IDs for `connect_nodes`.
 - **`patch_workflow_graph` operations format** — The `operations` field is an **array of operation objects**, not a single operation. Each object must have an `op` field.
 - **`entity_type` must use hyphens** — Use `data-products` (not `data_products`), `quality-rules` (not `quality_rules`).
