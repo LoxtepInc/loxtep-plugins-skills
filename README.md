@@ -1,8 +1,52 @@
 # Loxtep Plugins & Skills
 
-Plugins and skills for using [Loxtep](https://loxtep.io) from AI coding and productivity tools. All integrations use the same **Loxtep Customer MCP** (`npx @loxtep/customer-mcp-server`).
+Plugins and skills for using [Loxtep](https://loxtep.io) from AI coding and productivity tools.
 
-The MCP server registers **16 grouped tools** named `loxtep_projects`, `loxtep_workflows`, `loxtep_connectors`, and so on. Each call sets **`operation`** to the flat action name (e.g. `list_projects`, `create_connection`) plus that action’s arguments. See the [Customer MCP README](https://github.com/symmatiq/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for the full map. Under the hood that still covers projects, workflows, data products, connectors, templates, catalog, and the rest of the customer tool surface.
+The MCP server registers **16 grouped tools** named `loxtep_projects`, `loxtep_workflows`, `loxtep_connectors`, and so on. Each call sets **`operation`** to the flat action name (e.g. `list_projects`, `create_connection`) plus that action's arguments. See the [Customer MCP README](https://github.com/symmatiq/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for the full map. Under the hood that still covers projects, workflows, data products, connectors, templates, catalog, and the rest of the customer tool surface.
+
+## Quick Start — Hosted MCP (recommended)
+
+The fastest way to connect any MCP-compatible client to Loxtep. No installation, no Node.js, no `npx` required.
+
+Add this to your MCP client config:
+
+```json
+{
+  "mcpServers": {
+    "loxtep": {
+      "url": "https://api.loxtep.io/ai/mcp/stream"
+    }
+  }
+}
+```
+
+That's it. On first connection your MCP client will open a browser window for OAuth login — sign in to Loxtep and you're connected. Authentication is handled automatically via OAuth 2.1 with PKCE; tokens refresh in the background.
+
+## Alternative — Local MCP Server (stdio)
+
+If you prefer offline access or need a custom environment, you can run the MCP server locally via stdio:
+
+```bash
+npx @loxtep/customer-mcp-server
+```
+
+One-time login to save tokens locally:
+
+```bash
+npx @loxtep/customer-mcp-server login
+```
+
+Open the printed URL in your browser, sign in to Loxtep, and complete the OAuth flow. Tokens are stored at `~/.loxtep/customer-mcp.json` and used by the local MCP server.
+
+## Hosted vs Local — when to use which
+
+| | Hosted (`url` config) | Local (`npx` stdio) |
+|---|---|---|
+| **Install** | None — just a URL | Requires Node.js + npx |
+| **Auth** | OAuth 2.1 + PKCE (browser popup, automatic refresh) | File-based tokens (`~/.loxtep/customer-mcp.json`) |
+| **Offline** | Requires internet | Works offline after login |
+| **Updates** | Always latest — server-side | Manual (`npx @loxtep/customer-mcp-server@latest`) |
+| **Best for** | Most users, CI agents, quick setup | Air-gapped environments, custom tooling |
 
 ## Plugins (siblings)
 
@@ -15,16 +59,6 @@ The MCP server registers **16 grouped tools** named `loxtep_projects`, `loxtep_w
 | **Antigravity** | Google Antigravity IDE | [antigravity/](antigravity/) | MCP config + README. Add Loxtep server via Manage MCP Servers → View raw config. |
 | **Codex** | OpenAI Codex | [codex/](codex/) | MCP config + README. Run `codex mcp add loxtep -- npx @loxtep/customer-mcp-server` or edit `~/.codex/config.toml`. |
 
-## One-time setup (all platforms)
-
-After installing your plugin or integration, log in once to save your Loxtep tokens:
-
-```bash
-npx @loxtep/customer-mcp-server login
-```
-
-Open the printed URL in your browser, sign in to Loxtep, and complete the OAuth flow. Tokens are stored at `~/.loxtep/customer-mcp.json` and used by the MCP server.
-
 ## Repository layout
 
 - **cursor/** — Cursor plugin (`.cursor-plugin/`, rules, skills, assets).
@@ -34,7 +68,7 @@ Open the printed URL in your browser, sign in to Loxtep, and complete the OAuth 
 - **antigravity/** — Antigravity IDE: MCP config and README.
 - **codex/** — Codex CLI/IDE: TOML snippet and README.
 
-See each directory’s `README.md` for install and usage instructions.
+See each directory's `README.md` for install and usage instructions.
 
 **User story catalog** (S0–S12, intent → skill → MCP): [docs/skills-user-stories.md](docs/skills-user-stories.md).
 
@@ -48,7 +82,7 @@ When invoking Loxtep MCP tools, agents may pass `_metadata` in tool arguments fo
 attribution and eval scoring. This is **fully optional** and backward-compatible.
 
 **Convention:** Include `_metadata: { skill_name: 'skill-slug' }` in the tool
-arguments. The `skill_name` must match the skill’s `name` from its YAML frontmatter.
+arguments. The `skill_name` must match the skill's `name` from its YAML frontmatter.
 The Loxtep platform uses this for per-skill eval and analytics when available.
 
 | `skill_name` (use exactly) |

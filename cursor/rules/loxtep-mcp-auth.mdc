@@ -1,10 +1,21 @@
 ---
-description: When Loxtep MCP returns "no valid auth token", run the customer MCP login command.
+description: When Loxtep MCP returns "no valid auth token", handle authentication based on connection mode (stdio or hosted).
 globs: .cursor/rules/*.mdc
 alwaysApply: true
 ---
 
 # Loxtep Customer MCP — Authentication
+
+The Loxtep MCP server supports two connection modes with different authentication flows:
+
+## Determining Your Connection Mode
+
+- **Stdio mode** — configured with `"command": "npx"` and `"args": ["@loxtep/customer-mcp-server"]` in your MCP config. Runs locally.
+- **Hosted mode** — configured with just a `"url"` (e.g. `"url": "https://api.loxtep.io/ai/mcp/stream"`) in your MCP config. No local install needed.
+
+---
+
+## Stdio Mode (Local Server)
 
 When a call to the **Loxtep Customer MCP** (e.g. tool `loxtep_projects` with `operation: "list_projects"`, or any `loxtep_*` tool on server `user-loxtep`) fails with:
 
@@ -25,3 +36,31 @@ npx @loxtep/customer-mcp-server login
 **On MCP restart:** If no token file exists (and `LOXTEP_AUTH_TOKEN` is not set), the MCP server runs the login flow automatically at startup. The user will see the login URL in the MCP log; complete the flow in the browser within about 60 seconds or Cursor may time out and restart the server (you can complete login in the new session and retry). If one process completes login while Cursor is using another, the active process will use the updated token file on the next tool call (or after a failed refresh).
 
 **After login:** Retry the MCP tool call that failed (or, if login was triggered at startup, tool calls will work once login completes).
+
+---
+
+## Hosted Mode (Remote Server with OAuth 2.1)
+
+When using the hosted MCP server (URL-based config), authentication is handled **automatically by the MCP client** using OAuth 2.1 with PKCE. No manual login command is needed.
+
+**What happens on first connection:**
+- The MCP client discovers the OAuth endpoints automatically via the server's well-known metadata.
+- A browser window opens for you to sign in to Loxtep (email/password + MFA if configured).
+- Once you complete login, the browser redirects back and the MCP client receives tokens automatically.
+- Tokens are refreshed in the background — no manual re-authentication unless the session expires (7 days) or is revoked.
+
+**When auth errors occur in hosted mode:**
+- The MCP client will automatically trigger a new browser login flow. No `npx` command is needed.
+- If you see HTTP 401 errors in the MCP logs, the client should re-initiate the OAuth flow on its own.
+
+### Troubleshooting Hosted OAuth
+
+If the browser login window doesn't appear or the OAuth flow fails:
+
+1. **Check MCP client support** — Your MCP client must support OAuth 2.1 with PKCE. Cursor, Claude Desktop, and Kiro all support this. Older or custom clients may not.
+2. **Check network/firewall** — The client needs to reach `https://api.loxtep.io/ai/mcp/oauth/.well-known` for discovery. Verify the URL is accessible from your machine.
+3. **Browser blocked** — Some environments (remote SSH, containers) cannot open a browser. In that case, use stdio mode instead (`npx @loxtep/customer-mcp-server`).
+4. **Session expired** — If you haven't used the MCP connection in over 7 days, the refresh token expires. The client should prompt a new login automatically; if it doesn't, restart the MCP server in your client settings.
+5. **Organization session limit** — If you see HTTP 429 with a session limit message, another session for your organization needs to be closed. Check active sessions in the Loxtep UI.
+
+**After login:** Tool calls work immediately once the OAuth flow completes. Retry any failed call.
