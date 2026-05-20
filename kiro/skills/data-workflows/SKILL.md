@@ -226,12 +226,29 @@ Design-time configuration (Flows A–E above) creates the **graph definition** o
 - `deploy_project` — When `version_id` is omitted (default via MCP), automatically creates a project snapshot before deploying. This snapshot is immutable and can be used for rollback via `restore_version`. Each deployment also creates a `deployment_version` record tracking validation, approval, and deployment history per workflow.
 - `deploy_workflow` — Creates a `deployment_version` record for the targeted workflow (version_number auto-increments per workflow+instance). Does **not** create a full project snapshot — use `create_snapshot` manually if you need a restore point.
 
-**After deployment**, use the SDK to write events — **not** HTTP directly. The agent must resolve the runtime configuration so the SDK client knows which bot and queue to target:
+**After deployment**, use the SDK to write or read events — **not** HTTP directly. The recommended approach is `data_products.get_writer` / `data_products.get_reader`, which resolves all runtime bindings (bot_id, queue, stream bus config) automatically from the data product name:
+
+```js
+const writer = await client.data_products.get_writer('my-data-product');
+writer.write({ id: '123', payload: { ... } });
+await writer.close();
+```
+
+```js
+const reader = await client.data_products.get_reader('my-data-product');
+for await (const event of reader) {
+  console.log(event);
+}
+```
+
+The SDK resolves the data product's deployment bindings, instance stream config, and bot identity in a single call — no need to manually call `get_runtime_mapping` or extract queue/bot names.
+
+**Fallback (advanced):** If you need explicit control over bot_id and queue, use the lower-level `get_runtime_mapping` approach:
 
 1. `loxtep_deployments` → `get_runtime_mapping` with `workflow_id` + `project_id`
 2. From the response, identify the **connection entity's container** (match by `entity_id`)
 3. Extract the `bot_ids[0]` (the deployed bot) and `queue_ids` (input queue) for that container
-4. Configure the `@loxtep/sdk` client with `instance_id`, `bot_id`, and the resolved queue — then write events via the SDK's stream bus
+4. Configure the `@loxtep/sdk` client with `instance_id`, `bot_id`, and the resolved queue — then write events via `flows.get_writer`
 
 **Recommended agent sequence for SDK ingestion:**
 1. Complete Flows B/C/E (project + workflow + graph with connection + data product)
@@ -240,10 +257,10 @@ Design-time configuration (Flows A–E above) creates the **graph definition** o
    - **Quick iteration:** `loxtep_deployments` → `deploy_workflow` with `project_id` + `workflow_id` + `instance_id`
    - **Production release:** `loxtep_deployments` → `deploy_project` with `project_id` + `instance_id`
 4. Poll `get_deployment` until status = `deployed`
-5. `loxtep_deployments` → `get_runtime_mapping` with `workflow_id` + `project_id` — returns the deployed bot ID and queue names
-6. Use **`loxtep-sdk`** skill to bootstrap the SDK client with the resolved `bot_id` and queue, then write events via the stream bus
+5. Use `client.data_products.get_writer('data-product-name')` to write events. The SDK resolves all runtime bindings automatically.
+6. Use `client.data_products.get_reader('data-product-name')` to consume events from the data product queue.
 
-**Runtime naming convention reference:** See the **`loxtep-sdk`** skill for the full naming hierarchy and how to resolve queue/bot names from the runtime-mapping API.
+**Runtime naming convention reference:** See the **`loxtep-sdk`** skill for the full naming hierarchy. For most use cases, `get_writer`/`get_reader` eliminates the need to understand queue/bot naming — the SDK handles resolution internally.
 
 ## MCP mapping (operations and scope)
 
