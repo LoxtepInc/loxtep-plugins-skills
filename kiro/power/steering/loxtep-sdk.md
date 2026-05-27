@@ -1,5 +1,53 @@
 # Loxtep Node SDK (agent skill)
 
+## Recommended: Data-product-centric writer & reader
+
+**Use `data_products.get_writer(id_or_name)` and `data_products.get_reader(id_or_name)` as the primary pattern.** These methods resolve all plumbing (queue names, bot IDs, stream bus config) automatically from the data product name or UUID — no manual runtime-mapping lookups needed.
+
+### Copy-paste: write events to a data product
+
+```ts
+import { LoxtepClient } from '@loxtep/sdk';
+
+const client = new LoxtepClient({
+  api_url: process.env.LOXTEP_API_URL!,
+  auth: { type: 'jwt', token: process.env.LOXTEP_AUTH_TOKEN! },
+});
+
+// Resolve by name — SDK handles queue, bot_id, and stream bus config
+const writer = await client.data_products.get_writer('my-data-product');
+
+writer.write({ id: '123', name: 'Example', timestamp: Date.now() });
+writer.write({ id: '456', name: 'Another', timestamp: Date.now() });
+
+await writer.close();
+```
+
+### Copy-paste: read events from a data product
+
+```ts
+const reader = await client.data_products.get_reader('my-data-product');
+
+for await (const event of reader) {
+  console.log(event.payload);
+}
+```
+
+### Lower-level escape hatch: `flows.get_writer`
+
+For cases where you need explicit control over bot_id and queue name, use the lower-level `flows.get_writer()`:
+
+```ts
+const writer = client.flows.get_writer(flowId, {
+  bot_id: 'custom-bot-id',
+  output_queue_name: 'explicit-queue-name',
+});
+writer.write({ ... });
+await writer.close();
+```
+
+> **Prefer `data_products.get_writer`** unless you have a specific reason to manage queue/bot resolution yourself.
+
 ## CRITICAL — Deployment prerequisite
 
 **Queues and bots do NOT exist until a workflow is deployed to an instance.** Design-time configuration (creating workflows, connections, data products via MCP or UI) only defines the graph — it does not provision runtime infrastructure. You **must** deploy the project before the SDK can write or read events.
@@ -108,7 +156,11 @@ Use `entity_id` to find the container for your connection/transform/data product
 
 ### 6. SDK event writing (via stream bus)
 
-The SDK writes events through the **stream bus** — not via HTTP. To write events:
+The SDK writes events through the **stream bus** — not via HTTP.
+
+**Recommended:** Use `data_products.get_writer('name')` — it resolves the runtime mapping, bot_id, queue, and stream bus config automatically. See the top of this document.
+
+**Lower-level path (explicit control):**
 
 1. Resolve the runtime mapping (via MCP `get_runtime_mapping` or CLI `loxtep config export`)
 2. Configure the SDK client with the deployed `bot_id` and target queue

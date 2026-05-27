@@ -62,8 +62,8 @@ SDK connectors use `auth_type: "jwt"` \u2014 no OAuth, no external credential te
 
 1. **Install SDK**: `npm install @loxtep/sdk` (Node.js) or `pip install loxtep` (Python)
 2. **Authenticate**: `loxtep login` or set `LOXTEP_AUTH_TOKEN` environment variable
-3. **Export config**: `loxtep config export --from-connector "<connector_id>" --format sh`
-4. **Write events**: Use `client.flows.get_writer(flow_id, { bot_id, output_queue_name })` to write events to a data product queue
+3. **Export config** (optional): `loxtep config export --from-connector "<connector_id>" --format sh`
+4. **Write events**: Use `await client.data_products.get_writer('data-product-name')` — the SDK resolves queue, bot_id, and stream bus config automatically from deployment metadata. No manual configuration needed.
 
 > **Key difference from OAuth/API key flows:** SDK connectors skip the `create_connection` step \u2014 the SDK writes directly to the Stream Bus using the `sdk_config`. No project-scoped connection node is needed for the initial bootstrap.
 

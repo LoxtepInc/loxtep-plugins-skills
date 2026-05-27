@@ -5,6 +5,88 @@ description: Bootstrap @loxtep/sdk in Node (auth, env, REST vs Loxtep streams), 
 
 # Loxtep Node SDK (agent skill)
 
+## Recommended: Data-product-centric writer & reader
+
+**Use `data_products.get_writer(id_or_name)` and `data_products.get_reader(id_or_name)` as the primary pattern.** These methods resolve all plumbing (queue names, bot IDs, stream bus config) automatically from the data product name or UUID — no manual runtime-mapping lookups needed.
+
+### Copy-paste: write events to a data product
+
+```ts
+import { LoxtepClient } from '@loxtep/sdk';
+
+const client = new LoxtepClient({
+  api_url: process.env.LOXTEP_API_URL!,
+  auth: { type: 'jwt', token: process.env.LOXTEP_AUTH_TOKEN! },
+});
+
+// Resolve by name — SDK handles queue, bot_id, and stream bus config
+const writer = await client.data_products.get_writer('my-data-product');
+
+writer.write({ id: '123', name: 'Example', timestamp: Date.now() });
+writer.write({ id: '456', name: 'Another', timestamp: Date.now() });
+
+await writer.close();
+```
+
+### Copy-paste: read events from a data product
+
+```ts
+import { LoxtepClient } from '@loxtep/sdk';
+
+const client = new LoxtepClient({
+  api_url: process.env.LOXTEP_API_URL!,
+  auth: { type: 'jwt', token: process.env.LOXTEP_AUTH_TOKEN! },
+});
+
+const reader = await client.data_products.get_reader('my-data-product');
+
+for await (const event of reader) {
+  console.log(event.payload);
+}
+```
+
+### Options
+
+```ts
+// Writer options
+const writer = await client.data_products.get_writer('my-data-product', {
+  bot_id: 'custom-bot-id',   // override resolved bot (advanced)
+  batch_size: 100,            // events per batch (default: 100)
+  max_retries: 3,             // retry attempts (default: 3)
+});
+
+// Reader options
+const reader = await client.data_products.get_reader('my-data-product', {
+  bot_id: 'my-reader-bot',   // custom reader identity for checkpointing
+  from: 'z/2024/01/01',      // start position
+  batch_size: 100,            // events per batch (default: 100)
+});
+```
+
+### Cache invalidation
+
+The SDK caches resolved data product config in memory. To force re-resolution:
+
+```ts
+client.data_products.invalidate_cache('my-data-product'); // specific
+client.data_products.invalidate_cache();                  // all
+```
+
+### Lower-level escape hatch: `flows.get_writer`
+
+For cases where you need explicit control over bot_id and queue name (e.g., writing to a queue that isn't a data product, or using a non-standard bot identity), use the lower-level `flows.get_writer()`:
+
+```ts
+const writer = client.flows.get_writer(flowId, {
+  bot_id: 'custom-bot-id',
+  output_queue_name: 'explicit-queue-name',
+});
+writer.write({ ... });
+await writer.close();
+```
+
+> **Prefer `data_products.get_writer`** unless you have a specific reason to manage queue/bot resolution yourself.
+
 ## CRITICAL — Deployment prerequisite
 
 **Queues and bots do NOT exist until a workflow is deployed to an instance.** Design-time configuration (creating workflows, connections, data products via MCP or UI) only defines the graph — it does not provision runtime infrastructure. You **must** deploy the project before the SDK can write or read events.
@@ -15,12 +97,12 @@ description: Bootstrap @loxtep/sdk in Node (auth, env, REST vs Loxtep streams), 
 - Queue registrations on the stream bus
 - The `runtime_mapping` that maps entities → containers → bot_ids/queue_ids
 
-**If you skip deployment**, SDK calls to `flows.get_writer()` or direct queue writes will fail with "queue not found" or "no deployed workflow" errors.
+**If you skip deployment**, SDK calls to `data_products.get_writer()` or `flows.get_writer()` will fail with "data product not deployed" or "queue not found" errors.
 
 **How to deploy:** Use the `loxtep_deployments` MCP facade:
 1. `deploy_project` — triggers async deployment (requires `project_id` + `instance_id`)
 2. `list_deployments` or `get_deployment` — poll until status is `deployed`
-3. `get_runtime_mapping` — resolve entity → queue/bot names after deployment completes
+3. After deployment, `data_products.get_writer('name')` resolves automatically
 
 See the **`data-workflows`** skill (Flow F — Deploy before SDK ingestion) for the full sequence.
 
@@ -113,13 +195,15 @@ Use `entity_id` to find the container for your connection/transform/data product
 
 ### 6. SDK event writing (via stream bus)
 
-The SDK writes events through the **stream bus** — not via HTTP. To write events:
+The SDK writes events through the **stream bus** — not via HTTP.
+
+**Recommended:** Use `data_products.get_writer('name')` — it resolves the runtime mapping, bot_id, queue, and stream bus config automatically. See the top of this document.
+
+**Lower-level path (explicit control):**
 
 1. Resolve the runtime mapping (via MCP `get_runtime_mapping` or CLI `loxtep config export`)
 2. Configure the SDK client with the deployed `bot_id` and target queue
 3. Use `flows.get_writer()` which writes directly to the stream bus queue
-
-The **workflow must be deployed** before the SDK can write. The `get_runtime_mapping` response tells you which `bot_id` and queue to target for a given connection/data product entity.
 
 **Quick path — export config from a deployed connector:**
 
@@ -194,10 +278,12 @@ node -e "
 ## Shell exports from an existing data product
 
 ```bash
-loxtep config export --from-data-product "<uuid>" --format sh
+loxtep config export --from-data-product "<name_or_uuid>" --format sh
 # or JSON for apps:
-loxtep config export --from-data-product "<uuid>" --format json
+loxtep config export --from-data-product "<name_or_uuid>" --format json
 ```
+
+> **Note:** For most use cases, `data_products.get_writer('name')` resolves everything automatically — you only need CLI config export for debugging or non-SDK environments.
 
 ## MCP vs SDK
 
