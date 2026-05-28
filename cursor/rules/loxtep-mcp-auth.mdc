@@ -11,7 +11,7 @@ The Loxtep MCP server supports two connection modes with different authenticatio
 ## Determining Your Connection Mode
 
 - **Stdio mode** — configured with `"command": "npx"` and `"args": ["@loxtep/customer-mcp-server"]` in your MCP config. Runs locally.
-- **Hosted mode** — configured with just a `"url"` (e.g. `"url": "https://api.loxtep.io/ai/mcp/stream"`) in your MCP config. No local install needed.
+- **Hosted mode** — configured with just a `"url"` (e.g. `"url": "https://mcp.loxtep.io/ai/mcp/stream"`) in your MCP config. No local install needed.
 
 ---
 
@@ -58,7 +58,7 @@ When using the hosted MCP server (URL-based config), authentication is handled *
 If the browser login window doesn't appear or the OAuth flow fails:
 
 1. **Check MCP client support** — Your MCP client must support OAuth 2.1 with PKCE. Cursor, Claude Desktop, and Kiro all support this. Older or custom clients may not.
-2. **Check network/firewall** — The client needs to reach `https://api.loxtep.io/ai/mcp/oauth/.well-known` for discovery. Verify the URL is accessible from your machine.
+2. **Check network/firewall** — The client needs to reach `https://mcp.loxtep.io/ai/mcp/oauth/.well-known` for discovery. Verify the URL is accessible from your machine.
 3. **Browser blocked** — Some environments (remote SSH, containers) cannot open a browser. In that case, use stdio mode instead (`npx @loxtep/customer-mcp-server`).
 4. **Session expired** — If you haven't used the MCP connection in over 7 days, the refresh token expires. The client should prompt a new login automatically; if it doesn't, restart the MCP server in your client settings.
 5. **Organization session limit** — If you see HTTP 429 with a session limit message, another session for your organization needs to be closed. Check active sessions in the Loxtep UI.

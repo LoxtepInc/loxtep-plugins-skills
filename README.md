@@ -14,7 +14,7 @@ Add this to your MCP client config:
 {
   "mcpServers": {
     "loxtep": {
-      "url": "https://api.loxtep.io/ai/mcp/stream"
+      "url": "https://mcp.loxtep.io/ai/mcp/stream"
     }
   }
 }
