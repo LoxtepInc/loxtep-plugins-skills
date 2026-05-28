@@ -3,10 +3,6 @@
     "loxtep": {
       "command": "npx",
       "args": ["@loxtep/customer-mcp-server"]
-    },
-    "_comment_hosted": "Uncomment the url-based config below for zero-install hosted mode (requires browser login on first use). To use: remove the stdio 'loxtep' entry above and rename 'loxtep-hosted' to 'loxtep'.",
-    "loxtep-hosted": {
-      "url": "https://mcp.loxtep.io/ai/mcp/stream"
     }
   }
 }

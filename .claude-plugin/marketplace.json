@@ -6,9 +6,6 @@
     "name": "Loxtep",
     "email": "support@loxtep.io"
   },
-  "metadata": {
-    "pluginRoot": "."
-  },
   "plugins": [
     {
       "name": "loxtep",
