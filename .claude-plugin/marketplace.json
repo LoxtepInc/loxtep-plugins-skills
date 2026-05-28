@@ -1,22 +1,17 @@
 {
   "name": "loxtep",
   "description": "Loxtep data mesh platform plugins — projects, workflows, data products, connectors, catalog, and more via Customer MCP.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "owner": {
     "name": "Loxtep",
     "email": "support@loxtep.io"
-  },
-  "metadata": {
-    "description": "Loxtep's shared skills and plugins for Claude Code",
-    "version": "1.0.1",
-    "pluginRoot": "./claude"
   },
   "plugins": [
     {
       "name": "loxtep",
       "source": "./claude",
       "description": "Loxtep data mesh platform — 16 grouped MCP tools (loxtep_*) with per-call operation covering projects, workflows, data products, connectors, templates, catalog, schemas, analytics, and more. Includes story-first skills for auth, instances, connectors, workflows, governance, quality, analytics, workspace, process intelligence, procedures, and agent orchestration.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "Loxtep"
       },
