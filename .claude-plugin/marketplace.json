@@ -6,6 +6,11 @@
     "name": "Loxtep",
     "email": "support@loxtep.io"
   },
+  "metadata": {
+    "description": "Loxtep's shared skills and plugins for Claude Code",
+    "version": "1.0.1",
+    "pluginRoot": "./claude"
+  },
   "plugins": [
     {
       "name": "loxtep",
