@@ -2,7 +2,7 @@
 
 Plugins and skills for using [Loxtep](https://loxtep.io) from AI coding and productivity tools.
 
-The MCP server registers **16 grouped tools** named `loxtep_projects`, `loxtep_workflows`, `loxtep_connectors`, and so on. Each call sets **`operation`** to the flat action name (e.g. `list_projects`, `create_connection`) plus that action's arguments. See the [Customer MCP README](https://github.com/symmatiq/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for the full map. Under the hood that still covers projects, workflows, data products, connectors, templates, catalog, and the rest of the customer tool surface.
+The MCP server registers **16 grouped tools** named `loxtep_projects`, `loxtep_workflows`, `loxtep_connectors`, and so on. Each call sets **`operation`** to the flat action name (e.g. `list_projects`, `create_connection`) plus that action's arguments. See the [Customer MCP README](https://github.com/loxtepinc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for the full map. Under the hood that still covers projects, workflows, data products, connectors, templates, catalog, and the rest of the customer tool surface.
 
 ## Quick Start — Hosted MCP (recommended)
 

@@ -2,7 +2,7 @@
 
 Use the [Loxtep](https://loxtep.io) Customer MCP from [OpenCode](https://opencode.ai): **16 grouped tools** (`loxtep_*`) with per-call **`operation`**, covering projects, workflows, data products, connectors, and more.
 
-This directory lives in the [loxtep-plugins-skills](https://github.com/symmatiq/loxtep-plugins-skills) repo under `opencode/`.
+This directory lives in the [loxtep-plugins-skills](https://github.com/loxtepinc/loxtep-plugins-skills) repo under `opencode/`.
 
 ## Prerequisites
 
@@ -122,7 +122,7 @@ Add these under the `loxtep` server's `env` object in your MCP config if needed:
 }
 ```
 
-See the [Customer MCP Server README](https://github.com/symmatiq/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for full details.
+See the [Customer MCP Server README](https://github.com/loxtepinc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for full details.
 
 ## License
 

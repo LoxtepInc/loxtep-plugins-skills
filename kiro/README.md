@@ -2,7 +2,7 @@
 
 Use the [Loxtep](https://loxtep.io) Customer MCP from [Kiro](https://kiro.dev): **16 grouped tools** (`loxtep_*`) with per-call **`operation`**, covering projects, workflows, data products, connectors, and more.
 
-This directory lives in the [loxtep-plugins-skills](https://github.com/symmatiq/loxtep-plugins-skills) repo under `kiro/`.
+This directory lives in the [loxtep-plugins-skills](https://github.com/loxtepinc/loxtep-plugins-skills) repo under `kiro/`.
 
 ## Prerequisites
 
@@ -36,7 +36,7 @@ This directory lives in the [loxtep-plugins-skills](https://github.com/symmatiq/
 - `LOXTEP_API_BASE_URL` — Override API endpoint.
 - `LOXTEP_TOKEN_FILE` — Custom path to token file (default `~/.loxtep/customer-mcp.json`).
 
-Add these under the `loxtep` server's `env` object in your MCP config if needed. See the [Customer MCP Server README](https://github.com/symmatiq/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for full details.
+Add these under the `loxtep` server's `env` object in your MCP config if needed. See the [Customer MCP Server README](https://github.com/loxtepinc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for full details.
 
 ## License
 

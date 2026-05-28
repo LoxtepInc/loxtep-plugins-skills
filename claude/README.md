@@ -2,7 +2,7 @@
 
 Claude Code and Claude Cowork plugin for the [Loxtep](https://loxtep.io) data mesh platform. The Customer MCP lists **16 grouped tools** (`loxtep_*`); each invocation sets **`operation`** to the flat action name plus parameters—covering projects, workflows, data products, connectors, and more.
 
-This plugin lives in the [loxtep-plugins-skills](https://github.com/symmatiq/loxtep-plugins-skills) repo under `claude/`.
+This plugin lives in the [loxtep-plugins-skills](https://github.com/loxtepinc/loxtep-plugins-skills) repo under `claude/`.
 
 ## Prerequisites
 
@@ -11,7 +11,7 @@ This plugin lives in the [loxtep-plugins-skills](https://github.com/symmatiq/lox
 
 ## Quick start
 
-1. **Install the plugin** in Claude Code or Claude Cowork (e.g. from Git: clone or install from `https://github.com/symmatiq/loxtep-plugins-skills` and select the `claude/` directory as the plugin path, per your client’s instructions).
+1. **Install the plugin** in Claude Code or Claude Cowork (e.g. from Git: clone or install from `https://github.com/loxtepinc/loxtep-plugins-skills` and select the `claude/` directory as the plugin path, per your client’s instructions).
 2. **Log in once** to save your Loxtep tokens:
    ```bash
    npx @loxtep/customer-mcp-server login
@@ -31,7 +31,7 @@ This plugin lives in the [loxtep-plugins-skills](https://github.com/symmatiq/lox
 - `LOXTEP_API_BASE_URL` — Override API endpoint.
 - `LOXTEP_TOKEN_FILE` — Custom path to token file (default `~/.loxtep/customer-mcp.json`).
 
-See the [Customer MCP Server README](https://github.com/symmatiq/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for full details.
+See the [Customer MCP Server README](https://github.com/loxtepinc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for full details.
 
 ## Submission (Claude plugin discovery)
 

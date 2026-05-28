@@ -2,7 +2,7 @@
 
 Use the [Loxtep](https://loxtep.io) Customer MCP from [OpenAI Codex](https://codex.openai.com) (CLI and IDE): **16 grouped tools** (`loxtep_*`) with **`operation`** per invocation.
 
-This directory lives in the [loxtep-plugins-skills](https://github.com/symmatiq/loxtep-plugins-skills) repo under `codex/`.
+This directory lives in the [loxtep-plugins-skills](https://github.com/loxtepinc/loxtep-plugins-skills) repo under `codex/`.
 
 ## Prerequisites
 
@@ -46,7 +46,7 @@ args = ["@loxtep/customer-mcp-server"]
 - `LOXTEP_API_BASE_URL` — Override API endpoint.
 - `LOXTEP_TOKEN_FILE` — Custom path to token file (default `~/.loxtep/customer-mcp.json`).
 
-Configure these in the `[mcp_servers.loxtep]` section via `env` if your Codex version supports it, or set them in your shell. See the [Customer MCP Server README](https://github.com/symmatiq/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for full details.
+Configure these in the `[mcp_servers.loxtep]` section via `env` if your Codex version supports it, or set them in your shell. See the [Customer MCP Server README](https://github.com/loxtepinc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for full details.
 
 ## License
 

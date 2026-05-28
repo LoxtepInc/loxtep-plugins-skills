@@ -2,7 +2,7 @@
 
 Cursor plugin for the [Loxtep](https://loxtep.io) data mesh platform. The Customer MCP exposes **16 grouped tools** (`loxtep_projects`, `loxtep_workflows`, …); each call uses **`operation`** plus arguments (many actions total across those groups). Use it from Cursor to manage projects, workflows, data products, connections, templates, and more.
 
-This plugin lives in the [loxtep-plugins-skills](https://github.com/symmatiq/loxtep-plugins-skills) repo under `cursor/`. For Cursor Marketplace or “install from Git”, use the repo URL and select the `cursor/` path if your client supports subpaths.
+This plugin lives in the [loxtep-plugins-skills](https://github.com/loxtepinc/loxtep-plugins-skills) repo under `cursor/`. For Cursor Marketplace or “install from Git”, use the repo URL and select the `cursor/` path if your client supports subpaths.
 
 ## Prerequisites
 
@@ -11,7 +11,7 @@ This plugin lives in the [loxtep-plugins-skills](https://github.com/symmatiq/lox
 
 ## Quick start
 
-1. **Install the plugin** in Cursor (Settings → Plugins → Install from Git; use `https://github.com/symmatiq/loxtep-plugins-skills` and `cursor/` as the plugin path if supported).
+1. **Install the plugin** in Cursor (Settings → Plugins → Install from Git; use `https://github.com/loxtepinc/loxtep-plugins-skills` and `cursor/` as the plugin path if supported).
 2. **Log in once** to save your Loxtep tokens:
    ```bash
    npx @loxtep/customer-mcp-server login
@@ -32,7 +32,7 @@ This plugin lives in the [loxtep-plugins-skills](https://github.com/symmatiq/lox
 - `LOXTEP_API_BASE_URL` — Override API endpoint.
 - `LOXTEP_TOKEN_FILE` — Custom path to token file (default `~/.loxtep/customer-mcp.json`).
 
-See the [Customer MCP Server README](https://github.com/symmatiq/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for full details.
+See the [Customer MCP Server README](https://github.com/loxtepinc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for full details.
 
 ## Submission (Cursor Marketplace)
 

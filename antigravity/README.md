@@ -2,7 +2,7 @@
 
 Use the [Loxtep](https://loxtep.io) Customer MCP from [Google Antigravity IDE](https://antigravity.chat): **16 grouped tools** (`loxtep_*`) with **`operation`** per call—projects, workflows, data products, connectors, and more.
 
-This directory lives in the [loxtep-plugins-skills](https://github.com/symmatiq/loxtep-plugins-skills) repo under `antigravity/`.
+This directory lives in the [loxtep-plugins-skills](https://github.com/loxtepinc/loxtep-plugins-skills) repo under `antigravity/`.
 
 ## Prerequisites
 
@@ -39,7 +39,7 @@ This directory lives in the [loxtep-plugins-skills](https://github.com/symmatiq/
 - `LOXTEP_API_BASE_URL` — Override API endpoint.
 - `LOXTEP_TOKEN_FILE` — Custom path to token file (default `~/.loxtep/customer-mcp.json`).
 
-Add these in the `loxtep` server’s `env` object in your raw MCP config if needed. See the [Customer MCP Server README](https://github.com/symmatiq/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for full details.
+Add these in the `loxtep` server’s `env` object in your raw MCP config if needed. See the [Customer MCP Server README](https://github.com/loxtepinc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for full details.
 
 ## License
 
