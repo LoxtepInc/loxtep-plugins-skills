@@ -262,6 +262,29 @@ The SDK resolves the data product's deployment bindings, instance stream config,
 
 **Runtime naming convention reference:** See the **`loxtep-sdk`** skill for the full naming hierarchy. For most use cases, `get_writer`/`get_reader` eliminates the need to understand queue/bot naming — the SDK handles resolution internally.
 
+### Flow G — Build your own SDK-ingestion data product (end to end)
+
+When a customer wants to write events from their own code into a new data product, this is the complete happy path. The data product is fed by an **SDK connection** node; **deploy** provisions the queue + bot and the data product's runtime bindings; then the SDK resolves everything from the data product **name**.
+
+1. **Create the workflow** — `loxtep_workflows` → `create_workflow` with `workflow_type: "ingestion"`.
+2. **Add nodes** — `patch_workflow_graph` (Flow E, step 1): an SDK connection node (`entity_type: "connections"`, `connector_type: "sdk"`, `configuration: { "sdk_type": "nodejs", "event_type": "<name>" }`) **and** a `data-products` node named `<name>`.
+3. **Connect** — `patch_workflow_graph` (Flow E, step 2): `connect_nodes` connection → data product, plus `update_workflow` `{ "metadata": { "graph_wired": true } }`.
+4. **Deploy** — `loxtep_deployments` → `deploy_workflow` with `project_id` + `workflow_id` + `instance_id`. **Required**: queues/bots and the data product's deployment bindings do not exist until deploy (see Flow F). Re-run after any graph change.
+5. **Write / read via the SDK** (see **`loxtep-sdk`**) — resolve purely by data product name:
+   ```js
+   const writer = await client.data_products.get_writer('<name>');
+   writer.write({ id, timestamp, payload });   // payload = your event body
+   await writer.close();
+
+   const reader = await client.data_products.get_reader('<name>');
+   for await (const event of reader) { /* ... */ }
+   ```
+
+Notes:
+- `get_writer` / `get_reader` resolve by **name** (or UUID) and only **after deploy** — they read the deployment bindings created at deploy time. Pre-deploy resolution fails by design.
+- Authenticate once: `npx loxtep login` (or `npx @loxtep/customer-mcp-server login`). Creds live in `~/.loxtep/credentials.json` and the SDK refreshes them automatically. See **`loxtep-auth`**.
+- Simplest model: one workflow per event type, with the connection's `event_type` equal to the data product name.
+
 ## MCP mapping (operations and scope)
 
 | Step | User intent | Tool | `operation` | Scope | Key args |
