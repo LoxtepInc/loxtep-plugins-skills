@@ -1,5 +1,4 @@
 # Copy this into ~/.codex/config.toml (or merge into existing [mcp_servers] section)
 
 [mcp_servers.loxtep]
-command = "npx"
-args = ["@loxtep/customer-mcp-server"]
+url = "https://mcp.loxtep.io/ai/mcp/stream"

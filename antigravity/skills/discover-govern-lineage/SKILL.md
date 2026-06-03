@@ -63,7 +63,7 @@ description:
 
 ## Auth
 
-`loxtep-auth` / `npx @loxtep/customer-mcp-server login`.
+Reconnect the Loxtep MCP server to re-trigger OAuth — see **`loxtep-auth`**.
 
 ## References
 

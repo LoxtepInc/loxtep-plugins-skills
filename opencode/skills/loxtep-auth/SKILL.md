@@ -1,11 +1,6 @@
 ---
 name: loxtep-auth
-description: When Loxtep MCP returns "no valid auth token" or "RBAC requires JWT", run the customer MCP login command and retry. Use after any Loxtep tool call that fails with an authentication error.
-license: MIT
-compatibility: opencode
-metadata:
-  platform: loxtep
-  category: auth
+description: When Loxtep MCP returns "no valid auth token" or "RBAC requires JWT", guide the user to re-authenticate via the OAuth browser flow. Use after any Loxtep tool call that fails with an authentication error.
 ---
 
 # Loxtep MCP — Authentication recovery
@@ -15,17 +10,16 @@ When a call to a **Loxtep Customer MCP** tool (`loxtep_*` with an `operation` fi
 - **"No valid authentication token found"**, or
 - **"RBAC requires JWT token in Authorization header or x-jwt-token header"**,
 
-run the login command so the user can re-authenticate:
+the OAuth session has expired or was never established.
 
-```bash
-npx @loxtep/customer-mcp-server login
-```
+**How to fix:**
 
-**What happens:**
-- A local server starts and prints a URL (e.g. `https://appdev.loxtep.io/auth/mcp?port=38473`).
-- The user must open that URL in a browser, sign in to Loxtep, and complete the OAuth flow.
-- Tokens are saved to `~/.loxtep/customer-mcp.json`; the MCP server will use them on subsequent tool calls.
+1. **Disconnect and reconnect** the Loxtep MCP server in your IDE's MCP settings. This will trigger the OAuth flow again.
+2. A browser window will open for Loxtep login — sign in and authorize the connection.
+3. Tokens refresh automatically after re-authentication.
 
-**After login:** Retry the Loxtep tool call that failed.
+**After re-auth:** Retry the Loxtep tool call that failed.
 
-**Optional env:** Set `LOXTEP_ENV` or `NODE_ENV` to `dev` / `development` for dev app/API (`appdev.loxtep.io`, `apidev.loxtep.io`). Set `LOXTEP_API_BASE_URL` to override the API endpoint.
+**If your MCP client uses `mcp-remote`** (e.g. Antigravity): Kill and restart the `mcp-remote` process, or disconnect/reconnect the server in your IDE. The OAuth flow will re-trigger in your browser.
+
+**Dev environment:** Use `https://mcpdev.loxtep.io/ai/mcp/stream` as the server URL to connect to the Loxtep dev instance.

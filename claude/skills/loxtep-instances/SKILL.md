@@ -106,7 +106,7 @@ Add `"_metadata": { "skill_name": "loxtep-instances" }` alongside other fields.
 
 ## Auth
 
-If MCP returns missing JWT / auth errors, run `npx @loxtep/customer-mcp-server login` (skill **loxtep-auth**).
+If MCP returns missing JWT / auth errors, reconnect the Loxtep MCP server to re-trigger OAuth (skill **loxtep-auth**).
 
 ## References
 

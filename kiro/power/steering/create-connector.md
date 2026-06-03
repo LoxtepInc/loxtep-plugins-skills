@@ -109,7 +109,7 @@ SDK connector example:
 
 ## Auth
 
-`npx @loxtep/customer-mcp-server login` — **`loxtep-auth`**.
+Reconnect the Loxtep MCP server to re-trigger OAuth — see **`loxtep-auth`**.
 
 ## References
 

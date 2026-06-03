@@ -49,13 +49,7 @@ Each steering file covers an independent workflow area. Load the one matching us
 
 ### Authentication
 
-Run the login command to save tokens:
-
-```bash
-npx @loxtep/customer-mcp-server login
-```
-
-A local server starts and prints a URL (e.g. `https://app.loxtep.io/auth/mcp?port=38473`). Open it in a browser, sign in to Loxtep, and complete the OAuth flow. Tokens are saved to `~/.loxtep/customer-mcp.json`.
+Authentication is handled automatically via OAuth when you connect the Loxtep MCP server. A browser window will open for login — sign in and authorize the connection. Tokens refresh automatically.
 
 ### Authentication Recovery
 
@@ -63,14 +57,15 @@ When any `loxtep_*` tool call fails with:
 - **"No valid authentication token found"**, or
 - **"RBAC requires JWT token in Authorization header or x-jwt-token header"**
 
-Run `npx @loxtep/customer-mcp-server login` again, then retry the failed call.
+Disconnect and reconnect the Loxtep MCP server in your IDE's MCP settings to re-trigger the OAuth flow, then retry the failed call.
+
+**Dev environment:** Use `https://mcpdev.loxtep.io/ai/mcp/stream` as the server URL to connect to the Loxtep dev instance.
 
 ### Environment Variables (optional)
 
 - `LOXTEP_ENV` or `NODE_ENV` — Set to `dev` / `development` for dev endpoints (`appdev.loxtep.io`, `apidev.loxtep.io`). Default is production.
 - `LOXTEP_APP_URL` — Override app base URL for login.
 - `LOXTEP_API_BASE_URL` — Override API endpoint.
-- `LOXTEP_TOKEN_FILE` — Custom path to token file (default `~/.loxtep/customer-mcp.json`).
 
 ## Session Pattern (Start Here)
 
@@ -83,7 +78,7 @@ Before any project work, confirm identity and org:
 ### Permission Denials
 
 - Match failure messages to `get_current_user.permissions`. Role changes are admin-only.
-- **401 / missing token** → run `login` (see Authentication Recovery above).
+- **401 / missing token** → reconnect the Loxtep MCP server to re-trigger OAuth (see Authentication Recovery above).
 - **403 / permission denied** → check `permissions` array for the required `resource:action` grant.
 
 ## How MCP Calls Work
@@ -148,12 +143,11 @@ Example:
 ### MCP Server Won't Start
 
 - Verify Node.js 18+ is installed: `node --version`
-- Try running manually: `npx @loxtep/customer-mcp-server`
 - Check for network issues (the server needs to reach `api.loxtep.io` or `apidev.loxtep.io`)
 
 ### Authentication Errors
 
-- **"No valid authentication token found"** → Run `npx @loxtep/customer-mcp-server login`
+- **"No valid authentication token found"** → Disconnect and reconnect the Loxtep MCP server to re-trigger OAuth
 - **Token expired** → Same fix; tokens auto-refresh but may expire after extended inactivity
 - **Wrong environment** → Set `LOXTEP_ENV=dev` if targeting dev endpoints
 

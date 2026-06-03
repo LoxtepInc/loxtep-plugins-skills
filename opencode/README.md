@@ -6,7 +6,6 @@ This directory lives in the [loxtep-plugins-skills](https://github.com/loxtepinc
 
 ## Prerequisites
 
-- **Node.js** 18+
 - **OpenCode** installed ([opencode.ai/docs](https://opencode.ai/docs))
 - **Loxtep account** with `owner`, `org_admin`, or `developer` role (for MCP tool access)
 
@@ -20,18 +19,11 @@ Add the Loxtep server to your OpenCode MCP configuration. In your project's `ope
 {
   "mcp": {
     "loxtep": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["@loxtep/customer-mcp-server"]
+      "type": "http",
+      "url": "https://mcp.loxtep.io/ai/mcp/stream"
     }
   }
 }
-```
-
-Alternatively, use the CLI:
-
-```bash
-opencode mcp add loxtep -- npx @loxtep/customer-mcp-server
 ```
 
 ### 2. Install skills
@@ -48,23 +40,19 @@ cp -r opencode/skills/ ~/.config/opencode/skills/
 
 OpenCode also discovers skills from `.claude/skills/` and `.agents/skills/` paths, so the Claude or agents versions in this repo work too.
 
-### 3. Log in once
+### 3. Connect
 
-Save your Loxtep tokens:
-
-```bash
-npx @loxtep/customer-mcp-server login
-```
-
-Open the printed URL in your browser, sign in to Loxtep, and complete the OAuth flow. Tokens are stored at `~/.loxtep/customer-mcp.json`.
+On first use, OpenCode will open a browser window for OAuth login. Sign in to Loxtep and you're connected. Tokens refresh automatically.
 
 ### 4. Use the tools
 
 OpenCode's agent will discover the `loxtep_*` tools and the skills automatically. Skills are loaded on-demand via the native `skill` tool — the agent sees available skills and loads the full content when needed.
 
+> **Dev environment:** Replace the URL with `https://mcpdev.loxtep.io/ai/mcp/stream` to connect to the Loxtep dev instance.
+
 ## What you get
 
-- **Loxtep Customer MCP** — `npx @loxtep/customer-mcp-server` (grouped `loxtep_*` + `operation`; projects, workflows, data products, connectors, templates, catalog, schemas, and more).
+- **Loxtep Customer MCP** — hosted at `https://mcp.loxtep.io/ai/mcp/stream` (grouped `loxtep_*` + `operation`; projects, workflows, data products, connectors, templates, catalog, schemas, and more).
 - **Skills** — Story-first playbooks (see [docs/skills-user-stories.md](../docs/skills-user-stories.md)):
 
 | Skill | Description |
@@ -97,32 +85,6 @@ Control which skills agents can access in `opencode.json`:
   }
 }
 ```
-
-## Environment variables (optional)
-
-- `LOXTEP_ENV` or `NODE_ENV` — Set to `dev` / `development` for dev app/API (`appdev.loxtep.io`, `apidev.loxtep.io`). Default is production.
-- `LOXTEP_APP_URL` — Override app base URL for login.
-- `LOXTEP_API_BASE_URL` — Override API endpoint.
-- `LOXTEP_TOKEN_FILE` — Custom path to token file (default `~/.loxtep/customer-mcp.json`).
-
-Add these under the `loxtep` server's `env` object in your MCP config if needed:
-
-```json
-{
-  "mcp": {
-    "loxtep": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["@loxtep/customer-mcp-server"],
-      "env": {
-        "LOXTEP_ENV": "dev"
-      }
-    }
-  }
-}
-```
-
-See the [Customer MCP Server README](https://github.com/loxtepinc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for full details.
 
 ## License
 

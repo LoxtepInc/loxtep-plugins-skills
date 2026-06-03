@@ -16,8 +16,7 @@
   "license": "MIT",
   "mcpServers": {
     "loxtep": {
-      "command": "npx",
-      "args": ["@loxtep/customer-mcp-server"]
+      "url": "https://mcp.loxtep.io/ai/mcp/stream"
     }
   }
 }

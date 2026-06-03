@@ -249,7 +249,7 @@ When a customer wants to write events from their own code into a new data produc
 
 Notes:
 - `get_writer` / `get_reader` resolve by **name** (or UUID) and only **after deploy** — they read the deployment bindings created at deploy time. Pre-deploy resolution fails by design.
-- Authenticate once: `npx loxtep login` (or `npx @loxtep/customer-mcp-server login`). Creds live in `~/.loxtep/credentials.json` and the SDK refreshes them automatically. See **`loxtep-auth`**.
+- Authentication is handled automatically via OAuth when you connect the MCP server. If auth expires, reconnect the server to re-trigger the flow. See **`loxtep-auth`**.
 - Simplest model: one workflow per event type, with the connection's `event_type` equal to the data product name.
 
 ## MCP mapping (operations and scope)
@@ -296,7 +296,7 @@ Notes:
 
 ## Auth
 
-`npx @loxtep/customer-mcp-server login` — see **`loxtep-auth`**.
+Reconnect the Loxtep MCP server to re-trigger OAuth — see **`loxtep-auth`**.
 
 ## References
 

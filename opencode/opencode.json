@@ -1,9 +1,8 @@
 {
   "mcp": {
     "loxtep": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["@loxtep/customer-mcp-server"]
+      "type": "http",
+      "url": "https://mcp.loxtep.io/ai/mcp/stream"
     }
   },
   "permission": {

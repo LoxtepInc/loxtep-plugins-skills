@@ -234,7 +234,7 @@ Design-time configuration (Flows A–E above) creates the **graph definition** o
 
 ## Auth
 
-`npx @loxtep/customer-mcp-server login` — see **`loxtep-auth`**.
+Reconnect the Loxtep MCP server to re-trigger OAuth — see **`loxtep-auth`**.
 
 ## References
 

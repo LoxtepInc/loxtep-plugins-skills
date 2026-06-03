@@ -4,11 +4,9 @@ Plugins and skills for using [Loxtep](https://loxtep.io) from AI coding and prod
 
 The MCP server registers **16 grouped tools** named `loxtep_projects`, `loxtep_workflows`, `loxtep_connectors`, and so on. Each call sets **`operation`** to the flat action name (e.g. `list_projects`, `create_connection`) plus that action's arguments. See the [Customer MCP README](https://github.com/loxtepinc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for the full map. Under the hood that still covers projects, workflows, data products, connectors, templates, catalog, and the rest of the customer tool surface.
 
-## Quick Start — Hosted MCP (recommended)
+## Quick Start
 
-The fastest way to connect any MCP-compatible client to Loxtep. No installation, no Node.js, no `npx` required.
-
-Add this to your MCP client config:
+Add the Loxtep hosted MCP server to your client config:
 
 ```json
 {
@@ -22,42 +20,37 @@ Add this to your MCP client config:
 
 That's it. On first connection your MCP client will open a browser window for OAuth login — sign in to Loxtep and you're connected. Authentication is handled automatically via OAuth 2.1 with PKCE; tokens refresh in the background.
 
-## Alternative — Local MCP Server (stdio)
+No installation, no Node.js, no `npx`, no token files to manage.
 
-If you prefer offline access or need a custom environment, you can run the MCP server locally via stdio:
+> **Dev environment:** Replace the URL with `https://mcpdev.loxtep.io/ai/mcp/stream` to connect to the Loxtep dev instance.
 
-```bash
-npx @loxtep/customer-mcp-server
+## Clients without native MCP OAuth
+
+Some MCP clients (e.g. Google Antigravity) don't yet support the OAuth 2.1 handshake natively. For those, use `mcp-remote` as a local bridge:
+
+```json
+{
+  "mcpServers": {
+    "loxtep": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.loxtep.io/ai/mcp/stream"]
+    }
+  }
+}
 ```
 
-One-time login to save tokens locally:
+`mcp-remote` handles the OAuth flow locally (opens your browser, runs a localhost callback server) and bridges the authenticated connection via stdio.
 
-```bash
-npx @loxtep/customer-mcp-server login
-```
-
-Open the printed URL in your browser, sign in to Loxtep, and complete the OAuth flow. Tokens are stored at `~/.loxtep/customer-mcp.json` and used by the local MCP server.
-
-## Hosted vs Local — when to use which
-
-| | Hosted (`url` config) | Local (`npx` stdio) |
-|---|---|---|
-| **Install** | None — just a URL | Requires Node.js + npx |
-| **Auth** | OAuth 2.1 + PKCE (browser popup, automatic refresh) | File-based tokens (`~/.loxtep/customer-mcp.json`) |
-| **Offline** | Requires internet | Works offline after login |
-| **Updates** | Always latest — server-side | Manual (`npx @loxtep/customer-mcp-server@latest`) |
-| **Best for** | Most users, CI agents, quick setup | Air-gapped environments, custom tooling |
-
-## Plugins (siblings)
+## Plugins
 
 | Plugin | Platform | Path | Description |
 |--------|----------|------|-------------|
-| **Cursor** | Cursor IDE | [cursor/](cursor/) | Cursor Marketplace plugin: MCP, rules, skills. Install from Git or [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish). |
-| **Claude** | Claude Code & Claude Cowork | [claude/](claude/) | Claude plugin: MCP, skills. Install from Git or Claude plugin discovery. |
-| **OpenCode** | OpenCode (terminal/desktop/IDE) | [opencode/](opencode/) | MCP config, skills, `opencode.json`. Copy skills to `.opencode/skills/` or `~/.config/opencode/skills/`. |
-| **Kiro** | Kiro IDE | [kiro/](kiro/) | MCP config + README. Copy `mcp.json` into `.kiro/settings/mcp.json` or `~/.kiro/settings/mcp.json`. |
-| **Antigravity** | Google Antigravity IDE | [antigravity/](antigravity/) | MCP config + README. Uses `mcp-remote` bridge for OAuth (Antigravity doesn't support native MCP OAuth yet). |
-| **Codex** | OpenAI Codex | [codex/](codex/) | MCP config + README. Run `codex mcp add loxtep -- npx @loxtep/customer-mcp-server` or edit `~/.codex/config.toml`. |
+| **Cursor** | Cursor IDE | [cursor/](cursor/) | MCP config, rules, skills. Supports native OAuth via `url` config. |
+| **Claude** | Claude Code & Claude Cowork | [claude/](claude/) | MCP config, skills. Supports native OAuth via `url` config. |
+| **OpenCode** | OpenCode (terminal/desktop/IDE) | [opencode/](opencode/) | MCP config, skills. Supports native OAuth via `url` config. |
+| **Kiro** | Kiro IDE | [kiro/](kiro/) | MCP config + README. Supports native OAuth via `url` config. |
+| **Antigravity** | Google Antigravity IDE | [antigravity/](antigravity/) | MCP config + README. Uses `mcp-remote` bridge (no native MCP OAuth yet). |
+| **Codex** | OpenAI Codex | [codex/](codex/) | TOML config + README. Supports native OAuth via `url` config. |
 
 ## Repository layout
 
