@@ -56,7 +56,7 @@ Open the printed URL in your browser, sign in to Loxtep, and complete the OAuth 
 | **Claude** | Claude Code & Claude Cowork | [claude/](claude/) | Claude plugin: MCP, skills. Install from Git or Claude plugin discovery. |
 | **OpenCode** | OpenCode (terminal/desktop/IDE) | [opencode/](opencode/) | MCP config, skills, `opencode.json`. Copy skills to `.opencode/skills/` or `~/.config/opencode/skills/`. |
 | **Kiro** | Kiro IDE | [kiro/](kiro/) | MCP config + README. Copy `mcp.json` into `.kiro/settings/mcp.json` or `~/.kiro/settings/mcp.json`. |
-| **Antigravity** | Google Antigravity IDE | [antigravity/](antigravity/) | MCP config + README. Add Loxtep server via Manage MCP Servers → View raw config. |
+| **Antigravity** | Google Antigravity IDE | [antigravity/](antigravity/) | MCP config + README. Uses `mcp-remote` bridge for OAuth (Antigravity doesn't support native MCP OAuth yet). |
 | **Codex** | OpenAI Codex | [codex/](codex/) | MCP config + README. Run `codex mcp add loxtep -- npx @loxtep/customer-mcp-server` or edit `~/.codex/config.toml`. |
 
 ## Repository layout

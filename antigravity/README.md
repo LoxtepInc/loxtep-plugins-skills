@@ -11,35 +11,68 @@ This directory lives in the [loxtep-plugins-skills](https://github.com/loxtepinc
 
 ## Install
 
-1. **Add the Loxtep MCP server** in Antigravity:
-   - Open the "..." dropdown at the top of the Agent panel.
-   - Select **Manage MCP Servers** (or open the MCP Store).
-   - Click **View raw config** to open your `mcp_config.json`.
-   - Add the `loxtep` entry from `mcp_config.json` in this repo into your `mcpServers` object (or merge the full contents if the file is empty).
-   - Save and refresh so the server loads.
-   - See [Appwrite’s Antigravity MCP doc](https://appwrite.io/docs/tooling/mcp/antigravity) for the same config pattern.
+### 1. Add the Loxtep MCP server
 
-2. **Log in once** to save your Loxtep tokens:
-   ```bash
-   npx @loxtep/customer-mcp-server login
-   ```
-   Open the printed URL in your browser, sign in to Loxtep, and complete the OAuth flow.
+Antigravity does not yet support the MCP OAuth specification natively, so we use `mcp-remote` as a local bridge to handle the OAuth flow.
 
-3. **Use the tools** — The agent sees `loxtep_*` tools; each call sets **`operation`** (e.g. `list_projects`) plus arguments. Trigger via "@" or the MCP tools list in the IDE.
+- Open the "..." dropdown at the top of the Agent panel.
+- Select **Manage MCP Servers** (or open the MCP Store).
+- Click **View raw config** to open your `mcp_config.json`.
+- Add the `loxtep` entry from `mcp_config.json` in this repo into your `mcpServers` object:
+
+```json
+{
+  "mcpServers": {
+    "loxtep": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.loxtep.io/ai/mcp/stream"]
+    }
+  }
+}
+```
+
+Save and refresh so the server loads.
+
+> **Dev environment:** To connect to the Loxtep dev instance instead of production, replace the URL with `https://mcpdev.loxtep.io/ai/mcp/stream`.
+
+### 2. Authenticate
+
+On first connection, `mcp-remote` will open a browser window for OAuth login. Sign in to Loxtep and authorize the connection. Tokens are cached locally and refresh automatically — you only need to do this once.
+
+### 3. Use the tools
+
+The agent sees `loxtep_*` tools; each call sets **`operation`** (e.g. `list_projects`) plus arguments. Trigger via "@" or the MCP tools list in the IDE.
+
+## How it works
+
+`mcp-remote` runs a local OAuth proxy that:
+
+1. Starts a local `http://localhost` callback server
+2. Opens your browser for Loxtep OAuth login (first time only)
+3. Bridges the authenticated remote MCP connection to Antigravity via stdio
+
+This is required because Antigravity's native `serverUrl` config does not yet handle the MCP OAuth 2.1 handshake. The `mcp-remote` package handles it transparently.
 
 ## What you get
 
-- **Loxtep Customer MCP** — `npx @loxtep/customer-mcp-server` (grouped tools + `operation`; projects, workflows, data products, connectors, templates, catalog, schemas, and more).
+- **Loxtep Customer MCP** — hosted at `https://mcp.loxtep.io/ai/mcp/stream` (grouped tools + `operation`; projects, workflows, data products, connectors, templates, catalog, schemas, and more).
 - **Skills** — Story-first playbooks (see [docs/skills-user-stories.md](../docs/skills-user-stories.md)): `loxtep-auth`, `loxtep-instances`, `create-connector`, `data-workflows`, `discover-govern-lineage`, `org-semantics-quality`, `loxtep-analytics`, `loxtep-workspace`, `loxtep-process-intel`, `loxtep-procedures`, `loxtep-agent-workspace`, `loxtep-mcp-session`, `loxtep-sdk`. Each lives under `antigravity/skills/<slug>/SKILL.md` with MCP mapping tables where applicable.
 
 ## Environment variables (optional)
 
-- `LOXTEP_ENV` or `NODE_ENV` — Set to `dev` / `development` for dev app/API (`appdev.loxtep.io`, `apidev.loxtep.io`). Default is production.
-- `LOXTEP_APP_URL` — Override app base URL for login.
-- `LOXTEP_API_BASE_URL` — Override API endpoint.
-- `LOXTEP_TOKEN_FILE` — Custom path to token file (default `~/.loxtep/customer-mcp.json`).
+These can be added to the `env` object in the MCP config if needed:
 
-Add these in the `loxtep` server’s `env` object in your raw MCP config if needed. See the [Customer MCP Server README](https://github.com/loxtepinc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for full details.
+- `LOXTEP_ENV` or `NODE_ENV` — Set to `dev` / `development` for dev app/API (`appdev.loxtep.io`, `apidev.loxtep.io`). Default is production.
+
+See the [Customer MCP Server README](https://github.com/loxtepinc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for full details.
+
+## Troubleshooting
+
+| Issue | Fix |
+|-------|-----|
+| "Unauthorized" error on connect | Antigravity's native `serverUrl` OAuth is not supported. Use `mcp-remote` as shown above. |
+| Browser doesn't open for login | Run `npx mcp-remote https://mcp.loxtep.io/ai/mcp/stream` manually in a terminal first to complete the initial auth. |
+| `npx` not found | Ensure Node.js 18+ is installed and `npx` is on your PATH. |
 
 ## License
 

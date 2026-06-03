@@ -2,7 +2,7 @@
   "mcpServers": {
     "loxtep": {
       "command": "npx",
-      "args": ["@loxtep/customer-mcp-server"]
+      "args": ["-y", "mcp-remote", "https://mcp.loxtep.io/ai/mcp/stream"]
     }
   }
 }
