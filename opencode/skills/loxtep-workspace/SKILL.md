@@ -53,6 +53,29 @@ metadata:
 - **`restore_version`** is destructive relative to current state — snapshot first.
 - **`get_queue_info` / `replay_events`** — If the MCP response says the data product could not be loaded, verify deployment wiring for the AI service (platform base URL + auth), not just the client login.
 
+<!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+## Skill scope (`.loxtep/skills/loxtep-workspace.yaml`)
+
+Resource scope and operation permissions for this skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+
+```yaml
+# .loxtep/skills/loxtep-workspace.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Scoped to ONLY the identifiers listed; least-privilege per operation. Fail-closed.
+name: loxtep-workspace
+description: Workspace versioning plus read-only queue inspection (replay is not performed over MCP).
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions:
+  data_products: [read]
+  queues: [read]
+```
+<!-- END loxtep skill-scope (skill-package-v1) -->
+
 ## Optional attribution
 
 `_metadata: { "skill_name": "loxtep-workspace" }`

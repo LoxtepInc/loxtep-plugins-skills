@@ -42,6 +42,28 @@ metadata:
 - Wrong **org** or missing permissions show as auth or empty results.
 - **Execution environment** — SQL runs via **in-process** DuckDB in the AI service, not a user-supplied database URL.
 
+<!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+## Skill scope (`.loxtep/skills/loxtep-analytics.yaml`)
+
+Resource scope and operation permissions for this skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+
+```yaml
+# .loxtep/skills/loxtep-analytics.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Scoped to ONLY the identifiers listed; least-privilege per operation. Fail-closed.
+name: loxtep-analytics
+description: Read-only SQL analytics over data products.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions:
+  data_products: [read]
+```
+<!-- END loxtep skill-scope (skill-package-v1) -->
+
 ## Optional attribution
 
 `_metadata: { "skill_name": "loxtep-analytics" }`

@@ -1,0 +1,12 @@
+# .loxtep/skills/loxtep-mcp-session.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
+name: loxtep-mcp-session
+description: Session and RBAC orientation — no data-mesh resource access.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions: {}

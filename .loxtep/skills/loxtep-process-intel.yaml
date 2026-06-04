@@ -1,0 +1,12 @@
+# .loxtep/skills/loxtep-process-intel.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
+name: loxtep-process-intel
+description: Runtime process intelligence — RBAC-governed; no data-mesh resource scope.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions: {}

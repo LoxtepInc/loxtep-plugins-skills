@@ -99,6 +99,27 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
 - **Managed** or **self-hosted** without **`payment_method_id`** — **invalid** at MCP and API.
 - **Self-hosted** without **`connection_details.observe_api`** ARNs — **invalid**.
 
+<!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+## Skill scope (`.loxtep/skills/loxtep-instances.yaml`)
+
+Resource scope and operation permissions for this skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+
+```yaml
+# .loxtep/skills/loxtep-instances.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
+name: loxtep-instances
+description: Runtime instance provisioning — RBAC/billing-governed; no data-mesh resource scope.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions: {}
+```
+<!-- END loxtep skill-scope (skill-package-v1) -->
+
 ## Optional attribution
 
 Add `"_metadata": { "skill_name": "loxtep-instances" }` alongside other fields.

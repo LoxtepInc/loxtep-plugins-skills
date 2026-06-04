@@ -214,6 +214,29 @@ loxtep config export --from-connector "<connector_id>" --format env
 
 Then the SDK client picks up `LOXTEP_BOT_ID` and queue configuration automatically.
 
+<!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+## Skill scope (`.loxtep/skills/loxtep-sdk.yaml`)
+
+Resource scope and operation permissions for this skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+
+```yaml
+# .loxtep/skills/loxtep-sdk.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Scoped to ONLY the identifiers listed; least-privilege per operation. Fail-closed.
+name: loxtep-sdk
+description: SDK runtime read/write to data products and their queues.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions:
+  data_products: [read, write]
+  queues: [read, write]
+```
+<!-- END loxtep skill-scope (skill-package-v1) -->
+
 ## Auth (single mental model)
 
 1. `LOXTEP_AUTH_TOKEN` env var (CI/ephemeral), else  

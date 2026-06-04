@@ -1,0 +1,16 @@
+# .loxtep/skills/data-workflows.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Scoped to ONLY the identifiers listed; least-privilege per operation. Fail-closed.
+name: data-workflows
+description: Author and operate data workflows, connections, and data products.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions:
+  data_products: [read, create, write, delete]
+  connectors: [read, create, write, delete]
+  workflows: [read, create, write, delete]
+  queues: [read]

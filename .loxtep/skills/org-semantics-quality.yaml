@@ -1,0 +1,12 @@
+# .loxtep/skills/org-semantics-quality.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
+name: org-semantics-quality
+description: Org schema and quality-rule governance — RBAC-governed; no data-mesh resource scope.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions: {}

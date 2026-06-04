@@ -1,0 +1,12 @@
+# .loxtep/skills/loxtep-auth.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
+name: loxtep-auth
+description: Authentication recovery only — no data-mesh resource access.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions: {}

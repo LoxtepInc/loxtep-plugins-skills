@@ -58,6 +58,29 @@ metadata:
 - Heavy discovery may be asynchronous; poll or use platform UI if MCP returns a job id.
 - **Empty or sparse results** — Discovery/search may depend on injected services in the AI runtime; dev vs prod can differ.
 
+<!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+## Skill scope (`.loxtep/skills/discover-govern-lineage.yaml`)
+
+Resource scope and operation permissions for this skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+
+```yaml
+# .loxtep/skills/discover-govern-lineage.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Scoped to ONLY the identifiers listed; least-privilege per operation. Fail-closed.
+name: discover-govern-lineage
+description: Read-only catalog discovery, lineage, and governance over data products and domains.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions:
+  data_products: [read]
+  domains: [read]
+```
+<!-- END loxtep skill-scope (skill-package-v1) -->
+
 ## Optional attribution
 
 `_metadata: { "skill_name": "discover-govern-lineage" }`

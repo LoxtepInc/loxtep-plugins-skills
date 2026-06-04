@@ -300,6 +300,31 @@ Notes:
 - **Paid plans vs shared instance** — provisioning is **`loxtep-instances`**, not this skill.
 - **Agent issues/goals** — use **`loxtep-agent-workspace`**, not `loxtep_projects`.
 
+<!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+## Skill scope (`.loxtep/skills/data-workflows.yaml`)
+
+Resource scope and operation permissions for this skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+
+```yaml
+# .loxtep/skills/data-workflows.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Scoped to ONLY the identifiers listed; least-privilege per operation. Fail-closed.
+name: data-workflows
+description: Author and operate data workflows, connections, and data products.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions:
+  data_products: [read, create, write, delete]
+  connectors: [read, create, write, delete]
+  workflows: [read, create, write, delete]
+  queues: [read]
+```
+<!-- END loxtep skill-scope (skill-package-v1) -->
+
 ## Optional attribution
 
 ```json

@@ -1,0 +1,12 @@
+# .loxtep/skills/loxtep-agent-workspace.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
+name: loxtep-agent-workspace
+description: Agent orchestration (issues/goals/agents) — RBAC-governed; no data-mesh resource scope.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions: {}

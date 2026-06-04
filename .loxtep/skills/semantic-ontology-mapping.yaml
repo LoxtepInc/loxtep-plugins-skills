@@ -1,0 +1,12 @@
+# .loxtep/skills/semantic-ontology-mapping.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
+name: semantic-ontology-mapping
+description: Semantic/ontology mapping methodology — RBAC-governed; no data-mesh resource scope.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions: {}

@@ -1,0 +1,14 @@
+# .loxtep/skills/loxtep-sdk.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Scoped to ONLY the identifiers listed; least-privilege per operation. Fail-closed.
+name: loxtep-sdk
+description: SDK runtime read/write to data products and their queues.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions:
+  data_products: [read, write]
+  queues: [read, write]

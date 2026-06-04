@@ -1,0 +1,14 @@
+# .loxtep/skills/discover-govern-lineage.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Scoped to ONLY the identifiers listed; least-privilege per operation. Fail-closed.
+name: discover-govern-lineage
+description: Read-only catalog discovery, lineage, and governance over data products and domains.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions:
+  data_products: [read]
+  domains: [read]
