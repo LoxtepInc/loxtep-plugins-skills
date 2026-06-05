@@ -1,6 +1,6 @@
 # Loxtep Claude Plugin
 
-Claude Code and Claude Cowork plugin for the [Loxtep](https://loxtep.io) data mesh platform. The Customer MCP lists **16 grouped tools** (`loxtep_*`); each invocation sets **`operation`** to the flat action name plus parameters—covering projects, workflows, data products, connectors, and more.
+Claude Code and Claude Cowork plugin for the [Loxtep](https://loxtep.io) data mesh platform. The Customer MCP lists **19 grouped tools** (`loxtep_*`); each invocation sets **`operation`** to the flat action name plus parameters—covering projects, workflows, data products, connectors, and more.
 
 This plugin lives in the [loxtep-plugins-skills](https://github.com/loxtepinc/loxtep-plugins-skills) repo under `claude/`.
 
@@ -32,8 +32,8 @@ This plugin lives in the [loxtep-plugins-skills](https://github.com/loxtepinc/lo
 
 ## What's included
 
-- **Loxtep Customer MCP** — hosted at `https://mcp.loxtep.io/ai/mcp/stream` (16 `loxtep_*` tools with per-call `operation`; projects, workflows, data products, connectors, templates, catalog, schemas, and more).
-- **Skills** — Story-first playbooks (see [docs/skills-user-stories.md](../docs/skills-user-stories.md)): `loxtep-auth`, `loxtep-instances`, `create-connector`, `data-workflows`, `discover-govern-lineage`, `org-semantics-quality`, `loxtep-analytics`, `loxtep-workspace`, `loxtep-process-intel`, `loxtep-procedures`, `loxtep-agent-workspace`. Each lives under `claude/skills/<slug>/SKILL.md` with MCP mapping tables where applicable.
+- **Loxtep Customer MCP** — hosted at `https://mcp.loxtep.io/ai/mcp/stream` (19 `loxtep_*` grouped tools with per-call `operation`; projects, workflows, data products, connectors, templates, catalog, schemas, and more).
+- **Skills** — Story-first playbooks (see [docs/skills-user-stories.md](../docs/skills-user-stories.md)): `create-connector`, `data-product-modeling`, `data-workflows`, `discover-govern-lineage`, `loxtep-agent-workspace`, `loxtep-analytics`, `loxtep-auth`, `loxtep-instances`, `loxtep-mcp-session`, `loxtep-ontology`, `loxtep-procedures`, `loxtep-process-intel`, `loxtep-sdk`, `loxtep-semantic-layer`, `loxtep-workspace`, `org-semantics-quality`, `semantic-ontology-mapping`. Each lives under `claude/skills/<slug>/SKILL.md` with MCP mapping tables where applicable.
 
 ## Submission (Claude plugin discovery)
 

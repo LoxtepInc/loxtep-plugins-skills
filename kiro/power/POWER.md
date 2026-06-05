@@ -1,7 +1,7 @@
 ---
 name: "loxtep"
 displayName: "Loxtep Data Mesh Platform"
-description: "Build and operate data mesh pipelines with Loxtep — connect SaaS sources, build workflow graphs, create data products, run SQL analytics, manage governance, and deploy to runtime instances. 17 grouped MCP tools with per-call operation."
+description: "Build and operate data mesh pipelines with Loxtep — connect SaaS sources, build workflow graphs, create data products, run SQL analytics, manage governance, and deploy to runtime instances. 19 grouped MCP tools with per-call operation."
 keywords: ["loxtep", "data-mesh", "data-product", "workflow", "connector", "pipeline", "catalog", "governance", "analytics", "ingestion"]
 author: "Loxtep"
 ---
@@ -10,7 +10,7 @@ author: "Loxtep"
 
 ## Overview
 
-Loxtep is a data mesh platform that lets you connect external systems (Shopify, Salesforce, APIs), build workflow graphs, create unified data products, and expose them via webhooks or SQL analytics. The Customer MCP provides **17 grouped tools** (`loxtep_*`) — each call sets `operation` to a flat action name plus arguments.
+Loxtep is a data mesh platform that lets you connect external systems (Shopify, Salesforce, APIs), build workflow graphs, create unified data products, and expose them via webhooks or SQL analytics. The Customer MCP provides **19 grouped tools** (`loxtep_*`) — each call sets `operation` to a flat action name plus arguments.
 
 This power covers the full platform lifecycle:
 - **Authentication** and session management
@@ -83,7 +83,7 @@ Before any project work, confirm identity and org:
 
 ## How MCP Calls Work
 
-All 17 tools follow the same pattern:
+All 19 tools follow the same pattern:
 
 1. **Tool name** — e.g. `loxtep_projects`, `loxtep_workflows`, `loxtep_connectors`
 2. **`operation`** — flat action name (e.g. `list_projects`, `create_workflow`)
@@ -108,7 +108,7 @@ Example:
 | `loxtep_connections` | `create_connection`, `update_connection`, `delete_connection`, `list_connections`, `get_connection`, `test_connection` | project |
 | `loxtep_templates` | `list_templates`, `get_template`, `apply_template` | organization / project |
 | `loxtep_workflows` | `create_workflow`, `update_workflow`, `delete_workflow`, `list_workflows`, `get_workflow`, `get_workflow_graph`, `patch_workflow_graph`, `preview_transform`, `create_transformation`, `create_validation` | project |
-| `loxtep_data_products` | `create_data_product`, `update_data_product`, `delete_data_product`, `list_data_products`, `get_data_product`, `get_data_product_lexicon`, `list_consumptions`, `create_consumption` | project / organization |
+| `loxtep_data_products` | `create_data_product`, `update_data_product`, `delete_data_product`, `list_data_products`, `get_data_product`, `get_data_product_lexicon`, `get_data_product_sdk_config`, `list_consumptions`, `create_consumption` | project / organization |
 | `loxtep_schemas` | `create_schema`, `update_schema`, `delete_schema`, `get_schema`, `list_schema_versions`, `tag_pii_fields` | organization |
 | `loxtep_quality` | `create_quality_rule`, `update_quality_rule`, `delete_quality_rule`, `list_quality_rules`, `get_quality_rule`, `test_quality_rule` | organization |
 | `loxtep_catalog` | `search_catalog`, `get_catalog_entry`, `get_evidence`, `get_lineage_impact`, `get_governance_flags`, `run_discovery`, `list_domains`, `list_tags` | catalog |
@@ -118,6 +118,8 @@ Example:
 | `loxtep_procedures` | `list_procedures`, `get_procedure`, `create_procedure`, `update_procedure`, `delete_procedure`, `import_process_graph`, `export_process_graph`, `get_procedure_dependencies` | organization |
 | `loxtep_ontology` | `list_thesaurus_terms`, `get_thesaurus_term`, `create_thesaurus_term`, `update_thesaurus_term`, `delete_thesaurus_term`, `sync_vocabulary`, `resolve_canonical_key`, `get_ontology_relationships`, `create_ontology_concept`, `create_ontology_relationship`, `update_ontology_concept`, `delete_ontology_concept`, `register_namespace_mapping`, `list_namespace_mappings`, `get_namespace_mapping` | organization |
 | `loxtep_agent_workspace` | `agent_orchestration_create_issue`, `agent_orchestration_list_issues`, `agent_orchestration_get_issue`, `agent_orchestration_create_goal`, `agent_orchestration_list_goals`, `agent_orchestration_get_goal`, `agent_orchestration_list_projects`, `agent_orchestration_create_project`, `agent_orchestration_get_project`, `agent_orchestration_list_agents`, `agent_orchestration_get_agent` | organization |
+| `loxtep_semantic_layer` | `search_semantic_layer`, `get_semantic_artifact`, `get_semantic_completeness` | organization |
+| `loxtep_deployments` | `deploy_project`, `deploy_workflow`, `list_deployments`, `get_deployment`, `get_runtime_mapping` | project / organization |
 
 ## Story Index
 

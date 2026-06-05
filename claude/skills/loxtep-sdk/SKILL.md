@@ -214,6 +214,15 @@ loxtep config export --from-connector "<connector_id>" --format env
 
 Then the SDK client picks up `LOXTEP_BOT_ID` and queue configuration automatically.
 
+## MCP operations
+
+| Facade | `operation` | Permission | Notes |
+|--------|-------------|------------|-------|
+| `loxtep_data_products` | `get_data_product_sdk_config` | read | Returns SDK connection config for a data product |
+| `loxtep_deployments` | `deploy_workflow` | write | Deploy a single workflow to an instance |
+| `loxtep_deployments` | `list_deployments` | read | List deployment records (poll for status) |
+| `loxtep_deployments` | `get_deployment` | read | Get a single deployment record by ID |
+
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 ## Skill scope (`.loxtep/skills/loxtep-sdk.yaml`)
 
@@ -229,10 +238,12 @@ scope:
   data_products: []
   connectors: []
   workflows: []
+  deployments: []
   domains: []
   queues: []
 permissions:
   data_products: [read, write]
+  deployments: [read, write]
   queues: [read, write]
 ```
 <!-- END loxtep skill-scope (skill-package-v1) -->

@@ -87,14 +87,14 @@ transforms, and wire the pipeline.
 2. Use `snake_case` naming, business vocabulary (not system names).
 3. Mark PII fields, set governance classification.
 4. Version: additive = minor bump, breaking = major bump.
-5. `update_data_product_schema` with versioned field definitions.
+5. `update_data_product` with versioned schema in the `schema` field.
 
 ### Flow — Lineage Documentation
 
 1. For consumer DPs: document upstream source DPs.
 2. For each field: source_dp.field → [transform] → target_field.
-3. `create_lineage` with nodes and edges.
-4. `get_lineage_impact_analysis` before any schema changes.
+3. Use `search_catalog` and `get_lineage_impact` (via `loxtep_catalog`) to inspect existing lineage.
+4. Record provenance in the data product metadata via `update_data_product`.
 
 ## Provenance Card Template
 
@@ -111,18 +111,16 @@ Transform Logic:  [expression]
 
 ## MCP mapping
 
-| `operation` | Scope | Notes |
-|-------------|-------|-------|
-| `list_data_products` | organization | Filters: `kind`, `domain_id`, `status`, `medallion` |
-| `get_data_product` | organization | Full ODPS document by `data_product_id` |
-| `create_data_product` | organization | ODPS payload; set `kind`, `domain_id`, `owner` |
-| `update_data_product` | organization | Partial update; use for medallion promotion |
-| `update_data_product_schema` | organization | Schema versioning |
-| `create_lineage` | organization | Nodes + edges for data flow |
-| `get_lineage` | organization | Lineage graph for a DP |
-| `get_lineage_impact_analysis` | organization | Downstream impact before changes |
-| `create_consumption` | organization | Webhook/API endpoint for consumer DP |
-| `list_consumptions` | organization | Active delivery endpoints |
+| `operation` | Facade | Scope | Notes |
+|-------------|--------|-------|-------|
+| `list_data_products` | `loxtep_data_products` | organization | Filters: `kind`, `domain_id`, `status`, `medallion` |
+| `get_data_product` | `loxtep_data_products` | organization | Full ODPS document by `data_product_id` |
+| `get_data_product_lexicon` | `loxtep_data_products` | organization | Glossary/lexicon for a data product |
+| `create_data_product` | `loxtep_data_products` | organization | ODPS payload; set `kind`, `domain_id`, `owner` |
+| `update_data_product` | `loxtep_data_products` | organization | Partial update; use for medallion promotion |
+| `delete_data_product` | `loxtep_data_products` | project | Remove a data product by `project_id`, `data_product_id` |
+| `create_consumption` | `loxtep_data_products` | organization | Webhook/API endpoint for consumer DP |
+| `list_consumptions` | `loxtep_data_products` | organization | Active delivery endpoints |
 
 ## Decision tree
 
@@ -176,7 +174,7 @@ scope:
   domains: []
   queues: []
 permissions:
-  data_products: [read, create, write]
+  data_products: [read, create, write, delete]
   domains: [read]
 ```
 <!-- END loxtep skill-scope (skill-package-v1) -->

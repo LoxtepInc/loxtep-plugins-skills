@@ -1,6 +1,6 @@
 # Loxtep for Antigravity IDE
 
-Use the [Loxtep](https://loxtep.io) Customer MCP from [Google Antigravity IDE](https://antigravity.chat): **16 grouped tools** (`loxtep_*`) with **`operation`** per call—projects, workflows, data products, connectors, and more.
+Use the [Loxtep](https://loxtep.io) Customer MCP from [Google Antigravity IDE](https://antigravity.chat): **19 grouped tools** (`loxtep_*`) with **`operation`** per call—projects, workflows, data products, connectors, and more.
 
 This directory lives in the [loxtep-plugins-skills](https://github.com/loxtepinc/loxtep-plugins-skills) repo under `antigravity/`.
 
@@ -56,7 +56,7 @@ This is required because Antigravity's native `serverUrl` config does not yet ha
 ## What you get
 
 - **Loxtep Customer MCP** — hosted at `https://mcp.loxtep.io/ai/mcp/stream` (grouped tools + `operation`; projects, workflows, data products, connectors, templates, catalog, schemas, and more).
-- **Skills** — Story-first playbooks (see [docs/skills-user-stories.md](../docs/skills-user-stories.md)): `loxtep-auth`, `loxtep-instances`, `create-connector`, `data-workflows`, `discover-govern-lineage`, `org-semantics-quality`, `loxtep-analytics`, `loxtep-workspace`, `loxtep-process-intel`, `loxtep-procedures`, `loxtep-agent-workspace`, `loxtep-mcp-session`, `loxtep-sdk`. Each lives under `antigravity/skills/<slug>/SKILL.md` with MCP mapping tables where applicable.
+- **Skills** — Story-first playbooks (see [docs/skills-user-stories.md](../docs/skills-user-stories.md)): `create-connector`, `data-product-modeling`, `data-workflows`, `discover-govern-lineage`, `loxtep-agent-workspace`, `loxtep-analytics`, `loxtep-auth`, `loxtep-instances`, `loxtep-mcp-session`, `loxtep-ontology`, `loxtep-procedures`, `loxtep-process-intel`, `loxtep-sdk`, `loxtep-workspace`, `org-semantics-quality`, `semantic-ontology-mapping`. Each lives under `antigravity/skills/<slug>/SKILL.md` with MCP mapping tables where applicable.
 
 ## Environment variables (optional)
 

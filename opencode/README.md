@@ -1,6 +1,6 @@
 # Loxtep for OpenCode
 
-Use the [Loxtep](https://loxtep.io) Customer MCP from [OpenCode](https://opencode.ai): **16 grouped tools** (`loxtep_*`) with per-call **`operation`**, covering projects, workflows, data products, connectors, and more.
+Use the [Loxtep](https://loxtep.io) Customer MCP from [OpenCode](https://opencode.ai): **19 grouped tools** (`loxtep_*`) with per-call **`operation`**, covering projects, workflows, data products, connectors, and more.
 
 This directory lives in the [loxtep-plugins-skills](https://github.com/loxtepinc/loxtep-plugins-skills) repo under `opencode/`.
 
@@ -57,19 +57,22 @@ OpenCode's agent will discover the `loxtep_*` tools and the skills automatically
 
 | Skill | Description |
 |-------|-------------|
-| `loxtep-auth` | Authentication recovery for MCP token errors |
-| `loxtep-mcp-session` | Session, capabilities, and permission checks |
-| `loxtep-instances` | Runtime instance provisioning (shared/managed/self-hosted) |
 | `create-connector` | Connect SaaS/APIs (OAuth, API key, SDK connectors) |
+| `data-product-modeling` | Model source/consumer data products |
 | `data-workflows` | Projects, workflows, connections, data products, consumptions |
 | `discover-govern-lineage` | Catalog search, lineage, evidence, governance |
-| `org-semantics-quality` | Schemas, PII tagging, quality rules |
-| `loxtep-analytics` | SQL analytics via DuckDB |
-| `loxtep-workspace` | Versions, snapshots, restore, reindex, queue info |
-| `loxtep-process-intel` | Entity context, decision traces, ontology, thesaurus |
-| `loxtep-procedures` | Business procedures and process graph |
 | `loxtep-agent-workspace` | Agent orchestration (issues, goals, agents) |
+| `loxtep-analytics` | SQL analytics via DuckDB |
+| `loxtep-auth` | Authentication recovery for MCP token errors |
+| `loxtep-instances` | Runtime instance provisioning (shared/managed/self-hosted) |
+| `loxtep-mcp-session` | Session, capabilities, and permission checks |
+| `loxtep-ontology` | Ontology, vocabulary, namespaces |
+| `loxtep-procedures` | Business procedures and process graph |
+| `loxtep-process-intel` | Entity context, decision traces |
 | `loxtep-sdk` | Node SDK bootstrap, stream bus, queue/bot resolution |
+| `loxtep-workspace` | Versions, snapshots, restore, reindex, queue info |
+| `org-semantics-quality` | Schemas, PII tagging, quality rules |
+| `semantic-ontology-mapping` | Mapping external vocabularies to the ontology |
 
 ## Skill permissions (optional)
 
@@ -79,8 +82,11 @@ Control which skills agents can access in `opencode.json`:
 {
   "permission": {
     "skill": {
-      "*": "allow",
-      "loxtep-*": "allow"
+      "loxtep-*": "allow",
+      "create-connector": "allow",
+      "data-workflows": "allow",
+      "discover-govern-lineage": "allow",
+      "org-semantics-quality": "allow"
     }
   }
 }
