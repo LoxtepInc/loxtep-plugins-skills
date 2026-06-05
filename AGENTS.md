@@ -74,7 +74,7 @@ key parameters.
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
 | `get_current_user` | organization | — | — |
-| `get_current_organization` | organization | — | `include_instances` |
+| `get_current_organization` | organization | — | — |
 
 ```json
 { "operation": "get_current_user" }
@@ -83,10 +83,10 @@ key parameters.
 ### `loxtep_projects` — data-mesh projects
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
-| `list_projects` | organization | — | `status`, `search`, `page`, `page_size`, `domain_id` |
+| `list_projects` | organization | — | `domain_id` |
 | `get_project` | organization | `project_id` | — |
-| `create_project` | organization | `name` | `description`, `status`, `metadata`, `configuration`, `repository_url`, `repository_branch`, `github_repo_url`, `github_repo_name`, `github_repo_path`, `customer_role_arn`, `github_action`, `github_repo_visibility`, `github_import_url`, `github_branch`, `template_slug`, `domain_id` |
-| `update_project` | organization | `project_id` | `name`, `description`, `status`, `metadata`, `configuration`, `repository_url`, `repository_branch`, `github_repo_url`, `github_repo_name`, `github_repo_path`, `customer_role_arn` |
+| `create_project` | organization | `name` | `github_action`, `description` |
+| `update_project` | organization | `project_id` | `name`, `description`, `github_*` |
 | `delete_project` | organization | `project_id` | — |
 
 ```json
@@ -106,9 +106,9 @@ key parameters.
 ### `loxtep_templates` — template catalog
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
-| `list_templates` | organization | — | `category`, `search`, `page`, `page_size` |
+| `list_templates` | organization | — | — |
 | `get_template` | organization | `template_id` | — |
-| `apply_template` | project | `project_id`, `template_type`, `template_slug` | `preview`, `placeholder_overrides` |
+| `apply_template` | project | `project_id`, `template_id` | — |
 
 ```json
 { "operation": "list_templates" }
@@ -117,10 +117,10 @@ key parameters.
 ### `loxtep_connectors` — org-level connectors
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
-| `list_connectors` | organization | — | `connector_type`, `domain_id` |
+| `list_connectors` | organization | — | `domain_id` |
 | `list_connector_types` | global | — | — |
 | `create_connector` | organization | `connector_type`, `metadata` | `domain_id` |
-| `get_connector_oauth_url` | organization | — | `connector_id`, `connector_type`, `connection_config`, `callback_url` |
+| `get_connector_oauth_url` | organization | `connector_id` | — |
 
 ```json
 { "operation": "list_connector_types" }
@@ -143,14 +143,14 @@ key parameters.
 ### `loxtep_workflows` — workflows, graph, transforms
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
-| `create_workflow` | project | `project_id`, `name` | `connector_id`, `connection_id`, `workflow_type`, `preview`, `description` |
+| `create_workflow` | project | `project_id`, `name` | `description` |
 | `update_workflow` | project | `project_id`, `workflow_id` | `name`, `description` |
 | `delete_workflow` | project | `project_id`, `workflow_id` | — |
 | `list_workflows` | project | `project_id` | — |
 | `get_workflow` | project | `project_id`, `workflow_id` | — |
 | `get_workflow_graph` | project | `project_id`, `workflow_id` | — |
-| `patch_workflow_graph` | project | `project_id`, `workflow_id`, `ops` | `dry_run` |
-| `preview_transform` | project | `project_id`, `workflow_id`, `transformation_entity_id` | `source_event`, `transform_config` |
+| `patch_workflow_graph` | project | `project_id`, `workflow_id`, `ops` | — |
+| `preview_transform` | project | `project_id`, `transform` | `sample` |
 | `create_transformation` | project | `project_id`, `workflow_id`, `transformation` | — |
 | `create_validation` | project | `project_id`, `workflow_id`, `validation` | — |
 
@@ -166,12 +166,12 @@ key parameters.
 | `create_data_product` | project | `project_id`, `name`, `kind` | `domain_id`, `description`, `schema` |
 | `update_data_product` | project | `project_id`, `data_product_id` | `name`, `description`, `schema`, `domain_id` |
 | `delete_data_product` | project | `project_id`, `data_product_id` | — |
-| `list_data_products` | organization | — | `kind`, `domain_id`, `status`, `classification`, `owner_user_id`, `search`, `tags`, `sort_by`, `sort_order`, `page`, `page_size` |
-| `get_data_product` | organization | `data_product_id` | `domain_id` |
-| `get_data_product_lexicon` | organization | `data_product_id` | `domain_id` |
+| `list_data_products` | organization | — | `kind`, `domain_id` |
+| `get_data_product` | organization | `data_product_id` | — |
+| `get_data_product_lexicon` | organization | `data_product_id` | — |
 | `get_data_product_sdk_config` | organization | `data_product_id` | — |
-| `list_consumptions` | organization | `data_product_id` | `status`, `is_active`, `page`, `page_size`, `domain_id` |
-| `create_consumption` | organization | `data_product_id`, `target` | `endpoint_url`, `consumer_project_id`, `domain_id` |
+| `list_consumptions` | organization | — | `data_product_id` |
+| `create_consumption` | organization | `data_product_id`, `target` | — |
 
 ```json
 { "operation": "create_data_product", "project_id": "proj_…", "name": "orders", "kind": "source" }
@@ -198,8 +198,8 @@ key parameters.
 | `update_quality_rule` | organization | `quality_rule_id`, `definition` | — |
 | `delete_quality_rule` | organization | `quality_rule_id` | — |
 | `list_quality_rules` | organization | — | `domain_id` |
-| `get_quality_rule` | organization | `quality_rule_id` | `domain_id` |
-| `test_quality_rule` | organization | `quality_rule_id`, `sample` | `domain_id` |
+| `get_quality_rule` | organization | `quality_rule_id` | — |
+| `test_quality_rule` | organization | `quality_rule_id`, `sample` | — |
 
 ```json
 { "operation": "list_quality_rules" }
@@ -208,7 +208,7 @@ key parameters.
 ### `loxtep_catalog` — catalog, discovery, domains, tags
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
-| `search_catalog` | catalog | `query` | `type`, `kind`, `include_evidence`, `include_lineage`, `page`, `page_size` |
+| `search_catalog` | catalog | `query` | `filters` |
 | `get_evidence` | catalog | `entry_id` | — |
 | `get_lineage_impact` | catalog | `entry_id` | — |
 | `get_governance_flags` | catalog | `entry_id` | — |
@@ -251,21 +251,21 @@ key parameters.
 ### `loxtep_ontology` — ontology, vocabulary, namespaces
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
-| `list_thesaurus_terms` | organization | — | `scheme`, `domain`, `canonical_key_prefix`, `domain_id` |
-| `get_thesaurus_term` | organization | `term_id` | `domain_id` |
-| `create_thesaurus_term` | organization | `canonical_key`, `scheme`, `aliases` | `broader`, `narrower`, `related`, `domain_id` |
-| `update_thesaurus_term` | organization | `term_id` | `canonical_key`, `scheme`, `aliases`, `broader`, `narrower`, `related`, `domain_id` |
-| `delete_thesaurus_term` | organization | `term_id` | `domain_id` |
-| `sync_vocabulary` | organization | `domain`, `domain_id`, `terms`, `mode` | `dry_run` |
-| `resolve_canonical_key` | organization | `key_or_alias` | `domain_id` |
-| `get_ontology_relationships` | organization | — | `include_discovered`, `limit`, `source_entity_type`, `target_entity_type`, `relation_type`, `namespace`, `domain_id` |
-| `create_ontology_concept` | organization | `name`, `namespace`, `node_type` | `description`, `uri`, `parent_concepts` |
-| `create_ontology_relationship` | organization | `source_entity_type`, `target_entity_type`, `relation_type` | `relation_uri`, `join_field`, `description` |
-| `update_ontology_concept` | organization | `concept_id` | `description`, `relationships`, `namespace` |
+| `list_thesaurus_terms` | organization | — | — |
+| `get_thesaurus_term` | organization | `term_id` | — |
+| `create_thesaurus_term` | organization | `term` | `aliases` |
+| `update_thesaurus_term` | organization | `term_id` | `aliases` |
+| `delete_thesaurus_term` | organization | `term_id` | — |
+| `sync_vocabulary` | organization | `vocabulary` | — |
+| `resolve_canonical_key` | organization | `key` | — |
+| `get_ontology_relationships` | organization | `concept_id` | — |
+| `create_ontology_concept` | organization | `name` | — |
+| `create_ontology_relationship` | organization | `from`, `to`, `type` | — |
+| `update_ontology_concept` | organization | `concept_id` | — |
 | `delete_ontology_concept` | organization | `concept_id` | — |
-| `register_namespace_mapping` | organization | `prefix`, `uri`, `mappings` | `overwrite` |
+| `register_namespace_mapping` | organization | `namespace`, `mapping` | — |
 | `list_namespace_mappings` | organization | — | — |
-| `get_namespace_mapping` | organization | `prefix` | — |
+| `get_namespace_mapping` | organization | `namespace` | — |
 
 ```json
 { "operation": "resolve_canonical_key", "key": "customer_email" }
@@ -274,11 +274,11 @@ key parameters.
 ### `loxtep_process_intel` — process intelligence
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
-| `get_entity_context` | organization | `entity_type`, `entity_id` | `domain_id`, `project_id` |
-| `query_entity_context` | organization | `entity_type`, `entity_id` | `domain_id` |
-| `create_entity_context` | organization | `entity_type`, `entity_id`, `attributes`, `related_entities`, `source` | `timestamp`, `domain_id` |
-| `list_decision_traces` | organization | — | `correlation_key`, `correlation_value`, `decision_point`, `is_exception`, `precedent`, `page`, `page_size`, `procedure_id`, `decision_id`, `actor`, `override`, `date_from`, `date_to`, `domain_id` |
-| `record_decision_trace` | organization | `decision_id`, `procedure_id`, `step_id`, `inputs`, `outcome`, `rationale`, `actor`, `timestamp`, `override` | `domain_id` |
+| `get_entity_context` | organization | `entity_id` | — |
+| `query_entity_context` | organization | `query` | — |
+| `create_entity_context` | organization | `entity_id`, `context` | — |
+| `list_decision_traces` | organization | — | `anchor` |
+| `record_decision_trace` | organization | `trace` | — |
 
 ```json
 { "operation": "list_decision_traces" }
@@ -287,14 +287,14 @@ key parameters.
 ### `loxtep_procedures` — process graph procedures
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
-| `list_procedures` | organization | — | `status`, `name`, `has_step_with_agent`, `has_trigger_type`, `domain_id`, `has_dependents`, `depends_on`, `created_after`, `created_before` |
-| `get_procedure` | organization | `procedure_id` | `domain_id` |
-| `create_procedure` | organization | `name`, `description` | `status`, `domain_id`, `steps`, `decisions`, `triggers`, `dependencies`, `metadata` |
-| `update_procedure` | organization | `procedure_id` | `(partial body fields)`, `domain_id` |
-| `delete_procedure` | organization | `procedure_id` | `domain_id` |
-| `import_process_graph` | organization | `graph` | `procedure_id`, `domain_id`, `skip_catalog`, `options`, `s3_reference` |
-| `export_process_graph` | organization | `procedure_id`, `format` | `preserve_namespaces`, `domain_id` |
-| `get_procedure_dependencies` | organization | `procedure_id`, `direction` | `depth`, `relationship_types`, `domain_id` |
+| `list_procedures` | organization | — | — |
+| `get_procedure` | organization | `procedure_id` | — |
+| `create_procedure` | organization | `name`, `graph` | — |
+| `update_procedure` | organization | `procedure_id`, `graph` | — |
+| `delete_procedure` | organization | `procedure_id` | — |
+| `import_process_graph` | organization | `graph` | — |
+| `export_process_graph` | organization | `procedure_id` | — |
+| `get_procedure_dependencies` | organization | `procedure_id` | — |
 
 ```json
 { "operation": "list_procedures" }
@@ -303,17 +303,17 @@ key parameters.
 ### `loxtep_agent_workspace` — agent orchestration (issues/goals/agents)
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
-| `agent_orchestration_create_issue` | organization | `title` | `description`, `agent_project_id`, `goal_id`, `parent_issue_id`, `status`, `priority`, `assignee_agent_id`, `assignee_user_id`, `domain_id` |
-| `agent_orchestration_list_issues` | organization | — | `agent_project_id`, `goal_id`, `status`, `assignee_agent_id`, `page`, `page_size`, `domain_id` |
-| `agent_orchestration_get_issue` | organization | `issue_id` | `domain_id` |
-| `agent_orchestration_create_goal` | organization | `title` | `description`, `domain_id` |
-| `agent_orchestration_list_goals` | organization | — | `page`, `page_size`, `domain_id` |
-| `agent_orchestration_get_goal` | organization | `goal_id` | `domain_id` |
-| `agent_orchestration_list_projects` | organization | — | `page`, `page_size`, `domain_id` |
-| `agent_orchestration_create_project` | organization | `name` | `description`, `domain_id` |
-| `agent_orchestration_get_project` | organization | `project_id` | `domain_id` |
-| `agent_orchestration_list_agents` | organization | — | `page`, `page_size`, `domain_id` |
-| `agent_orchestration_get_agent` | organization | `agent_id` | `domain_id` |
+| `agent_orchestration_create_issue` | organization | `title` | `description` |
+| `agent_orchestration_list_issues` | organization | — | — |
+| `agent_orchestration_get_issue` | organization | `issue_id` | — |
+| `agent_orchestration_create_goal` | organization | `title` | `description` |
+| `agent_orchestration_list_goals` | organization | — | — |
+| `agent_orchestration_get_goal` | organization | `goal_id` | — |
+| `agent_orchestration_list_projects` | organization | — | — |
+| `agent_orchestration_create_project` | organization | `name` | — |
+| `agent_orchestration_get_project` | organization | `project_id` | — |
+| `agent_orchestration_list_agents` | organization | — | — |
+| `agent_orchestration_get_agent` | organization | `agent_id` | — |
 
 ```json
 { "operation": "agent_orchestration_list_issues" }
@@ -322,8 +322,8 @@ key parameters.
 ### `loxtep_semantic_layer` — org semantic layer
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
-| `search_semantic_layer` | organization | `query` | `artifact_types`, `domain`, `domain_id`, `industry_relevance`, `page`, `page_size` |
-| `get_semantic_artifact` | organization | `artifact_type`, `id` | `domain_id` |
+| `search_semantic_layer` | organization | `query` | `artifact_type` |
+| `get_semantic_artifact` | organization | `artifact_type`, `id` | — |
 | `get_semantic_completeness` | organization | — | `domain_id` |
 
 ```json
