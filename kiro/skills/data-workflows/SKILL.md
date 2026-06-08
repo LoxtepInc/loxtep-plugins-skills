@@ -65,6 +65,19 @@ End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **d
 2. `loxtep_data_products` → `create_consumption` with `data_product_id`, `endpoint_url`, optional `headers`, `secret_token`, `filters`, `delivery_method` (default webhook per platform).
 3. Optional: `list_consumptions` to audit active subscriptions.
 
+### Flow F — Enrich/stage from an existing data product (enrichment workflow)
+
+To build a **derived/staging** data product whose source is **another data product** (e.g. dbt-style staging over an ingested product), the workflow is `workflow_type: "enrichment"` and its **source node must be a `data-product-trigger` connection**.
+
+- **Do not** use a plain `data-products` source node — it is logical only (no runtime bot/queue), so nothing feeds the transforms.
+- **Do not** use an `sdk` connection — it is a producer; it does not read another product's stream.
+
+1. `create_workflow` with `workflow_type: "enrichment"`.
+2. `create_connection` with `type: "data-product-trigger"` and `configuration.source_data_product_id` = the upstream data product's UUID or name. At deploy this reads the upstream product's bound queue and forwards events downstream.
+3. Add transforms (`create_transformation`, e.g. `change_schema` → `filter` → `drop_fields`) and a sink `data-products` node.
+4. `patch_workflow_graph` (see Flow E): `add_node` the trigger connection + sink, then `connect_nodes` trigger → first transform → … → sink. (`create_connection` / `create_data_product` do not add graph nodes by themselves.)
+5. Deploy. Events replay from the upstream product's history. The **`data-product-enrichment`** workflow template scaffolds this exact shape.
+
 ### Flow E — Wiring a workflow graph with `patch_workflow_graph` (CRITICAL)
 
 `patch_workflow_graph` is the **only** way to add connection nodes, data product nodes, and edges to a workflow. It requires a **two-step sequential process** because you need the entity IDs returned from step 1 to create edges in step 2.
