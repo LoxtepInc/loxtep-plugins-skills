@@ -373,6 +373,8 @@ rejected, and a check that cannot complete blocks the operation.
 | `loxtep-ontology` | Ontology, vocabulary, namespaces |
 | `loxtep-procedures` | Process graph procedures |
 | `loxtep-agent-workspace` | Agent orchestration (issues/goals/agents) |
+| `loxtep-deployments` | Deployment lifecycle (deploy project/workflow, status, runtime mapping) |
+| `loxtep-semantic-layer` | Semantic layer search, artifact retrieval, completeness |
 | `loxtep-sdk` | Using the `@loxtep/sdk` runtime + CLI |
 | `semantic-ontology-mapping` | Mapping external vocabularies to the ontology |
 

@@ -24,6 +24,8 @@ Each story lists **primary skill** (where the narrative lives) and **supporting 
 | S11 | **Provision** or list runtime instances (shared playground vs managed paid) | `loxtep-instances` |
 | S12 | Recover from **auth** failures on MCP | `loxtep-auth` |
 | S13 | Manage **ontology**, vocabulary, and namespace mappings | `loxtep-ontology` |
+| S14 | **Deploy** projects/workflows to runtime instances, check status | `loxtep-deployments` |
+| S15 | **Search** semantic layer, retrieve artifacts, check completeness | `loxtep-semantic-layer` |
 
 ---
 
@@ -190,6 +192,32 @@ Each story lists **primary skill** (where the narrative lives) and **supporting 
 
 ---
 
+## S14 — Deploy projects/workflows to runtime instances
+
+| Field | Detail |
+|-------|--------|
+| **Persona** | Data engineer, platform operator |
+| **Preconditions** | Project exists with authored workflows; target instance provisioned (S11) |
+| **Happy path** | `list_deployments` (check current state) → `deploy_project` or `deploy_workflow` → poll `get_deployment` for status → `get_runtime_mapping` to verify |
+| **MCP** | `loxtep_deployments` (5 ops: `deploy_project`, `deploy_workflow`, `list_deployments`, `get_deployment`, `get_runtime_mapping`) |
+| **Primary skill** | `loxtep-deployments` |
+| **Related** | S11 (instance provisioning), S2 (workflow authoring) |
+
+---
+
+## S15 — Search semantic layer, retrieve artifacts, check completeness
+
+| Field | Detail |
+|-------|--------|
+| **Persona** | Analyst, data steward, governance lead |
+| **Preconditions** | Org permissions; semantic layer populated (thesaurus, ontology, metrics) |
+| **Happy path** | `search_semantic_layer` (query term) → `get_semantic_artifact` (specific item by type + id) → `get_semantic_completeness` (coverage assessment) |
+| **MCP** | `loxtep_semantic_layer` (3 ops: `search_semantic_layer`, `get_semantic_artifact`, `get_semantic_completeness`) |
+| **Primary skill** | `loxtep-semantic-layer` |
+| **Related** | S4 (schema/quality authoring), S13 (ontology management), S5 (catalog discovery) |
+
+---
+
 ## Skill clusters (maintenance view)
 
 | Skill `name` | Stories | Facades (MCP tools) |
@@ -206,6 +234,8 @@ Each story lists **primary skill** (where the narrative lives) and **supporting 
 | `loxtep-procedures` | S9 | `loxtep_procedures` (8 ops: CRUD + import/export/dependencies) |
 | `loxtep-ontology` | S13 | `loxtep_ontology` (15 ops: vocabulary + ontology + namespace mappings) |
 | `loxtep-agent-workspace` | S10 | `loxtep_agent_workspace` |
+| `loxtep-deployments` | S14 | `loxtep_deployments` (5 ops: deploy + status + runtime mapping) |
+| `loxtep-semantic-layer` | S15 | `loxtep_semantic_layer` (3 ops: search + artifact + completeness) |
 
 ---
 
@@ -231,3 +261,5 @@ Regenerate mentally from [`mcp-facades.ts`](https://github.com/loxtepinc/loxtep/
 | `list_thesaurus_terms`, `get_thesaurus_term`, `create_thesaurus_term`, `update_thesaurus_term`, `delete_thesaurus_term`, `sync_vocabulary`, `resolve_canonical_key`, `get_ontology_relationships`, `create_ontology_concept`, `create_ontology_relationship`, `update_ontology_concept`, `delete_ontology_concept`, `register_namespace_mapping`, `list_namespace_mappings`, `get_namespace_mapping` | `loxtep-ontology` |
 | All `agent_orchestration_*` | `loxtep-agent-workspace` |
 | `list_instances`, `create_instance` | `loxtep-instances` |
+| `deploy_project`, `deploy_workflow`, `list_deployments`, `get_deployment`, `get_runtime_mapping` | `loxtep-deployments` |
+| `search_semantic_layer`, `get_semantic_artifact`, `get_semantic_completeness` | `loxtep-semantic-layer` |

@@ -1,8 +1,8 @@
 # Loxtep plugins — skills roadmap
 
-Canonical MCP grouping: **17** `loxtep_*` tools; each call sets **`operation`** to a flat tool name plus arguments. See the [Customer MCP Server README](https://github.com/loxtepinc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md).
+Canonical MCP grouping: **19** `loxtep_*` tools; each call sets **`operation`** to a flat tool name plus arguments. See the [Customer MCP Server README](https://github.com/loxtepinc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md).
 
-**Pick a goal first:** use the [user story catalog](skills-user-stories.md) (S0–S13) to map intent → primary skill → facades. Skills in `claude/skills/`, `cursor/skills/`, `kiro/skills/`, `opencode/skills/`, `antigravity/skills/`, and `codex/skills/` are kept in parity.
+**Pick a goal first:** use the [user story catalog](skills-user-stories.md) (S0–S15) to map intent → primary skill → facades. Skills in `claude/skills/`, `cursor/skills/`, `kiro/skills/`, `opencode/skills/`, `antigravity/skills/`, and `codex/skills/` are kept in parity.
 
 ---
 
@@ -22,6 +22,8 @@ Canonical MCP grouping: **17** `loxtep_*` tools; each call sets **`operation`** 
 | `loxtep-procedures` | S9 | `loxtep_procedures` |
 | `loxtep-ontology` | S13 | `loxtep_ontology` |
 | `loxtep-agent-workspace` | S10 | `loxtep_agent_workspace` |
+| `loxtep-deployments` | S14 | `loxtep_deployments` |
+| `loxtep-semantic-layer` | S15 | `loxtep_semantic_layer` |
 
 Each skill’s `SKILL.md` includes flows, pitfalls, and an MCP mapping table where relevant.
 
@@ -45,6 +47,8 @@ Each skill’s `SKILL.md` includes flows, pitfalls, and an MCP mapping table whe
 | S11 | List / create instances | `loxtep-instances` |
 | S12 | Auth recovery | `loxtep-auth` |
 | S13 | Ontology, vocabulary, namespace management | `loxtep-ontology` |
+| S14 | Deploy projects/workflows to instances | `loxtep-deployments` |
+| S15 | Search semantic layer, artifacts, completeness | `loxtep-semantic-layer` |
 
 Full narrative: [skills-user-stories.md](skills-user-stories.md).
 
@@ -70,6 +74,8 @@ Full narrative: [skills-user-stories.md](skills-user-stories.md).
 | `loxtep_procedures` | `loxtep-procedures` |
 | `loxtep_ontology` | `loxtep-ontology` |
 | `loxtep_agent_workspace` | `loxtep-agent-workspace` |
+| `loxtep_deployments` | `loxtep-deployments` |
+| `loxtep_semantic_layer` | `loxtep-semantic-layer` |
 
 Operation-level index: final section of [skills-user-stories.md](skills-user-stories.md) (“MCP operation → skill index”).
 
@@ -81,7 +87,7 @@ Agents may pass `_metadata: { skill_name: '<slug>' }` on tool arguments; it must
 
 | `skill_name` value |
 |--------------------|
-| `loxtep-auth`, `loxtep-instances`, `create-connector`, `data-workflows`, `discover-govern-lineage`, `org-semantics-quality`, `loxtep-analytics`, `loxtep-workspace`, `loxtep-process-intel`, `loxtep-procedures`, `loxtep-ontology`, `loxtep-agent-workspace` |
+| `loxtep-auth`, `loxtep-instances`, `create-connector`, `data-workflows`, `discover-govern-lineage`, `org-semantics-quality`, `loxtep-analytics`, `loxtep-workspace`, `loxtep-process-intel`, `loxtep-procedures`, `loxtep-ontology`, `loxtep-agent-workspace`, `loxtep-deployments`, `loxtep-semantic-layer` |
 
 ---
 
@@ -92,6 +98,7 @@ Add focused skills only when agents repeatedly mis-route or need deeper playbook
 | Candidate slug | Rationale |
 |----------------|-----------|
 | `session-org` | Deep playbook for **only** `loxtep_session` if S0 grows too large inside `data-workflows`. |
+| `loxtep-governance` | Dedicated governance skill if `discover-govern-lineage` becomes too broad (policies, access requests, audit). |
 
 Scaffold new skills like [create-connector](../cursor/skills/create-connector/SKILL.md): frontmatter `name`, triggers, `loxtep_*` + `operation` tables, optional `_metadata.skill_name`, auth pointer, link to [skills-user-stories.md](skills-user-stories.md).
 
