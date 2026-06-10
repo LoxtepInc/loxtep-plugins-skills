@@ -121,9 +121,10 @@ Each story lists **primary skill** (where the narrative lives) and **supporting 
 | Field | Detail |
 |-------|--------|
 | **Persona** | Engineer fixing drift or auditing |
-| **Happy path** | `list_versions` → `create_snapshot` / `compare_versions` / `restore_version` → `reindex_workspace`; ops health: `get_queue_info`, `replay_events` |
+| **Happy path** | `list_versions` → `create_snapshot` / `compare_versions` / `restore_version` → `reindex_workspace`; ops health: `get_queue_info`, `read_queue_events`, `replay_events` |
 | **MCP** | `loxtep_workspace` (mix of project-scoped and org — see skill) |
 | **Primary skill** | `loxtep-workspace` |
+| **Related skill** | `loxtep-queue-tracing` — debug deployments and data flow by tracing events through queues |
 
 ---
 

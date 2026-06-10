@@ -86,7 +86,7 @@ key parameters.
 | `list_projects` | organization | — | `domain_id` |
 | `get_project` | organization | `project_id` | — |
 | `create_project` | organization | `name` | `github_action`, `description` |
-| `update_project` | organization | `project_id` | `name`, `description`, `domain_id`, `github_*` |
+| `update_project` | organization | `project_id` | `name`, `description`, `target_domain_id`, `github_*` |
 | `delete_project` | organization | `project_id` | — |
 
 ```json
@@ -243,9 +243,14 @@ key parameters.
 | `reindex_workspace` | project | `project_id` | — |
 | `get_queue_info` | organization | `data_product_id` | — |
 | `replay_events` | organization | `data_product_id` | `start`, `end` |
+| `read_queue_events` | organization | `queue_name` | `eid`, `search_text`, `count` |
 
 ```json
 { "operation": "list_versions", "project_id": "proj_…" }
+```
+
+```json
+{ "operation": "read_queue_events", "queue_name": "lxappdev-workflows-workflow-deployment-errors", "count": 5 }
 ```
 
 ### `loxtep_ontology` — ontology, vocabulary, namespaces
@@ -368,7 +373,8 @@ rejected, and a check that cannot complete blocks the operation.
 | `discover-govern-lineage` | Discovery, governance, lineage |
 | `org-semantics-quality` | Semantic layer + quality rules |
 | `loxtep-analytics` | DuckDB analytics |
-| `loxtep-workspace` | Snapshots, versions, workspace index |
+| `loxtep-workspace` | Snapshots, versions, workspace index, read queue events |
+| `loxtep-queue-tracing` | Debug deployments and data flow by tracing events through queues |
 | `loxtep-process-intel` | Entity context + decision traces |
 | `loxtep-ontology` | Ontology, vocabulary, namespaces |
 | `loxtep-procedures` | Process graph procedures |

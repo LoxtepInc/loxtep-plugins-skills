@@ -32,7 +32,8 @@ Each steering file covers an independent workflow area. Load the one matching us
 - **discover-govern-lineage** — Catalog search, lineage impact, evidence, governance flags, discovery (Story S5)
 - **org-semantics-quality** — Org-level schemas, PII tagging, schema versions, quality rules (Story S4)
 - **loxtep-analytics** — SQL analytics, list tables, table schema, execute queries (Story S6)
-- **loxtep-workspace** — Snapshots, version compare/restore, reindex, queue info, replay (Story S7)
+- **loxtep-workspace** — Snapshots, version compare/restore, reindex, queue info, read queue events, replay (Story S7)
+- **loxtep-queue-tracing** — Debug deployments and data flow by reading output/error queues from the live runtime
 - **loxtep-process-intel** — Entity context, decision traces (Story S8)
 - **loxtep-procedures** — Business procedures in the process graph, import/export, dependencies (Story S9)
 - **loxtep-ontology** — Ontology concepts, vocabulary/thesaurus CRUD, namespace mappings (Story S13)
@@ -113,7 +114,7 @@ Example:
 | `loxtep_quality` | `create_quality_rule`, `update_quality_rule`, `delete_quality_rule`, `list_quality_rules`, `get_quality_rule`, `test_quality_rule` | organization |
 | `loxtep_catalog` | `search_catalog`, `get_catalog_entry`, `get_evidence`, `get_lineage_impact`, `get_governance_flags`, `run_discovery`, `list_domains`, `list_tags` | catalog |
 | `loxtep_analytics` | `execute_query`, `list_tables`, `get_table_schema`, `get_query_results` | organization |
-| `loxtep_workspace` | `list_versions`, `create_snapshot`, `restore_version`, `compare_versions`, `reindex_workspace`, `get_queue_info`, `replay_events` | project / organization |
+| `loxtep_workspace` | `list_versions`, `create_snapshot`, `restore_version`, `compare_versions`, `reindex_workspace`, `get_queue_info`, `replay_events`, `read_queue_events` | project / organization |
 | `loxtep_process_intel` | `get_entity_context`, `query_entity_context`, `create_entity_context`, `list_decision_traces`, `record_decision_trace` | organization |
 | `loxtep_procedures` | `list_procedures`, `get_procedure`, `create_procedure`, `update_procedure`, `delete_procedure`, `import_process_graph`, `export_process_graph`, `get_procedure_dependencies` | organization |
 | `loxtep_ontology` | `list_thesaurus_terms`, `get_thesaurus_term`, `create_thesaurus_term`, `update_thesaurus_term`, `delete_thesaurus_term`, `sync_vocabulary`, `resolve_canonical_key`, `get_ontology_relationships`, `create_ontology_concept`, `create_ontology_relationship`, `update_ontology_concept`, `delete_ontology_concept`, `register_namespace_mapping`, `list_namespace_mappings`, `get_namespace_mapping` | organization |

@@ -18,6 +18,7 @@ Canonical MCP grouping: **19** `loxtep_*` tools; each call sets **`operation`** 
 | `org-semantics-quality` | S4 | `loxtep_schemas`, `loxtep_quality` |
 | `loxtep-analytics` | S6 | `loxtep_analytics` |
 | `loxtep-workspace` | S7 | `loxtep_workspace` |
+| `loxtep-queue-tracing` | S7 (extension) | `loxtep_workspace`, `loxtep_deployments`, `loxtep_instances` |
 | `loxtep-process-intel` | S8 | `loxtep_process_intel` |
 | `loxtep-procedures` | S9 | `loxtep_procedures` |
 | `loxtep-ontology` | S13 | `loxtep_ontology` |
