@@ -86,7 +86,7 @@ key parameters.
 | `list_projects` | organization | — | `domain_id` |
 | `get_project` | organization | `project_id` | — |
 | `create_project` | organization | `name` | `github_action`, `description` |
-| `update_project` | organization | `project_id` | `name`, `description`, `github_*` |
+| `update_project` | organization | `project_id` | `name`, `description`, `domain_id`, `github_*` |
 | `delete_project` | organization | `project_id` | — |
 
 ```json
