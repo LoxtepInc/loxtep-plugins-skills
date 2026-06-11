@@ -86,12 +86,6 @@ Some MCP clients (e.g. Google Antigravity) don't yet support the OAuth 2.1 hands
 
 See each directory's `README.md` for install and usage instructions.
 
-**User story catalog** (S0–S15, intent → skill → MCP): [docs/skills-user-stories.md](docs/skills-user-stories.md).
-
-**Skills roadmap** (indexes by story and by facade, `_metadata` slugs, drift notes): [docs/skills-roadmap.md](docs/skills-roadmap.md).
-
-**MCP vs skills drift** (manual process; no CI parser): [docs/mcp-operation-skills-drift.md](docs/mcp-operation-skills-drift.md).
-
 ## Skill attribution (optional)
 
 When invoking Loxtep MCP tools, agents may pass `_metadata` in tool arguments for
