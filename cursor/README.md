@@ -56,8 +56,6 @@ You are not duct-taping integrations. You are **publishing governed data product
 
 4. **Use the tools** — In the MCP palette you will see grouped tools like `loxtep_projects` and `loxtep_data_products`. Pass **`operation`** (e.g. `list_projects`, `create_data_product`) and the fields that action needs.
 
-> **Dev environment:** Replace the URL with `https://mcpdev.loxtep.io/ai/mcp/stream` to connect to the Loxtep dev instance.
-
 ## Developer workflows
 
 1. **Orient** — `loxtep_session` → `get_current_user` → RBAC grants; search catalog or semantic layer before inventing field names.
