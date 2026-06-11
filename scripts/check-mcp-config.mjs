@@ -48,13 +48,9 @@ const marketplacePath = join(REPO_ROOT, '.claude-plugin/marketplace.json');
 const cursorMarketplacePath = join(REPO_ROOT, '.cursor-plugin/marketplace.json');
 if (existsSync(marketplacePath)) {
   const marketplace = JSON.parse(readFileSync(marketplacePath, 'utf8'));
-  const cursorPlugin = marketplace.plugins?.find((p) => p.name === 'loxtep');
   const claudePlugin = marketplace.plugins?.find((p) => p.name === 'loxtep-claude');
-  if (!cursorPlugin || cursorPlugin.source !== './cursor') {
-    errors.push('marketplace.json: plugin "loxtep" must use source "./cursor"');
-  }
   if (!claudePlugin || claudePlugin.source !== './claude') {
-    errors.push('marketplace.json: plugin "loxtep-claude" must use source "./claude"');
+    errors.push('.claude-plugin/marketplace.json: plugin "loxtep-claude" must use source "./claude"');
   }
 }
 
