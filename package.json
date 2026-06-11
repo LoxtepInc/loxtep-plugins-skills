@@ -7,8 +7,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check:mcp-config": "node scripts/check-mcp-config.mjs",
+    "check:skill-doc-links": "node scripts/sync-cursor-skill-doc-links.mjs --check",
+    "sync:skill-doc-links": "node scripts/sync-cursor-skill-doc-links.mjs",
     "check:docs": "node scripts/check-docs-consistency.mjs",
-    "check": "npm run check:mcp-config && npm run check:docs && npm test"
+    "check": "npm run check:mcp-config && npm run check:skill-doc-links && npm run check:docs && npm test"
   },
   "devDependencies": {
     "fast-check": "^3.15.0",

@@ -24,6 +24,7 @@ const CONFIG_FILES = [
   'antigravity/mcp_config.json',
   'codex/config.snippet.toml',
   '.claude-plugin/marketplace.json',
+  '.cursor-plugin/marketplace.json',
 ];
 
 const LEGACY = '@loxtep/customer-mcp-server';
@@ -44,6 +45,7 @@ for (const rel of CONFIG_FILES) {
 }
 
 const marketplacePath = join(REPO_ROOT, '.claude-plugin/marketplace.json');
+const cursorMarketplacePath = join(REPO_ROOT, '.cursor-plugin/marketplace.json');
 if (existsSync(marketplacePath)) {
   const marketplace = JSON.parse(readFileSync(marketplacePath, 'utf8'));
   const cursorPlugin = marketplace.plugins?.find((p) => p.name === 'loxtep');
@@ -53,6 +55,19 @@ if (existsSync(marketplacePath)) {
   }
   if (!claudePlugin || claudePlugin.source !== './claude') {
     errors.push('marketplace.json: plugin "loxtep-claude" must use source "./claude"');
+  }
+}
+
+if (!existsSync(cursorMarketplacePath)) {
+  errors.push('Missing Cursor marketplace manifest: .cursor-plugin/marketplace.json');
+} else {
+  const cursorMarketplace = JSON.parse(readFileSync(cursorMarketplacePath, 'utf8'));
+  const cursorPlugin = cursorMarketplace.plugins?.find((p) => p.name === 'loxtep');
+  if (!cursorPlugin || cursorPlugin.source !== './cursor') {
+    errors.push('.cursor-plugin/marketplace.json: plugin "loxtep" must use source "./cursor"');
+  }
+  if (!cursorPlugin?.homepage?.includes('/tree/main/cursor')) {
+    errors.push('.cursor-plugin/marketplace.json: plugin "loxtep" must set homepage to the cursor/ subpath');
   }
 }
 

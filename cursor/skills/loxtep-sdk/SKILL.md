@@ -1,6 +1,8 @@
 ---
 name: loxtep-sdk
 description: Bootstrap @loxtep/sdk in Node (auth, env, REST vs Loxtep streams), map MCP tools to SDK methods, and avoid mixing JWT with IAM. Use when adding Loxtep SDK usage, queue readers/writers, or pairing MCP with runtime code.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/loxtep-sdk/SKILL.md
 ---
 
 # Loxtep Node SDK (agent skill)

@@ -7,6 +7,8 @@ description:
   check deployment status, list deployments, or inspect runtime mappings.
   Customer MCP loxtep_deployments. Not the same as loxtep_instances (provisioning)
   or loxtep_workflows (authoring). See docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/loxtep-deployments/SKILL.md
 ---
 
 # Deployments (Customer MCP)

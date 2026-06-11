@@ -5,6 +5,8 @@ description:
   wants to know their RBAC grants, or needs the recommended session order before other tools.
   Covers get_current_user (permissions), get_current_organization, project_id, and ListTools.
   Complements loxtep-auth for JWT recovery. See docs/skills-user-stories.md S0.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/loxtep-mcp-session/SKILL.md
 ---
 
 # Loxtep MCP — session, capabilities, and denials

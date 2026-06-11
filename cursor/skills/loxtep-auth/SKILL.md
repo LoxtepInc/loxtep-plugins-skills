@@ -1,6 +1,8 @@
 ---
 name: loxtep-auth
 description: When Loxtep MCP returns "no valid auth token" or "RBAC requires JWT", guide the user to re-authenticate via the OAuth browser flow. Use after any Loxtep tool call that fails with an authentication error.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/loxtep-auth/SKILL.md
 ---
 
 # Loxtep MCP — Authentication recovery

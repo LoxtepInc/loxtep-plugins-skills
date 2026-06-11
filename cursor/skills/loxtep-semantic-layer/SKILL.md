@@ -7,6 +7,8 @@ description:
   or check semantic completeness across the organization. Customer MCP loxtep_semantic_layer.
   Not the same as loxtep_ontology (vocabulary/namespace management) or loxtep_catalog
   (discovery/governance). See docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/loxtep-semantic-layer/SKILL.md
 ---
 
 # Semantic Layer (Customer MCP)

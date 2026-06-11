@@ -6,6 +6,8 @@ description:
   catalog search. Customer MCP loxtep_schemas and loxtep_quality. User story S4. Pair with
   discover-govern-lineage and loxtep-process-intel for catalog vs ontology vs thesaurus.
   See docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/org-semantics-quality/SKILL.md
 ---
 
 # Org semantics, schemas, and quality (Customer MCP)

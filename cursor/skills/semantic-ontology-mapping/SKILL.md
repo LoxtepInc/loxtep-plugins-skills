@@ -7,6 +7,8 @@ description:
   typing, conflict resolution, process-concept bindings, and taxonomy development.
   Complements data-product-modeling (physical manifestation) and loxtep-ontology
   (MCP CRUD operations). User story S21.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/semantic-ontology-mapping/SKILL.md
 ---
 
 # Semantic & Ontological Mapping for Business Environments

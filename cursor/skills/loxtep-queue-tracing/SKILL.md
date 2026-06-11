@@ -6,6 +6,8 @@ description:
   see what actually happened. Combines loxtep_workspace (read_queue_events) with
   knowledge of queue naming conventions. User story S7 extension.
   See docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/loxtep-queue-tracing/SKILL.md
 ---
 
 # Queue tracing for debugging (Customer MCP)

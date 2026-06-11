@@ -4,6 +4,8 @@ description:
   Use when the user wants SQL analytics over the mesh, DuckDB queries, list tables, table
   schema, execute query, or poll query results. Customer MCP loxtep_analytics. User story S6.
   See docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/loxtep-analytics/SKILL.md
 ---
 
 # Analytics and SQL (Customer MCP)

@@ -4,6 +4,8 @@ description:
   Use when the user wants agent orchestration — issues, goals, agent projects, agents — not
   data mesh projects or loxtep_workflows. Customer MCP loxtep_agent_workspace with operations
   agent_orchestration_*. User story S10. See docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/loxtep-agent-workspace/SKILL.md
 ---
 
 # Agent orchestration workspace (Customer MCP)

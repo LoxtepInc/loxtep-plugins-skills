@@ -7,6 +7,8 @@ description:
   medallion promotion (Bronze→Silver→Gold), schema design, lineage mapping,
   and reverse modeling (begin with the end in mind). Complements loxtep-ontology
   (vocabulary/concepts) and org-semantics-quality (governance). User story S20.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/data-product-modeling/SKILL.md
 ---
 
 # Data Product Modeling (Demand-Driven Design)

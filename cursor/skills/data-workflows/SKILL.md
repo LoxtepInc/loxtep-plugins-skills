@@ -13,6 +13,8 @@ trigger: |
   "setup connector", "unify data", "data mesh", "webhook consumption". Always invoke before making
   direct loxtep_data_products or loxtep_workflows MCP calls to ensure proper architecture
   (connectors → workflows → data products).
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/data-workflows/SKILL.md
 ---
 
 # Data mesh studio (Customer MCP)

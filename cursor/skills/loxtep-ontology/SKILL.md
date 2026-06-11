@@ -5,6 +5,8 @@ description:
   namespace mappings, or sync vocabularies. Customer MCP loxtep_ontology. User story S13.
   Not the same as loxtep_process_intel (runtime intelligence) or loxtep_procedures
   (process graph CRUD). See docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/loxtep-ontology/SKILL.md
 ---
 
 # Ontology, vocabulary, and namespace management (Customer MCP)

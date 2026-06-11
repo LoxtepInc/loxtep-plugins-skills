@@ -5,6 +5,8 @@ description:
   create_instance, loxtep_instances, instance provisioning, shared vs managed, starter plan,
   plan_id, payment_method_id, billing UI (add payment methods in app, not MCP), regions, or
   "create a Loxtep instance". User story S11; see docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/loxtep-instances/SKILL.md
 ---
 
 # Loxtep instances (Customer MCP)

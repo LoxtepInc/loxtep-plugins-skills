@@ -4,6 +4,8 @@ description:
   Use when the user wants process graph procedures — list, get, create, update,
   delete procedures, import/export process graphs, or query procedure dependencies.
   Customer MCP loxtep_procedures. User story S9. See docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/loxtep-procedures/SKILL.md
 ---
 
 # Procedures & Process Graph (Customer MCP)

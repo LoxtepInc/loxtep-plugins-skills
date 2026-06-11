@@ -4,6 +4,8 @@ description:
   Use when the user wants workspace versions, snapshots, restore or compare versions,
   reindex workspace, queue info, read queue events, or replay events. Customer MCP loxtep_workspace. User story S7.
   See docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/loxtep-workspace/SKILL.md
 ---
 
 # Workspace versions and operations (Customer MCP)

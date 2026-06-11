@@ -5,6 +5,8 @@ description:
   evidence, governance flags, run discovery, list domains or tags, or understand "what
   connects to what" in Discover. Customer MCP tool loxtep_catalog. User story S5.
   See docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/discover-govern-lineage/SKILL.md
 ---
 
 # Discover, lineage, and governance (Customer MCP)

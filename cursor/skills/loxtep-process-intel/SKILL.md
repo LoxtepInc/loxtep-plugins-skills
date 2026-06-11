@@ -5,6 +5,8 @@ description:
   to read or write entity context, query entity context, or list/record decision traces.
   Customer MCP loxtep_process_intel. User story S8. Not the same as loxtep_ontology
   (vocabulary/ontology management) or loxtep_catalog (discovery). See docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/loxtep-process-intel/SKILL.md
 ---
 
 # Process intelligence (Customer MCP)

@@ -7,6 +7,8 @@ description:
   loxtep_connectors, loxtep_connections, loxtep_templates. User story S1; then use data-workflows
   for graph and data products. For SDK-based programmatic ingestion, use the SDK connector flow.
   See docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/create-connector/SKILL.md
 ---
 
 # Connect systems and ingest (Customer MCP)
