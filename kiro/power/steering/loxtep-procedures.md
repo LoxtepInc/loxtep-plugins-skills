@@ -19,7 +19,7 @@
 
 ### Flow — Create a procedure with full step graph
 
-1. `create_procedure` with `name`, `status`, `steps` (ordered array), `decisions`, `triggers`, `dependencies`, `metadata`.
+1. `create_procedure` with required `organization_id` and `name`; optional `status`, `description`, `domain_id`, `steps` (ordered array), `decisions`, `triggers`, `dependencies`, `metadata`.
 2. Each step supports `agents`, `inputs`, `outputs`, `next_steps` (branching), `decision_ref`, `glossary_terms`.
 3. Decisions define `rule`, `inputs`, `outcomes` (with `next_step_ref` for branching).
 4. Triggers define `type` (schedule | event | manual | upstream_procedure) + configuration.

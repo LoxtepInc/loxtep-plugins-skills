@@ -24,7 +24,7 @@
 ### Flow — Safe rollback
 
 1. `list_versions` with `project_id`.
-2. `compare_versions` (optional) between current and target.
+2. `compare_versions` (optional) between current and target — pass `version_a` (required, UUID) and `version_b` (optional, UUID or the literal `"current"`; defaults to `"current"`).
 3. `create_snapshot` before destructive change.
 4. `restore_version` when approved.
 

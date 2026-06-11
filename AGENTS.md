@@ -224,13 +224,13 @@ key parameters.
 ### `loxtep_analytics` — analytics / DuckDB
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
-| `execute_query` | organization | `sql` | `data_product_id` |
+| `execute_query` | organization | `query` | `data_product_id` |
 | `list_tables` | organization | — | `data_product_id` |
 | `get_table_schema` | organization | `table` | — |
 | `get_query_results` | organization | `query_id` | — |
 
 ```json
-{ "operation": "execute_query", "sql": "SELECT count(*) FROM orders" }
+{ "operation": "execute_query", "query": "SELECT count(*) FROM orders" }
 ```
 
 ### `loxtep_workspace` — snapshots, index, streaming hints
@@ -239,7 +239,7 @@ key parameters.
 | `list_versions` | project | `project_id` | — |
 | `create_snapshot` | project | `project_id` | `label` |
 | `restore_version` | project | `project_id`, `version_id` | — |
-| `compare_versions` | project | `project_id`, `from`, `to` | — |
+| `compare_versions` | project | `project_id`, `version_a` | `version_b` (UUID or `"current"`, default `"current"`) |
 | `reindex_workspace` | project | `project_id` | — |
 | `get_queue_info` | organization | `data_product_id` | — |
 | `replay_events` | organization | `data_product_id` | `start`, `end` |
@@ -264,7 +264,7 @@ key parameters.
 | `sync_vocabulary` | organization | `vocabulary` | — |
 | `resolve_canonical_key` | organization | `key` | — |
 | `get_ontology_relationships` | organization | `concept_id` | — |
-| `create_ontology_concept` | organization | `name` | — |
+| `create_ontology_concept` | organization | `name`, `namespace`, `node_type` | `description`, `uri`, `parent_concepts` |
 | `create_ontology_relationship` | organization | `from`, `to`, `type` | — |
 | `update_ontology_concept` | organization | `concept_id` | — |
 | `delete_ontology_concept` | organization | `concept_id` | — |
@@ -294,7 +294,7 @@ key parameters.
 | --- | --- | --- | --- |
 | `list_procedures` | organization | — | — |
 | `get_procedure` | organization | `procedure_id` | — |
-| `create_procedure` | organization | `name`, `graph` | — |
+| `create_procedure` | organization | `organization_id`, `name` | `description`, `status`, `domain_id`, `steps`, `decisions`, `triggers`, `dependencies`, `metadata` |
 | `update_procedure` | organization | `procedure_id`, `graph` | — |
 | `delete_procedure` | organization | `procedure_id` | — |
 | `import_process_graph` | organization | `graph` | — |

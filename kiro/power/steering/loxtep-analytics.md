@@ -14,7 +14,7 @@
 
 1. `loxtep_analytics` → `list_tables`.
 2. `get_table_schema` for chosen table(s).
-3. `execute_query` with SQL text / params per API.
+3. `execute_query` with the required `query` parameter (the SQL text). The required parameter is named `query`, not `sql`.
 4. `get_query_results` if execution is asynchronous or paginated.
 
 ## MCP mapping

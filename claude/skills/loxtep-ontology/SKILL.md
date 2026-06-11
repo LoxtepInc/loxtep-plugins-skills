@@ -41,7 +41,7 @@ management surface.
 
 ### Flow — Ontology concept creation
 
-1. `create_ontology_concept` with `name`, `namespace`, `node_type`.
+1. `create_ontology_concept` with required `name`, `namespace`, and `node_type` (optional `description`, `uri`, `parent_concepts`).
 2. `create_ontology_relationship` linking source → target entity types.
 3. `get_ontology_relationships` with filters to verify graph edges.
 4. `update_ontology_concept` / `delete_ontology_concept` as needed.
@@ -71,7 +71,7 @@ management surface.
 | `sync_vocabulary` | organization | Bulk sync with `dry_run` support |
 | `resolve_canonical_key` | organization | Alias → canonical resolution |
 | `get_ontology_relationships` | organization | Filters: `source_entity_type`, `target_entity_type`, `relation_type`, `namespace` |
-| `create_ontology_concept` | organization | URI uniqueness enforced |
+| `create_ontology_concept` | organization | Required: `name`, `namespace`, `node_type`; optional: `description`, `uri`, `parent_concepts`. URI uniqueness enforced |
 | `create_ontology_relationship` | organization | Validates both entity types exist |
 | `update_ontology_concept` | organization | Partial field updates |
 | `delete_ontology_concept` | organization | Soft-delete; warns about dependent relationships |

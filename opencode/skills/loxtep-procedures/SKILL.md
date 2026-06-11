@@ -37,8 +37,9 @@ PKO-compliant JSON-LD graphs. Distinct from data-mesh **workflows** in
 
 ### Flow — Create procedure with full step graph
 
-1. `create_procedure` with `name`, `steps`, `decisions`, `triggers`,
-   `dependencies`, and `metadata`.
+1. `create_procedure` with required `organization_id` and `name` (optional
+   `description`, `status`, `domain_id`, `steps`, `decisions`, `triggers`,
+   `dependencies`, and `metadata`).
 2. `get_procedure` to verify the created structure.
 3. `update_procedure` for partial updates (submit complete arrays per field to
    replace).
@@ -86,7 +87,7 @@ PKO-compliant JSON-LD graphs. Distinct from data-mesh **workflows** in
 |-------------|-------|-------|
 | `list_procedures` | organization | Filters: `status`, `name`, `domain_id`, `has_step_with_agent`, `has_trigger_type`, `has_dependents`, `depends_on`, `created_after`, `created_before` |
 | `get_procedure` | organization | Full step graph with decisions, triggers, dependencies, metadata |
-| `create_procedure` | organization | Extended: `steps`, `decisions`, `triggers`, `dependencies`, `metadata` |
+| `create_procedure` | organization | Required: `organization_id`, `name`; optional: `description`, `status`, `domain_id`, `steps`, `decisions`, `triggers`, `dependencies`, `metadata` |
 | `update_procedure` | organization | Partial updates; arrays use full-replacement semantics |
 | `delete_procedure` | organization | Soft-delete (tombstone); warns about downstream dependents |
 | `import_process_graph` | organization | Inline JSON-LD (≤ 4 MB) or S3 reference; idempotent upsert |

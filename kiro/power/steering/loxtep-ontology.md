@@ -31,7 +31,7 @@
 
 ### Flow — Ontology concept management
 
-1. `create_ontology_concept` with `name`, `namespace`, `node_type` (entity | microservice | taxonomy | pattern | custom), `description`, `uri`, `parent_concepts`.
+1. `create_ontology_concept` with required `name`, `namespace`, `node_type` (entity | microservice | taxonomy | pattern | custom); optional `description`, `uri`, `parent_concepts`.
 2. `update_ontology_concept` for partial field updates.
 3. `delete_ontology_concept` — tombstones the concept, warns about dependent relationships.
 4. `get_ontology_relationships` — filter by `source_entity_type`, `target_entity_type`, `relation_type`, `namespace`.

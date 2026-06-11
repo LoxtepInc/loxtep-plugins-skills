@@ -54,7 +54,7 @@ SDK connectors use `auth_type: "jwt"` \u2014 no OAuth, no external credential te
 | Step | Action | Tool | `operation` | Notes |
 |------|--------|------|-------------|-------|
 | 1 | Discover available types (confirm `"sdk"` is listed) | `loxtep_connectors` | `list_connector_types` | **global** scope |
-| 2 | Create SDK connector | `loxtep_connectors` | `create_connector` | `connector_type: "sdk"`, provide `metadata.name` (required) and optional `metadata.data_product_name` |
+| 2 | Create SDK connector | `loxtep_connectors` | `create_connector` | `connector_type: "sdk"`, provide `metadata.name` (required) and optional `metadata.data_product_name`. If the organization has more than one instance, `metadata.instance_id` is **required** (single-instance orgs fall back automatically) |
 | 3 | Extract `sdk_config` from response | \u2014 | \u2014 | Response includes `sdk_config: { api_url, organization_id, project_id, instance_id, region }` |
 | 4 | Guide user through SDK bootstrap | \u2014 | \u2014 | See bootstrap steps below |
 
