@@ -2,7 +2,7 @@
 
 Claude Code and Claude Cowork plugin for the [Loxtep](https://loxtep.io) data mesh platform. The Customer MCP lists **19 grouped tools** (`loxtep_*`); each invocation sets **`operation`** to the flat action name plus parameters—covering projects, workflows, data products, connectors, and more.
 
-This plugin lives in the [loxtep-plugins-skills](https://github.com/loxtepinc/loxtep-plugins-skills) repo under `claude/`.
+This plugin lives in the [loxtep-plugins-skills](https://github.com/LoxtepInc/loxtep-plugins-skills) repo under `claude/`.
 
 ## Prerequisites
 
@@ -10,7 +10,7 @@ This plugin lives in the [loxtep-plugins-skills](https://github.com/loxtepinc/lo
 
 ## Quick start
 
-1. **Install the plugin** in Claude Code or Claude Cowork (e.g. from Git: clone or install from `https://github.com/loxtepinc/loxtep-plugins-skills` and select the `claude/` directory as the plugin path, per your client's instructions).
+1. **Install the plugin** in Claude Code or Claude Cowork (e.g. from Git: clone or install from `https://github.com/LoxtepInc/loxtep-plugins-skills` and select the `claude/` directory as the plugin path, per your client's instructions).
 
 2. **Or add manually** — merge the following into your `.claude/mcp.json`:
 

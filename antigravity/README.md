@@ -2,7 +2,7 @@
 
 Use the [Loxtep](https://loxtep.io) Customer MCP from [Google Antigravity IDE](https://antigravity.chat): **19 grouped tools** (`loxtep_*`) with **`operation`** per call—projects, workflows, data products, connectors, and more.
 
-This directory lives in the [loxtep-plugins-skills](https://github.com/loxtepinc/loxtep-plugins-skills) repo under `antigravity/`.
+This directory lives in the [loxtep-plugins-skills](https://github.com/LoxtepInc/loxtep-plugins-skills) repo under `antigravity/`.
 
 ## Prerequisites
 
@@ -64,7 +64,7 @@ These can be added to the `env` object in the MCP config if needed:
 
 - `LOXTEP_ENV` or `NODE_ENV` — Set to `dev` / `development` for dev app/API (`appdev.loxtep.io`, `apidev.loxtep.io`). Default is production.
 
-See the [Customer MCP Server README](https://github.com/loxtepinc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for full details.
+See the [Customer MCP Server README](https://github.com/LoxtepInc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for full details.
 
 ## Troubleshooting
 

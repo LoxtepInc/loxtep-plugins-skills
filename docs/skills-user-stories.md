@@ -1,6 +1,6 @@
 # User stories → Customer MCP (living catalog)
 
-Canonical MCP facades: [Customer MCP README](https://github.com/loxtepinc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md). Operation scopes align with `mcp-facade-op-scopes` in the Loxtep monorepo.
+Canonical MCP facades: [Customer MCP README](https://github.com/LoxtepInc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md). Operation scopes align with `mcp-facade-op-scopes` in the Loxtep monorepo.
 
 Each story lists **primary skill** (where the narrative lives) and **supporting skills**.
 
@@ -242,7 +242,7 @@ Each story lists **primary skill** (where the narrative lives) and **supporting 
 
 ## MCP operation → skill index (drift helper)
 
-Regenerate mentally from [`mcp-facades.ts`](https://github.com/loxtepinc/loxtep/blob/main/platform-backend/ai/lib/tools/mcp-facades.ts): every `operation` should appear in **exactly one** primary skill’s MCP mapping appendix (or shared where noted: `create_connection` appears in both `create-connector` and `data-workflows` by design).
+Regenerate mentally from [`mcp-facades.ts`](https://github.com/LoxtepInc/loxtep/blob/main/platform-backend/ai/lib/tools/mcp-facades.ts): every `operation` should appear in **exactly one** primary skill’s MCP mapping appendix (or shared where noted: `create_connection` appears in both `create-connector` and `data-workflows` by design).
 
 | `operation` | Primary skill |
 |-------------|----------------|

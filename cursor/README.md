@@ -2,7 +2,7 @@
 
 Cursor plugin for the [Loxtep](https://loxtep.io) data mesh platform. The Customer MCP exposes **19 grouped tools** (`loxtep_projects`, `loxtep_workflows`, …); each call uses **`operation`** plus arguments (many actions total across those groups). Use it from Cursor to manage projects, workflows, data products, connections, templates, and more.
 
-This plugin lives in the [loxtep-plugins-skills](https://github.com/loxtepinc/loxtep-plugins-skills) repo under `cursor/`. For Cursor Marketplace or "install from Git", use the repo URL and select the `cursor/` path if your client supports subpaths.
+This plugin lives in the [loxtep-plugins-skills](https://github.com/LoxtepInc/loxtep-plugins-skills) repo under `cursor/`. For Cursor Marketplace or "install from Git", use the repo URL and select the `cursor/` path if your client supports subpaths.
 
 ## Prerequisites
 
@@ -10,7 +10,7 @@ This plugin lives in the [loxtep-plugins-skills](https://github.com/loxtepinc/lo
 
 ## Quick start
 
-1. **Install the plugin** in Cursor (Settings → Plugins → Install from Git; use `https://github.com/loxtepinc/loxtep-plugins-skills` and `cursor/` as the plugin path if supported).
+1. **Install the plugin** in Cursor (Settings → Plugins → Install from Git; use `https://github.com/LoxtepInc/loxtep-plugins-skills` and `cursor/` as the plugin path if supported).
 
 2. **Or add manually** — merge the following into your `.cursor/mcp.json` or project `.mcp.json`:
 

@@ -12,7 +12,7 @@
     "connectors"
   ],
   "logo": "assets/logo.svg",
-  "repository": "https://github.com/loxtepinc/loxtep-plugins-skills",
+  "repository": "https://github.com/LoxtepInc/loxtep-plugins-skills",
   "license": "MIT",
   "mcpServers": {
     "loxtep": {

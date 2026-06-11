@@ -9,7 +9,7 @@ There is **no CI job** in this repo that parses the Loxtep monorepo’s `mcp-fac
 
 After the Customer MCP adds, renames, or removes an `operation` on any `loxtep_*` facade:
 
-1. Compare against [`mcp-facades.ts`](https://github.com/loxtepinc/loxtep/blob/main/platform-backend/ai/lib/tools/mcp-facades.ts) (or the generated README table in `_customer-mcp-server`).
+1. Compare against [`mcp-facades.ts`](https://github.com/LoxtepInc/loxtep/blob/main/platform-backend/ai/lib/tools/mcp-facades.ts) (or the generated README table in `_customer-mcp-server`).
 2. Update **skills-user-stories.md** (index + operation table + any affected story section).
 3. Update the affected **skill(s)** in `claude/skills/<slug>/SKILL.md`, `cursor/skills/<slug>/SKILL.md`, `kiro/skills/<slug>/SKILL.md`, `opencode/skills/<slug>/SKILL.md`, `antigravity/skills/<slug>/SKILL.md`, and `codex/skills/<slug>/SKILL.md`.
 4. Refresh **skills-roadmap.md** if a new skill slug or facade ownership changes.

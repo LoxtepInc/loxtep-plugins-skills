@@ -5,7 +5,7 @@
   "description": "Loxtep data mesh platform — projects, workflows, data products, connectors, and more from Claude Code. Customer MCP: 16 grouped tools (loxtep_*) with per-call operation; OAuth login.",
   "author": { "name": "Loxtep" },
   "homepage": "https://loxtep.io",
-  "repository": "https://github.com/loxtepinc/loxtep-plugins-skills",
+  "repository": "https://github.com/LoxtepInc/loxtep-plugins-skills",
   "license": "MIT",
   "keywords": ["data-mesh", "pipelines", "aws", "data-products", "mcp", "connectors"],
   "skills": "./skills/",
