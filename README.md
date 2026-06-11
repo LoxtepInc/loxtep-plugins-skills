@@ -2,7 +2,9 @@
 
 Plugins and skills for using [Loxtep](https://loxtep.io) from AI coding and productivity tools.
 
-The MCP server registers **16 grouped tools** named `loxtep_projects`, `loxtep_workflows`, `loxtep_connectors`, and so on. Each call sets **`operation`** to the flat action name (e.g. `list_projects`, `create_connection`) plus that action's arguments. See the [Customer MCP README](https://github.com/LoxtepInc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for the full map. Under the hood that still covers projects, workflows, data products, connectors, templates, catalog, and the rest of the customer tool surface.
+Loxtep is not another pipeline tool. It publishes **governed data products** on a **real-time streaming** backbone — with **data governance**, **catalog and lineage**, a **semantic layer**, and **AI context** (entity knowledge, decision traces, ontology) that agents can query instead of inventing. These plugins connect your MCP client to that platform over hosted OAuth.
+
+The Customer MCP registers **19 grouped tools** named `loxtep_projects`, `loxtep_workflows`, `loxtep_data_products`, and so on. Each call sets **`operation`** to the flat action name (e.g. `list_projects`, `create_data_product`) plus that action's arguments. See the [Customer MCP README](https://github.com/LoxtepInc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for the full map.
 
 ## Quick Start
 
@@ -45,7 +47,7 @@ Some MCP clients (e.g. Google Antigravity) don't yet support the OAuth 2.1 hands
 
 | Plugin | Platform | Path | Description |
 |--------|----------|------|-------------|
-| **Cursor** | Cursor IDE | [cursor/](cursor/) | MCP config, rules, skills. Supports native OAuth via `url` config. |
+| **Cursor** | Cursor IDE | [cursor/](cursor/) | Governed data products, streaming, semantic layer, AI context — hosted MCP, skills, auth rule. Native OAuth via `url` config. |
 | **Claude** | Claude Code & Claude Cowork | [claude/](claude/) | MCP config, skills. Supports native OAuth via `url` config. |
 | **OpenCode** | OpenCode (terminal/desktop/IDE) | [opencode/](opencode/) | MCP config, skills. Supports native OAuth via `url` config. |
 | **Kiro** | Kiro IDE | [kiro/](kiro/) | MCP config + README. Supports native OAuth via `url` config. |

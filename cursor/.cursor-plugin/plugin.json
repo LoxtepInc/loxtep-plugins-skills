@@ -1,15 +1,19 @@
 {
   "name": "loxtep",
   "version": "1.0.0",
-  "description": "Loxtep data platform — projects, workflows, data products, connectors from Cursor. Customer MCP: 16 grouped tools (loxtep_*) with per-call operation; OAuth login.",
+  "description": "Governed real-time data products, semantic layer, and AI context for Cursor. Hosted MCP + skills: streaming workflows, catalog/lineage, schemas, quality, deployments, and queue tracing.",
   "author": { "name": "Loxtep" },
   "keywords": [
-    "data-mesh",
-    "pipelines",
-    "aws",
     "data-products",
+    "event-streaming",
+    "data-governance",
+    "semantic-layer",
+    "ai-context",
+    "lineage",
     "mcp",
-    "connectors"
+    "real-time",
+    "catalog",
+    "duckdb"
   ],
   "logo": "assets/logo.svg",
   "repository": "https://github.com/LoxtepInc/loxtep-plugins-skills",
