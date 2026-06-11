@@ -1,30 +1,80 @@
 # Loxtep for Codex
 
-Use the [Loxtep](https://loxtep.io) Customer MCP from [OpenAI Codex](https://codex.openai.com) (CLI and IDE): **19 grouped tools** (`loxtep_*`) with **`operation`** per invocation.
+**Governed, real-time data products with a semantic layer and AI context — operable from OpenAI Codex over hosted MCP.**
+
+[Loxtep](https://loxtep.io) is not another pipeline tool. Most stacks give you pipes: connect A to B, schedule a job, move on. Loxtep gives you **data products** — versioned, governed, discoverable datasets with schemas, lineage, quality rules, and consumption interfaces — backed by **real-time event streaming**, not batch glue code.
+
+Because AI agents need more than API access, Loxtep maintains a **semantic layer, ontology, and runtime context** (entity knowledge, decision traces, process graphs) that your Codex agent can query and extend.
+
+This directory connects Codex to that platform: hosted MCP, OAuth, and scoped skills.
 
 This directory lives in the [loxtep-plugins-skills](https://github.com/LoxtepInc/loxtep-plugins-skills) repo under `codex/`.
+
+## What makes Loxtep different
+
+| Generic workflow tool | Loxtep |
+| --- | --- |
+| Pipelines as the unit of work | **Data products** — owned, versioned, cataloged assets with contracts and SLAs |
+| Batch ETL / cron jobs | **Event streaming** (rstreams) — real-time data movement |
+| Docs about data definitions | **Semantic layer + ontology** — canonical terms agents can resolve |
+| "The AI read our wiki" | **AI context** — entity context, decision traces, process intelligence |
+| Security as an afterthought | **Data governance by design** — RBAC, PII, quality, lineage |
+| Opaque data sprawl | **Discovery** — catalog, evidence, lineage impact, governance flags |
+
+## Key concepts
+
+- **Data product** — Governed, discoverable dataset with schema, lineage, quality, and consumption.
+- **Streaming** — Events in real time; workflows implement the flow.
+- **Semantic layer** — Business meaning agents query instead of inventing field names.
+- **AI context** — Entity knowledge, decisions, processes exposed over MCP.
+- **Governance** — Permissions, PII, quality, and lineage enforced at build and access time.
 
 ## Prerequisites
 
 - **Loxtep account** with `owner`, `org_admin`, or `developer` role (for MCP tool access)
+- Project-scoped operations require `project_id` (call `get_current_user` first)
 
 ## Install
 
-Edit `~/.codex/config.toml` and add the snippet from `config.snippet.toml` in this repo (or the block below). Codex uses TOML; see [Codex MCP](https://developers.openai.com/codex/mcp) and [config reference](https://developers.openai.com/codex/config-reference).
+Edit `~/.codex/config.toml` and add the snippet from `config.snippet.toml` (or below). See [Codex MCP](https://developers.openai.com/codex/mcp) and [config reference](https://developers.openai.com/codex/config-reference).
 
 ```toml
 [mcp_servers.loxtep]
 url = "https://mcp.loxtep.io/ai/mcp/stream"
 ```
 
-On first use, Codex will open a browser window for OAuth login. Sign in to Loxtep and you're connected. Tokens refresh automatically.
+On first use, Codex opens OAuth in the browser. Tokens refresh automatically.
 
-> **Dev environment:** Replace the URL with `https://mcpdev.loxtep.io/ai/mcp/stream` to connect to the Loxtep dev instance.
+> **Dev environment:** `https://mcpdev.loxtep.io/ai/mcp/stream`
+
+## Developer workflows
+
+1. **Orient** — session + RBAC; catalog/semantic layer search.
+2. **Ingest** — connector → connection → workflow graph (streaming).
+3. **Productize** — governed data products with schema and lineage.
+4. **Govern** — PII, quality, semantics, ontology.
+5. **Consume** — DuckDB, webhooks, SDK.
+6. **Context for AI** — entity context, decision traces.
+7. **Ship & debug** — deploy, runtime mapping, queue tracing.
+
+## Example prompts
+
+- "Search the semantic layer for how we define churn"
+- "Create a source data product for Shopify orders and tag email as PII"
+- "Show lineage impact if we deprecate unified_orders"
+- "Trace deployment errors on the queue"
 
 ## What you get
 
-- **Loxtep Customer MCP** — hosted at `https://mcp.loxtep.io/ai/mcp/stream` (grouped tools + `operation`; projects, workflows, data products, connectors, templates, catalog, schemas, and more).
-- **Skills** — Story-first playbooks (see [docs/skills-user-stories.md](../docs/skills-user-stories.md)): `create-connector`, `data-product-modeling`, `data-workflows`, `discover-govern-lineage`, `loxtep-agent-workspace`, `loxtep-analytics`, `loxtep-auth`, `loxtep-instances`, `loxtep-mcp-session`, `loxtep-ontology`, `loxtep-procedures`, `loxtep-process-intel`, `loxtep-sdk`, `loxtep-workspace`, `org-semantics-quality`, `semantic-ontology-mapping`. Each lives under `codex/skills/<slug>/SKILL.md` with MCP mapping tables where applicable.
+### Loxtep Customer MCP
+
+**19 grouped `loxtep_*` tools** — projects, workflows, connectors, data products, schemas, quality, catalog, semantic layer, ontology, analytics, deployments, workspace/queue ops, process intelligence, agent orchestration.
+
+### Skills (19 bundles)
+
+Under `codex/skills/<slug>/SKILL.md`. See [docs/skills-user-stories.md](../docs/skills-user-stories.md).
+
+Includes: `loxtep-mcp-session`, `loxtep-auth`, `loxtep-instances`, `create-connector`, `data-workflows`, `data-product-modeling`, `discover-govern-lineage`, `org-semantics-quality`, `loxtep-analytics`, `loxtep-workspace`, `loxtep-deployments`, `loxtep-queue-tracing`, `loxtep-process-intel`, `loxtep-ontology`, `loxtep-procedures`, `loxtep-agent-workspace`, `loxtep-sdk`, `loxtep-semantic-layer`, `semantic-ontology-mapping`.
 
 ## License
 

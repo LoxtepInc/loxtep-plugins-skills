@@ -1,24 +1,48 @@
 # Loxtep for Antigravity IDE
 
-Use the [Loxtep](https://loxtep.io) Customer MCP from [Google Antigravity IDE](https://antigravity.chat): **19 grouped tools** (`loxtep_*`) with **`operation`** per call—projects, workflows, data products, connectors, and more.
+**Governed, real-time data products with a semantic layer and AI context — operable from Antigravity over hosted MCP.**
+
+[Loxtep](https://loxtep.io) is not another pipeline tool. Most stacks give you pipes: connect A to B, schedule a job, move on. Loxtep gives you **data products** — versioned, governed, discoverable datasets with schemas, lineage, quality rules, and consumption interfaces — backed by **real-time event streaming**, not batch glue code.
+
+Because AI agents need more than API access, Loxtep maintains a **semantic layer, ontology, and runtime context** (entity knowledge, decision traces, process graphs) that your Antigravity agent can query and extend.
+
+This directory connects Antigravity to that platform via hosted MCP (through `mcp-remote` for OAuth) and scoped skills.
 
 This directory lives in the [loxtep-plugins-skills](https://github.com/LoxtepInc/loxtep-plugins-skills) repo under `antigravity/`.
 
+## What makes Loxtep different
+
+| Generic workflow tool | Loxtep |
+| --- | --- |
+| Pipelines as the unit of work | **Data products** — owned, versioned, cataloged assets with contracts and SLAs |
+| Batch ETL / cron jobs | **Event streaming** (rstreams) — real-time data movement |
+| Docs about data definitions | **Semantic layer + ontology** — canonical terms agents can resolve |
+| "The AI read our wiki" | **AI context** — entity context, decision traces, process intelligence |
+| Security as an afterthought | **Data governance by design** — RBAC, PII, quality, lineage |
+| Opaque data sprawl | **Discovery** — catalog, evidence, lineage impact, governance flags |
+
+## Key concepts
+
+- **Data product** — Governed, discoverable dataset with schema, lineage, quality, and consumption.
+- **Streaming** — Events in real time; workflows implement the flow.
+- **Semantic layer** — Business meaning agents query instead of inventing field names.
+- **AI context** — Entity knowledge, decisions, processes exposed over MCP.
+- **Governance** — Permissions, PII, quality, and lineage enforced at build and access time.
+
 ## Prerequisites
 
-- **Node.js** 18+
+- **Node.js** 18+ (for `mcp-remote` OAuth bridge)
 - **Loxtep account** with `owner`, `org_admin`, or `developer` role (for MCP tool access)
+- Project-scoped operations require `project_id` (call `get_current_user` first)
 
 ## Install
 
 ### 1. Add the Loxtep MCP server
 
-Antigravity does not yet support the MCP OAuth specification natively, so we use `mcp-remote` as a local bridge to handle the OAuth flow.
+Antigravity does not yet support MCP OAuth natively, so use `mcp-remote` as a local bridge.
 
-- Open the "..." dropdown at the top of the Agent panel.
-- Select **Manage MCP Servers** (or open the MCP Store).
-- Click **View raw config** to open your `mcp_config.json`.
-- Add the `loxtep` entry from `mcp_config.json` in this repo into your `mcpServers` object:
+- Open the "..." dropdown in the Agent panel → **Manage MCP Servers** → **View raw config**.
+- Add the `loxtep` entry from `mcp_config.json` in this repo:
 
 ```json
 {
@@ -31,48 +55,55 @@ Antigravity does not yet support the MCP OAuth specification natively, so we use
 }
 ```
 
-Save and refresh so the server loads.
-
-> **Dev environment:** To connect to the Loxtep dev instance instead of production, replace the URL with `https://mcpdev.loxtep.io/ai/mcp/stream`.
+Save and refresh. For dev: use `https://mcpdev.loxtep.io/ai/mcp/stream`.
 
 ### 2. Authenticate
 
-On first connection, `mcp-remote` will open a browser window for OAuth login. Sign in to Loxtep and authorize the connection. Tokens are cached locally and refresh automatically — you only need to do this once.
+On first connection, `mcp-remote` opens the browser for OAuth. Tokens cache locally and refresh automatically.
 
 ### 3. Use the tools
 
-The agent sees `loxtep_*` tools; each call sets **`operation`** (e.g. `list_projects`) plus arguments. Trigger via "@" or the MCP tools list in the IDE.
+The agent sees `loxtep_*` tools; each call sets **`operation`** plus arguments.
 
 ## How it works
 
-`mcp-remote` runs a local OAuth proxy that:
+`mcp-remote` runs a local OAuth proxy: localhost callback → browser login → stdio bridge to Antigravity. Required until Antigravity supports MCP OAuth 2.1 natively.
 
-1. Starts a local `http://localhost` callback server
-2. Opens your browser for Loxtep OAuth login (first time only)
-3. Bridges the authenticated remote MCP connection to Antigravity via stdio
+## Developer workflows
 
-This is required because Antigravity's native `serverUrl` config does not yet handle the MCP OAuth 2.1 handshake. The `mcp-remote` package handles it transparently.
+1. **Orient** — session + RBAC; catalog/semantic layer search.
+2. **Ingest** — connector → connection → workflow graph (streaming).
+3. **Productize** — governed data products with schema and lineage.
+4. **Govern** — PII, quality, semantics, ontology.
+5. **Consume** — DuckDB, webhooks, SDK.
+6. **Context for AI** — entity context, decision traces.
+7. **Ship & debug** — deploy, runtime mapping, queue tracing.
 
 ## What you get
 
-- **Loxtep Customer MCP** — hosted at `https://mcp.loxtep.io/ai/mcp/stream` (grouped tools + `operation`; projects, workflows, data products, connectors, templates, catalog, schemas, and more).
-- **Skills** — Story-first playbooks (see [docs/skills-user-stories.md](../docs/skills-user-stories.md)): `create-connector`, `data-product-modeling`, `data-workflows`, `discover-govern-lineage`, `loxtep-agent-workspace`, `loxtep-analytics`, `loxtep-auth`, `loxtep-instances`, `loxtep-mcp-session`, `loxtep-ontology`, `loxtep-procedures`, `loxtep-process-intel`, `loxtep-sdk`, `loxtep-workspace`, `org-semantics-quality`, `semantic-ontology-mapping`. Each lives under `antigravity/skills/<slug>/SKILL.md` with MCP mapping tables where applicable.
+### Loxtep Customer MCP
+
+**19 grouped `loxtep_*` tools** — projects, workflows, connectors, data products, schemas, quality, catalog, semantic layer, ontology, analytics, deployments, workspace/queue ops, process intelligence, agent orchestration.
+
+### Skills (19 bundles)
+
+Under `antigravity/skills/<slug>/SKILL.md`. See [docs/skills-user-stories.md](../docs/skills-user-stories.md).
+
+Includes: `loxtep-mcp-session`, `loxtep-auth`, `loxtep-instances`, `create-connector`, `data-workflows`, `data-product-modeling`, `discover-govern-lineage`, `org-semantics-quality`, `loxtep-analytics`, `loxtep-workspace`, `loxtep-deployments`, `loxtep-queue-tracing`, `loxtep-process-intel`, `loxtep-ontology`, `loxtep-procedures`, `loxtep-agent-workspace`, `loxtep-sdk`, `loxtep-semantic-layer`, `semantic-ontology-mapping`.
 
 ## Environment variables (optional)
 
-These can be added to the `env` object in the MCP config if needed:
-
-- `LOXTEP_ENV` or `NODE_ENV` — Set to `dev` / `development` for dev app/API (`appdev.loxtep.io`, `apidev.loxtep.io`). Default is production.
+- `LOXTEP_ENV` or `NODE_ENV` — `dev` / `development` for dev app/API. Default is production.
 
 See the [Customer MCP Server README](https://github.com/LoxtepInc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for full details.
 
 ## Troubleshooting
 
 | Issue | Fix |
-|-------|-----|
-| "Unauthorized" error on connect | Antigravity's native `serverUrl` OAuth is not supported. Use `mcp-remote` as shown above. |
-| Browser doesn't open for login | Run `npx mcp-remote https://mcp.loxtep.io/ai/mcp/stream` manually in a terminal first to complete the initial auth. |
-| `npx` not found | Ensure Node.js 18+ is installed and `npx` is on your PATH. |
+| --- | --- |
+| "Unauthorized" on connect | Use `mcp-remote` as shown; native `serverUrl` OAuth is not supported. |
+| Browser doesn't open | Run `npx mcp-remote https://mcp.loxtep.io/ai/mcp/stream` manually first. |
+| `npx` not found | Install Node.js 18+ and ensure `npx` is on PATH. |
 
 ## License
 
