@@ -7,30 +7,7 @@
     "email": "support@loxtep.io"
   },
   "plugins": [
-    {
-      "name": "loxtep",
-      "source": "./cursor",
-      "description": "Loxtep for Cursor — hosted MCP at mcp.loxtep.io, 19 grouped loxtep_* tools, OAuth login, 19 skills, auth recovery rule. Install this entry for Cursor IDE.",
-      "version": "1.1.0",
-      "author": {
-        "name": "Loxtep"
-      },
-      "homepage": "https://github.com/LoxtepInc/loxtep-plugins-skills/tree/main/cursor",
-      "repository": "https://github.com/LoxtepInc/loxtep-plugins-skills",
-      "keywords": [
-        "data-products",
-        "event-streaming",
-        "data-governance",
-        "semantic-layer",
-        "ai-context",
-        "lineage",
-        "mcp",
-        "real-time",
-        "catalog",
-        "duckdb",
-        "cursor"
-      ]
-    },
+
     {
       "name": "loxtep-claude",
       "source": "./claude",
