@@ -75,7 +75,7 @@ permissions: {}
 
 ## Auth
 
-`loxtep-auth` / login command.
+`loxtep-auth` / reconnect MCP for OAuth.
 
 ## References
 

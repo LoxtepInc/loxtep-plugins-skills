@@ -1,7 +1,7 @@
 {
   "name": "loxtep",
-  "description": "Loxtep data mesh platform plugins — projects, workflows, data products, connectors, catalog, and more via Customer MCP.",
-  "version": "1.0.1",
+  "description": "Loxtep data mesh platform plugins — governed data products, streaming workflows, semantic layer, and AI context via hosted MCP (OAuth 2.1).",
+  "version": "1.1.0",
   "owner": {
     "name": "Loxtep",
     "email": "support@loxtep.io"
@@ -9,23 +9,46 @@
   "plugins": [
     {
       "name": "loxtep",
-      "source": "./claude",
-      "description": "Loxtep data mesh platform — 16 grouped MCP tools (loxtep_*) with per-call operation covering projects, workflows, data products, connectors, templates, catalog, schemas, analytics, and more. Includes story-first skills for auth, instances, connectors, workflows, governance, quality, analytics, workspace, process intelligence, procedures, and agent orchestration.",
-      "version": "1.0.1",
+      "source": "./cursor",
+      "description": "Loxtep for Cursor — hosted MCP at mcp.loxtep.io, 19 grouped loxtep_* tools, OAuth login, 19 skills, auth recovery rule. Install this entry for Cursor IDE.",
+      "version": "1.1.0",
       "author": {
         "name": "Loxtep"
       },
       "keywords": [
-        "data-mesh",
-        "pipelines",
-        "aws",
         "data-products",
+        "event-streaming",
+        "data-governance",
+        "semantic-layer",
+        "ai-context",
+        "lineage",
         "mcp",
-        "connectors",
-        "workflows",
+        "real-time",
         "catalog",
-        "governance",
-        "analytics"
+        "duckdb",
+        "cursor"
+      ]
+    },
+    {
+      "name": "loxtep-claude",
+      "source": "./claude",
+      "description": "Loxtep for Claude Code and Cowork — hosted MCP at mcp.loxtep.io, 19 grouped loxtep_* tools, OAuth login, 19 skills, auth recovery rule.",
+      "version": "1.1.0",
+      "author": {
+        "name": "Loxtep"
+      },
+      "keywords": [
+        "data-products",
+        "event-streaming",
+        "data-governance",
+        "semantic-layer",
+        "ai-context",
+        "lineage",
+        "mcp",
+        "real-time",
+        "catalog",
+        "duckdb",
+        "claude"
       ]
     }
   ]

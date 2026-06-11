@@ -95,7 +95,7 @@ Includes: `loxtep-mcp-session`, `loxtep-auth`, `loxtep-instances`, `create-conne
 
 - `LOXTEP_ENV` or `NODE_ENV` — `dev` / `development` for dev app/API. Default is production.
 
-See the [Customer MCP Server README](https://github.com/LoxtepInc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for full details.
+See [`mcp-facades.ts`](https://github.com/LoxtepInc/loxtep/blob/main/platform-backend/ai/lib/tools/mcp-facades.ts) for the full tool map.
 
 ## Troubleshooting
 

@@ -45,8 +45,8 @@ Each steering file covers an independent workflow area. Load the one matching us
 
 ### Prerequisites
 
-- **Node.js** 18+
 - **Loxtep account** with `owner`, `org_admin`, or `developer` role
+- MCP configured with hosted URL: `https://mcp.loxtep.io/ai/mcp/stream`
 
 ### Authentication
 
@@ -64,9 +64,7 @@ Disconnect and reconnect the Loxtep MCP server in your IDE's MCP settings to re-
 
 ### Environment Variables (optional)
 
-- `LOXTEP_ENV` or `NODE_ENV` — Set to `dev` / `development` for dev endpoints (`appdev.loxtep.io`, `apidev.loxtep.io`). Default is production.
-- `LOXTEP_APP_URL` — Override app base URL for login.
-- `LOXTEP_API_BASE_URL` — Override API endpoint.
+- `LOXTEP_ENV` or `NODE_ENV` — Set to `dev` / `development` when your client or tooling targets dev endpoints. Default is production.
 
 ## Session Pattern (Start Here)
 
@@ -143,10 +141,10 @@ Example:
 
 ## Troubleshooting
 
-### MCP Server Won't Start
+### MCP Server Won't Connect
 
-- Verify Node.js 18+ is installed: `node --version`
-- Check for network issues (the server needs to reach `api.loxtep.io` or `apidev.loxtep.io`)
+- Verify the hosted endpoint is reachable: `curl -sI https://mcp.loxtep.io/ai/mcp/oauth/.well-known`
+- Check for network/firewall issues blocking `mcp.loxtep.io`
 
 ### Authentication Errors
 

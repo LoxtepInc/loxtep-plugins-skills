@@ -1,6 +1,6 @@
 {
   "name": "loxtep",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Governed real-time data products, semantic layer, and AI context for Cursor. Hosted MCP + skills: streaming workflows, catalog/lineage, schemas, quality, deployments, and queue tracing.",
   "author": { "name": "Loxtep" },
   "keywords": [
@@ -18,6 +18,8 @@
   "logo": "assets/logo.svg",
   "repository": "https://github.com/LoxtepInc/loxtep-plugins-skills",
   "license": "MIT",
+  "skills": "./skills/",
+  "rules": "./rules/",
   "mcpServers": {
     "loxtep": {
       "url": "https://mcp.loxtep.io/ai/mcp/stream"

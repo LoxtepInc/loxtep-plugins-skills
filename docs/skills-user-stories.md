@@ -1,6 +1,6 @@
 # User stories → Customer MCP (living catalog)
 
-Canonical MCP facades: [Customer MCP README](https://github.com/LoxtepInc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md). Operation scopes align with `mcp-facade-op-scopes` in the Loxtep monorepo.
+Canonical MCP facades: [`mcp-facades.ts`](https://github.com/LoxtepInc/loxtep/blob/main/platform-backend/ai/lib/tools/mcp-facades.ts). Operation scopes align with `mcp-facade-op-scopes` in the Loxtep monorepo. Hosted endpoint: `https://mcp.loxtep.io/ai/mcp/stream`.
 
 Each story lists **primary skill** (where the narrative lives) and **supporting skills**.
 

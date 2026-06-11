@@ -84,6 +84,10 @@ You are not duct-taping integrations. You are **publishing governed data product
 
 Hosted at `https://mcp.loxtep.io/ai/mcp/stream` — **19 grouped `loxtep_*` tools** with `operation`-based dispatch covering projects, workflows, connectors, **data products**, schemas, quality rules, catalog, **semantic layer**, ontology, analytics, deployments, workspace/queue ops, process intelligence, and agent orchestration.
 
+### Auth recovery rule
+
+`rules/loxtep-mcp-auth.mdc` — guides the agent to reconnect the hosted MCP server when auth fails (OAuth 2.1 recovery).
+
 ### Skills (19 bundles)
 
 Scoped skill bundles under `claude/skills/<slug>/SKILL.md`. See [docs/skills-user-stories.md](../docs/skills-user-stories.md) for the full user-story catalog.

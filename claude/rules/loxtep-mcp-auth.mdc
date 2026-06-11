@@ -1,6 +1,5 @@
 ---
 description: When Loxtep hosted MCP returns auth errors, reconnect to re-trigger OAuth 2.1 (or mcp-remote for bridged clients).
-globs: .cursor/rules/*.mdc
 alwaysApply: true
 ---
 
@@ -32,7 +31,7 @@ When a call to any **Loxtep MCP** tool (`loxtep_*` with an `operation` field) fa
 
 then:
 
-1. **Disconnect and reconnect** the Loxtep MCP server in Cursor MCP settings (or restart the MCP server). This re-triggers OAuth.
+1. **Disconnect and reconnect** the Loxtep MCP server in Claude MCP settings (or restart the MCP server). This re-triggers OAuth.
 2. Complete sign-in in the browser when prompted.
 3. **Retry** the failed tool call.
 

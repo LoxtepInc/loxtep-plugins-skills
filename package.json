@@ -1,11 +1,14 @@
 {
   "name": "loxtep-plugins-skills",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "check:mcp-config": "node scripts/check-mcp-config.mjs",
+    "check:docs": "node scripts/check-docs-consistency.mjs",
+    "check": "npm run check:mcp-config && npm run check:docs && npm test"
   },
   "devDependencies": {
     "fast-check": "^3.15.0",

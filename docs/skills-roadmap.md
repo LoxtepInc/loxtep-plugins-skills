@@ -1,6 +1,6 @@
 # Loxtep plugins — skills roadmap
 
-Canonical MCP grouping: **19** `loxtep_*` tools; each call sets **`operation`** to a flat tool name plus arguments. See the [Customer MCP Server README](https://github.com/LoxtepInc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md).
+Canonical MCP grouping: **19** `loxtep_*` tools; each call sets **`operation`** to a flat tool name plus arguments. See [`mcp-facades.ts`](https://github.com/LoxtepInc/loxtep/blob/main/platform-backend/ai/lib/tools/mcp-facades.ts) in the Loxtep monorepo.
 
 **Pick a goal first:** use the [user story catalog](skills-user-stories.md) (S0–S15) to map intent → primary skill → facades. Skills in `claude/skills/`, `cursor/skills/`, `kiro/skills/`, `opencode/skills/`, `antigravity/skills/`, and `codex/skills/` are kept in parity.
 

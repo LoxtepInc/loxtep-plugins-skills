@@ -4,7 +4,7 @@ Plugins and skills for using [Loxtep](https://loxtep.io) from AI coding and prod
 
 Loxtep is not another pipeline tool. It publishes **governed data products** on a **real-time streaming** backbone — with **data governance**, **catalog and lineage**, a **semantic layer**, and **AI context** (entity knowledge, decision traces, ontology) that agents can query instead of inventing. These plugins connect your MCP client to that platform over hosted OAuth.
 
-The Customer MCP registers **19 grouped tools** named `loxtep_projects`, `loxtep_workflows`, `loxtep_data_products`, and so on. Each call sets **`operation`** to the flat action name (e.g. `list_projects`, `create_data_product`) plus that action's arguments. See the [Customer MCP README](https://github.com/LoxtepInc/loxtep/blob/main/platform-backend/_customer-mcp-server/README.md) for the full map.
+The hosted MCP registers **19 grouped tools** named `loxtep_projects`, `loxtep_workflows`, `loxtep_data_products`, and so on. Each call sets **`operation`** to the flat action name (e.g. `list_projects`, `create_data_product`) plus that action's arguments. Tool definitions and scopes live in the Loxtep monorepo [`mcp-facades.ts`](https://github.com/LoxtepInc/loxtep/blob/main/platform-backend/ai/lib/tools/mcp-facades.ts).
 
 Scoped **skills** (19 per client) teach agents the platform model — data products, governance, semantic layer, streaming workflows, deployments, queue tracing — so they work inside boundaries instead of inventing field names and bypassing access rules.
 
@@ -45,6 +45,8 @@ That's it. On first connection your MCP client will open a browser window for OA
 
 No installation, no Node.js, no `npx`, no token files to manage.
 
+> **Migrating from `npx @loxtep/customer-mcp-server`:** Remove the stdio MCP entry from your client config. Uninstall/reinstall the Loxtep plugin so it picks up the hosted URL (`cursor/` for Cursor, `claude/` for Claude Code). Delete `~/.loxtep/customer-mcp.json` if you no longer use the legacy CLI. Reconnect MCP — OAuth runs in the browser.
+
 > **Dev environment:** Replace the URL with `https://mcpdev.loxtep.io/ai/mcp/stream` to connect to the Loxtep dev instance.
 
 ## Clients without native MCP OAuth
@@ -68,8 +70,8 @@ Some MCP clients (e.g. Google Antigravity) don't yet support the OAuth 2.1 hands
 
 | Plugin | Platform | Path | Description |
 |--------|----------|------|-------------|
-| **Cursor** | Cursor IDE | [cursor/](cursor/) | Governed data products, streaming, semantic layer, AI context — MCP, 19 skills, auth rule. Native OAuth. |
-| **Claude** | Claude Code & Cowork | [claude/](claude/) | Same platform surface — MCP, 19 skills, Claude plugin manifest. Native OAuth. |
+| **Cursor** | Cursor IDE | [cursor/](cursor/) | Marketplace plugin **`loxtep`** (path `cursor/`). Hosted MCP, 19 skills, auth rule. |
+| **Claude** | Claude Code & Cowork | [claude/](claude/) | Marketplace plugin **`loxtep-claude`** (path `claude/`). Same surface — hosted MCP, 19 skills, auth rule. |
 | **OpenCode** | OpenCode | [opencode/](opencode/) | MCP + 19 skills for terminal/desktop/IDE. Native OAuth; optional skill permissions. |
 | **Kiro** | Kiro IDE | [kiro/](kiro/) | MCP, 19 skills, optional Kiro Power steering guides. Native OAuth. |
 | **Antigravity** | Google Antigravity | [antigravity/](antigravity/) | MCP + 19 skills via `mcp-remote` OAuth bridge. |
