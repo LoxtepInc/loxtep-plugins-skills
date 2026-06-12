@@ -4,7 +4,7 @@ Plugins and skills for using [Loxtep](https://loxtep.io) from AI coding and prod
 
 Loxtep is not another pipeline tool. It publishes **governed data products** on a **real-time streaming** backbone — with **data governance**, **catalog and lineage**, a **semantic layer**, and **AI context** (entity knowledge, decision traces, ontology) that agents can query instead of inventing. These plugins connect your MCP client to that platform over hosted OAuth.
 
-The hosted MCP registers **19 grouped tools** named `loxtep_projects`, `loxtep_workflows`, `loxtep_data_products`, and so on. Each call sets **`operation`** to the flat action name (e.g. `list_projects`, `create_data_product`) plus that action's arguments. Tool definitions and scopes live in the Loxtep monorepo [`mcp-facades.ts`](https://github.com/LoxtepInc/loxtep/blob/main/platform-backend/ai/lib/tools/mcp-facades.ts).
+The hosted MCP registers **19 grouped tools** named `loxtep_projects`, `loxtep_workflows`, `loxtep_data_products`, and so on. Each call sets **`operation`** to the flat action name (e.g. `list_projects`, `create_data_product`) plus that action's arguments. Tool definitions and scopes are published on the hosted MCP server.
 
 Scoped **skills** (19 per client) teach agents the platform model — data products, governance, semantic layer, streaming workflows, deployments, queue tracing — so they work inside boundaries instead of inventing field names and bypassing access rules.
 
@@ -13,7 +13,7 @@ Scoped **skills** (19 per client) teach agents the platform model — data produ
 | Generic workflow tool | Loxtep |
 | --- | --- |
 | Pipelines as the unit of work | **Data products** — owned, versioned, cataloged assets with contracts and SLAs |
-| Batch ETL / cron jobs | **Event streaming** (rstreams) — flows built for continuous, real-time data movement |
+| Batch ETL / cron jobs | **Event streaming** — flows built for continuous, real-time data movement |
 | Docs about data definitions | **Semantic layer + ontology** — canonical terms, namespaces, mappings agents can resolve |
 | "The AI read our wiki" | **AI context** — entity context, decision traces, process intelligence wired to the platform |
 | Security as an afterthought | **Data governance by design** — RBAC, PII tagging, quality rules, access requests, audit-friendly lineage |

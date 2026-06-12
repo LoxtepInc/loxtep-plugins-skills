@@ -12,7 +12,7 @@
 
 ## Queue naming conventions
 
-### Deployment queues (namespace = `lxappdev` or `lxappprod`)
+### Deployment queues (namespace from your instance record)
 
 | Queue | Contains |
 |-------|----------|

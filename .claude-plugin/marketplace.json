@@ -28,7 +28,7 @@
         "mcp",
         "real-time",
         "catalog",
-        "duckdb",
+        "sql-analytics",
         "claude"
       ]
     }

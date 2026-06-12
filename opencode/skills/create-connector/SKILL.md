@@ -90,7 +90,7 @@ SDK connectors use `auth_type: "jwt"` — no OAuth, no external credential testi
 - **`test_connection`** — Optional HTTP GET when the stored connection config includes a probe URL; otherwise config-only success.
 - **SDK connectors** do **not** use OAuth or API key auth — do not call `get_connector_oauth_url` for `connector_type: "sdk"`. Authentication is handled via JWT (`loxtep login` or `LOXTEP_AUTH_TOKEN` env var).
 - **SDK connector test** always returns `{ passed: true }` — there are no external credentials to validate.
-- **New connector types** (new provider in platform code) are **not** creatable via MCP — use `list_connector_types`; platform work is internal.
+- **New connector types** are **not** creatable via MCP — use `list_connector_types` for supported types, or contact Loxtep support to request new ones.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 ## Skill scope (`.loxtep/skills/create-connector.yaml`)

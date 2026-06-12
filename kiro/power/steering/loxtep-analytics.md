@@ -30,7 +30,7 @@
 
 - Large result sets — use limits / pagination per platform.
 - Wrong **org** or missing permissions show as auth or empty results.
-- **Execution environment** — SQL runs via **in-process** DuckDB in the AI service, not a user-supplied database URL.
+- **Execution environment** — Analytics runs against governed mesh tables via `loxtep_analytics`, not an arbitrary external database URL.
 
 ## Optional attribution
 

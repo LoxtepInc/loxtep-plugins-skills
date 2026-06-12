@@ -2,7 +2,7 @@
 name: loxtep-queue-tracing
 description:
   Use when debugging deployments, workflow execution, or data flow issues by reading
-  queue events from the live runtime. Trace actions through the RStreams event bus to
+  queue events from the live runtime. Trace actions through the platform event queues to
   see what actually happened. Combines loxtep_workspace (read_queue_events) with
   knowledge of queue naming conventions. User story S7 extension.
   See docs/skills-user-stories.md.
@@ -26,7 +26,7 @@ metadata:
 
 - MCP auth (`loxtep-auth`)
 - Access to `read_queue_events` operation on `loxtep_workspace` facade
-- Knowledge of the instance **namespace** (e.g., `lxappdev`, `lxappprod`) — derive from the instance record or ask the user
+- Knowledge of the instance **namespace** (from your instance record) — derive from the instance record or ask the user
 
 ## Queue naming conventions
 
@@ -122,7 +122,7 @@ Queue names include a **microservice_id** (`w-{org4}-{inst4}-{proj8}-{wf8}`) and
 ## Pitfalls
 
 - **Namespace matters:** Queue names are namespace-prefixed. Using the wrong namespace returns empty results.
-- **Observe proxy required:** `read_queue_events` requires the AI runtime to have `platformApiBaseUrl` configured. If it returns "not configured", the MCP server can't reach the Observe proxy.
+- **Queue observability required:** `read_queue_events` needs your instance to support queue inspection. If unavailable, use the Loxtep UI or contact support.
 - **Queue may not exist:** If a workflow was never deployed or a node was removed, its queues won't exist in the runtime.
 - **Event retention:** Queues retain events based on the instance's retention policy. Very old events may be unavailable.
 

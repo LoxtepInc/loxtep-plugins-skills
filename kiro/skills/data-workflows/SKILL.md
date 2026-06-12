@@ -273,7 +273,7 @@ The SDK resolves the data product's deployment bindings, instance stream config,
 5. Use `client.data_products.get_writer('data-product-name')` to write events. The SDK resolves all runtime bindings automatically.
 6. Use `client.data_products.get_reader('data-product-name')` to consume events from the data product queue.
 
-**Runtime naming convention reference:** See the **`loxtep-sdk`** skill for the full naming hierarchy. For most use cases, `get_writer`/`get_reader` eliminates the need to understand queue/bot naming — the SDK handles resolution internally.
+**Runtime naming convention reference:** See the **`loxtep-sdk`** skill for the full naming hierarchy. For most use cases, `get_writer`/`get_reader` eliminates the need to understand queue/bot naming — the SDK resolves queue and bot names for you.
 
 ### Flow G — Build your own SDK-ingestion data product (end to end)
 

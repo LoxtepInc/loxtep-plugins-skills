@@ -7,7 +7,7 @@
   "homepage": "https://loxtep.io",
   "repository": "https://github.com/LoxtepInc/loxtep-plugins-skills",
   "license": "MIT",
-  "keywords": ["data-products", "event-streaming", "data-governance", "semantic-layer", "ai-context", "lineage", "mcp", "real-time", "catalog", "duckdb"],
+  "keywords": ["data-products", "event-streaming", "data-governance", "semantic-layer", "ai-context", "lineage", "mcp", "real-time", "catalog", "sql-analytics"],
   "skills": "./skills/",
   "rules": "./rules/",
   "mcpServers": "./.mcp.json"

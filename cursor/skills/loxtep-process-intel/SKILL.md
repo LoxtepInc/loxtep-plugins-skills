@@ -53,7 +53,7 @@ metadata:
 - **Ontology/thesaurus** management (vocabulary terms, ontology concepts, namespace mappings) is now in **`loxtep-ontology`** skill — not here.
 - **Catalog** discovery is **`loxtep_catalog`** — different product surface.
 - **Agent workspace** issues are **`loxtep_agent_workspace`** — not process intel.
-- **HTTP reads** — Tools may require **`platformApiBaseUrl`** and signed or JWT auth in the AI runtime; failures often present as empty data or 403 — check deployment, not only `login`.
+- **Connectivity** — Process-intel tools require valid MCP authentication and access to your organization's process-intelligence data.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 ## Skill scope (`.loxtep/skills/loxtep-process-intel.yaml`)

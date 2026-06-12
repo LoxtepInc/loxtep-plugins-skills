@@ -1,4 +1,4 @@
-# Dependencies
+# Local artifacts (no package.json in this repo)
 node_modules/
 
 # Editor
@@ -14,7 +14,6 @@ Thumbs.db
 
 # Logs
 *.log
-npm-debug.log*
 
 # Env (do not commit secrets)
 .env

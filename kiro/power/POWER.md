@@ -18,7 +18,7 @@ This power covers the full platform lifecycle:
 - **Projects & Workflows** — graph-based pipeline design
 - **Data Products** — unified outputs with webhook consumptions
 - **Catalog & Governance** — discovery, lineage, evidence, quality rules
-- **Analytics** — SQL queries over mesh data (DuckDB)
+- **Analytics** — SQL queries over mesh data 
 - **Instances & Deployment** — runtime provisioning and deployment
 - **Process Intelligence** — entity context, ontology, decision traces
 - **Agent Workspace** — issues, goals, and agent orchestration

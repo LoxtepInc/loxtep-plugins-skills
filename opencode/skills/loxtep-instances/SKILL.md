@@ -86,8 +86,6 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
   "connection_details": {
     "observe_api": {
       "cross_account_role_arn": "arn:aws:iam::123456789012:role/LoxtepObserve",
-      "rstreams_secret_arn": "arn:aws:secretsmanager:us-east-1:123:secret:stream-integration",
-      "rstreams_auth_arn": "arn:aws:secretsmanager:us-east-1:123:secret:auth"
     }
   }
 }

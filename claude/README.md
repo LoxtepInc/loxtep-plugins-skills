@@ -15,7 +15,7 @@ This plugin lives in the [loxtep-plugins-skills](https://github.com/LoxtepInc/lo
 | Generic workflow tool | Loxtep |
 | --- | --- |
 | Pipelines as the unit of work | **Data products** — owned, versioned, cataloged assets with contracts and SLAs |
-| Batch ETL / cron jobs | **Event streaming** (rstreams) — flows built for continuous, real-time data movement |
+| Batch ETL / cron jobs | **Event streaming** — flows built for continuous, real-time data movement |
 | Docs about data definitions | **Semantic layer + ontology** — canonical terms, namespaces, mappings agents can resolve |
 | "The AI read our wiki" | **AI context** — entity context, decision traces, process intelligence wired to the platform |
 | Security as an afterthought | **Data governance by design** — RBAC, PII tagging, quality rules, access requests, audit-friendly lineage |
@@ -64,7 +64,7 @@ You are not duct-taping integrations. You are **publishing governed data product
 2. **Ingest (streaming)** — connector → connection node → workflow graph → events on the bus.
 3. **Productize** — create a **data product** with schema, domain, lineage — not just a destination table.
 4. **Govern** — quality rules, PII fields, semantic definitions, ontology concepts.
-5. **Consume** — SQL analytics (DuckDB), webhooks, SDK readers against governed products.
+5. **Consume** — SQL analytics , webhooks, SDK readers against governed products.
 6. **Context for AI** — entity context, decision traces, vocabulary sync so the next agent session starts smarter.
 7. **Ship & debug** — deploy to instance → runtime mapping → queue tracing on failure.
 
@@ -102,7 +102,7 @@ Scoped skill bundles under `claude/skills/<slug>/SKILL.md`. See [docs/skills-use
 | `data-product-modeling` | Model source/consumer data products |
 | `discover-govern-lineage` | Catalog discovery, governance, lineage |
 | `org-semantics-quality` | Schemas, semantics, PII, quality rules |
-| `loxtep-analytics` | DuckDB SQL analytics |
+| `loxtep-analytics` | SQL analytics |
 | `loxtep-workspace` | Snapshots, versions, workspace index |
 | `loxtep-deployments` | Deploy projects/workflows; runtime mapping |
 | `loxtep-queue-tracing` | Debug flows via queue event tracing |

@@ -1,7 +1,7 @@
 ---
 name: loxtep-analytics
 description:
-  Use when the user wants SQL analytics over the mesh, DuckDB queries, list tables, table
+  Use when the user wants SQL analytics over the mesh, SQL queries, list tables, table
   schema, execute query, or poll query results. Customer MCP loxtep_analytics. User story S6.
   See docs/skills-user-stories.md.
 ---
@@ -38,7 +38,7 @@ description:
 
 - Large result sets — use limits / pagination per platform.
 - Wrong **org** or missing permissions show as auth or empty results.
-- **Execution environment** — SQL runs via **in-process** DuckDB in the AI service, not a user-supplied database URL.
+- **Execution environment** — Analytics runs against governed mesh tables via `loxtep_analytics`, not an arbitrary external database URL.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 ## Skill scope (`.loxtep/skills/loxtep-analytics.yaml`)

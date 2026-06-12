@@ -15,7 +15,7 @@ This directory lives in the [loxtep-plugins-skills](https://github.com/LoxtepInc
 | Generic workflow tool | Loxtep |
 | --- | --- |
 | Pipelines as the unit of work | **Data products** — owned, versioned, cataloged assets with contracts and SLAs |
-| Batch ETL / cron jobs | **Event streaming** (rstreams) — real-time data movement |
+| Batch ETL / cron jobs | **Event streaming** — real-time data movement |
 | Docs about data definitions | **Semantic layer + ontology** — canonical terms agents can resolve |
 | "The AI read our wiki" | **AI context** — entity context, decision traces, process intelligence |
 | Security as an afterthought | **Data governance by design** — RBAC, PII, quality, lineage |
@@ -75,7 +75,7 @@ The agent sees `loxtep_*` tools; each call sets **`operation`** plus arguments.
 2. **Ingest** — connector → connection → workflow graph (streaming).
 3. **Productize** — governed data products with schema and lineage.
 4. **Govern** — PII, quality, semantics, ontology.
-5. **Consume** — DuckDB, webhooks, SDK.
+5. **Consume** — webhooks, SDK.
 6. **Context for AI** — entity context, decision traces.
 7. **Ship & debug** — deploy, runtime mapping, queue tracing.
 
@@ -95,7 +95,7 @@ Includes: `loxtep-mcp-session`, `loxtep-auth`, `loxtep-instances`, `create-conne
 
 - `LOXTEP_ENV` or `NODE_ENV` — `dev` / `development` for dev app/API. Default is production.
 
-See [`mcp-facades.ts`](https://github.com/LoxtepInc/loxtep/blob/main/platform-backend/ai/lib/tools/mcp-facades.ts) for the full tool map.
+See [AGENTS.md](../AGENTS.md) for the full tool map.
 
 ## Troubleshooting
 

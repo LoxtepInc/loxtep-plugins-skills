@@ -15,7 +15,7 @@ This directory lives in the [loxtep-plugins-skills](https://github.com/LoxtepInc
 | Generic workflow tool | Loxtep |
 | --- | --- |
 | Pipelines as the unit of work | **Data products** — owned, versioned, cataloged assets with contracts and SLAs |
-| Batch ETL / cron jobs | **Event streaming** (rstreams) — real-time data movement |
+| Batch ETL / cron jobs | **Event streaming** — real-time data movement |
 | Docs about data definitions | **Semantic layer + ontology** — canonical terms agents can resolve |
 | "The AI read our wiki" | **AI context** — entity context, decision traces, process intelligence |
 | Security as an afterthought | **Data governance by design** — RBAC, PII, quality, lineage |
@@ -53,7 +53,7 @@ On first use, Codex opens OAuth in the browser. Tokens refresh automatically.
 2. **Ingest** — connector → connection → workflow graph (streaming).
 3. **Productize** — governed data products with schema and lineage.
 4. **Govern** — PII, quality, semantics, ontology.
-5. **Consume** — DuckDB, webhooks, SDK.
+5. **Consume** — webhooks, SDK.
 6. **Context for AI** — entity context, decision traces.
 7. **Ship & debug** — deploy, runtime mapping, queue tracing.
 

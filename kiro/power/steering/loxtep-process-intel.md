@@ -40,7 +40,7 @@
 - **Ontology/thesaurus management** is now in **`loxtep_ontology`** — use that for vocabulary terms, ontology concepts, relationships, and namespace mappings.
 - **Catalog** discovery is **`loxtep_catalog`** — different product surface.
 - **Agent workspace** issues are **`loxtep_agent_workspace`** — not process intel.
-- **HTTP reads** — Process-intel tools call platform REST; the AI Lambda needs correct **`platformApiBaseUrl`** + auth (JWT or SigV4 per deployment).
+- **Connectivity** — Process-intel tools require valid MCP authentication and access to your organization's process-intelligence data.
 - **Append-only** — `create_entity_context` never overwrites; each call creates a new snapshot.
 
 ## Optional attribution

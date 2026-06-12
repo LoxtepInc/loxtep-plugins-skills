@@ -15,7 +15,7 @@ This directory lives in the [loxtep-plugins-skills](https://github.com/LoxtepInc
 | Generic workflow tool | Loxtep |
 | --- | --- |
 | Pipelines as the unit of work | **Data products** — owned, versioned, cataloged assets with contracts and SLAs |
-| Batch ETL / cron jobs | **Event streaming** (rstreams) — flows built for continuous, real-time data movement |
+| Batch ETL / cron jobs | **Event streaming** — flows built for continuous, real-time data movement |
 | Docs about data definitions | **Semantic layer + ontology** — canonical terms, namespaces, mappings agents can resolve |
 | "The AI read our wiki" | **AI context** — entity context, decision traces, process intelligence wired to the platform |
 | Security as an afterthought | **Data governance by design** — RBAC, PII tagging, quality rules, access requests, audit-friendly lineage |
@@ -80,7 +80,7 @@ OpenCode discovers `loxtep_*` tools and skills automatically. Skills load on-dem
 2. **Ingest (streaming)** — connector → connection → workflow graph → events on the bus.
 3. **Productize** — governed **data product** with schema, domain, lineage.
 4. **Govern** — quality rules, PII, semantics, ontology.
-5. **Consume** — DuckDB SQL, webhooks, SDK readers.
+5. **Consume** — SQL, webhooks, SDK readers.
 6. **Context for AI** — entity context, decision traces, vocabulary sync.
 7. **Ship & debug** — deploy → runtime mapping → queue tracing.
 
@@ -111,7 +111,7 @@ See [docs/skills-user-stories.md](../docs/skills-user-stories.md). Skills live u
 | `data-product-modeling` | Source/consumer data products |
 | `discover-govern-lineage` | Catalog, governance, lineage |
 | `org-semantics-quality` | Schemas, PII, quality rules |
-| `loxtep-analytics` | DuckDB SQL |
+| `loxtep-analytics` | SQL |
 | `loxtep-workspace` | Snapshots, versions, queues |
 | `loxtep-deployments` | Deploy; runtime mapping |
 | `loxtep-queue-tracing` | Queue event debugging |

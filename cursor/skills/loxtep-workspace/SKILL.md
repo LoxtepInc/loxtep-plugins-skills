@@ -20,14 +20,14 @@ metadata:
 
 - MCP auth (`loxtep-auth` on JWT errors).
 - **Project-scoped:** `list_versions`, `create_snapshot`, `restore_version`, `compare_versions`, `reindex_workspace` — pass **`project_id`** per tool contract.
-- **Queue / replay:** pass **`data_product_id`** (UUID) when you need real queue metadata. Full hints require the AI runtime to call the platform **`GET /dataproducts/{id}`** (i.e. `platformApiBaseUrl` + auth on the server); with only `queue_name` you get a name-only hint.
-- **Read queue events:** pass the full **`queue_name`** (RStreams queue ID, e.g. `lxappdev-workflows-workflow-deployment-errors`). Requires the Observe proxy to be configured on the AI runtime (`platformApiBaseUrl` + auth).
+- **Queue / replay:** pass **`data_product_id`** (UUID) when you need real queue metadata. Pass `data_product_id` when you need queue metadata bound to a data product; with only `queue_name` you may get a name-only hint.
+- **Read queue events:** pass the full **`queue_name`** (fully qualified queue name, e.g. `{namespace}-workflows-workflow-deployment-errors`). Requires queue observability for your instance.
 
-## Platform honesty (limits)
+## Limitations
 
 - **`get_queue_info`** — Loads data product detail when `data_product_id` is set and the platform API is reachable; response includes the stream queue binding in `storage` / ingestion hints when present.
-- **`read_queue_events`** — Reads actual events from a queue via the Observe proxy search endpoint (same backend used by the UI). Pass `queue_name` (required), optional `eid` (start position), optional `search_text` (payload filter), and `count` (default 10, max 100). Returns event payloads.
-- **`replay_events`** — **Does not** run historical stream replay over MCP. The tool records parameters and sets **`historical_replay_via_mcp: false`**; use Observe / consumer offset tools or **`POST /dataproducts/{id}/deliver-event`** for synthetic exercise — see tool response `message`.
+- **`read_queue_events`** — Reads recent events from a queue. Pass `queue_name` (required), optional `eid` (start position), optional `search_text` (payload filter), and `count` (default 10, max 100). Returns event payloads.
+- **`replay_events`** — Does not replay historical events over MCP. The tool records your request and returns guidance in the response; use the Loxtep UI for full replay workflows.
 
 ## Happy-path flows
 
@@ -59,8 +59,8 @@ metadata:
 ## Pitfalls
 
 - **`restore_version`** is destructive relative to current state — snapshot first.
-- **`get_queue_info` / `replay_events`** — If the MCP response says the data product could not be loaded, verify deployment wiring for the AI service (platform base URL + auth), not just the client login.
-- **`read_queue_events`** — Requires the Observe proxy to be configured. If you get "Observe proxy not configured", the AI runtime's `platformApiBaseUrl` is not set. The queue_name must be the full RStreams queue ID (namespace-prefixed).
+- **`get_queue_info` / `replay_events`** — If the data product could not be loaded, verify your instance connection and permissions, not just MCP login.
+- **`read_queue_events`** — Requires queue observability for your instance. The `queue_name` must be the full namespace-prefixed queue name.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 ## Skill scope (`.loxtep/skills/loxtep-workspace.yaml`)
