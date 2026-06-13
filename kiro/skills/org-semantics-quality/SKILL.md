@@ -25,8 +25,9 @@ description:
 
 ### Flow — Schema lifecycle
 
-1. `create_schema` → `get_schema` / `list_schema_versions`.
-2. `update_schema` as model evolves; `tag_pii_fields` before exposure rules.
+1. `create_schema` with `data_product_id`, `name`, `version`, `format`, `fields[]`, `definition` → returns `schema_id` + `schema_version_id`.
+2. `update_schema` as model evolves.
+3. `tag_pii_fields` with `schema_version_id` and `field_names[]` before exposure rules.
 3. `delete_schema` only when policy allows destruction.
 
 ### Flow — Quality on definitions

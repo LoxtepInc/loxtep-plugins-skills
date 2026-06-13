@@ -14,7 +14,7 @@
 
 ### Flow — Investigate an entity
 
-1. `get_entity_context` or `query_entity_context` with correlation/domain params per API.
+1. `get_entity_context` or `query_entity_context` with `entity_type` (e.g. `data-products`, `connections`) and `entity_id`.
 2. `list_decision_traces` filtered by entity if supported.
 
 ### Flow — Record execution context
