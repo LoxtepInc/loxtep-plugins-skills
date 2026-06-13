@@ -175,12 +175,14 @@ key parameters.
 ### `loxtep_schemas` — schema definitions
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
-| `create_schema` | organization | `name`, `definition` | `domain_id` |
-| `update_schema` | organization | `schema_id`, `definition` | — |
-| `delete_schema` | organization | `schema_id` | — |
+| `create_schema` | organization | `data_product_id`, `version`, `format`, `fields[]` | `definition`, `metadata`, `preview` |
+| `update_schema` | organization | `schema_id` | `version`, `format`, `fields`, `definition`, `preview` |
+| `delete_schema` | organization | `schema_id` | `preview` |
 | `get_schema` | organization | `schema_id` | — |
-| `list_schema_versions` | organization | `schema_id` | — |
+| `list_schema_versions` | organization | `data_product_id` | — |
 | `tag_pii_fields` | organization | `schema_id`, `fields` | — |
+
+Create returns `schema_id` / `schema_version_id` (same UUID) for immediate get/update/delete.
 
 ```json
 { "operation": "get_schema", "schema_id": "sch_…" }
@@ -189,11 +191,12 @@ key parameters.
 ### `loxtep_quality` — quality rules
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
-| `create_quality_rule` | organization | `name`, `definition` | `domain_id` |
-| `update_quality_rule` | organization | `quality_rule_id`, `definition` | — |
-| `delete_quality_rule` | organization | `quality_rule_id` | — |
-| `list_quality_rules` | organization | — | `domain_id` |
+| `create_quality_rule` | organization | `data_product_id`, `name`, `rule_type`, `condition`, `threshold`, `severity` | `description`, `preview` |
+| `update_quality_rule` | organization | `quality_rule_id` | `name`, `condition`, `threshold`, `severity`, `preview` |
+| `delete_quality_rule` | organization | `quality_rule_id` | `preview` |
+| `list_quality_rules` | organization | — | `data_product_id`, `domain_id` |
 | `get_quality_rule` | organization | `quality_rule_id` | — |
+| `test_quality_rule` | organization | `quality_rule_id` | — |
 | `test_quality_rule` | organization | `quality_rule_id`, `sample` | — |
 
 ```json
@@ -238,7 +241,7 @@ key parameters.
 | `reindex_workspace` | project | `project_id` | — |
 | `get_queue_info` | organization | `data_product_id` | — |
 | `replay_events` | organization | `data_product_id` | `start`, `end` |
-| `read_queue_events` | organization | `queue_name` | `eid`, `search_text`, `count` |
+| `read_queue_events` | organization | — | `queue_name`, `data_product_id`, `eid`, `search_text`, `count` |
 
 ```json
 { "operation": "list_versions", "project_id": "proj_…" }
