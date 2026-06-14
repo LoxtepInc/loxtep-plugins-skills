@@ -153,7 +153,7 @@ key parameters.
 { "operation": "list_workflows", "project_id": "proj_…" }
 ```
 
-### `loxtep_data_products` — data products & consumptions
+### `loxtep_data_products` — data products & delivery interfaces
 `kind` is `source` (atomic, domain-owned) or `consumer` (composed projection).
 
 | Operation | Scope | Required | Optional |
@@ -165,8 +165,19 @@ key parameters.
 | `get_data_product` | organization | `data_product_id` | — |
 | `get_data_product_lexicon` | organization | `data_product_id` | — |
 | `get_data_product_sdk_config` | organization | `data_product_id` | — |
-| `list_consumptions` | organization | — | `data_product_id` |
-| `create_consumption` | organization | `data_product_id`, `target` | — |
+| `list_delivery_interfaces` | organization | — | `data_product_id` |
+| `create_delivery_interface` | organization | `data_product_id`, `endpoint_url` | `delivery_type`, `headers`, `secret_token`, `filters`, `method` |
+| `list_consumptions` (deprecated alias) | organization | — | `data_product_id` |
+| `create_consumption` (deprecated alias) | organization | `data_product_id`, `endpoint_url` | `headers`, `secret_token`, `filters`, `method` |
+
+> **Terminology note:** `list_consumptions` and `create_consumption` are
+> deprecated aliases for `list_delivery_interfaces` and
+> `create_delivery_interface`. The old names remain functional during the
+> transition period. Prefer the new names in all new code.
+
+```json
+{ "operation": "create_delivery_interface", "data_product_id": "dp_…", "delivery_type": "webhook", "endpoint_url": "https://…", "method": "POST" }
+```
 
 ```json
 { "operation": "create_data_product", "project_id": "proj_…", "name": "orders", "kind": "source" }
@@ -175,12 +186,14 @@ key parameters.
 ### `loxtep_schemas` — schema definitions
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
-| `create_schema` | organization | `name`, `definition` | `domain_id` |
-| `update_schema` | organization | `schema_id`, `definition` | — |
-| `delete_schema` | organization | `schema_id` | — |
+| `create_schema` | organization | `data_product_id`, `name`, `version`, `format`, `fields[]`, `definition` | `metadata`, `preview` |
+| `update_schema` | organization | `schema_id` | `version`, `format`, `fields`, `definition`, `preview` |
+| `delete_schema` | organization | `schema_id` | `preview` |
 | `get_schema` | organization | `schema_id` | — |
-| `list_schema_versions` | organization | `schema_id` | — |
-| `tag_pii_fields` | organization | `schema_id`, `fields` | — |
+| `list_schema_versions` | organization | `data_product_id` | — |
+| `tag_pii_fields` | organization | `schema_version_id`, `field_names` | — |
+
+Create returns `schema_id` / `schema_version_id` for immediate get/update/delete. Use `schema_version_id` (not `schema_id`) for `tag_pii_fields`.
 
 ```json
 { "operation": "get_schema", "schema_id": "sch_…" }
@@ -189,11 +202,12 @@ key parameters.
 ### `loxtep_quality` — quality rules
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
-| `create_quality_rule` | organization | `name`, `definition` | `domain_id` |
-| `update_quality_rule` | organization | `quality_rule_id`, `definition` | — |
-| `delete_quality_rule` | organization | `quality_rule_id` | — |
-| `list_quality_rules` | organization | — | `domain_id` |
+| `create_quality_rule` | organization | `data_product_id`, `name`, `rule_type`, `condition`, `threshold`, `severity` | `description`, `preview` |
+| `update_quality_rule` | organization | `quality_rule_id` | `name`, `condition`, `threshold`, `severity`, `preview` |
+| `delete_quality_rule` | organization | `quality_rule_id` | `preview` |
+| `list_quality_rules` | organization | — | `data_product_id`, `domain_id` |
 | `get_quality_rule` | organization | `quality_rule_id` | — |
+| `test_quality_rule` | organization | `quality_rule_id` | — |
 | `test_quality_rule` | organization | `quality_rule_id`, `sample` | — |
 
 ```json
@@ -238,7 +252,7 @@ key parameters.
 | `reindex_workspace` | project | `project_id` | — |
 | `get_queue_info` | organization | `data_product_id` | — |
 | `replay_events` | organization | `data_product_id` | `start`, `end` |
-| `read_queue_events` | organization | `queue_name` | `eid`, `search_text`, `count` |
+| `read_queue_events` | organization | — | `queue_name`, `data_product_id`, `eid`, `search_text`, `count` |
 
 ```json
 { "operation": "list_versions", "project_id": "proj_…" }
@@ -253,11 +267,11 @@ key parameters.
 | --- | --- | --- | --- |
 | `list_thesaurus_terms` | organization | — | — |
 | `get_thesaurus_term` | organization | `term_id` | — |
-| `create_thesaurus_term` | organization | `term` | `aliases` |
+| `create_thesaurus_term` | organization | `canonical_key` | `aliases` (array of `{path: string}` objects) |
 | `update_thesaurus_term` | organization | `term_id` | `aliases` |
 | `delete_thesaurus_term` | organization | `term_id` | — |
 | `sync_vocabulary` | organization | `vocabulary` | — |
-| `resolve_canonical_key` | organization | `key` | — |
+| `resolve_canonical_key` | organization | `key_or_alias` | — |
 | `get_ontology_relationships` | organization | `concept_id` | — |
 | `create_ontology_concept` | organization | `name`, `namespace`, `node_type` | `description`, `uri`, `parent_concepts` |
 | `create_ontology_relationship` | organization | `from`, `to`, `type` | — |
@@ -268,17 +282,17 @@ key parameters.
 | `get_namespace_mapping` | organization | `namespace` | — |
 
 ```json
-{ "operation": "resolve_canonical_key", "key": "customer_email" }
+{ "operation": "resolve_canonical_key", "key_or_alias": "customer_email" }
 ```
 
 ### `loxtep_process_intel` — process intelligence
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
-| `get_entity_context` | organization | `entity_id` | — |
-| `query_entity_context` | organization | `query` | — |
+| `get_entity_context` | organization | `entity_id`, `entity_type` | — |
+| `query_entity_context` | organization | `entity_id`, `entity_type` | — |
 | `create_entity_context` | organization | `entity_id`, `context` | — |
 | `list_decision_traces` | organization | — | `anchor` |
-| `record_decision_trace` | organization | `trace` | — |
+| `record_decision_trace` | organization | `decision_id`, `procedure_id`, `outcome`, `actor` | `rationale`, `inputs`, `override` |
 
 ```json
 { "operation": "list_decision_traces" }
@@ -384,6 +398,11 @@ rejected, and a check that cannot complete blocks the operation.
 Pass `_metadata: { skill_name: '<slug>' }` in tool arguments for attribution and
 eval scoring. It's optional, backward-compatible, and ignored for tool logic. The
 `skill_name` must match the skill's `name` from its YAML frontmatter.
+
+**Terminology note:** Operations formerly named `create_consumption` /
+`list_consumptions` are now `create_delivery_interface` /
+`list_delivery_interfaces`. The old names remain as functional aliases during
+transition. Skills and agents should prefer the new names.
 
 ---
 

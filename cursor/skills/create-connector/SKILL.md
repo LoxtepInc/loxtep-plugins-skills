@@ -36,7 +36,7 @@ metadata:
 | Step | Action | Tool | `operation` | Scope |
 |------|--------|------|-------------|-------|
 | 1 | Discover types | `loxtep_connectors` | `list_connector_types` | **global** |
-| 2 | Start OAuth | `loxtep_connectors` | `get_connector_oauth_url` | organization |
+| 2 | Start OAuth | `loxtep_connectors` | `get_connector_oauth_url` | organization | **Shopify:** `connector_type: "shopify"`, `connection_config: { "shop": "your-store" }` (store slug without `.myshopify.com`) |
 | 3 | User completes browser OAuth | \u2014 | \u2014 | \u2014 |
 | 4 | Attach to project | `loxtep_connections` | `create_connection` | **project** (`project_id`) |
 | 5 | Wire into flow | `loxtep_workflows` | `patch_workflow_graph` | **project** \u2014 see **data-workflows** |
@@ -88,6 +88,7 @@ SDK connectors use `auth_type: "jwt"` \u2014 no OAuth, no external credential te
 
 ## Pitfalls
 
+- **Shopify OAuth** — `get_connector_oauth_url` requires `connection_config.shop` (store slug, not full domain). Example: `{ "connector_type": "shopify", "connection_config": { "shop": "pictureitlikethis" } }`.
 - **`list_connector_types`** is **global** \u2014 do not assume org context for discovery.
 - **`create_connection`** without **`project_id`** fails for project-scoped tool.
 - **`test_connection`** \u2014 See **data-workflows** / connections mapping: optional HTTP GET when the stored connection config includes a probe URL; otherwise config-only success.

@@ -1,6 +1,8 @@
 ---
 name: loxtep-sdk
 description: Bootstrap @loxtep/sdk in Node (auth, env, REST vs Loxtep streams), map MCP tools to SDK methods, and avoid mixing JWT with IAM. Use when adding Loxtep SDK usage, queue readers/writers, or pairing MCP with runtime code.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/antigravity/skills/loxtep-sdk/SKILL.md
 ---
 
 # Loxtep Node SDK (agent skill)
@@ -8,6 +10,25 @@ description: Bootstrap @loxtep/sdk in Node (auth, env, REST vs Loxtep streams), 
 ## Recommended: Data-product-centric writer & reader
 
 **Use `data_products.get_writer(id_or_name)` and `data_products.get_reader(id_or_name)` as the primary pattern.** These methods resolve all plumbing (queue names, bot IDs, stream bus config) automatically from the data product name or UUID — no manual runtime-mapping lookups needed.
+
+### Delivery interfaces (formerly `consumptions`)
+
+The SDK exposes delivery interface management under `data_products.delivery`:
+
+```ts
+// Primary namespace (preferred)
+const interfaces = await client.data_products.delivery.list(dataProductId);
+await client.data_products.delivery.create(dataProductId, {
+  endpoint_url: 'https://example.com/webhook',
+  delivery_type: 'webhook',
+});
+
+// Deprecated namespace (still functional, logs warning on first use)
+// client.data_products.consumptions.list(...)  // → use .delivery instead
+```
+
+> **Note:** The `consumptions` namespace is deprecated and proxies to `delivery`.
+> The `Consumption` type is a deprecated alias for `DeliveryInterface`.
 
 ### Copy-paste: write events to a data product
 
@@ -77,9 +98,9 @@ client.data_products.invalidate_cache();                  // all
 For cases where you need explicit control over bot_id and queue name (e.g., writing to a queue that isn't a data product, or using a non-standard bot identity), use the lower-level `flows.get_writer()`:
 
 ```ts
-const writer = client.flows.get_writer(flowId, {
+const writer = await client.flows.get_writer({
   bot_id: 'custom-bot-id',
-  output_queue_name: 'explicit-queue-name',
+  queue: 'explicit-queue-name',
 });
 writer.write({ ... });
 await writer.close();
@@ -214,6 +235,17 @@ loxtep config export --from-connector "<connector_id>" --format env
 
 Then the SDK client picks up `LOXTEP_BOT_ID` and queue configuration automatically.
 
+## MCP operations
+
+| Facade | `operation` | Permission | Notes |
+|--------|-------------|------------|-------|
+| `loxtep_data_products` | `get_data_product_sdk_config` | read | Returns SDK connection config for a data product |
+| `loxtep_data_products` | `create_delivery_interface` | write | Create a delivery interface (alias: `create_consumption`) |
+| `loxtep_data_products` | `list_delivery_interfaces` | read | List active delivery interfaces (alias: `list_consumptions`) |
+| `loxtep_deployments` | `deploy_workflow` | write | Deploy a single workflow to an instance |
+| `loxtep_deployments` | `list_deployments` | read | List deployment records (poll for status) |
+| `loxtep_deployments` | `get_deployment` | read | Get a single deployment record by ID |
+
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 ## Skill scope (`.loxtep/skills/loxtep-sdk.yaml`)
 
@@ -229,10 +261,12 @@ scope:
   data_products: []
   connectors: []
   workflows: []
+  deployments: []
   domains: []
   queues: []
 permissions:
   data_products: [read, write]
+  deployments: [read, write]
   queues: [read, write]
 ```
 <!-- END loxtep skill-scope (skill-package-v1) -->

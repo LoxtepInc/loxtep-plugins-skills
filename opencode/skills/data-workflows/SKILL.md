@@ -1,30 +1,41 @@
 ---
 name: data-workflows
-description: Use when the user wants to build or operate the data mesh studio — projects, workflows, templates, connections, data products, omnichannel unified products, webhook consumptions, session context, or "ingest / unify / expose sales data". Customer MCP tools loxtep_session, loxtep_projects, loxtep_templates, loxtep_workflows, loxtep_connections, loxtep_data_products.
-license: MIT
-compatibility: opencode
+description:
+  Use when the user wants to build or operate the data mesh studio — projects, workflows,
+  templates, connections, data products, omnichannel unified products, delivery interfaces
+  (webhook subscriptions), session context, or "ingest / unify / expose sales data".
+  Customer MCP tools loxtep_session, loxtep_projects, loxtep_templates, loxtep_workflows,
+  loxtep_connections, loxtep_data_products. Stories S0, S2, S3; orchestrates with
+  create-connector for S1. See docs/skills-user-stories.md.
+trigger: |
+  TRIGGER when: User asks about or mentions creating/listing/updating data products, workflows,
+  connections, connectors, ingestion pipelines, data mesh, omnichannel products, delivery
+  interfaces, or delivery workflows in context of Loxtep. Includes patterns: "create data
+  product", "build workflow", "ingest data", "setup connector", "unify data", "data mesh",
+  "delivery interface", "delivery workflow", "webhook subscription". Always invoke before
+  making direct loxtep_data_products or loxtep_workflows MCP calls to ensure proper
+  architecture (connectors → workflows → data products).
 metadata:
-  platform: loxtep
-  category: workflows
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/opencode/skills/data-workflows/SKILL.md
 ---
 
 # Data mesh studio (Customer MCP)
 
-End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **data products**, and **webhook consumptions**, plus **session** context. Pair with **`create-connector`** for SaaS/API ingest (Shopify, etc.) or **SDK connector** for programmatic ingestion, and **`loxtep-instances`** for runtime provisioning.
+End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **data products**, and **delivery interfaces** (webhook subscriptions, API endpoints, exports, database syncs, BI connections, event streams), plus **session** context. Pair with **`create-connector`** for SaaS/API ingest (Shopify, etc.) or **SDK connector** for programmatic ingestion, and **`loxtep-instances`** for runtime provisioning.
 
 ## When to use
 
 - **S0:** Confirm user and org (`get_current_user`, `get_current_organization`).
 - **S2:** Create an **omnichannel** or unified **data product** across multiple sources in a project.
-- **S3:** Register an **external webhook** for data product updates (`create_consumption`).
-- User asks for **projects**, **flows**, **templates**, **connections** (project nodes), **data products**, **consumptions**, or **patch workflow graph**.
+- **S3:** Register a **delivery interface** (e.g., webhook subscription) for data product updates (`create_delivery_interface`; alias: `create_consumption`).
+- User asks for **projects**, **flows**, **templates**, **connections** (project nodes), **data products**, **delivery interfaces**, or **patch workflow graph**.
 - **SDK / programmatic ingestion:** If the user wants to write events from their own code (not a SaaS connector), use the **`create-connector`** skill's **SDK Connector flow** (`connector_type: "sdk"`) to create the connector, then **`loxtep-sdk`** for SDK client usage. This skill handles the workflow graph and data products that receive those events.
 
 ## Prerequisites
 
-- MCP login (`loxtep-auth` if JWT errors). For **permissions / 403**, see **`loxtep-mcp-session`** (`get_current_user` → `permissions`).
+- MCP login (`loxtep-auth` if JWT errors). For **permissions / 403** questions, use skill **`loxtep-mcp-session`** (`get_current_user` → `permissions`).
 - **Project-scoped** calls require `project_id` in the same payload as `operation`.
-- **Org-scoped** data products / consumptions: use `data_product_id` as required by each operation.
+- **Org-scoped** data products / delivery interfaces: use `data_product_id` as required by each operation.
 
 ## How MCP calls work
 
@@ -52,11 +63,16 @@ End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **d
 3. `loxtep_workflows` → `patch_workflow_graph` to add nodes (connection + data product) and wire edges. **See Flow E below for the exact format.**
 4. `get_data_product` / `get_data_product_lexicon` to verify; `update_data_product` as needed.
 
-### Flow D — Webhook for data product updates (S3)
+### Flow D — Delivery interface for data product updates (S3)
+
+> **Terminology note:** The MCP operation `create_delivery_interface` is the
+> primary name. The old name `create_consumption` remains as a functional alias
+> during the transition period. The `workflow_type` enum value `'consumption'`
+> is unchanged in tool calls — the user-facing name is "delivery workflow."
 
 1. Obtain `data_product_id` (`list_data_products` / `get_data_product`).
-2. `loxtep_data_products` → `create_consumption` with `data_product_id`, `endpoint_url`, optional `headers`, `secret_token`, `filters`, `delivery_method` (default webhook per platform).
-3. Optional: `list_consumptions` to audit active subscriptions.
+2. `loxtep_data_products` → `create_delivery_interface` with `data_product_id`, `endpoint_url`, optional `headers`, `secret_token`, `filters`, `delivery_type` (e.g. `webhook`, `api_endpoint`, `export`, `database_sync`, `bi_connect`, `event_stream`).
+3. Optional: `list_delivery_interfaces` to audit active delivery interfaces.
 
 ### Flow F — Enrich/stage from an existing data product (enrichment workflow)
 
@@ -232,6 +248,13 @@ Design-time configuration (Flows A–E above) creates the **graph definition** o
 - `deploy_project` — When `version_id` is omitted (default via MCP), automatically creates a project snapshot before deploying. This snapshot is immutable and can be used for rollback via `restore_version`. Each deployment also creates a `deployment_version` record tracking validation, approval, and deployment history per workflow.
 - `deploy_workflow` — Creates a `deployment_version` record for the targeted workflow (version_number auto-increments per workflow+instance). Does **not** create a full project snapshot — use `create_snapshot` manually if you need a restore point.
 
+**After deployment**, use the SDK to write events — **not** HTTP directly. The agent must resolve the runtime configuration so the SDK client knows which bot and queue to target:
+
+1. `loxtep_deployments` → `get_runtime_mapping` with `workflow_id` + `project_id`
+2. From the response, identify the **connection entity's container** (match by `entity_id`)
+3. Extract the `bot_ids[0]` (the deployed bot) and `queue_ids` (input queue) for that container
+4. Configure the `@loxtep/sdk` client with `instance_id`, `bot_id`, and the resolved queue — then write events via the SDK's stream bus
+
 **Recommended agent sequence for SDK ingestion:**
 1. Complete Flows B/C/E (project + workflow + graph with connection + data product)
 2. Ensure user has an instance (`loxtep_instances` → `list_instances`)
@@ -241,6 +264,8 @@ Design-time configuration (Flows A–E above) creates the **graph definition** o
 4. Poll `get_deployment` until status = `deployed`
 5. `loxtep_deployments` → `get_runtime_mapping` with `workflow_id` + `project_id` — returns the deployed bot ID and queue names
 6. Use **`loxtep-sdk`** skill to bootstrap the SDK client with the resolved `bot_id` and queue, then write events via the stream bus
+
+**Runtime naming convention reference:** See the **`loxtep-sdk`** skill for the full naming hierarchy and how to resolve queue/bot names from the runtime-mapping API.
 
 ### Flow G — Build your own SDK-ingestion data product (end to end)
 
@@ -276,7 +301,7 @@ Notes:
 | 5 | Workflows | `loxtep_workflows` | `create_workflow`, `update_workflow`, `delete_workflow`, `list_workflows`, `get_workflow`, `get_workflow_graph`, `patch_workflow_graph`, `preview_transform`, `create_transformation`, `create_validation` | **project** | `project_id` |
 | 6 | Connection nodes | `loxtep_connections` | `create_connection`, `update_connection`, `delete_connection`, `list_connections`, `get_connection`, `test_connection` | **project** | `project_id` |
 | 7 | Data products | `loxtep_data_products` | `create_data_product`, `update_data_product`, `delete_data_product`, `list_data_products`, `get_data_product`, `get_data_product_lexicon` | **project** or org per op | `project_id` where required |
-| 8 | Webhook consumptions | `loxtep_data_products` | `list_consumptions`, `create_consumption` | **organization** | `data_product_id`, `endpoint_url`, … |
+| 8 | Delivery interfaces | `loxtep_data_products` | `list_delivery_interfaces`, `create_delivery_interface` (aliases: `list_consumptions`, `create_consumption`) | **organization** | `data_product_id`, `endpoint_url`, `delivery_type`, … |
 | 9 | Deploy project | `loxtep_deployments` | `deploy_project` | **project** | `project_id`, `instance_id`, optional `force_redeploy` |
 | 9b | Deploy single workflow | `loxtep_deployments` | `deploy_workflow` | **project** | `project_id`, `workflow_id`, `instance_id`, optional `force_redeploy`, `skip_validation` |
 | 10 | List/get deployments | `loxtep_deployments` | `list_deployments`, `get_deployment` | **organization** | `deployment_id`, optional filters |
@@ -285,15 +310,15 @@ Notes:
 ## Pitfalls
 
 - Missing **`project_id`** on project-scoped workflow/connection ops.
-- **Deployment required before SDK ingestion** — Creating workflows, connections, and data products via MCP only defines the graph. Queues and bots are **not provisioned** until the project is deployed to an instance.
+- **Deployment required before SDK ingestion** — Creating workflows, connections, and data products via MCP only defines the graph. Queues and bots are **not provisioned** until the project is deployed to an instance. Do not attempt SDK event writes until deployment completes. See Flow F above.
 - **`deploy_workflow` vs `deploy_project`** — Use `deploy_workflow` for fast iteration on a single workflow during development. Use `deploy_project` for production releases or when multiple workflows changed (it creates a full project snapshot for rollback). `deploy_workflow` does **not** create a project snapshot — call `create_snapshot` first if you need a restore point.
 - **`deploy_workflow` requires `workflow_id`** — Unlike `deploy_project` which deploys all workflows in the project, `deploy_workflow` targets exactly one. Pass all three: `project_id`, `workflow_id`, `instance_id`.
-- **`patch_workflow_graph` requires two sequential calls** — you cannot add nodes and connect them in a single call because you need the returned entity IDs for `connect_nodes`.
-- **`patch_workflow_graph` operations format** — The `operations` field is an **array of operation objects**, not a single operation. Each object must have an `op` field.
+- **`patch_workflow_graph` requires two sequential calls** — you cannot add nodes and connect them in a single call because you need the returned entity IDs for `connect_nodes`. Attempting to guess or pre-generate IDs will fail validation.
+- **`patch_workflow_graph` operations format** — The `operations` field is an **array of operation objects**, not a single operation. Each object must have an `op` field. Do NOT pass `type` instead of `op` (though the backend normalizes both, prefer `op`).
 - **`entity_type` must use hyphens** — Use `data-products` (not `data_products`), `quality-rules` (not `quality_rules`).
 - **`apply_template`** requires `project_id` — not the same as org-only template list.
-- **`test_connection`** — Loads connection from workspace storage; runs an optional **HTTP GET** probe only when the saved configuration includes a URL-like field.
-- **`create_transformation`** / **`create_validation`** — Require an **existing workflow graph**. If the graph is missing, the tool fails with a not-found style error.
+- **`test_connection`** — Loads connection from workspace storage; runs an optional **HTTP GET** probe only when the saved configuration includes a URL-like field (`base_url`, `url`, `host`, …). Otherwise it confirms the entity exists without a live probe.
+- **`create_transformation`** / **`create_validation`** — Require an **existing workflow graph** (`get_workflow_graph` / prior `patch_workflow_graph`). If the graph is missing, the tool fails with a not-found style error.
 - **Paid plans vs shared instance** — provisioning is **`loxtep-instances`**, not this skill.
 - **Agent issues/goals** — use **`loxtep-agent-workspace`**, not `loxtep_projects`.
 
@@ -338,4 +363,4 @@ Reconnect the Loxtep MCP server to re-trigger OAuth — see **`loxtep-auth`**.
 
 ## References
 
-- [User story catalog](../../docs/skills-user-stories.md) (this repo)
+- [User story catalog](../../../docs/skills-user-stories.md) (this repo)

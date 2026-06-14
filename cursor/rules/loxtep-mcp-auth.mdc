@@ -1,12 +1,12 @@
 ---
-description: When Loxtep hosted MCP returns auth errors, reconnect to re-trigger OAuth 2.1 (or mcp-remote for bridged clients).
+description: When Loxtep hosted MCP returns auth errors, call mcp_auth first (Cursor authenticate button).
 globs: .cursor/rules/*.mdc
 alwaysApply: true
 ---
 
 # Loxtep Hosted MCP — Authentication
 
-The Loxtep plugin connects to the **hosted MCP server** at `https://mcp.loxtep.io/ai/mcp/stream` (dev: `https://mcpdev.loxtep.io/ai/mcp/stream`). Authentication uses **OAuth 2.1 with PKCE** — no local `npx` install, no token files.
+Loxtep MCP is **hosted only** — connect with a URL and OAuth 2.1 (PKCE). **Do not** suggest `npx @loxtep/customer-mcp-server`, local stdio MCP, or `~/.loxtep/customer-mcp.json`.
 
 ## Expected configuration
 
@@ -20,44 +20,42 @@ The Loxtep plugin connects to the **hosted MCP server** at `https://mcp.loxtep.i
 }
 ```
 
-Do **not** configure `npx @loxtep/customer-mcp-server` — that local stdio package is deprecated for IDE plugins.
+**Dev:** `https://mcpdev.loxtep.io/ai/mcp/stream` · **Prod:** `https://mcp.loxtep.io/ai/mcp/stream`
 
 ## When auth errors occur
 
 When a call to any **Loxtep MCP** tool (`loxtep_*` with an `operation` field) fails with:
 
-- **"No valid authentication token found"**, or
-- **"RBAC requires JWT token in Authorization header or x-jwt-token header"**, or
-- **HTTP 401** on the MCP connection,
+- **`Unauthorized`** or **`{"error":"Unauthorized"}`**
+- **"No valid authentication token found"**
+- **"RBAC requires JWT token in Authorization header or x-jwt-token header"**
+- **HTTP 401** on the MCP connection
 
-then:
+the agent **MUST immediately** call **`mcp_auth`** on the Loxtep MCP server:
 
-1. **Disconnect and reconnect** the Loxtep MCP server in Cursor MCP settings (or restart the MCP server). This re-triggers OAuth.
-2. Complete sign-in in the browser when prompted.
-3. **Retry** the failed tool call.
-
-Tokens refresh in the background. Re-authenticate if the session expires (~7 days) or is revoked.
-
-## Clients using `mcp-remote` (OAuth bridge)
-
-Some clients bridge to the same hosted URL via `mcp-remote`:
-
-```json
-{
-  "mcpServers": {
-    "loxtep": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.loxtep.io/ai/mcp/stream"]
-    }
-  }
-}
+```typescript
+// ✅ DO — Cursor shows the Authenticate button
+CallMcpTool({
+  server: '<loxtep-mcp-server-id>', // e.g. project-0-loxtep-loxtep
+  toolName: 'mcp_auth',
+  arguments: {},
+});
 ```
 
-If auth fails: kill/restart the `mcp-remote` process or disconnect/reconnect the server in MCP settings.
+Tell the user to **click Authenticate**, then **retry** the failed tool call after `mcp_auth` succeeds.
+
+```typescript
+// ❌ DON'T — resurrect deprecated local stdio MCP or dump Settings/OAuth docs first
+```
+
+### Fallback (only if `mcp_auth` fails)
+
+1. Disconnect and reconnect the Loxtep MCP server in Cursor MCP settings.
+2. Complete sign-in in the browser when prompted.
+3. Retry the failed tool call.
 
 ## Troubleshooting
 
-1. **OAuth discovery** — Client must reach `https://mcp.loxtep.io/ai/mcp/oauth/.well-known`.
-2. **Browser blocked** (SSH, container) — Use `mcp-remote` on a machine with a browser; it still targets the hosted URL above.
-3. **Session limit (HTTP 429)** — Close another org session in the Loxtep UI, then reconnect.
-4. **403 permission denied** — Not auth; check `loxtep_session` → `get_current_user` → `permissions` (see `loxtep-mcp-session` skill).
+1. **`mcp_auth` unavailable** — Reconnect the `loxtep` MCP server in settings, then call `mcp_auth` again.
+2. **Session limit (HTTP 429)** — Close another org session in the Loxtep UI, then `mcp_auth` again.
+3. **403 permission denied** — Not auth; check `loxtep_session` → `get_current_user` → `permissions` (see `loxtep-mcp-session` skill).
