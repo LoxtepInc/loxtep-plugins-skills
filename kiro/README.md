@@ -23,7 +23,7 @@ This directory lives in the [loxtep-plugins-skills](https://github.com/LoxtepInc
 
 ## Key concepts
 
-- **Data product** — Governed, discoverable dataset with schema, lineage, quality, and consumption.
+- **Data product** — Governed, discoverable dataset with schema, lineage, quality, and delivery.
 - **Streaming** — Events in real time; workflows implement the flow.
 - **Semantic layer** — Business meaning agents query instead of inventing field names.
 - **AI context** — Entity knowledge, decisions, processes exposed over MCP.

@@ -74,10 +74,10 @@ Each story lists **primary skill** (where the narrative lives) and **supporting 
 |-------|--------|
 | **Persona** | Integrator exposing mesh events to sales stack |
 | **Preconditions** | `data_product_id` known |
-| **Happy path** | `list_consumptions` (optional) → `create_consumption` with `data_product_id`, `endpoint_url`, optional `headers`, `secret_token`, `filters` |
-| **MCP** | `loxtep_data_products`: `create_consumption`, `list_consumptions` (organization-scoped; requires `data_product_id`) |
+| **Happy path** | `list_delivery_interfaces` (optional) → `create_delivery_interface` with `data_product_id`, `endpoint_url`, optional `headers`, `secret_token`, `filters` |
+| **MCP** | `loxtep_data_products`: `create_delivery_interface`, `list_delivery_interfaces` (organization-scoped; requires `data_product_id`) |
 | **Primary skill** | `data-workflows` |
-| **Product note** | Tool descriptions reference webhook subscriptions (consumptions). If your deployment restricts consumptions, treat as **partial** until API confirms. |
+| **Product note** | Tool descriptions reference webhook subscriptions (delivery interfaces). If your deployment restricts delivery interfaces, treat as **partial** until API confirms. |
 
 ---
 
@@ -250,7 +250,7 @@ Each story lists **primary skill** (where the narrative lives) and **supporting 
 | `list_templates`, `get_template`, `apply_template` | `data-workflows` (templates); `create-connector` when applying **connector** templates only |
 | `create_workflow`, `update_workflow`, `delete_workflow`, `list_workflows`, `get_workflow`, `get_workflow_graph`, `patch_workflow_graph`, `preview_transform`, `create_transformation`, `create_validation` | `data-workflows` |
 | `create_connection`, `update_connection`, `delete_connection`, `list_connections`, `get_connection`, `test_connection` | `create-connector` **and** `data-workflows` |
-| `create_data_product`, `update_data_product`, `delete_data_product`, `list_data_products`, `get_data_product`, `get_data_product_lexicon`, `list_consumptions`, `create_consumption` | `data-workflows` |
+| `create_data_product`, `update_data_product`, `delete_data_product`, `list_data_products`, `get_data_product`, `get_data_product_lexicon`, `list_delivery_interfaces`, `create_delivery_interface` | `data-workflows` |
 | All `loxtep_catalog` ops | `discover-govern-lineage` |
 | All `loxtep_schemas` / `loxtep_quality` ops | `org-semantics-quality` |
 | All `loxtep_analytics` ops | `loxtep-analytics` |

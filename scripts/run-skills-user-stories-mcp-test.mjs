@@ -466,18 +466,18 @@ async function run() {
     await runStorySteps('S3', 'data-workflows', [
       async () => {
         const res = await callMcp('loxtep_data_products', {
-          operation: 'list_consumptions',
+          operation: 'list_delivery_interfaces',
           data_product_id: fixture.data_product_id,
         });
-        return logStep('S3', 'list_consumptions', 'loxtep_data_products', 'list_consumptions', res);
+        return logStep('S3', 'list_delivery_interfaces', 'loxtep_data_products', 'list_delivery_interfaces', res);
       },
       async () => {
         const res = await callMcp('loxtep_data_products', {
-          operation: 'create_consumption',
+          operation: 'create_delivery_interface',
           data_product_id: fixture.data_product_id,
           endpoint_url: 'https://example.com/webhook/mcp-story-test',
         });
-        return logStep('S3', 'create_consumption', 'loxtep_data_products', 'create_consumption', res);
+        return logStep('S3', 'create_delivery_interface', 'loxtep_data_products', 'create_delivery_interface', res);
       },
     ]);
   } else {
@@ -817,7 +817,7 @@ const STORY_TITLES = {
   S0: 'Session / org',
   S1: 'Connectors',
   S2: 'Omnichannel DP',
-  S3: 'Webhook consumption',
+  S3: 'Webhook delivery',
   S4: 'Schemas / quality',
   S5: 'Discover / lineage',
   S6: 'Analytics SQL',

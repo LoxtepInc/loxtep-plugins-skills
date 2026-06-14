@@ -6,7 +6,7 @@
 
 - After a **deployment** fails or behaves unexpectedly
 - When a **workflow execution** produces no output or errors silently
-- When **data flow** stops at a node (connection, transform, validation, consumption)
+- When **data flow** stops at a node (connection, transform, validation, delivery)
 - When you need to verify an **event was emitted** correctly
 - Debugging **"nothing happened"** scenarios where logs are insufficient
 

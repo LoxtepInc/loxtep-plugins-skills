@@ -27,7 +27,6 @@ When exploring lineage, keep this distinction clear:
   governance, and delivery interfaces.
 - **Delivery interface** — How a data product (source or consumer) makes its data
   available externally (webhook, API, export, database sync, BI connect, event stream).
-  Formerly called "consumption interface."
 
 In lineage views:
 - Nodes represent **data products** (source or consumer), never projections directly.

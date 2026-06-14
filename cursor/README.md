@@ -25,7 +25,7 @@ You are not duct-taping integrations. You are **publishing governed data product
 
 ## Key concepts
 
-- **Data product** — A governed, discoverable dataset your org owns. Has schema, lineage, quality, and consumption — not a one-off script output.
+- **Data product** — A governed, discoverable dataset your org owns. Has schema, lineage, quality, and delivery — not a one-off script output.
 - **Streaming** — Data moves as events through the platform in real time; workflows are how you implement the flow.
 - **Semantic layer** — Searchable business meaning: metrics, definitions, artifacts — what agents should use instead of guessing column names.
 - **AI context** — Structured org knowledge (entities, decisions, processes) the platform stores and the MCP exposes.

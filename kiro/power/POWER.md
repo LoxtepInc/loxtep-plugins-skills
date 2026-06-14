@@ -16,7 +16,7 @@ This power covers the full platform lifecycle:
 - **Authentication** and session management
 - **Connectors** — OAuth, API key, and SDK-based ingestion
 - **Projects & Workflows** — graph-based pipeline design
-- **Data Products** — unified outputs with webhook consumptions
+- **Data Products** — unified outputs with delivery interfaces
 - **Catalog & Governance** — discovery, lineage, evidence, quality rules
 - **Analytics** — SQL queries over mesh data 
 - **Instances & Deployment** — runtime provisioning and deployment
@@ -27,7 +27,7 @@ This power covers the full platform lifecycle:
 
 Each steering file covers an independent workflow area. Load the one matching user intent:
 
-- **data-workflows** — Projects, workflow graphs, connections, data products, webhook consumptions, deployment (Stories S0, S2, S3)
+- **data-workflows** — Projects, workflow graphs, connections, data products, delivery interfaces, deployment (Stories S0, S2, S3)
 - **create-connector** — Connect Shopify, Salesforce, or any SaaS/API; OAuth, API key, and SDK connector flows (Story S1)
 - **discover-govern-lineage** — Catalog search, lineage impact, evidence, governance flags, discovery (Story S5)
 - **org-semantics-quality** — Org-level schemas, PII tagging, schema versions, quality rules (Story S4)
@@ -107,7 +107,7 @@ Example:
 | `loxtep_connections` | `create_connection`, `update_connection`, `delete_connection`, `list_connections`, `get_connection`, `test_connection` | project |
 | `loxtep_templates` | `list_templates`, `get_template`, `apply_template` | organization / project |
 | `loxtep_workflows` | `create_workflow`, `update_workflow`, `delete_workflow`, `list_workflows`, `get_workflow`, `get_workflow_graph`, `patch_workflow_graph`, `preview_transform`, `create_transformation`, `create_validation` | project |
-| `loxtep_data_products` | `create_data_product`, `update_data_product`, `delete_data_product`, `list_data_products`, `get_data_product`, `get_data_product_lexicon`, `get_data_product_sdk_config`, `list_consumptions`, `create_consumption` | project / organization |
+| `loxtep_data_products` | `create_data_product`, `update_data_product`, `delete_data_product`, `list_data_products`, `get_data_product`, `get_data_product_lexicon`, `get_data_product_sdk_config`, `list_delivery_interfaces`, `create_delivery_interface` | project / organization |
 | `loxtep_schemas` | `create_schema`, `update_schema`, `delete_schema`, `get_schema`, `list_schema_versions`, `tag_pii_fields` | organization |
 | `loxtep_quality` | `create_quality_rule`, `update_quality_rule`, `delete_quality_rule`, `list_quality_rules`, `get_quality_rule`, `test_quality_rule` | organization |
 | `loxtep_catalog` | `search_catalog`, `get_catalog_entry`, `get_evidence`, `get_lineage_impact`, `get_governance_flags`, `run_discovery`, `list_domains`, `list_tags` | catalog |

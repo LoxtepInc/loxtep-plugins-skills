@@ -48,15 +48,12 @@ transforms, and wire the pipeline.
 ### Terminology Note
 
 - **Delivery interface** — How a data product makes data available externally
-  (webhook, API endpoint, export, DB sync, BI connect, event stream). Formerly
-  called "consumption interface."
+  (webhook, API endpoint, export, DB sync, BI connect, event stream).
 - **Delivery workflow** — A workflow with `workflow_type: 'consumption'` that
   pushes data to external systems. The enum value `'consumption'` is unchanged
   in API calls; "delivery workflow" is the user-facing name.
-- **`create_delivery_interface`** — Primary MCP operation name.
-  `create_consumption` remains as a deprecated alias.
-- **`list_delivery_interfaces`** — Primary MCP operation name.
-  `list_consumptions` remains as a deprecated alias.
+- **`create_delivery_interface`** — MCP operation to create a delivery interface.
+- **`list_delivery_interfaces`** — MCP operation to list delivery interfaces.
 
 ## Happy-path flows
 
@@ -135,8 +132,8 @@ Transform Logic:  [expression]
 | `create_data_product` | `loxtep_data_products` | organization | ODPS payload; set `kind`, `domain_id`, `owner` |
 | `update_data_product` | `loxtep_data_products` | organization | Partial update; use for medallion promotion |
 | `delete_data_product` | `loxtep_data_products` | project | Remove a data product by `project_id`, `data_product_id` |
-| `create_delivery_interface` | `loxtep_data_products` | organization | Delivery interface (webhook/API/export/DB sync/BI/event stream) for a data product. Alias: `create_consumption` |
-| `list_delivery_interfaces` | `loxtep_data_products` | organization | Active delivery interfaces. Alias: `list_consumptions` |
+| `create_delivery_interface` | `loxtep_data_products` | organization | Delivery interface (webhook/API/export/DB sync/BI/event stream) for a data product. |
+| `list_delivery_interfaces` | `loxtep_data_products` | organization | Active delivery interfaces. |
 
 ## Decision tree
 

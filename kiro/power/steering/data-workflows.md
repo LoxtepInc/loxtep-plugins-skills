@@ -1,20 +1,20 @@
 # Data mesh studio (Customer MCP)
 
-End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **data products**, and **webhook consumptions**, plus **session** context. Pair with **`create-connector`** for SaaS/API ingest (Shopify, etc.) or **SDK connector** for programmatic ingestion, and **`loxtep-instances`** for runtime provisioning.
+End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **data products**, and **delivery interfaces**, plus **session** context. Pair with **`create-connector`** for SaaS/API ingest (Shopify, etc.) or **SDK connector** for programmatic ingestion, and **`loxtep-instances`** for runtime provisioning.
 
 ## When to use
 
 - **S0:** Confirm user and org (`get_current_user`, `get_current_organization`).
 - **S2:** Create an **omnichannel** or unified **data product** across multiple sources in a project.
-- **S3:** Register an **external webhook** for data product updates (`create_consumption`).
-- User asks for **projects**, **flows**, **templates**, **connections** (project nodes), **data products**, **consumptions**, or **patch workflow graph**.
+- **S3:** Register a **delivery interface** (e.g., webhook subscription) for data product updates (`create_delivery_interface`).
+- User asks for **projects**, **flows**, **templates**, **connections** (project nodes), **data products**, **delivery interfaces**, or **patch workflow graph**.
 - **SDK / programmatic ingestion:** If the user wants to write events from their own code (not a SaaS connector), use the **`create-connector`** skill's **SDK Connector flow** (`connector_type: "sdk"`) to create the connector, then **`loxtep-sdk`** for SDK client usage. This skill handles the workflow graph and data products that receive those events.
 
 ## Prerequisites
 
 - MCP login (`loxtep-auth` if JWT errors). For **permissions / 403**, see **`loxtep-mcp-session`** (`get_current_user` → `permissions`).
 - **Project-scoped** calls require `project_id` in the same payload as `operation`.
-- **Org-scoped** data products / consumptions: use `data_product_id` as required by each operation.
+- **Org-scoped** data products / delivery interfaces: use `data_product_id` as required by each operation.
 
 ## How MCP calls work
 
@@ -45,8 +45,8 @@ End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **d
 ### Flow D — Webhook for data product updates (S3)
 
 1. Obtain `data_product_id` (`list_data_products` / `get_data_product`).
-2. `loxtep_data_products` → `create_consumption` with `data_product_id`, `endpoint_url`, optional `headers`, `secret_token`, `filters`, `delivery_method` (default webhook per platform).
-3. Optional: `list_consumptions` to audit active subscriptions.
+2. `loxtep_data_products` → `create_delivery_interface` with `data_product_id`, `endpoint_url`, optional `headers`, `secret_token`, `filters`, `delivery_type` (default webhook per platform).
+3. Optional: `list_delivery_interfaces` to audit active subscriptions.
 
 ### Flow E — Wiring a workflow graph with `patch_workflow_graph` (CRITICAL)
 
@@ -204,7 +204,7 @@ Design-time configuration (Flows A–E above) creates the **graph definition** o
 | 5 | Workflows | `loxtep_workflows` | `create_workflow`, `update_workflow`, `delete_workflow`, `list_workflows`, `get_workflow`, `get_workflow_graph`, `patch_workflow_graph`, `preview_transform`, `create_transformation`, `create_validation` | **project** | `project_id` |
 | 6 | Connection nodes | `loxtep_connections` | `create_connection`, `update_connection`, `delete_connection`, `list_connections`, `get_connection`, `test_connection` | **project** | `project_id` |
 | 7 | Data products | `loxtep_data_products` | `create_data_product`, `update_data_product`, `delete_data_product`, `list_data_products`, `get_data_product`, `get_data_product_lexicon` | **project** or org per op | `project_id` where required |
-| 8 | Webhook consumptions | `loxtep_data_products` | `list_consumptions`, `create_consumption` | **organization** | `data_product_id`, `endpoint_url`, … |
+| 8 | Delivery interfaces | `loxtep_data_products` | `list_delivery_interfaces`, `create_delivery_interface` | **organization** | `data_product_id`, `endpoint_url`, … |
 | 9 | Deploy project | `loxtep_deployments` | `deploy_project` | **project** | `project_id`, `instance_id`, optional `force_redeploy` |
 | 10 | List/get deployments | `loxtep_deployments` | `list_deployments`, `get_deployment` | **organization** | `deployment_id`, optional filters |
 | 11 | Runtime mapping | `loxtep_deployments` | `get_runtime_mapping` | **project** | `workflow_id`, `project_id` |

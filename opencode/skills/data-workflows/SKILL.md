@@ -27,7 +27,7 @@ End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **d
 
 - **S0:** Confirm user and org (`get_current_user`, `get_current_organization`).
 - **S2:** Create an **omnichannel** or unified **data product** across multiple sources in a project.
-- **S3:** Register a **delivery interface** (e.g., webhook subscription) for data product updates (`create_delivery_interface`; alias: `create_consumption`).
+- **S3:** Register a **delivery interface** (e.g., webhook subscription) for data product updates (`create_delivery_interface`).
 - User asks for **projects**, **flows**, **templates**, **connections** (project nodes), **data products**, **delivery interfaces**, or **patch workflow graph**.
 - **SDK / programmatic ingestion:** If the user wants to write events from their own code (not a SaaS connector), use the **`create-connector`** skill's **SDK Connector flow** (`connector_type: "sdk"`) to create the connector, then **`loxtep-sdk`** for SDK client usage. This skill handles the workflow graph and data products that receive those events.
 
@@ -65,10 +65,8 @@ End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **d
 
 ### Flow D — Delivery interface for data product updates (S3)
 
-> **Terminology note:** The MCP operation `create_delivery_interface` is the
-> primary name. The old name `create_consumption` remains as a functional alias
-> during the transition period. The `workflow_type` enum value `'consumption'`
-> is unchanged in tool calls — the user-facing name is "delivery workflow."
+> **Note:** The `workflow_type` enum value `'consumption'` is unchanged in tool
+> calls — the user-facing name is "delivery workflow."
 
 1. Obtain `data_product_id` (`list_data_products` / `get_data_product`).
 2. `loxtep_data_products` → `create_delivery_interface` with `data_product_id`, `endpoint_url`, optional `headers`, `secret_token`, `filters`, `delivery_type` (e.g. `webhook`, `api_endpoint`, `export`, `database_sync`, `bi_connect`, `event_stream`).
@@ -301,7 +299,7 @@ Notes:
 | 5 | Workflows | `loxtep_workflows` | `create_workflow`, `update_workflow`, `delete_workflow`, `list_workflows`, `get_workflow`, `get_workflow_graph`, `patch_workflow_graph`, `preview_transform`, `create_transformation`, `create_validation` | **project** | `project_id` |
 | 6 | Connection nodes | `loxtep_connections` | `create_connection`, `update_connection`, `delete_connection`, `list_connections`, `get_connection`, `test_connection` | **project** | `project_id` |
 | 7 | Data products | `loxtep_data_products` | `create_data_product`, `update_data_product`, `delete_data_product`, `list_data_products`, `get_data_product`, `get_data_product_lexicon` | **project** or org per op | `project_id` where required |
-| 8 | Delivery interfaces | `loxtep_data_products` | `list_delivery_interfaces`, `create_delivery_interface` (aliases: `list_consumptions`, `create_consumption`) | **organization** | `data_product_id`, `endpoint_url`, `delivery_type`, … |
+| 8 | Delivery interfaces | `loxtep_data_products` | `list_delivery_interfaces`, `create_delivery_interface` | **organization** | `data_product_id`, `endpoint_url`, `delivery_type`, … |
 | 9 | Deploy project | `loxtep_deployments` | `deploy_project` | **project** | `project_id`, `instance_id`, optional `force_redeploy` |
 | 9b | Deploy single workflow | `loxtep_deployments` | `deploy_workflow` | **project** | `project_id`, `workflow_id`, `instance_id`, optional `force_redeploy`, `skip_validation` |
 | 10 | List/get deployments | `loxtep_deployments` | `list_deployments`, `get_deployment` | **organization** | `deployment_id`, optional filters |

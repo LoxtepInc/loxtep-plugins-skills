@@ -11,7 +11,7 @@ metadata:
 
 **Use `data_products.get_writer(id_or_name)` and `data_products.get_reader(id_or_name)` as the primary pattern.** These methods resolve all plumbing (queue names, bot IDs, stream bus config) automatically from the data product name or UUID — no manual runtime-mapping lookups needed.
 
-### Delivery interfaces (formerly `consumptions`)
+### Delivery interfaces
 
 The SDK exposes delivery interface management under `data_products.delivery`:
 
@@ -23,12 +23,7 @@ await client.data_products.delivery.create(dataProductId, {
   delivery_type: 'webhook',
 });
 
-// Deprecated namespace (still functional, logs warning on first use)
-// client.data_products.consumptions.list(...)  // → use .delivery instead
 ```
-
-> **Note:** The `consumptions` namespace is deprecated and proxies to `delivery`.
-> The `Consumption` type is a deprecated alias for `DeliveryInterface`.
 
 ### Copy-paste: write events to a data product
 
@@ -240,8 +235,8 @@ Then the SDK client picks up `LOXTEP_BOT_ID` and queue configuration automatical
 | Facade | `operation` | Permission | Notes |
 |--------|-------------|------------|-------|
 | `loxtep_data_products` | `get_data_product_sdk_config` | read | Returns SDK connection config for a data product |
-| `loxtep_data_products` | `create_delivery_interface` | write | Create a delivery interface (alias: `create_consumption`) |
-| `loxtep_data_products` | `list_delivery_interfaces` | read | List active delivery interfaces (alias: `list_consumptions`) |
+| `loxtep_data_products` | `create_delivery_interface` | write | Create a delivery interface |
+| `loxtep_data_products` | `list_delivery_interfaces` | read | List active delivery interfaces |
 | `loxtep_deployments` | `deploy_workflow` | write | Deploy a single workflow to an instance |
 | `loxtep_deployments` | `list_deployments` | read | List deployment records (poll for status) |
 | `loxtep_deployments` | `get_deployment` | read | Get a single deployment record by ID |
