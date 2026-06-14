@@ -1,0 +1,127 @@
+{
+  "report_id": "skills-user-stories-gap-report-2026-06-13-r9",
+  "generated_at": "2026-06-13T02:50:00.000Z",
+  "environment": {
+    "stack": "dev",
+    "mcp_endpoint": "https://mcpdev.loxtep.io/ai/mcp/stream",
+    "mcp_server": "project-0-loxtep-loxtep",
+    "api_url": "https://apidev.loxtep.io",
+    "methodology": "Full S0–S15 happy-path via hosted MCP (CallMcpTool). No REST bypasses. Agent-driven — no runner script.",
+    "user_id": "bc5759c3-f962-49b1-9ccf-721ceaeba4dc",
+    "user_email": "testecomm@pictureitlikethis.com",
+    "organization_id": "a28f7e9c-428d-4113-9b7d-1eb71ef08332",
+    "organization_name": "pictureitlikethis"
+  },
+  "summary": {
+    "stories_attempted": 16,
+    "pass": 10,
+    "partial": 6,
+    "fail": 0,
+    "blocked": 0,
+    "prior_run": "skills-user-stories-gap-report-2026-06-13-r8"
+  },
+  "fixtures": {
+    "project_id": "67e91bb7-9f20-418c-b481-19185087b9e4",
+    "workflow_id": "62b73f04-2829-4fef-8e51-4f6a275e07de",
+    "connector_id": "e53c0300-aaad-4554-a2ce-e860ab93c3b2",
+    "connection_id": "a0b98863-b927-4a2f-8e99-e3a1f91aeb6a",
+    "data_product_id": "8d11763c-21a4-4ae5-90ec-0806dea5acff",
+    "consumption_id": "3fe6eeaf-92ac-42e5-8403-c32a0522c71e",
+    "schema_version_id": "5c5f647a-d366-4c08-b09e-57a3166f9a7f",
+    "instance_id": "90bd6e87-15b7-46f5-9e58-0fdca065e9a9",
+    "deployed_shopify_data_product_id": "b4ea7ba0-37d5-4bf7-b83c-362cc0e6d9bd",
+    "shopify_instance_id": "9c5a188a-8e71-4bf7-b83c-362cc0e6d9bd"
+  },
+  "stories": {
+    "S0": { "status": "PASS", "skill": "loxtep-mcp-session", "notes": "get_current_user, get_current_organization" },
+    "S12": { "status": "PASS", "skill": "loxtep-auth" },
+    "S1": {
+      "status": "PARTIAL",
+      "skill": "create-connector",
+      "notes": "SDK connector OK; Shopify OAuth blocked — missing loxtep-dev/connectors/shopify/client-id"
+    },
+    "S2": { "status": "PASS", "skill": "data-workflows" },
+    "S3": { "status": "PASS", "skill": "data-workflows" },
+    "S4": { "status": "PASS", "skill": "org-semantics-quality" },
+    "S5": { "status": "PASS", "skill": "discover-govern-lineage" },
+    "S6": {
+      "status": "PARTIAL",
+      "skill": "loxtep-analytics",
+      "notes": "list_tables (58) + execute_query PASS; get_table_schema FAIL — DuckDB binder quoting table_name"
+    },
+    "S7": {
+      "status": "PARTIAL",
+      "skill": "loxtep-workspace",
+      "notes": "create_snapshot + get_queue_info PASS; read_queue_events Observe HTTP 500"
+    },
+    "S8": {
+      "status": "PARTIAL",
+      "skill": "loxtep-process-intel",
+      "notes": "create_entity_context PASS; get_entity_context PASS; query_entity_context FAIL"
+    },
+    "S9": {
+      "status": "PARTIAL",
+      "skill": "loxtep-procedures",
+      "notes": "list_procedures only; create_procedure needs organization_id"
+    },
+    "S10": { "status": "PASS", "skill": "loxtep-agent-workspace", "notes": "agent_orchestration_list_projects" },
+    "S11": { "status": "PASS", "skill": "loxtep-instances", "notes": "3 instances" },
+    "S13": { "status": "PASS", "skill": "loxtep-ontology" },
+    "S14": {
+      "status": "PARTIAL",
+      "skill": "loxtep-deployments",
+      "notes": "deploy_project triggered; list_deployments empty — no get_deployment poll"
+    },
+    "S15": { "status": "PASS", "skill": "loxtep-semantic-layer" }
+  },
+  "step_failures": [
+    {
+      "story": "S1",
+      "tool": "loxtep_connectors",
+      "operation": "get_oauth_url",
+      "error": "missing dev secret loxtep-dev/connectors/shopify/client-id"
+    },
+    {
+      "story": "S6",
+      "tool": "loxtep_analytics",
+      "operation": "get_table_schema",
+      "table_name": "shopify_gql_order",
+      "error": "query_parse_error — DuckDB binder: table_name double-quoted as column"
+    },
+    {
+      "story": "S7",
+      "tool": "loxtep_workspace",
+      "operation": "read_queue_events",
+      "queue_name": "w-a28f-9c5a-de8e71af-queue-conn-9cf1650e-ingested",
+      "instance_id": "9c5a188a-8e71-4bf7-b83c-362cc0e6d9bd",
+      "error": "Observe search returned HTTP 500"
+    },
+    {
+      "story": "S8",
+      "tool": "loxtep_process_intel",
+      "operation": "query_entity_context",
+      "entity_type": "customer",
+      "entity_id": "mcp-r9-customer-001",
+      "error": "Entity context query failed"
+    },
+    {
+      "story": "S9",
+      "tool": "loxtep_procedures",
+      "operation": "create_procedure",
+      "error": "organization_id required — validation"
+    }
+  ],
+  "improvements_since_r8": [
+    "get_queue_info returns hints for draft DPs (no 404)",
+    "create_entity_context succeeds with graph deployed",
+    "get_table_schema error shape changed (binder/quoting vs t is not iterable)"
+  ],
+  "open_gaps": [
+    { "gap": "get_table_schema DuckDB describe SQL", "stories": ["S6"], "priority": "P1" },
+    { "gap": "query_entity_context after create", "stories": ["S8"], "priority": "P1" },
+    { "gap": "Observe proxy 500 on read_queue_events", "stories": ["S7"], "priority": "P1" },
+    { "gap": "Shopify OAuth secret missing on dev", "stories": ["S1"], "priority": "P2" },
+    { "gap": "Procedures CRUD coverage", "stories": ["S9"], "priority": "coverage" },
+    { "gap": "Deployment poll coverage", "stories": ["S14"], "priority": "coverage" }
+  ]
+}

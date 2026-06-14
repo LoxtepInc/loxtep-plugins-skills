@@ -153,7 +153,7 @@ key parameters.
 { "operation": "list_workflows", "project_id": "proj_…" }
 ```
 
-### `loxtep_data_products` — data products & consumptions
+### `loxtep_data_products` — data products & delivery interfaces
 `kind` is `source` (atomic, domain-owned) or `consumer` (composed projection).
 
 | Operation | Scope | Required | Optional |
@@ -165,8 +165,19 @@ key parameters.
 | `get_data_product` | organization | `data_product_id` | — |
 | `get_data_product_lexicon` | organization | `data_product_id` | — |
 | `get_data_product_sdk_config` | organization | `data_product_id` | — |
-| `list_consumptions` | organization | — | `data_product_id` |
-| `create_consumption` | organization | `data_product_id`, `endpoint_url` | `headers`, `secret_token`, `filters`, `method` |
+| `list_delivery_interfaces` | organization | — | `data_product_id` |
+| `create_delivery_interface` | organization | `data_product_id`, `endpoint_url` | `delivery_type`, `headers`, `secret_token`, `filters`, `method` |
+| `list_consumptions` (deprecated alias) | organization | — | `data_product_id` |
+| `create_consumption` (deprecated alias) | organization | `data_product_id`, `endpoint_url` | `headers`, `secret_token`, `filters`, `method` |
+
+> **Terminology note:** `list_consumptions` and `create_consumption` are
+> deprecated aliases for `list_delivery_interfaces` and
+> `create_delivery_interface`. The old names remain functional during the
+> transition period. Prefer the new names in all new code.
+
+```json
+{ "operation": "create_delivery_interface", "data_product_id": "dp_…", "delivery_type": "webhook", "endpoint_url": "https://…", "method": "POST" }
+```
 
 ```json
 { "operation": "create_data_product", "project_id": "proj_…", "name": "orders", "kind": "source" }
@@ -387,6 +398,11 @@ rejected, and a check that cannot complete blocks the operation.
 Pass `_metadata: { skill_name: '<slug>' }` in tool arguments for attribution and
 eval scoring. It's optional, backward-compatible, and ignored for tool logic. The
 `skill_name` must match the skill's `name` from its YAML frontmatter.
+
+**Terminology note:** Operations formerly named `create_consumption` /
+`list_consumptions` are now `create_delivery_interface` /
+`list_delivery_interfaces`. The old names remain as functional aliases during
+transition. Skills and agents should prefer the new names.
 
 ---
 

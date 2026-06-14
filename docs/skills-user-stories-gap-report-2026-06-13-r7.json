@@ -1,0 +1,441 @@
+{
+  "report_id": "skills-user-stories-gap-report-2026-06-13-r7",
+  "generated_at": "2026-06-13T01:39:21.509Z",
+  "environment": {
+    "stack": "dev",
+    "mcp_endpoint": "https://mcpdev.loxtep.io/ai/mcp/stream",
+    "api_url": "https://apidev.loxtep.io",
+    "methodology": "Full S0–S15 happy-path via customer-mcp-server callToolApi (MCP tools/call Function URL). No REST bypasses.",
+    "user_id": "bc5759c3-f962-49b1-9ccf-721ceaeba4dc",
+    "user_email": "testecomm@pictureitlikethis.com",
+    "organization_id": "a28f7e9c-428d-4113-9b7d-1eb71ef08332",
+    "organization_name": "pictureitlikethis"
+  },
+  "summary": {
+    "stories_attempted": 16,
+    "pass": 8,
+    "partial": 7,
+    "fail": 1,
+    "blocked": 0,
+    "workarounds_used": 0,
+    "prior_run": "skills-user-stories-gap-report-2026-06-12-r6"
+  },
+  "stories": {
+    "S0": {
+      "status": "PASS",
+      "skill": "loxtep-mcp-session"
+    },
+    "S12": {
+      "status": "PASS",
+      "skill": "loxtep-auth"
+    },
+    "S1": {
+      "status": "PARTIAL",
+      "skill": "create-connector"
+    },
+    "S2": {
+      "status": "FAIL",
+      "skill": "data-workflows"
+    },
+    "S4": {
+      "status": "PARTIAL",
+      "skill": "org-semantics-quality"
+    },
+    "S3": {
+      "status": "PARTIAL",
+      "skill": "data-workflows"
+    },
+    "S5": {
+      "status": "PARTIAL",
+      "skill": "discover-govern-lineage"
+    },
+    "S6": {
+      "status": "PARTIAL",
+      "skill": "loxtep-analytics"
+    },
+    "S7": {
+      "status": "PARTIAL",
+      "skill": "loxtep-workspace"
+    },
+    "S8": {
+      "status": "PASS",
+      "skill": "loxtep-process-intel"
+    },
+    "S9": {
+      "status": "PASS",
+      "skill": "loxtep-procedures"
+    },
+    "S10": {
+      "status": "PASS",
+      "skill": "loxtep-agent-workspace"
+    },
+    "S11": {
+      "status": "PASS",
+      "skill": "loxtep-instances"
+    },
+    "S13": {
+      "status": "PASS",
+      "skill": "loxtep-ontology"
+    },
+    "S14": {
+      "status": "PARTIAL",
+      "skill": "loxtep-deployments"
+    },
+    "S15": {
+      "status": "PASS",
+      "skill": "loxtep-semantic-layer"
+    }
+  },
+  "steps": [
+    {
+      "story_id": "S0",
+      "step": "get_current_user",
+      "tool": "loxtep_session",
+      "operation": "get_current_user",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S0",
+      "step": "get_current_organization",
+      "tool": "loxtep_session",
+      "operation": "get_current_organization",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S12",
+      "step": "mcp_session_active",
+      "tool": "loxtep_session",
+      "operation": "session",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S2",
+      "step": "create_project",
+      "tool": "loxtep_projects",
+      "operation": "create_project",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S11",
+      "step": "list_instances",
+      "tool": "loxtep_instances",
+      "operation": "list_instances",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S1",
+      "step": "list_connector_types",
+      "tool": "loxtep_connectors",
+      "operation": "list_connector_types",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S1",
+      "step": "create_connector sdk",
+      "tool": "loxtep_connectors",
+      "operation": "create_connector",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S1",
+      "step": "delete_connector",
+      "tool": "loxtep_connectors",
+      "operation": "delete_connector",
+      "status": "SKIPPED",
+      "gap_type": "api_backend",
+      "error": "no connector_id",
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S1",
+      "step": "get_connector_oauth_url shopify no project_id",
+      "tool": "loxtep_connectors",
+      "operation": "get_connector_oauth_url",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S1",
+      "step": "get_connector_oauth_url with project_id",
+      "tool": "loxtep_connectors",
+      "operation": "get_connector_oauth_url",
+      "status": "SKIPPED",
+      "gap_type": "api_backend",
+      "error": "no project_id",
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S1",
+      "step": "create_connection",
+      "tool": "loxtep_connections",
+      "operation": "create_connection",
+      "status": "SKIPPED",
+      "gap_type": "api_backend",
+      "error": "no connector_id",
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S1",
+      "step": "test_connection",
+      "tool": "loxtep_connections",
+      "operation": "test_connection",
+      "status": "SKIPPED",
+      "gap_type": "api_backend",
+      "error": "no connection_id",
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S1",
+      "step": "list_connections",
+      "tool": "loxtep_connections",
+      "operation": "list_connections",
+      "status": "SKIPPED",
+      "gap_type": "api_backend",
+      "error": "no project_id",
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S5",
+      "step": "search_catalog",
+      "tool": "loxtep_catalog",
+      "operation": "search_catalog",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S5",
+      "step": "get_catalog_entry",
+      "tool": "loxtep_catalog",
+      "operation": "get_catalog_entry",
+      "status": "SKIPPED",
+      "gap_type": "api_backend",
+      "error": "no data_product_id",
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S5",
+      "step": "list_domains",
+      "tool": "loxtep_catalog",
+      "operation": "list_domains",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S5",
+      "step": "list_tags",
+      "tool": "loxtep_catalog",
+      "operation": "list_tags",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S5",
+      "step": "get_lineage_impact",
+      "tool": "loxtep_catalog",
+      "operation": "get_lineage_impact",
+      "status": "SKIPPED",
+      "gap_type": "api_backend",
+      "error": "no data_product_id",
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S7",
+      "step": "list_versions",
+      "tool": "loxtep_workspace",
+      "operation": "list_versions",
+      "status": "SKIPPED",
+      "gap_type": "api_backend",
+      "error": "no project_id",
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S7",
+      "step": "create_snapshot",
+      "tool": "loxtep_workspace",
+      "operation": "create_snapshot",
+      "status": "SKIPPED",
+      "gap_type": "api_backend",
+      "error": "no project_id",
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S7",
+      "step": "get_queue_info",
+      "tool": "loxtep_workspace",
+      "operation": "get_queue_info",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S7",
+      "step": "read_queue_events",
+      "tool": "loxtep_workspace",
+      "operation": "read_queue_events",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S8",
+      "step": "create_entity_context",
+      "tool": "loxtep_process_intel",
+      "operation": "create_entity_context",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S8",
+      "step": "get_entity_context",
+      "tool": "loxtep_process_intel",
+      "operation": "get_entity_context",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S8",
+      "step": "query_entity_context",
+      "tool": "loxtep_process_intel",
+      "operation": "query_entity_context",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S9",
+      "step": "list_procedures",
+      "tool": "loxtep_procedures",
+      "operation": "list_procedures",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S10",
+      "step": "agent_orchestration_list_issues",
+      "tool": "loxtep_agent_workspace",
+      "operation": "agent_orchestration_list_issues",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S10",
+      "step": "agent_orchestration_create_issue",
+      "tool": "loxtep_agent_workspace",
+      "operation": "agent_orchestration_create_issue",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S10",
+      "step": "agent_orchestration_create_project",
+      "tool": "loxtep_agent_workspace",
+      "operation": "agent_orchestration_create_project",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S13",
+      "step": "create_ontology_concept",
+      "tool": "loxtep_ontology",
+      "operation": "create_ontology_concept",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S14",
+      "step": "list_deployments",
+      "tool": "loxtep_deployments",
+      "operation": "list_deployments",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S14",
+      "step": "deploy_project",
+      "tool": "loxtep_deployments",
+      "operation": "deploy_project",
+      "status": "SKIPPED",
+      "gap_type": "api_backend",
+      "error": "missing project_id or instance_id",
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S15",
+      "step": "search_semantic_layer",
+      "tool": "loxtep_semantic_layer",
+      "operation": "search_semantic_layer",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S15",
+      "step": "get_semantic_completeness",
+      "tool": "loxtep_semantic_layer",
+      "operation": "get_semantic_completeness",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    },
+    {
+      "story_id": "S15",
+      "step": "get_semantic_artifact",
+      "tool": "loxtep_semantic_layer",
+      "operation": "get_semantic_artifact",
+      "status": "PASS",
+      "gap_type": null,
+      "workaround_used": "none"
+    }
+  ],
+  "fixture": {
+    "project_id": null,
+    "workflow_id": null,
+    "connection_id": null,
+    "data_product_id": null,
+    "domain_id": null,
+    "schema_id": null,
+    "schema_version_id": null,
+    "quality_rule_id": null,
+    "instance_id": null,
+    "deployment_id": null,
+    "user_id": "bc5759c3-f962-49b1-9ccf-721ceaeba4dc",
+    "organization_id": "a28f7e9c-428d-4113-9b7d-1eb71ef08332",
+    "user_email": "testecomm@pictureitlikethis.com",
+    "organization_name": "pictureitlikethis",
+    "semantic_artifact_type": "entity",
+    "semantic_artifact_id": "54d7ef3e-a3e0-4284-9bfc-f8279701d2cf",
+    "first_table_name": null
+  },
+  "improvements_since_prior": [
+    "S8 promoted to PASS (was PARTIAL)",
+    "S9 promoted to PASS (was PARTIAL)",
+    "S11 promoted to PASS (was PARTIAL)"
+  ],
+  "regressions_or_still_open": []
+}

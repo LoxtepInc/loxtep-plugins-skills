@@ -5,8 +5,11 @@ description:
   demand-driven (output-first) methodology. Covers source data product design
   (atomic, domain-owned), consumer data product design (composed/projected),
   medallion promotion (Bronze→Silver→Gold), schema design, lineage mapping,
-  and reverse modeling (begin with the end in mind). Complements loxtep-ontology
-  (vocabulary/concepts) and org-semantics-quality (governance). User story S20.
+  delivery interface configuration, and reverse modeling (begin with the end
+  in mind). Complements loxtep-ontology (vocabulary/concepts) and
+  org-semantics-quality (governance). User story S20.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/codex/skills/data-product-modeling/SKILL.md
 ---
 
 # Data Product Modeling (Demand-Driven Design)
@@ -32,7 +35,7 @@ transforms, and wire the pipeline.
 | ------------ | ---------------------------------- | ------------------------------------ |
 | Nature       | Atomic, domain-owned               | Composed, projected                  |
 | Origin       | External system ingestion          | Derived from source DPs              |
-| Workflow     | connector-ingestion, webhook, sdk  | data-product-consumption             |
+| Workflow     | connector-ingestion, webhook, sdk  | delivery workflow (`data-product-consumption`) |
 | Medallion    | Typically Bronze → Silver          | Typically Silver → Gold              |
 | UI route     | /source/data-products              | /consumer/data-products              |
 
@@ -40,7 +43,20 @@ transforms, and wire the pipeline.
 
 - **Bronze:** Raw ingested, minimal schema, domain-internal
 - **Silver:** Curated, validated, schema versioned, cross-domain OK
-- **Gold:** Contracted, SLA-bound, consumption-ready, external-facing OK
+- **Gold:** Contracted, SLA-bound, delivery-ready, external-facing OK
+
+### Terminology Note
+
+- **Delivery interface** — How a data product makes data available externally
+  (webhook, API endpoint, export, DB sync, BI connect, event stream). Formerly
+  called "consumption interface."
+- **Delivery workflow** — A workflow with `workflow_type: 'consumption'` that
+  pushes data to external systems. The enum value `'consumption'` is unchanged
+  in API calls; "delivery workflow" is the user-facing name.
+- **`create_delivery_interface`** — Primary MCP operation name.
+  `create_consumption` remains as a deprecated alias.
+- **`list_delivery_interfaces`** — Primary MCP operation name.
+  `list_consumptions` remains as a deprecated alias.
 
 ## Happy-path flows
 
@@ -66,7 +82,7 @@ transforms, and wire the pipeline.
 5. **Specify transforms:** JOIN keys, aggregations, derivations, filters.
 6. **Design workflow:** Trigger (event/cron), transform chain, delivery config.
 7. **Create consumer DP:** Use `create_data_product` with kind=consumer.
-8. **Configure consumption:** Set up webhook/API/SQL delivery endpoint.
+8. **Configure delivery interface:** Set up webhook/API/SQL delivery endpoint.
 
 ### Flow — Medallion Promotion (Bronze → Silver)
 
@@ -78,7 +94,7 @@ transforms, and wire the pipeline.
 ### Flow — Medallion Promotion (Silver → Gold)
 
 1. Verify all Silver requirements plus: active contract, SLA defined,
-   SLA met 30 days, consumption endpoints configured, governance sign-off.
+   SLA met 30 days, delivery interfaces configured, governance sign-off.
 2. `update_data_product` with `medallion: "gold"`.
 
 ### Flow — Schema Design
@@ -119,8 +135,8 @@ Transform Logic:  [expression]
 | `create_data_product` | `loxtep_data_products` | organization | ODPS payload; set `kind`, `domain_id`, `owner` |
 | `update_data_product` | `loxtep_data_products` | organization | Partial update; use for medallion promotion |
 | `delete_data_product` | `loxtep_data_products` | project | Remove a data product by `project_id`, `data_product_id` |
-| `create_consumption` | `loxtep_data_products` | organization | Webhook/API endpoint for consumer DP |
-| `list_consumptions` | `loxtep_data_products` | organization | Active delivery endpoints |
+| `create_delivery_interface` | `loxtep_data_products` | organization | Delivery interface (webhook/API/export/DB sync/BI/event stream) for a data product. Alias: `create_consumption` |
+| `list_delivery_interfaces` | `loxtep_data_products` | organization | Active delivery interfaces. Alias: `list_consumptions` |
 
 ## Decision tree
 
@@ -131,7 +147,8 @@ Transform Logic:  [expression]
   │   └── YES → Source DP (kind: source), connector-ingestion workflow
   │
   ├── Need to combine multiple sources?
-  │   └── YES → Consumer DP (kind: consumer), data-product-consumption workflow
+  │   └── YES → Consumer DP (kind: consumer), delivery workflow
+  │             (template: `data-product-consumption`)
   │             Create source DPs for each system first
   │
   └── Primary source + supplementary enrichment?

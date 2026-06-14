@@ -3,13 +3,36 @@ name: discover-govern-lineage
 description:
   Use when the user wants to discover data in the catalog, search assets, lineage impact,
   evidence, governance flags, run discovery, list domains or tags, or understand "what
-  connects to what" in Discover. Customer MCP tool loxtep_catalog. User story S5.
+  connects to what" in Discover. Distinguishes projection logic (the derivation that
+  transforms source data) from consumer data products (the resulting entity that holds
+  derived data). Customer MCP tool loxtep_catalog. User story S5.
   See docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/codex/skills/discover-govern-lineage/SKILL.md
 ---
 
 # Discover, lineage, and governance (Customer MCP)
 
 **Story S5:** Find and trust data — **search**, **catalog entries**, **lineage**, **evidence**, **governance**, **discovery**, **domains**, **tags**.
+
+## Terminology: Projection vs Consumer Data Product
+
+When exploring lineage, keep this distinction clear:
+
+- **Projection logic** — The derivation (field mappings, aggregations, joins, filters)
+  that transforms source data products into a consumer data product's shape. This is
+  the "how" — the process/specification that defines the transformation.
+- **Consumer data product** — The resulting entity (`kind: 'consumer'`) that holds the
+  derived data. This is the "what" — the catalog-visible product with its own schema,
+  governance, and delivery interfaces.
+- **Delivery interface** — How a data product (source or consumer) makes its data
+  available externally (webhook, API, export, database sync, BI connect, event stream).
+  Formerly called "consumption interface."
+
+In lineage views:
+- Nodes represent **data products** (source or consumer), never projections directly.
+- Edges between source → consumer represent the projection relationship.
+- The projection spec name appears as edge metadata or on the consumer DP detail page.
 
 ## When to use
 
@@ -55,7 +78,7 @@ description:
 
 - Do not confuse **catalog** scope with **project**-scoped workflow tools — different facades.
 - Heavy discovery may be asynchronous; poll or use platform UI if MCP returns a job id.
-- **Empty or sparse results** — Discovery/search may depend on injected services in the AI runtime (LOX-1226); dev vs prod can differ.
+- **Empty or sparse results** — Discovery/search tools may need platform-injected search/evidence services in the AI runtime; behavior can differ between local tests and production.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 ## Skill scope (`.loxtep/skills/discover-govern-lineage.yaml`)

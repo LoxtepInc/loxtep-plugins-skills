@@ -2,7 +2,7 @@
 
 **Governed, real-time data products with a semantic layer and AI context — operable from Claude Code and Cowork over hosted MCP.**
 
-[Loxtep](https://loxtep.io) is not another pipeline tool. Most stacks give you pipes: connect A to B, schedule a job, move on. Loxtep gives you **data products** — versioned, governed, discoverable datasets with schemas, lineage, quality rules, and consumption interfaces — backed by **real-time event streaming**, not batch glue code.
+[Loxtep](https://loxtep.io) is not another pipeline tool. Most stacks give you pipes: connect A to B, schedule a job, move on. Loxtep gives you **data products** — versioned, governed, discoverable datasets with schemas, lineage, quality rules, and delivery interfaces — backed by **real-time event streaming**, not batch glue code.
 
 Because AI agents need more than API access, Loxtep maintains a **semantic layer, ontology, and runtime context** (entity knowledge, decision traces, process graphs) that your Claude agent can query and extend. "Customer revenue" means *your* definition, with *your* lineage, under *your* access policies.
 

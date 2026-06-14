@@ -48,7 +48,7 @@ Each story lists **primary skill** (where the narrative lives) and **supporting 
 |-------|--------|
 | **Persona** | Data engineer, integrator |
 | **Preconditions** | Org role allows connectors; optional `project_id` for connection node |
-| **Happy path** | `list_connector_types` → `get_connector_oauth_url` or `create_connector` → `create_connection` in project → wire graph via `patch_workflow_graph` (see S2) |
+| **Happy path** | `list_connector_types` → `get_connector_oauth_url` (Shopify: include `connection_config.shop`) or `create_connector` → `create_connection` in project → wire graph via `patch_workflow_graph` (see S2) |
 | **MCP** | `loxtep_connectors` (global/org), `loxtep_connections` (project), `loxtep_workflows` for graph |
 | **Primary skill** | `create-connector` |
 | **Edge cases** | OAuth timeout; connector type not in catalog — request new types from Loxtep |
@@ -121,7 +121,7 @@ Each story lists **primary skill** (where the narrative lives) and **supporting 
 | Field | Detail |
 |-------|--------|
 | **Persona** | Engineer fixing drift or auditing |
-| **Happy path** | `list_versions` → `create_snapshot` / `compare_versions` / `restore_version` → `reindex_workspace`; ops health: `get_queue_info`, `read_queue_events`, `replay_events` |
+| **Happy path** | `list_versions` → `create_snapshot` / `compare_versions` / `restore_version` → `reindex_workspace`; ops health: `get_queue_info` (uses `data_product_id`), `read_queue_events` (optional `instance_id` for Observe routing), `replay_events` |
 | **MCP** | `loxtep_workspace` (mix of project-scoped and org — see skill) |
 | **Primary skill** | `loxtep-workspace` |
 | **Related skill** | `loxtep-queue-tracing` — debug deployments and data flow by tracing events through queues |
