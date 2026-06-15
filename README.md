@@ -29,29 +29,77 @@ Scoped **skills** (19 per client) teach agents the platform model — data produ
 
 ## Quick Start
 
-Add the Loxtep hosted MCP server to your client config:
+Each AI tool has a native way to install Loxtep — marketplace plugins, powers, or config files — that gives you MCP connectivity **plus** scoped skills and workflow guides out of the box. Pick your client below.
 
-```json
-{
-  "mcpServers": {
-    "loxtep": {
-      "url": "https://mcp.loxtep.io/ai/mcp/stream"
-    }
-  }
-}
+### Cursor
+
+Install the **`loxtep`** plugin from the Cursor Marketplace, or from Git:
+
+**Settings → Plugins → Install from Git** → `https://github.com/LoxtepInc/loxtep-plugins-skills` (path: `cursor/`)
+
+This installs the hosted MCP server, 19 scoped skills, and an auth-recovery rule. On first use Cursor opens OAuth in the browser — sign in and you're connected.
+
+See [`cursor/README.md`](cursor/README.md) for details.
+
+### Claude Code & Cowork
+
+Install the **`loxtep-claude`** plugin from the Claude plugin directory, or from Git:
+
+```bash
+claude plugin install https://github.com/LoxtepInc/loxtep-plugins-skills --path claude/
 ```
 
-That's it. On first connection your MCP client will open a browser window for OAuth login — sign in to Loxtep and you're connected. Authentication is handled automatically via OAuth 2.1 with PKCE; tokens refresh in the background.
+This gives you the hosted MCP, 19 skills, and auth recovery. OAuth runs on first tool call.
 
-No installation, no Node.js, no `npx`, no token files to manage.
+See [`claude/README.md`](claude/README.md) for details.
 
-> **Migrating from `npx @loxtep/customer-mcp-server`:** Remove the stdio MCP entry from your client config. Uninstall/reinstall the Loxtep plugin so it picks up the hosted URL (`cursor/` for Cursor, `claude/` for Claude Code). Delete `~/.loxtep/customer-mcp.json` if you no longer use the legacy CLI. Reconnect MCP — OAuth runs in the browser.
+### Kiro
 
-> **Dev environment:** Replace the URL with `https://mcpdev.loxtep.io/ai/mcp/stream` to connect to the Loxtep dev instance.
+Install Loxtep as a **Kiro Power** — this gives you MCP, skills, and step-by-step steering guides for each workflow area:
 
-## Clients without native MCP OAuth
+1. Open the Powers panel in Kiro
+2. Add the Loxtep power from `kiro/power/` in this repo (or copy `kiro/mcp.json` into `.kiro/settings/mcp.json`)
 
-Some MCP clients (e.g. Google Antigravity) don't yet support the OAuth 2.1 handshake natively. For those, use `mcp-remote` as a local bridge:
+The Power includes 13 steering files (connectors, workflows, analytics, governance, etc.) that load contextually based on your task.
+
+See [`kiro/README.md`](kiro/README.md) for details.
+
+### OpenCode
+
+Copy the config and skills into your project:
+
+```bash
+# MCP config
+cp opencode/opencode.json ./opencode.json
+
+# Skills (project-local)
+cp -r opencode/skills/ .opencode/skills/
+```
+
+Or add to your existing `opencode.json`:
+
+```json
+{ "mcp": { "loxtep": { "type": "http", "url": "https://mcp.loxtep.io/ai/mcp/stream" } } }
+```
+
+See [`opencode/README.md`](opencode/README.md) for details.
+
+### Codex
+
+Add to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.loxtep]
+url = "https://mcp.loxtep.io/ai/mcp/stream"
+```
+
+Copy skills from `codex/skills/` into your workspace. See [`codex/README.md`](codex/README.md) for details.
+
+### Antigravity
+
+Antigravity doesn't support MCP OAuth natively yet — use `mcp-remote` as a bridge:
+
+Open **Agent panel → "..." → Manage MCP Servers → View raw config** and add:
 
 ```json
 {
@@ -64,7 +112,29 @@ Some MCP clients (e.g. Google Antigravity) don't yet support the OAuth 2.1 hands
 }
 ```
 
-`mcp-remote` handles the OAuth flow locally (opens your browser, runs a localhost callback server) and bridges the authenticated connection via stdio.
+Requires Node.js 18+. `mcp-remote` handles OAuth locally. See [`antigravity/README.md`](antigravity/README.md) for details.
+
+### Manual / other clients
+
+For any MCP client with native OAuth support, add this to its MCP config:
+
+```json
+{
+  "mcpServers": {
+    "loxtep": {
+      "url": "https://mcp.loxtep.io/ai/mcp/stream"
+    }
+  }
+}
+```
+
+For clients without OAuth support, wrap with `mcp-remote` (see Antigravity above).
+
+### Common notes
+
+- **Authentication:** OAuth 2.1 + PKCE. Browser opens on first connect; tokens refresh automatically. No API keys, no token files.
+- **Dev environment:** Replace the URL with `https://mcpdev.loxtep.io/ai/mcp/stream` for the dev instance.
+- **Migrating from `npx @loxtep/customer-mcp-server`:** Remove the stdio MCP entry. Uninstall/reinstall via your client's native method above. Delete `~/.loxtep/customer-mcp.json` if no longer needed.
 
 ## Plugins
 
