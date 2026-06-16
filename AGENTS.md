@@ -15,12 +15,10 @@
 
 # AGENTS.md — Loxtep Plugins & Skills
 
-Loxtep is **the Enterprise Context Layer**: the system that turns organizational
-knowledge, expertise, and norms into machine-usable context for AI across
-heterogeneous systems. Built on governed data products and a real-time streaming
-backbone, with a semantic layer, ontology, process graph, and scoped skills.
-This repo connects your AI tools to Loxtep over **MCP** and ships **Agent-Scope
-Skills** that keep agents inside governed boundaries.
+Loxtep is **the AI operating system for a company**: context management for AI,
+data management, and integrations across every system. This repo connects your AI
+tools to Loxtep over **MCP** and ships **scoped skills** that keep agents inside
+governed boundaries.
 
 The build-and-operate surface is **MCP + CLI + SDK + skills + docs**. Connect
 once, then build and operate Loxtep entirely from your agent.
@@ -51,7 +49,7 @@ Clients without native MCP OAuth (e.g. Antigravity) bridge via `mcp-remote`:
 
 ## How calls work
 
-The server registers **20 grouped tools** (area facades, all named `loxtep_*`).
+The server registers **21 grouped tools** (area facades, all named `loxtep_*`).
 Each call sets **`operation`** to the flat action name, plus that action's
 arguments. Example: call the tool **`loxtep_connectors`** with:
 
@@ -235,6 +233,7 @@ key parameters.
 | `list_tables` | organization | — | `data_product_id` |
 | `get_table_schema` | organization | `table` | — |
 | `get_query_results` | organization | `query_id` | — |
+| `get_compounding_metric` | organization | — | — |
 
 ```json
 { "operation": "execute_query", "query": "SELECT count(*) FROM orders" }
@@ -287,21 +286,14 @@ key parameters.
 | `create_entity_context` | organization | `entity_id`, `context` | — |
 | `list_decision_traces` | organization | — | `anchor` |
 | `record_decision_trace` | organization | `trace` | — |
-| `list_promotion_candidates` | organization | — | `entity_type`, `procedure_id`, `status`, `organization_id` |
-| `promote_candidate` | organization | `candidate_id`, `action` | `rationale`, `entity_id`, `organization_id` |
-
-`list_promotion_candidates`: returns `promotion` and `entity_fact` type candidates — recurring
-decision-trace patterns (≥ threshold with consistent outcomes) eligible for promotion into
-durable Context_Artifacts. Filterable by entity_type, procedure_id, status.
-`promote_candidate`: `action` is `"approve"` (creates artifact at `in_review` via CDLC, links
-provenance to originating traces) or `"reject"` (discards). Human-in-the-loop: auto_propagate
-does NOT bypass review on promotion. Requires `process_intelligence:create`.
+| `list_promotion_candidates` | organization | — | — |
+| `promote_candidate` | organization | — | — |
 
 ```json
 { "operation": "list_decision_traces" }
 ```
 
-### `loxtep_procedures` — Organizational Skills (process graph procedures)
+### `loxtep_procedures` — process graph procedures
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
 | `list_procedures` | organization | — | — |
@@ -342,6 +334,9 @@ does NOT bypass review on promotion. Requires `process_intelligence:create`.
 | `search_semantic_layer` | organization | `query` | `artifact_type` |
 | `get_semantic_artifact` | organization | `artifact_type`, `id` | — |
 | `get_semantic_completeness` | organization | — | `domain_id` |
+| `create_canonical_knowledge` | organization | — | — |
+| `get_canonical_knowledge` | organization | — | — |
+| `update_canonical_knowledge` | organization | — | — |
 
 ```json
 { "operation": "search_semantic_layer", "query": "revenue" }
@@ -360,55 +355,34 @@ does NOT bypass review on promotion. Requires `process_intelligence:create`.
 { "operation": "deploy_project", "project_id": "proj_…", "instance_id": "inst_…" }
 ```
 
-### `loxtep_cdlc` — Context Development Lifecycle
+### `loxtep_cdlc` — Context Development Lifecycle (CDLC)
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
-| `get_artifact_lifecycle` | organization | `artifact_ref` | `organization_id` |
-| `transition_lifecycle` | organization | `artifact_ref`, `current_state`, `target_state` | `actor`, `organization_id` |
-| `propagate_change` | organization | `artifact_ref`, `new_version` | `previous_version`, `change_propagation_policy`, `actor`, `organization_id` |
-| `list_propagation_lineage` | organization | — | `source_artifact_ref`, `action_taken`, `actor`, `from_date`, `to_date`, `organization_id` |
-| `list_context_dependencies` | organization | — | `from_artifact_ref`, `to_artifact_ref`, `dependency_type`, `organization_id` |
+| `get_artifact_lifecycle` | organization | — | — |
+| `transition_lifecycle` | organization | — | — |
+| `propagate_change` | organization | — | — |
+| `list_propagation_lineage` | organization | — | — |
+| `list_context_dependencies` | organization | — | — |
 
-```json
-{ "operation": "get_artifact_lifecycle", "artifact_ref": "thesaurus_term:term_123" }
-```
-
-### `loxtep_context_mining` — Context Mining (AI-assisted discovery)
+### `loxtep_context_mining` — Context Mining
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
-| `run_mining_pass` | organization | — | `signal_sources`, `scope_filters`, `organization_id` |
-| `list_candidates` | organization | — | `candidate_type`, `status`, `mining_run_id`, `organization_id` |
-| `act_on_candidate` | organization | `candidate_id`, `action` | `rationale`, `organization_id` |
-
-`signal_sources`: `["semantic_definitions", "decision_traces", "event_sequences"]`.
-`scope_filters`: `{ "entity_types": [...], "from_date": "...", "to_date": "..." }`.
-`action`: `"approve"` (routes through CDLC at `in_review`) or `"reject"` (discards).
-Human-in-the-loop: no candidate is ever auto-committed. Requires `process_intelligence:create`.
-
-```json
-{ "operation": "run_mining_pass", "signal_sources": ["semantic_definitions"] }
-```
+| `run_mining_pass` | organization | — | — |
+| `list_candidates` | organization | — | — |
+| `act_on_candidate` | organization | — | — |
 
 ---
 
 ## Skills (scoped agent access)
 
-Loxtep distinguishes two skill types:
+A **skill** is a scoped integration bundle: it declares which platform resources
+and operations an agent may reach inside a workspace. Skills here ship as
+`SKILL.md` bundles per client (`<client>/skills/<slug>/SKILL.md`) and, in a
+code-first workspace, as `.loxtep/skills/<name>.yaml` scope files.
 
-- **Organizational Skills** — reusable, versionable procedures in the process
-  graph. They encode how work gets done: steps, decisions, triggers,
-  dependencies. A skill does for procedural knowledge what a function did for
-  logic — and it compounds, because many agents reuse the same procedure rather
-  than re-deriving it.
-- **Agent-Scope Skills** — scoped integration bundles that declare which platform
-  resources and operations an agent may reach inside a workspace. Enforced
-  fail-closed: an out-of-scope resource returns `SCOPE_VIOLATION`, a disallowed
-  operation is denied, an unknown skill name is rejected, and a check that cannot
-  complete blocks the operation.
-
-Skills in this repo are **Agent-Scope Skills**: they ship as `SKILL.md` bundles
-per client (`<client>/skills/<slug>/SKILL.md`) and, in a code-first workspace, as
-`.loxtep/skills/<name>.yaml` scope files.
+The platform enforces scope **fail-closed**: an out-of-scope resource returns
+`SCOPE_VIOLATION`, a disallowed operation is denied, an unknown skill name is
+rejected, and a check that cannot complete blocks the operation.
 
 ### Skill bundles (this repo)
 
@@ -425,7 +399,7 @@ per client (`<client>/skills/<slug>/SKILL.md`) and, in a code-first workspace, a
 | `loxtep-workspace` | Snapshots, versions, workspace index |
 | `loxtep-process-intel` | Entity context + decision traces |
 | `loxtep-ontology` | Ontology, vocabulary, namespaces |
-| `loxtep-procedures` | Organizational Skills (process graph procedures) |
+| `loxtep-procedures` | Process graph procedures |
 | `loxtep-agent-workspace` | Agent orchestration (issues/goals/agents) |
 | `loxtep-sdk` | Using the `@loxtep/sdk` runtime + CLI |
 | `semantic-ontology-mapping` | Mapping external vocabularies to the ontology |
