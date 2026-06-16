@@ -93,9 +93,9 @@ SDK connectors use `auth_type: "jwt"` — no OAuth, no external credential testi
 - **New connector types** are **not** creatable via MCP — use `list_connector_types` for supported types, or contact Loxtep support to request new ones.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
-## Skill scope (`.loxtep/skills/create-connector.yaml`)
+## Agent-Scope Skill scope (`.loxtep/skills/create-connector.yaml`)
 
-Resource scope and operation permissions for this skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+Resource scope and operation permissions for this Agent-Scope Skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
 
 ```yaml
 # .loxtep/skills/create-connector.yaml
@@ -131,4 +131,4 @@ Reconnect the Loxtep MCP server to re-trigger OAuth — see **`loxtep-auth`**.
 ## References
 
 - [User story catalog](../../docs/skills-user-stories.md)
-- For SDK usage after connector creation, see **`loxtep-sdk`** skill
+- For SDK usage after connector creation, see the **`loxtep-sdk`** Agent-Scope Skill

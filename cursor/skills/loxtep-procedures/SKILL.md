@@ -97,7 +97,7 @@ PKO-compliant JSON-LD graphs. Distinct from data-mesh **workflows** in
 ## Pitfalls
 
 - **Data mesh workflows** (`create_workflow`, `patch_workflow_graph`) live under
-  **`loxtep_workflows`** / **`data-workflows`** skill — different product
+  **`loxtep_workflows`** / **`data-workflows`** Agent-Scope Skill — different product
   object.
 - **Ontology/vocabulary management** (thesaurus terms, ontology concepts,
   namespace mappings) is **`loxtep_ontology`** — different facade. Procedures
@@ -120,19 +120,19 @@ PKO-compliant JSON-LD graphs. Distinct from data-mesh **workflows** in
   `target_procedure_id` that doesn't exist yet — it will be marked `unresolved`
   until the target is imported/created.
 - **Namespace resolution on import**: `import_process_graph` auto-resolves W3C
-  PKO terms and any registered namespace mappings (see `loxtep-ontology` skill).
+  PKO terms and any registered namespace mappings (see `loxtep-ontology` Agent-Scope Skill).
   Unregistered namespace terms are flagged as `unmapped_terms` in the response
   without failing the import.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
-## Skill scope (`.loxtep/skills/loxtep-procedures.yaml`)
+## Agent-Scope Skill scope (`.loxtep/skills/loxtep-procedures.yaml`)
 
-Resource scope and operation permissions for this skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+Resource scope and operation permissions for this Agent-Scope Skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
 
 ```yaml
 # .loxtep/skills/loxtep-procedures.yaml
 # Conforms to https://loxtep.io/schemas/skill-package-v1.json
-# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
+# Fail-closed: this Agent-Scope Skill's facades are RBAC-governed and carry no data-mesh resource scope.
 name: loxtep-procedures
 description: Process-graph procedures (distinct from data-mesh workflows) — RBAC-governed; no data-mesh resource scope.
 scope:

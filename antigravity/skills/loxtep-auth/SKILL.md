@@ -12,7 +12,7 @@ Loxtep MCP is **hosted only** (`https://mcp.loxtep.io/ai/mcp/stream`, dev: `http
 When a call to a **Loxtep MCP** tool (`loxtep_*` with an `operation` field) fails with auth errors, disconnect/reconnect the hosted MCP server in IDE settings, complete OAuth in the browser, then retry the failed call.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
-## Skill scope (`.loxtep/skills/loxtep-auth.yaml`)
+## Agent-Scope Skill scope (`.loxtep/skills/loxtep-auth.yaml`)
 
 ```yaml
 name: loxtep-auth

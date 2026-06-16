@@ -32,7 +32,7 @@ metadata:
 
 - Tools enforce **resource:action**-style RBAC (e.g. create vs read). If a call fails with a permission error, compare it to entries in **`get_current_user.permissions`** (`resource` + `action`).
 - **Fix:** an org **owner/admin** must change your role or assignments — MCP login cannot upgrade RBAC.
-- **401 / missing token:** use **`loxtep-auth`** (`login`), not this skill.
+- **401 / missing token:** use **`loxtep-auth`** (`login`), not this Agent-Scope Skill.
 
 ## Pitfalls
 
@@ -40,14 +40,14 @@ metadata:
 - **ListTools** shows facades and parameters; it does not replace **`get_current_user`** for “what am I allowed?” — use both.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
-## Skill scope (`.loxtep/skills/loxtep-mcp-session.yaml`)
+## Agent-Scope Skill scope (`.loxtep/skills/loxtep-mcp-session.yaml`)
 
-Resource scope and operation permissions for this skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+Resource scope and operation permissions for this Agent-Scope Skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
 
 ```yaml
 # .loxtep/skills/loxtep-mcp-session.yaml
 # Conforms to https://loxtep.io/schemas/skill-package-v1.json
-# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
+# Fail-closed: this Agent-Scope Skill's facades are RBAC-governed and carry no data-mesh resource scope.
 name: loxtep-mcp-session
 description: Session and RBAC orientation — no data-mesh resource access.
 scope:

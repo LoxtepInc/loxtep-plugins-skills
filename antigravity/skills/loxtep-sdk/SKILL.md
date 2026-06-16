@@ -5,7 +5,7 @@ metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/antigravity/skills/loxtep-sdk/SKILL.md
 ---
 
-# Loxtep Node SDK (agent skill)
+# Loxtep Node SDK (Agent-Scope Skill)
 
 ## Recommended: Data-product-centric writer & reader
 
@@ -120,7 +120,7 @@ await writer.close();
 2. `list_deployments` or `get_deployment` — poll until status is `deployed`
 3. After deployment, `data_products.get_writer('name')` resolves automatically
 
-See the **`data-workflows`** skill (Flow F — Deploy before SDK ingestion) for the full sequence.
+See the **`data-workflows`** Agent-Scope Skill (Flow F — Deploy before SDK ingestion) for the full sequence.
 
 ## Runtime naming convention (how queues and bots are named)
 
@@ -242,9 +242,9 @@ Then the SDK client picks up `LOXTEP_BOT_ID` and queue configuration automatical
 | `loxtep_deployments` | `get_deployment` | read | Get a single deployment record by ID |
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
-## Skill scope (`.loxtep/skills/loxtep-sdk.yaml`)
+## Agent-Scope Skill scope (`.loxtep/skills/loxtep-sdk.yaml`)
 
-Resource scope and operation permissions for this skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+Resource scope and operation permissions for this Agent-Scope Skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
 
 ```yaml
 # .loxtep/skills/loxtep-sdk.yaml
@@ -296,7 +296,7 @@ export function createRuntimeClient() {
 
 ## Bootstrapping from an SDK Connector
 
-If an SDK connector already exists (created via UI, API, or MCP — see the **`create-connector`** skill), export its `sdk_config` directly:
+If an SDK connector already exists (created via UI, API, or MCP — see the **`create-connector`** Agent-Scope Skill), export its `sdk_config` directly:
 
 ```bash
 # Export as shell exports (source-able)
@@ -325,7 +325,7 @@ node -e "
 "
 ```
 
-> To create an SDK connector in the first place, see the **`create-connector`** skill (Flow — SDK Connector).
+> To create an SDK connector in the first place, see the **`create-connector`** Agent-Scope Skill (Flow — SDK Connector).
 
 ## Shell exports from an existing data product
 

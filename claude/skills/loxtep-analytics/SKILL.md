@@ -41,9 +41,9 @@ description:
 - **Execution environment** — Analytics runs against governed mesh tables via `loxtep_analytics`, not an arbitrary external database URL.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
-## Skill scope (`.loxtep/skills/loxtep-analytics.yaml`)
+## Agent-Scope Skill scope (`.loxtep/skills/loxtep-analytics.yaml`)
 
-Resource scope and operation permissions for this skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+Resource scope and operation permissions for this Agent-Scope Skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
 
 ```yaml
 # .loxtep/skills/loxtep-analytics.yaml

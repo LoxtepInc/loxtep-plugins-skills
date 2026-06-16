@@ -24,7 +24,7 @@ and inspect runtime mappings.
 ## Prerequisites
 
 - MCP auth. Project-scoped operations require `project_id`.
-- Target `instance_id` must exist (see `loxtep-instances` skill for provisioning).
+- Target `instance_id` must exist (see `loxtep-instances` Agent-Scope Skill for provisioning).
 
 ## Happy-path flow
 
@@ -56,10 +56,10 @@ and inspect runtime mappings.
 
 ## Pitfalls
 
-- **Instance provisioning** is `loxtep_instances` — different facade. This skill
+- **Instance provisioning** is `loxtep_instances` — different facade. This Agent-Scope Skill
   assumes the target instance already exists.
 - **Workflow authoring** (create, update, graph) is `loxtep_workflows` via the
-  `data-workflows` skill. This skill handles *deployment* of authored workflows.
+  `data-workflows` Agent-Scope Skill. This Agent-Scope Skill handles *deployment* of authored workflows.
 - **`force_redeploy`** skips the "already deployed at same version" short-circuit.
   Use when runtime state is suspected stale.
 - **`skip_validation`** on `deploy_workflow` bypasses pre-deploy validation (graph
@@ -68,14 +68,14 @@ and inspect runtime mappings.
   Poll `get_deployment` for async deploy completion.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
-## Skill scope (`.loxtep/skills/loxtep-deployments.yaml`)
+## Agent-Scope Skill scope (`.loxtep/skills/loxtep-deployments.yaml`)
 
-Resource scope and operation permissions for this skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+Resource scope and operation permissions for this Agent-Scope Skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
 
 ```yaml
 # .loxtep/skills/loxtep-deployments.yaml
 # Conforms to https://loxtep.io/schemas/skill-package-v1.json
-# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
+# Fail-closed: this Agent-Scope Skill's facades are RBAC-governed and carry no data-mesh resource scope.
 name: loxtep-deployments
 version: 1.0.0
 description: Deployment lifecycle management — RBAC-governed; no data-mesh resource scope.
@@ -95,7 +95,7 @@ permissions: {}
 
 ## Auth
 
-If MCP returns missing JWT / auth errors, reconnect the Loxtep MCP server to re-trigger OAuth (skill **loxtep-auth**).
+If MCP returns missing JWT / auth errors, reconnect the Loxtep MCP server to re-trigger OAuth (Agent-Scope Skill **loxtep-auth**).
 
 ## References
 

@@ -51,24 +51,24 @@ definitions, metrics, dimensions, and completeness scores.
 ## Pitfalls
 
 - **Ontology/vocabulary management** (thesaurus terms, namespace mappings) is
-  **`loxtep_ontology`** — different facade. This skill is for *querying* the
+  **`loxtep_ontology`** — different facade. This Agent-Scope Skill is for *querying* the
   curated semantic layer, not managing its underlying ontology structure.
 - **Catalog search** is **`loxtep_catalog`** — use that for broad discovery
-  across all artifact types. This skill is for the semantic-layer-specific
+  across all artifact types. This Agent-Scope Skill is for the semantic-layer-specific
   search and completeness view.
 - **`artifact_types`** (plural) is an array filter — pass multiple types to
   narrow results. Do not confuse with `artifact_type` (singular) used in
   `get_semantic_artifact`.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
-## Skill scope (`.loxtep/skills/loxtep-semantic-layer.yaml`)
+## Agent-Scope Skill scope (`.loxtep/skills/loxtep-semantic-layer.yaml`)
 
-Resource scope and operation permissions for this skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+Resource scope and operation permissions for this Agent-Scope Skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
 
 ```yaml
 # .loxtep/skills/loxtep-semantic-layer.yaml
 # Conforms to https://loxtep.io/schemas/skill-package-v1.json
-# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
+# Fail-closed: this Agent-Scope Skill's facades are RBAC-governed and carry no data-mesh resource scope.
 name: loxtep-semantic-layer
 version: 1.0.0
 description: Semantic layer search, artifact retrieval, and completeness — RBAC-governed; no data-mesh resource scope.

@@ -24,7 +24,7 @@ the OAuth session has expired or was never established.
 3. **Retry** the tool call that failed.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
-## Skill scope (`.loxtep/skills/loxtep-auth.yaml`)
+## Agent-Scope Skill scope (`.loxtep/skills/loxtep-auth.yaml`)
 
 ```yaml
 name: loxtep-auth

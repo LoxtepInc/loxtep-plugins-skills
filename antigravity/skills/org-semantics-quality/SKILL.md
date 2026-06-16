@@ -46,18 +46,18 @@ description:
 ## Pitfalls
 
 - **Ontology relationships / thesaurus** for entity intelligence live under **`loxtep_process_intel`**, not `loxtep_schemas`.
-- **Catalog discovery** is **`loxtep_catalog`** (`discover-govern-lineage` skill).
+- **Catalog discovery** is **`loxtep_catalog`** (`discover-govern-lineage` Agent-Scope Skill).
 - **403 / permission denied** — Schema and quality tools enforce RBAC (`schemas:*`, `quality:*`); session may be valid but role may not allow the operation.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
-## Skill scope (`.loxtep/skills/org-semantics-quality.yaml`)
+## Agent-Scope Skill scope (`.loxtep/skills/org-semantics-quality.yaml`)
 
-Resource scope and operation permissions for this skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+Resource scope and operation permissions for this Agent-Scope Skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
 
 ```yaml
 # .loxtep/skills/org-semantics-quality.yaml
 # Conforms to https://loxtep.io/schemas/skill-package-v1.json
-# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
+# Fail-closed: this Agent-Scope Skill's facades are RBAC-governed and carry no data-mesh resource scope.
 name: org-semantics-quality
 description: Org schema and quality-rule governance — RBAC-governed; no data-mesh resource scope.
 scope:

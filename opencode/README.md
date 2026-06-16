@@ -1,6 +1,6 @@
 # Loxtep for OpenCode
 
-**Governed, real-time data products with a semantic layer and AI context — operable from OpenCode over hosted MCP.**
+**Loxtep is the Enterprise Context Layer — turning organizational knowledge, expertise, and norms into machine-usable context for AI. Operable from OpenCode over hosted MCP.**
 
 [Loxtep](https://loxtep.io) is not another pipeline tool. Most stacks give you pipes: connect A to B, schedule a job, move on. Loxtep gives you **data products** — versioned, governed, discoverable datasets with schemas, lineage, quality rules, and delivery interfaces — backed by **real-time event streaming**, not batch glue code.
 

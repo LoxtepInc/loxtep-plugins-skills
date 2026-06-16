@@ -162,7 +162,7 @@ Transform Logic:  [expression]
 - **Schema drift** — Source system changes without DP update. Add validation in workflow.
 - **Orphan consumer** — Consumer DP whose upstream source was deprecated. Monitor lineage.
 
-## Coupling with other skills
+## Coupling with other Agent-Scope Skills
 
 - **loxtep-ontology:** Vocabulary terms, concept definitions → bind to DP glossary
 - **org-semantics-quality:** Quality rules, governance → bind to DP quality config
@@ -171,9 +171,9 @@ Transform Logic:  [expression]
 - **discover-govern-lineage:** Catalog discovery, governance policies
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
-## Skill scope (`.loxtep/skills/data-product-modeling.yaml`)
+## Agent-Scope Skill scope (`.loxtep/skills/data-product-modeling.yaml`)
 
-Resource scope and operation permissions for this skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+Resource scope and operation permissions for this Agent-Scope Skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
 
 ```yaml
 # .loxtep/skills/data-product-modeling.yaml

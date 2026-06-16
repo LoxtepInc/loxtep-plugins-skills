@@ -84,13 +84,13 @@ management surface.
 ## Pitfalls
 
 - **Runtime intelligence** (entity context, decision traces) is
-  **`loxtep_process_intel`** — different facade. This skill is for
+  **`loxtep_process_intel`** — different facade. This Agent-Scope Skill is for
   **schema/vocabulary management**, not runtime queries.
 - **Process graph CRUD** (procedures, steps, import/export) is
   **`loxtep_procedures`** — different facade. Ontology concepts describe the
   *types* in the graph; procedures are the *instances*.
 - **Catalog search** is **`loxtep_catalog`** — use that for discovery across
-  all artifact types. This skill manages the underlying ontology that catalog
+  all artifact types. This Agent-Scope Skill manages the underlying ontology that catalog
   entries reference.
 - **`sync_vocabulary` with `full_sync`** will tombstone terms not in the
   submitted set — use `additive_only` if you only want to add/update.
@@ -103,14 +103,14 @@ management surface.
   (tombstone pattern). They warn about dependents but do not cascade.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
-## Skill scope (`.loxtep/skills/loxtep-ontology.yaml`)
+## Agent-Scope Skill scope (`.loxtep/skills/loxtep-ontology.yaml`)
 
-Resource scope and operation permissions for this skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+Resource scope and operation permissions for this Agent-Scope Skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
 
 ```yaml
 # .loxtep/skills/loxtep-ontology.yaml
 # Conforms to https://loxtep.io/schemas/skill-package-v1.json
-# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
+# Fail-closed: this Agent-Scope Skill's facades are RBAC-governed and carry no data-mesh resource scope.
 name: loxtep-ontology
 description: Ontology, vocabulary, and namespace management — RBAC-governed; no data-mesh resource scope.
 scope:

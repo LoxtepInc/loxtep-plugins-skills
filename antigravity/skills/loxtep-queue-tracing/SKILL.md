@@ -134,6 +134,6 @@ Queue names include a **microservice_id** (`w-{org4}-{inst4}-{proj8}-{wf8}`) and
 
 ## References
 
-- [loxtep-workspace skill](../loxtep-workspace/SKILL.md)
-- [loxtep-deployments skill](../loxtep-deployments/SKILL.md)
+- [loxtep-workspace Agent-Scope Skill](../loxtep-workspace/SKILL.md)
+- [loxtep-deployments Agent-Scope Skill](../loxtep-deployments/SKILL.md)
 - [User story catalog](../../../docs/skills-user-stories.md)

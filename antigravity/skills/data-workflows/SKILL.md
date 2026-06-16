@@ -29,11 +29,11 @@ End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **d
 - **S2:** Create an **omnichannel** or unified **data product** across multiple sources in a project.
 - **S3:** Register a **delivery interface** (e.g., webhook subscription) for data product updates (`create_delivery_interface`).
 - User asks for **projects**, **flows**, **templates**, **connections** (project nodes), **data products**, **delivery interfaces**, or **patch workflow graph**.
-- **SDK / programmatic ingestion:** If the user wants to write events from their own code (not a SaaS connector), use the **`create-connector`** skill's **SDK Connector flow** (`connector_type: "sdk"`) to create the connector, then **`loxtep-sdk`** for SDK client usage. This skill handles the workflow graph and data products that receive those events.
+- **SDK / programmatic ingestion:** If the user wants to write events from their own code (not a SaaS connector), use the **`create-connector`** Agent-Scope Skill's **SDK Connector flow** (`connector_type: "sdk"`) to create the connector, then **`loxtep-sdk`** for SDK client usage. This Agent-Scope Skill handles the workflow graph and data products that receive those events.
 
 ## Prerequisites
 
-- MCP login (`loxtep-auth` if JWT errors). For **permissions / 403** questions, use skill **`loxtep-mcp-session`** (`get_current_user` → `permissions`).
+- MCP login (`loxtep-auth` if JWT errors). For **permissions / 403** questions, use the **`loxtep-mcp-session`** Agent-Scope Skill (`get_current_user` → `permissions`).
 - **Project-scoped** calls require `project_id` in the same payload as `operation`.
 - **Org-scoped** data products / delivery interfaces: use `data_product_id` as required by each operation.
 
@@ -58,7 +58,7 @@ End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **d
 
 ### Flow C — Omnichannel data product (S2)
 
-1. Ensure **project** exists; add **connections** per channel (see **`create-connector`** skill).
+1. Ensure **project** exists; add **connections** per channel (see the **`create-connector`** Agent-Scope Skill).
 2. `loxtep_workflows` → `create_workflow` to create the workflow entity.
 3. `loxtep_workflows` → `patch_workflow_graph` to add nodes (connection + data product) and wire edges. **See Flow E below for the exact format.**
 4. `get_data_product` / `get_data_product_lexicon` to verify; `update_data_product` as needed.
@@ -261,9 +261,9 @@ Design-time configuration (Flows A–E above) creates the **graph definition** o
    - **Production release:** `loxtep_deployments` → `deploy_project` with `project_id` + `instance_id`
 4. Poll `get_deployment` until status = `deployed`
 5. `loxtep_deployments` → `get_runtime_mapping` with `workflow_id` + `project_id` — returns the deployed bot ID and queue names
-6. Use **`loxtep-sdk`** skill to bootstrap the SDK client with the resolved `bot_id` and queue, then write events via the stream bus
+6. Use the **`loxtep-sdk`** Agent-Scope Skill to bootstrap the SDK client with the resolved `bot_id` and queue, then write events via the stream bus
 
-**Runtime naming convention reference:** See the **`loxtep-sdk`** skill for the full naming hierarchy and how to resolve queue/bot names from the runtime-mapping API.
+**Runtime naming convention reference:** See the **`loxtep-sdk`** Agent-Scope Skill for the full naming hierarchy and how to resolve queue/bot names from the runtime-mapping API.
 
 ### Flow G — Build your own SDK-ingestion data product (end to end)
 
@@ -317,13 +317,13 @@ Notes:
 - **`apply_template`** requires `project_id` — not the same as org-only template list.
 - **`test_connection`** — Loads connection from workspace storage; runs an optional **HTTP GET** probe only when the saved configuration includes a URL-like field (`base_url`, `url`, `host`, …). Otherwise it confirms the entity exists without a live probe.
 - **`create_transformation`** / **`create_validation`** — Require an **existing workflow graph** (`get_workflow_graph` / prior `patch_workflow_graph`). If the graph is missing, the tool fails with a not-found style error.
-- **Paid plans vs shared instance** — provisioning is **`loxtep-instances`**, not this skill.
+- **Paid plans vs shared instance** — provisioning is **`loxtep-instances`**, not this Agent-Scope Skill.
 - **Agent issues/goals** — use **`loxtep-agent-workspace`**, not `loxtep_projects`.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
-## Skill scope (`.loxtep/skills/data-workflows.yaml`)
+## Agent-Scope Skill scope (`.loxtep/skills/data-workflows.yaml`)
 
-Resource scope and operation permissions for this skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+Resource scope and operation permissions for this Agent-Scope Skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
 
 ```yaml
 # .loxtep/skills/data-workflows.yaml

@@ -2,11 +2,18 @@
 
 Plugins and skills for using [Loxtep](https://loxtep.io) from AI coding and productivity tools.
 
-Loxtep is not another pipeline tool. It publishes **governed data products** on a **real-time streaming** backbone — with **data governance**, **catalog and lineage**, a **semantic layer**, and **AI context** (entity knowledge, decision traces, ontology) that agents can query instead of inventing. These plugins connect your MCP client to that platform over hosted OAuth.
+Loxtep is the **Enterprise Context Layer**: the system that turns organizational
+knowledge, expertise, and norms into machine-usable context for AI across
+heterogeneous systems. Built on **governed data products** on a **real-time
+streaming** backbone — with a **semantic layer**, **ontology**, **process graph**,
+and **AI context** (entity knowledge, decision traces, Organizational Skills) that
+agents query instead of inventing. One source of truth, many interfaces:
+MCP, REST, SQL, SDK, streaming, and graph. These plugins connect your MCP client to
+that platform over hosted OAuth.
 
 The hosted MCP registers **19 grouped tools** named `loxtep_projects`, `loxtep_workflows`, `loxtep_data_products`, and so on. Each call sets **`operation`** to the flat action name (e.g. `list_projects`, `create_data_product`) plus that action's arguments. Tool definitions and scopes are published on the hosted MCP server.
 
-Scoped **skills** (19 per client) teach agents the platform model — data products, governance, semantic layer, streaming workflows, deployments, queue tracing — so they work inside boundaries instead of inventing field names and bypassing access rules.
+Scoped **Agent-Scope Skills** (19 per client) teach agents the platform model — data products, governance, semantic layer, streaming workflows, deployments, queue tracing — so they work inside boundaries instead of inventing field names and bypassing access rules.
 
 ## What makes Loxtep different
 
@@ -201,6 +208,18 @@ The Loxtep platform uses this for per-skill eval and analytics when available.
 (Call the MCP tool **`loxtep_connectors`** with the JSON above as arguments.)
 
 Tools ignore `_metadata` for tool logic; it is used only for request attribution.
+
+## Other Ways to Get Started
+
+MCP is the **agent-first** path. Loxtep also supports:
+
+| Path | Use case | Where to learn more |
+|------|----------|---------------------|
+| **Code-first (CLI)** | Author workflows as TypeScript, test locally, deploy via CI: `loxtep init → attach → generate → test → deploy` | [`@loxtep/sdk` README](https://github.com/LoxtepInc/loxtep-sdk/tree/main/nodejs#quick-start--code-first-cli-init--deploy) |
+| **Programmatic (SDK)** | Write/read events from application code (microservices, lambdas) | [`@loxtep/sdk` README](https://github.com/LoxtepInc/loxtep-sdk/tree/main/nodejs#quick-start--programmatic--5-min-to-first-stream) |
+| **Web UI** | Visual project setup and management | [app.loxtep.io](https://app.loxtep.io) (limited preview) |
+
+All paths are covered in the [Loxtep Quickstart](https://docs.loxtep.io/quickstart).
 
 ## License
 

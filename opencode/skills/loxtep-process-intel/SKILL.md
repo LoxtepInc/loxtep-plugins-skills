@@ -49,20 +49,20 @@ metadata:
 
 ## Pitfalls
 
-- **Ontology/thesaurus** management (vocabulary terms, ontology concepts, namespace mappings) is now in **`loxtep-ontology`** skill — not here.
+- **Ontology/thesaurus** management (vocabulary terms, ontology concepts, namespace mappings) is now in the **`loxtep-ontology`** Agent-Scope Skill — not here.
 - **Catalog** discovery is **`loxtep_catalog`** — different product surface.
 - **Agent workspace** issues are **`loxtep_agent_workspace`** — not process intel.
 - **Connectivity** — Process-intel tools require valid MCP authentication and access to your organization's process-intelligence data.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
-## Skill scope (`.loxtep/skills/loxtep-process-intel.yaml`)
+## Agent-Scope Skill scope (`.loxtep/skills/loxtep-process-intel.yaml`)
 
-Resource scope and operation permissions for this skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+Resource scope and operation permissions for this Agent-Scope Skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
 
 ```yaml
 # .loxtep/skills/loxtep-process-intel.yaml
 # Conforms to https://loxtep.io/schemas/skill-package-v1.json
-# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
+# Fail-closed: this Agent-Scope Skill's facades are RBAC-governed and carry no data-mesh resource scope.
 name: loxtep-process-intel
 description: Runtime process intelligence — RBAC-governed; no data-mesh resource scope.
 scope:
