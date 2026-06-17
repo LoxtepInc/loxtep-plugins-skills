@@ -83,16 +83,28 @@ transforms, and wire the pipeline.
 
 ### Flow — Medallion Promotion (Bronze → Silver)
 
-1. `get_data_product` to check current state.
-2. Verify: schema version ≥ 1.0, all fields described, PII marked,
-   quality rules active (≥3), score > 80%, glossary terms defined.
-3. `update_data_product` with `medallion: "silver"`.
+1. `get_promotion_readiness` with `data_product_id` to see prerequisite checklist.
+2. Remediate each unsatisfied prerequisite:
+   - Schema version: `update_data_product` with schema `version: "1.0"`.
+   - Field descriptions: `update_data_product` with all fields described.
+   - PII classified: `tag_pii_fields` via `loxtep_schemas`.
+   - Quality rules: `create_quality_rule` via `loxtep_quality` (≥3 rules). Check with `get_quality_score`.
+   - Glossary terms: `append_thesaurus_synonym` via `loxtep_ontology` for each field.
+   - Primary entity: `update_data_product` with `entities[].is_primary + natural_key`.
+3. `get_promotion_readiness` again to verify all prerequisites satisfied.
+4. `promote_data_product` with `target_tier: "silver"`.
 
 ### Flow — Medallion Promotion (Silver → Gold)
 
-1. Verify all Silver requirements plus: active contract, SLA defined,
-   SLA met 30 days, delivery interfaces configured, governance sign-off.
-2. `update_data_product` with `medallion: "gold"`.
+1. `get_promotion_readiness` with `data_product_id` to see Gold prerequisites.
+2. Remediate each unsatisfied prerequisite:
+   - Ontology bindings: `bind_field_to_ontology` for each unbound field via `loxtep_ontology`.
+   - Data contract: `create_data_contract` with SLA terms via `loxtep_data_products`.
+   - Consumption endpoint: `create_delivery_interface` via `loxtep_data_products`.
+   - Graph sync: auto-handled by Silver promotion.
+   - PROV-O lineage: document upstream lineage via `update_data_product` lineage field.
+3. `get_promotion_readiness` again to confirm.
+4. `promote_data_product` with `target_tier: "gold"`.
 
 ### Flow — Schema Design
 
@@ -130,10 +142,14 @@ Transform Logic:  [expression]
 | `get_data_product` | `loxtep_data_products` | organization | Full ODPS document by `data_product_id` |
 | `get_data_product_lexicon` | `loxtep_data_products` | organization | Glossary/lexicon for a data product |
 | `create_data_product` | `loxtep_data_products` | organization | ODPS payload; set `kind`, `domain_id`, `owner` |
-| `update_data_product` | `loxtep_data_products` | organization | Partial update; use for medallion promotion |
+| `update_data_product` | `loxtep_data_products` | organization | Partial update; use for schema, metadata, status |
 | `delete_data_product` | `loxtep_data_products` | project | Remove a data product by `project_id`, `data_product_id` |
 | `create_delivery_interface` | `loxtep_data_products` | organization | Delivery interface (webhook/API/export/DB sync/BI/event stream) for a data product. |
 | `list_delivery_interfaces` | `loxtep_data_products` | organization | Active delivery interfaces. |
+| `get_promotion_readiness` | `loxtep_data_products` | organization | Check prerequisites, progress, promotability for a data product. |
+| `promote_data_product` | `loxtep_data_products` | organization | Execute tier transition (Silver/Gold). Validates prerequisites server-side. |
+| `create_data_contract` | `loxtep_data_products` | organization | Create contract with SLA/quality terms. Required for Gold. |
+| `list_data_contracts` | `loxtep_data_products` | organization | List contracts, optionally filtered by `data_product_id`. |
 
 ## Decision tree
 

@@ -1,10 +1,10 @@
 # Process intelligence (Customer MCP)
 
-**Story S8:** Understand **entities**, **decisions**, and **execution context** across the process graph — runtime intelligence for entity state and decision audit trails.
+**Story S8:** Understand **entities**, **decisions**, **execution context**, and perform **unified context retrieval** across the process graph — runtime intelligence for entity state, decision audit trails, and multi-backend context queries.
 
 ## When to use
 
-- "**Entity context** for order/customer", "**decision traces**", "record **decision**", "create **entity context**"
+- "**Entity context** for order/customer", "**decision traces**", "record **decision**", "create **entity context**", "**unified context query**"
 
 ## Prerequisites
 
@@ -23,6 +23,14 @@
 2. Each call creates a new context snapshot (append-only).
 3. If `entity_type` is not in the ontology, a warning is returned — register it via `loxtep_ontology` → `create_ontology_concept`.
 
+### Flow — Unified context query
+
+1. `query_context` with `query` — a natural language question (e.g. "What processes touch the customer entity?").
+2. Optionally restrict search scope with `backends: ["graph", "vector"]` (valid: `graph`, `analytics`, `vector`, `catalog`).
+3. Optionally set `max_results` (default 20) and `include_plan: false` to suppress execution plan.
+4. Response includes synthesized `answer`, `confidence` score (0–1), `sources` (citations array), and optional execution `plan`.
+5. Check `metadata` for latencies, backends consulted/failed, and intent classification.
+
 ### Flow — Record decision trace
 
 1. `record_decision_trace` with `decision_id`, `procedure_id`, `step_id`, `inputs`, `outcome`, `rationale`, `actor`, `timestamp`.
@@ -33,7 +41,7 @@
 
 | `operation` | Scope |
 |-------------|-------|
-| `get_entity_context`, `query_entity_context`, `create_entity_context`, `list_decision_traces`, `record_decision_trace` | organization |
+| `get_entity_context`, `query_entity_context`, `create_entity_context`, `list_decision_traces`, `record_decision_trace`, `query_context` | organization |
 
 ## Pitfalls
 

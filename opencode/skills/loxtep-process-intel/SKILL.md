@@ -1,6 +1,6 @@
 ---
 name: loxtep-process-intel
-description: Runtime process intelligence — entity context and decision traces. Use when the user wants to read or write entity context, query entity context, or list/record decision traces. Customer MCP loxtep_process_intel. Not the same as loxtep_ontology (vocabulary/ontology management) or loxtep_catalog (discovery).
+description: Runtime process intelligence — entity context, decision traces, and unified context retrieval. Use when the user wants to read or write entity context, query entity context, perform unified multi-backend context queries, or list/record decision traces. Customer MCP loxtep_process_intel. Not the same as loxtep_ontology (vocabulary/ontology management) or loxtep_catalog (discovery).
 license: MIT
 compatibility: opencode
 metadata:
@@ -14,7 +14,7 @@ metadata:
 
 ## When to use
 
-- "**Entity context** for order/customer", "**decision traces**", "record **execution context**", "record **decision**"
+- "**Entity context** for order/customer", "**decision traces**", "record **execution context**", "record **decision**", "**unified context query**"
 
 ## Prerequisites
 
@@ -32,6 +32,12 @@ metadata:
 1. `create_entity_context` with entity_type, entity_id, attributes, related_entities, source.
 2. Append-only — each call creates a new context snapshot (no overwrite).
 
+### Flow — Unified context query
+
+1. `query_context` with `query` (natural language question).
+2. Optionally restrict with `backends: ["graph", "vector"]` to limit search scope.
+3. Response includes synthesized `answer`, `confidence` score, `sources` (citations), and execution `plan`.
+
 ### Flow — Record decision trace
 
 1. `record_decision_trace` with decision_id, procedure_id, step_id, inputs, outcome, rationale, actor, timestamp.
@@ -45,6 +51,7 @@ metadata:
 | `query_entity_context` | organization | read |
 | `create_entity_context` | organization | write |
 | `list_decision_traces` | organization | read |
+| `query_context` | organization | read |
 | `record_decision_trace` | organization | write |
 
 ## Pitfalls

@@ -173,6 +173,10 @@ key parameters.
 | `get_data_product_sdk_config` | organization | `data_product_id` | — |
 | `list_delivery_interfaces` | organization | — | — |
 | `create_delivery_interface` | organization | — | — |
+| `get_promotion_readiness` | organization | `data_product_id` | — |
+| `promote_data_product` | organization | `data_product_id`, `target_tier` | — |
+| `create_data_contract` | organization | `data_product_id`, `name` | `description`, `version`, `status`, `terms`, `schema_version_id` |
+| `list_data_contracts` | organization | — | `data_product_id`, `status`, `page`, `page_size` |
 
 ```json
 { "operation": "create_data_product", "project_id": "proj_…", "name": "orders", "kind": "source" }
@@ -278,7 +282,7 @@ key parameters.
 { "operation": "resolve_canonical_key", "key_or_alias": "customer_email" }
 ```
 
-### `loxtep_process_intel` — process intelligence
+### `loxtep_process_intel` — process intelligence & unified context retrieval
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
 | `get_entity_context` | organization | `entity_id` | — |
@@ -286,11 +290,12 @@ key parameters.
 | `create_entity_context` | organization | `entity_id`, `context` | — |
 | `list_decision_traces` | organization | — | `anchor` |
 | `record_decision_trace` | organization | `trace` | — |
+| `query_context` | organization | `query` | `backends`, `max_results`, `include_plan` |
 | `list_promotion_candidates` | organization | — | — |
 | `promote_candidate` | organization | — | — |
 
 ```json
-{ "operation": "list_decision_traces" }
+{ "operation": "query_context", "query": "What processes touch the customer entity?" }
 ```
 
 ### `loxtep_procedures` — process graph procedures
@@ -397,7 +402,7 @@ rejected, and a check that cannot complete blocks the operation.
 | `org-semantics-quality` | Semantic layer + quality rules |
 | `loxtep-analytics` | DuckDB analytics |
 | `loxtep-workspace` | Snapshots, versions, workspace index |
-| `loxtep-process-intel` | Entity context + decision traces |
+| `loxtep-process-intel` | Entity context + decision traces + unified context retrieval |
 | `loxtep-ontology` | Ontology, vocabulary, namespaces |
 | `loxtep-procedures` | Process graph procedures |
 | `loxtep-agent-workspace` | Agent orchestration (issues/goals/agents) |

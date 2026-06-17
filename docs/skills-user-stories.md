@@ -18,7 +18,7 @@ Each story lists **primary skill** (where the narrative lives) and **supporting 
 | S5 | **Discover** assets, lineage, evidence, governance; run discovery | `discover-govern-lineage` |
 | S6 | **Query** mesh data with SQL / analytics | `loxtep-analytics` |
 | S7 | **Snapshots**, compare versions, reindex workspace, inspect queues | `loxtep-workspace` |
-| S8 | **Entity / decision** intelligence — runtime context and decision traces | `loxtep-process-intel` |
+| S8 | **Entity / decision** intelligence — runtime context, decision traces, and unified context retrieval | `loxtep-process-intel` |
 | S9 | **Procedures** (process graph) — CRUD, import/export, dependencies | `loxtep-procedures` |
 | S10 | **Agent** issues/goals/projects (not data-mesh workflow projects) | `loxtep-agent-workspace` |
 | S11 | **Provision** or list runtime instances (shared playground vs managed paid) | `loxtep-instances` |
@@ -133,8 +133,8 @@ Each story lists **primary skill** (where the narrative lives) and **supporting 
 | Field | Detail |
 |-------|--------|
 | **Persona** | Ops / analytics investigating entities |
-| **Happy path** | `get_entity_context` / `query_entity_context` → `create_entity_context` → `list_decision_traces` → `record_decision_trace` |
-| **MCP** | `loxtep_process_intel` (5 ops) |
+| **Happy path** | `get_entity_context` / `query_entity_context` → `create_entity_context` → `list_decision_traces` → `record_decision_trace`; unified retrieval: `query_context` with natural language question |
+| **MCP** | `loxtep_process_intel` (6 ops) |
 | **Primary skill** | `loxtep-process-intel` |
 | **Related** | S13 (ontology/vocabulary/namespace management) |
 
@@ -231,7 +231,7 @@ Each story lists **primary skill** (where the narrative lives) and **supporting 
 | `org-semantics-quality` | S4 | `loxtep_schemas`, `loxtep_quality` |
 | `loxtep-analytics` | S6 | `loxtep_analytics` |
 | `loxtep-workspace` | S7 | `loxtep_workspace` |
-| `loxtep-process-intel` | S8 | `loxtep_process_intel` (5 ops: entity context, decision traces) |
+| `loxtep-process-intel` | S8 | `loxtep_process_intel` (6 ops: entity context, decision traces, unified context query) |
 | `loxtep-procedures` | S9 | `loxtep_procedures` (8 ops: CRUD + import/export/dependencies) |
 | `loxtep-ontology` | S13 | `loxtep_ontology` (15 ops: vocabulary + ontology + namespace mappings) |
 | `loxtep-agent-workspace` | S10 | `loxtep_agent_workspace` |
@@ -255,7 +255,7 @@ Each story lists **primary skill** (where the narrative lives) and **supporting 
 | All `loxtep_schemas` / `loxtep_quality` ops | `org-semantics-quality` |
 | All `loxtep_analytics` ops | `loxtep-analytics` |
 | All `loxtep_workspace` ops | `loxtep-workspace` |
-| `get_entity_context`, `query_entity_context`, `create_entity_context`, `list_decision_traces`, `record_decision_trace` | `loxtep-process-intel` |
+| `get_entity_context`, `query_entity_context`, `create_entity_context`, `list_decision_traces`, `record_decision_trace`, `query_context` | `loxtep-process-intel` |
 | `list_procedures`, `get_procedure`, `create_procedure`, `update_procedure`, `delete_procedure`, `import_process_graph`, `export_process_graph`, `get_procedure_dependencies` | `loxtep-procedures` |
 | `list_thesaurus_terms`, `get_thesaurus_term`, `create_thesaurus_term`, `update_thesaurus_term`, `delete_thesaurus_term`, `sync_vocabulary`, `resolve_canonical_key`, `get_ontology_relationships`, `create_ontology_concept`, `create_ontology_relationship`, `update_ontology_concept`, `delete_ontology_concept`, `register_namespace_mapping`, `list_namespace_mappings`, `get_namespace_mapping` | `loxtep-ontology` |
 | All `agent_orchestration_*` | `loxtep-agent-workspace` |
