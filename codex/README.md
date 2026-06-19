@@ -45,8 +45,6 @@ url = "https://mcp.loxtep.io/ai/mcp/stream"
 
 On first use, Codex opens OAuth in the browser. Tokens refresh automatically.
 
-> **Dev environment:** `https://mcpdev.loxtep.io/ai/mcp/stream`
-
 ## Developer workflows
 
 1. **Orient** — session + RBAC; catalog/semantic layer search.
