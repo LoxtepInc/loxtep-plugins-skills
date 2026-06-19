@@ -173,10 +173,6 @@ key parameters.
 | `get_data_product_sdk_config` | organization | `data_product_id` | — |
 | `list_delivery_interfaces` | organization | — | — |
 | `create_delivery_interface` | organization | — | — |
-| `get_promotion_readiness` | organization | `data_product_id` | — |
-| `promote_data_product` | organization | `data_product_id`, `target_tier` | — |
-| `create_data_contract` | organization | `data_product_id`, `name` | `description`, `version`, `status`, `terms`, `schema_version_id` |
-| `list_data_contracts` | organization | — | `data_product_id`, `status`, `page`, `page_size` |
 
 ```json
 { "operation": "create_data_product", "project_id": "proj_…", "name": "orders", "kind": "source" }
@@ -290,9 +286,9 @@ key parameters.
 | `create_entity_context` | organization | `entity_id`, `context` | — |
 | `list_decision_traces` | organization | — | `anchor` |
 | `record_decision_trace` | organization | `trace` | — |
-| `query_context` | organization | `query` | `backends`, `max_results`, `include_plan` |
 | `list_promotion_candidates` | organization | — | — |
 | `promote_candidate` | organization | — | — |
+| `query_context` | organization | `query` | `backends`, `max_results`, `include_plan` |
 
 ```json
 { "operation": "query_context", "query": "What processes touch the customer entity?" }

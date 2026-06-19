@@ -1,26 +1,29 @@
 ---
 name: "loxtep"
-displayName: "Loxtep Data Mesh Platform"
-description: "Build and operate data mesh pipelines with Loxtep — connect SaaS sources, build workflow graphs, create data products, run SQL analytics, manage governance, and deploy to runtime instances. 19 grouped MCP tools with per-call operation."
-keywords: ["loxtep", "data-mesh", "data-product", "workflow", "connector", "pipeline", "catalog", "governance", "analytics", "ingestion"]
+displayName: "Loxtep Enterprise Context Layer"
+description: "Loxtep is the Enterprise Context Layer — turning organizational knowledge into machine-usable context for AI. Manage governed data products, semantic ontology, process graphs, entity context, and decision traces. 19 grouped MCP tools with per-call operation."
+keywords: ["loxtep", "context-layer", "data-product", "workflow", "connector", "semantic-layer", "ontology", "governance", "process-intelligence", "streaming"]
 author: "Loxtep"
 ---
 
-# Loxtep Data Mesh Platform
+# Loxtep Enterprise Context Layer
 
 ## Overview
 
-Loxtep is a data mesh platform that lets you connect external systems (Shopify, Salesforce, APIs), build workflow graphs, create unified data products, and expose them via webhooks or SQL analytics. The Customer MCP provides **19 grouped tools** (`loxtep_*`) — each call sets `operation` to a flat action name plus arguments.
+Loxtep is the **Enterprise Context Layer** — the system that turns organizational knowledge, expertise, and norms into machine-usable context for AI. Built on **governed data products** over a **real-time streaming** backbone with a **semantic layer**, **ontology**, **process graph**, and **AI context** (entity knowledge, decision traces) that agents query instead of inventing.
+
+Connect external systems (Shopify, Salesforce, APIs) via workflows, create versioned and governed data products, and expose organizational context through a semantic layer and process intelligence. The Customer MCP provides **19 grouped tools** (`loxtep_*`) — each call sets `operation` to a flat action name plus arguments.
 
 This power covers the full platform lifecycle:
 - **Authentication** and session management
-- **Connectors** — OAuth, API key, and SDK-based ingestion
-- **Projects & Workflows** — graph-based pipeline design
-- **Data Products** — unified outputs with delivery interfaces
-- **Catalog & Governance** — discovery, lineage, evidence, quality rules
-- **Analytics** — SQL queries over mesh data 
+- **Connectors** — OAuth, API key, and SDK-based integrations
+- **Projects & Workflows** — real-time streaming pipelines
+- **Data Products** — governed, discoverable assets with schema and lineage
+- **Semantic Layer & Ontology** — canonical business terms, vocabulary, namespaces
+- **Catalog & Governance** — discovery, lineage, evidence, quality rules, PII tagging
+- **Analytics** — SQL queries over data products
 - **Instances & Deployment** — runtime provisioning and deployment
-- **Process Intelligence** — entity context, ontology, decision traces
+- **Process Intelligence** — entity context, decision traces, organizational skills
 - **Agent Workspace** — issues, goals, and agent orchestration
 
 ## Available Steering Files
@@ -68,11 +71,12 @@ Disconnect and reconnect the Loxtep MCP server in your IDE's MCP settings to re-
 
 ## Session Pattern (Start Here)
 
-Before any project work, confirm identity and org:
+Before any project work, confirm identity and org context:
 
-1. `loxtep_session` → `get_current_user` — returns `permissions` (effective resource/action grants) and `roles`.
-2. `loxtep_session` → `get_current_organization` — confirms org scope.
+1. `loxtep_session` → `get_current_user` — returns `permissions` (effective resource/action grants), `roles`, and org context.
+2. `loxtep_session` → `get_current_organization` — confirms organizational scope and governance settings.
 3. For project-scoped tools (`loxtep_workflows`, `loxtep_connections`, `loxtep_data_products`), always include `project_id`.
+4. Use the **semantic layer** and **ontology** to resolve canonical business terms instead of guessing field names.
 
 ### Permission Denials
 
@@ -92,7 +96,7 @@ Example:
 ```json
 {
   "operation": "create_project",
-  "name": "My Data Mesh Project"
+  "name": "customer-orders"
 }
 ```
 
@@ -130,7 +134,7 @@ Example:
 | S3 | Webhook delivery for data product updates | data-workflows |
 | S4 | Org schemas, PII, quality rules | org-semantics-quality |
 | S5 | Catalog, lineage, discovery | discover-govern-lineage |
-| S6 | SQL analytics over mesh | loxtep-analytics |
+| S6 | SQL analytics over data products | loxtep-analytics |
 | S7 | Snapshots, versions, reindex | loxtep-workspace |
 | S8 | Entity/ontology/thesaurus intelligence | loxtep-process-intel |
 | S9 | Business procedures | loxtep-procedures |
@@ -165,12 +169,16 @@ Example:
 
 ## Best Practices
 
-- Always start with `get_current_user` → `get_current_organization` to confirm context
+- Always start with `get_current_user` → `get_current_organization` to confirm context and organizational governance
+- Query the **semantic layer** first to resolve canonical field names and business meanings before building workflows
 - Use `list_projects` to get `project_id` before project-scoped operations
+- Query **ontology** and **thesaurus** to align with organizational vocabulary and namespace mappings
+- Access **entity context** and **decision traces** to understand organizational knowledge about data and decisions
 - For workflow graphs, always call `patch_workflow_graph` twice: first to add nodes, then to connect them (you need the returned entity IDs)
 - Use `dry_run: true` on `patch_workflow_graph` to validate before persisting
 - Deploy projects to an instance before attempting SDK event writes
 - Use `entity_type` values with hyphens: `data-products`, `quality-rules` (not underscores)
-- For ontology/vocabulary management, use `loxtep_ontology` (not `loxtep_process_intel`). Process intel is for runtime entity context and decision traces only.
+- For ontology/vocabulary management, use `loxtep_ontology` (not `loxtep_process_intel`). Process intel is for runtime entity context and decision traces only
 - Use `sync_vocabulary` with `dry_run: true` to preview vocabulary diffs before applying bulk changes
 - Register namespace mappings via `register_namespace_mapping` before importing graphs that use external ontologies (W3C PKO is pre-registered)
+- Leverage **process intelligence** to understand organizational processes and decision flows before building automated workflows

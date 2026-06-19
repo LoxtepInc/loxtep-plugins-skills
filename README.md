@@ -50,10 +50,20 @@ See [`cursor/README.md`](cursor/README.md) for details.
 
 ### Claude Code & Cowork
 
-Install the **`loxtep-claude`** plugin from the Claude plugin directory, or from Git:
+Install the **`loxtep-claude`** plugin via the marketplace:
 
 ```bash
-claude plugin install https://github.com/LoxtepInc/loxtep-plugins-skills --path claude/
+# Step 1: Add the repo as a marketplace
+claude plugin marketplace add https://github.com/LoxtepInc/loxtep-plugins-skills
+
+# Step 2: Install the plugin
+claude plugin install loxtep-claude
+```
+
+Or install directly from a local clone:
+
+```bash
+claude plugin install /path/to/loxtep-plugins-skills/claude
 ```
 
 This gives you the hosted MCP, 19 skills, and auth recovery. OAuth runs on first tool call.
