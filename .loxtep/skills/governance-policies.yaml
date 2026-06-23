@@ -1,0 +1,13 @@
+# .loxtep/skills/governance-policies.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Fail-closed: policy CRUD is RBAC-governed via the governance API/console, not a data-mesh
+# resource scope and not on the MCP tool surface.
+name: governance-policies
+description: Author and manage deploy-time governance policies — RBAC-governed; no data-mesh resource scope.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions: {}

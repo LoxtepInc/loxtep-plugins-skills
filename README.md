@@ -66,7 +66,7 @@ Or install directly from a local clone:
 claude plugin install /path/to/loxtep-plugins-skills/claude
 ```
 
-This gives you the hosted MCP, 19 skills, and auth recovery. OAuth runs on first tool call.
+This gives you the hosted MCP, 20 skills, and auth recovery. OAuth runs on first tool call.
 
 See [`claude/README.md`](claude/README.md) for details.
 
@@ -157,12 +157,12 @@ For clients without OAuth support, wrap with `mcp-remote` (see Antigravity above
 
 | Plugin | Platform | Path | Description |
 |--------|----------|------|-------------|
-| **Cursor** | Cursor IDE | [cursor/](cursor/) | Marketplace plugin **`loxtep`** (path `cursor/`). Hosted MCP, 19 skills, auth rule. |
-| **Claude** | Claude Code & Cowork | [claude/](claude/) | Marketplace plugin **`loxtep-claude`** (path `claude/`). Same surface — hosted MCP, 19 skills, auth rule. |
-| **OpenCode** | OpenCode | [opencode/](opencode/) | MCP + 19 skills for terminal/desktop/IDE. Native OAuth; optional skill permissions. |
-| **Kiro** | Kiro IDE | [kiro/](kiro/) | MCP, 19 skills, optional Kiro Power steering guides. Native OAuth. |
-| **Antigravity** | Google Antigravity | [antigravity/](antigravity/) | MCP + 19 skills via `mcp-remote` OAuth bridge. |
-| **Codex** | OpenAI Codex | [codex/](codex/) | MCP + 19 skills; TOML config snippet. Native OAuth. |
+| **Cursor** | Cursor IDE | [cursor/](cursor/) | Marketplace plugin **`loxtep`** (path `cursor/`). Hosted MCP, 20 skills, auth rule. |
+| **Claude** | Claude Code & Cowork | [claude/](claude/) | Marketplace plugin **`loxtep-claude`** (path `claude/`). Same surface — hosted MCP, 20 skills, auth rule. |
+| **OpenCode** | OpenCode | [opencode/](opencode/) | MCP + 20 skills for terminal/desktop/IDE. Native OAuth; optional skill permissions. |
+| **Kiro** | Kiro IDE | [kiro/](kiro/) | MCP, 20 skills, optional Kiro Power steering guides. Native OAuth. |
+| **Antigravity** | Google Antigravity | [antigravity/](antigravity/) | MCP + 20 skills via `mcp-remote` OAuth bridge. |
+| **Codex** | OpenAI Codex | [codex/](codex/) | MCP + 20 skills; TOML config snippet. Native OAuth. |
 
 ## Repository layout
 
