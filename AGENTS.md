@@ -329,9 +329,9 @@ key parameters.
 | `agent_orchestration_create_goal` | organization | `title` | `description` |
 | `agent_orchestration_list_goals` | organization | — | — |
 | `agent_orchestration_get_goal` | organization | `goal_id` | — |
-| `agent_orchestration_list_projects` | organization | — | — |
-| `agent_orchestration_create_project` | organization | `name` | — |
-| `agent_orchestration_get_project` | organization | `project_id` | — |
+| `agent_orchestration_list_workstreams` | organization | — | — |
+| `agent_orchestration_create_workstream` | organization | `name` | — |
+| `agent_orchestration_get_workstream` | organization | `workstream_id` | — |
 | `agent_orchestration_list_agents` | organization | — | — |
 | `agent_orchestration_get_agent` | organization | `agent_id` | — |
 
