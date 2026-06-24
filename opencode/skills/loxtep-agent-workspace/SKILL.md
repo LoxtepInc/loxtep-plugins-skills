@@ -26,12 +26,12 @@ metadata:
 - **`operation`** values (flat names):
   `agent_orchestration_create_issue`, `agent_orchestration_list_issues`, `agent_orchestration_get_issue`,
   `agent_orchestration_create_goal`, `agent_orchestration_list_goals`, `agent_orchestration_get_goal`,
-  `agent_orchestration_list_projects`, `agent_orchestration_create_project`, `agent_orchestration_get_project`,
+  `agent_orchestration_list_workstreams`, `agent_orchestration_create_workstream`, `agent_orchestration_get_workstream`,
   `agent_orchestration_list_agents`, `agent_orchestration_get_agent`
 
 ## Pitfalls
 
-- **`agent_orchestration_create_project`** ≠ **`create_project`** on `loxtep_projects`. Naming collision in English — always pick the **tool** from user intent.
+- **`agent_orchestration_create_workstream`** ≠ **`create_project`** on `loxtep_projects`. Naming collision in English — always pick the **tool** from user intent.
 - Data pipeline work → **`data-workflows`** + **`create-connector`**.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->

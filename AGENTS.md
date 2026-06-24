@@ -171,8 +171,13 @@ key parameters.
 | `get_data_product` | organization | `data_product_id` | — |
 | `get_data_product_lexicon` | organization | `data_product_id` | — |
 | `get_data_product_sdk_config` | organization | `data_product_id` | — |
+| `enrich_schema_descriptions` | organization | — | — |
 | `list_delivery_interfaces` | organization | — | — |
 | `create_delivery_interface` | organization | — | — |
+| `get_promotion_readiness` | organization | — | — |
+| `promote_data_product` | organization | — | — |
+| `create_data_contract` | organization | — | — |
+| `list_data_contracts` | organization | — | — |
 
 ```json
 { "operation": "create_data_product", "project_id": "proj_…", "name": "orders", "kind": "source" }
@@ -205,6 +210,7 @@ key parameters.
 | `list_quality_rules` | organization | — | `domain_id` |
 | `get_quality_rule` | organization | `quality_rule_id` | — |
 | `test_quality_rule` | organization | `quality_rule_id`, `sample` | — |
+| `get_quality_score` | organization | — | — |
 
 ```json
 { "operation": "list_quality_rules" }
@@ -263,13 +269,17 @@ key parameters.
 | `create_thesaurus_term` | organization | `term` | `aliases` |
 | `update_thesaurus_term` | organization | `term_id` | `aliases` |
 | `delete_thesaurus_term` | organization | `term_id` | — |
+| `append_thesaurus_synonym` | organization | — | — |
 | `sync_vocabulary` | organization | `vocabulary` | — |
 | `resolve_canonical_key` | organization | `key` | — |
 | `get_ontology_relationships` | organization | `concept_id` | — |
+| `list_ontology_concepts` | organization | — | — |
+| `get_ontology_concept` | organization | — | — |
 | `create_ontology_concept` | organization | `name` | — |
 | `create_ontology_relationship` | organization | `from`, `to`, `type` | — |
 | `update_ontology_concept` | organization | `concept_id` | — |
 | `delete_ontology_concept` | organization | `concept_id` | — |
+| `bind_field_to_ontology` | organization | — | — |
 | `register_namespace_mapping` | organization | `namespace`, `mapping` | — |
 | `list_namespace_mappings` | organization | — | — |
 | `get_namespace_mapping` | organization | `namespace` | — |
@@ -335,6 +345,9 @@ key parameters.
 | `search_semantic_layer` | organization | `query` | `artifact_type` |
 | `get_semantic_artifact` | organization | `artifact_type`, `id` | — |
 | `get_semantic_completeness` | organization | — | `domain_id` |
+| `get_pack_activation_status` | organization | — | — |
+| `activate_vocabulary_pack` | organization | — | — |
+| `list_available_packs` | organization | — | — |
 | `create_canonical_knowledge` | organization | — | — |
 | `get_canonical_knowledge` | organization | — | — |
 | `update_canonical_knowledge` | organization | — | — |
