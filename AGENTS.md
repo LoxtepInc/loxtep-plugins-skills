@@ -98,6 +98,9 @@ key parameters.
 | --- | --- | --- | --- |
 | `list_instances` | organization | — | — |
 | `create_instance` | organization | `name`, `region`, `instance_type` | `plan_id`, `payment_method_id`, `connection_details` |
+| `get_deployment_urls` | organization | — | — |
+| `register_infrastructure` | organization | — | — |
+| `get_infrastructure` | organization | — | — |
 
 ```json
 { "operation": "create_instance", "name": "sandbox", "region": "us-east-1", "instance_type": "shared" }
