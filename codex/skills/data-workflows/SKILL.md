@@ -43,6 +43,50 @@ End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **d
 2. **`operation`** — flat tool id (e.g. `list_workflows`).
 3. **Other fields** — API args at top level next to `operation`.
 
+## Source Integration Flow (Canonical Methodology)
+
+Use this 14-step sequence for any REST, SFTP, or file-based source ingestion project.
+Steps 8 and 9 have mandatory **user approval gates** — halt and present options to the
+user; do not proceed without explicit confirmation.
+
+```
+Step 1  ─ Create org connector (create_connector) + verify (test_connection)
+           Gate: must succeed before continuing
+Step 2  ─ Enumerate entities to extract from the source (e.g. products, inventory, orders)
+Step 3  ─ Define source schema from API docs / file specs; register in loxtep_schemas
+Step 4  ─ Pull live sample (≥20 records) via connector; infer schema if no docs available
+Step 5  ─ Reconcile sample vs schema — if sample contradicts docs, schema follows sample
+           Gate: schema must match observed data before validator is built
+Step 6  ─ create_workflow (ingestion, cron trigger, connector_id set)
+           patch_workflow_graph Step 1: add_node connection + validation + raw source DP
+           patch_workflow_graph Step 2: connect_nodes + update_workflow metadata.graph_wired: true
+Step 7  ─ Add validator node (entity_type: "validations") into graph
+           Route failures to quarantine DP, do not block the pipeline
+Step 8  ─ Query loxtep_ontology for canonical entity match
+           ⛔ USER APPROVAL GATE: ambiguous match or no match → halt, present options
+Step 9  ─ Design field-by-field source → canonical mappings
+           ⛔ USER APPROVAL GATE: ambiguous mapping → halt, present options
+Step 10 ─ create_workflow (enrichment, data-product-trigger on raw source DP)
+           Add transformation nodes (change_schema, execute_code_function)
+           patch_workflow_graph: trigger → transforms → unified consumer DP
+           connect_nodes + update_workflow metadata.graph_wired: true
+Step 11 ─ Register thesaurus terms for all source-specific field aliases
+Step 12 ─ Bind data product fields to ontology; register in semantic layer
+Step 13 ─ Verify all node names follow naming conventions before deploy
+Step 14 ─ deploy_workflow (ingestion + enrichment each)
+           Poll get_deployment until status = "deployed"
+           get_runtime_mapping to confirm queue/bot resolution
+```
+
+> **Two-level connector concept:** Step 1 creates an *org-level connector*
+> (`loxtep_connectors` → `create_connector`) that stores credentials. Steps 6 and 10
+> add *workflow graph connection nodes* (`patch_workflow_graph add_node entity_type:
+> "connections"`) that reference the org connector via `connector_id`. Both are required
+> and they are different things — see **Flow I** for concrete examples. See also
+> **`create-connector`** skill.
+
+---
+
 ## Happy-path flows
 
 ### Flow A — Session before work (S0)
@@ -78,12 +122,20 @@ To build a **derived/staging** data product whose source is **another data produ
 
 - **Do not** use a plain `data-products` source node — it is logical only (no runtime bot/queue), so nothing feeds the transforms.
 - **Do not** use an `sdk` connection — it is a producer; it does not read another product's stream.
+- **Do not** call `create_connection` to create the trigger — it creates a standalone project-scoped connection entity, not a graph node. Use `patch_workflow_graph add_node` directly (step 2 below).
 
 1. `create_workflow` with `workflow_type: "enrichment"`.
-2. `create_connection` with `type: "data-product-trigger"` and `configuration.source_data_product_id` = the upstream data product's UUID or name. At deploy this reads the upstream product's bound queue and forwards events downstream.
-3. Add transforms (`create_transformation`, e.g. `change_schema` → `filter` → `drop_fields`) and a sink `data-products` node.
-4. `patch_workflow_graph` (see Flow E): `add_node` the trigger connection + sink, then `connect_nodes` trigger → first transform → … → sink. (`create_connection` / `create_data_product` do not add graph nodes by themselves.)
-5. Deploy. Events replay from the upstream product's history. The **`data-product-enrichment`** workflow template scaffolds this exact shape.
+2. **`patch_workflow_graph` Step 1 — add nodes**: add a `data-product-trigger` connection
+   node (`entity_type: "connections"`, `connector_type: "data-product-trigger"`,
+   `configuration: { "source_data_product_id": "<upstream-dp-uuid>" }`), one or more
+   `transformations` nodes, and a sink `data-products` node (unified consumer DP).
+   Capture the returned `entity_id` for each node.
+3. **`patch_workflow_graph` Step 2 — connect + mark wired**: `connect_nodes` trigger → first
+   transform → … → sink DP, then `update_workflow` with
+   `{ "metadata": { "graph_wired": true } }`.
+4. Deploy. At runtime, the `data-product-trigger` node reads the upstream product's bound
+   queue and forwards events to the transform chain. The **`data-product-enrichment`**
+   workflow template scaffolds this exact shape.
 
 ### Flow E — Wiring a workflow graph with `patch_workflow_graph` (CRITICAL)
 
@@ -183,7 +235,7 @@ Use the entity IDs from step 1 to create the edge and update workflow metadata:
 - Always include `"op": "update_workflow"` with `{ "metadata": { "graph_wired": true } }` in the second patch so the UI shows the workflow as configured.
 - Use `dry_run: true` to validate operations without persisting.
 
-### Flow F — Deploy before SDK ingestion (CRITICAL for runtime)
+### Flow G — Deploy before SDK ingestion (CRITICAL for runtime)
 
 Design-time configuration (Flows A–E above) creates the **graph definition** only. **Queues and bots do not exist until the project is deployed to an instance.** If the user wants to write events via the SDK, they must deploy first.
 
@@ -265,7 +317,7 @@ Design-time configuration (Flows A–E above) creates the **graph definition** o
 
 **Runtime naming convention reference:** See the **`loxtep-sdk`** Agent-Scope Skill for the full naming hierarchy and how to resolve queue/bot names from the runtime-mapping API.
 
-### Flow G — Build your own SDK-ingestion data product (end to end)
+### Flow H — Build your own SDK-ingestion data product (end to end)
 
 When a customer wants to write events from their own code into a new data product, this is the complete happy path. The data product is fed by an **SDK connection** node; **deploy** provisions the queue + bot and the data product's runtime bindings; then the SDK resolves everything from the data product **name**.
 
@@ -287,6 +339,152 @@ Notes:
 - `get_writer` / `get_reader` resolve by **name** (or UUID) and only **after deploy** — they read the deployment bindings created at deploy time. Pre-deploy resolution fails by design.
 - Authentication is handled automatically via OAuth when you connect the MCP server. If auth expires, reconnect the server to re-trigger the flow. See **`loxtep-auth`**.
 - Simplest model: one workflow per event type, with the connection's `event_type` equal to the data product name.
+
+### Flow I — Scheduled REST/SFTP ingestion workflow (source integration)
+
+For ingesting data on a cron schedule from a REST API or SFTP file source into a raw
+source data product. The org-level connector must exist first (see **`create-connector`**).
+
+**Step 1 — Create ingestion workflow with cron trigger:**
+
+```json
+{
+  "operation": "create_workflow",
+  "project_id": "<project_id>",
+  "name": "ingest-<entity-type>-<source-system>",
+  "workflow_type": "ingestion",
+  "connector_id": "<org-connector-uuid>",
+  "trigger": {
+    "type": "cron",
+    "schedule": "0 */12 * * *"
+  }
+}
+```
+
+**Step 2 — Add nodes via `patch_workflow_graph` (call 1):**
+
+```json
+{
+  "operation": "patch_workflow_graph",
+  "project_id": "<project_id>",
+  "workflow_id": "<workflow_id>",
+  "operations": [
+    {
+      "op": "add_node",
+      "entity_type": "connections",
+      "entity": {
+        "name": "<Source-System> <Protocol>",
+        "connector_type": "rest",
+        "connector_id": "<org-connector-uuid>",
+        "configuration": {
+          "endpoint": "/v2/<entity-type>",
+          "method": "GET",
+          "pagination": { "type": "offset", "page_size": 100 }
+        }
+      }
+    },
+    {
+      "op": "add_node",
+      "entity_type": "validations",
+      "entity": {
+        "name": "validate-<entity-type>-<source-system>",
+        "validation_type": "schema",
+        "schema_id": "<source-schema-uuid>"
+      }
+    },
+    {
+      "op": "add_node",
+      "entity_type": "data-products",
+      "entity": {
+        "name": "<source-system>-<entity-type>-raw",
+        "kind": "source",
+        "status": "draft",
+        "governance": { "classification": "internal", "pii_fields": [], "compliance_requirements": [], "tags": [] }
+      }
+    },
+    {
+      "op": "add_node",
+      "entity_type": "data-products",
+      "entity": {
+        "name": "<entity-type>-<source-system>-quarantine",
+        "kind": "source",
+        "status": "draft",
+        "governance": { "classification": "internal", "pii_fields": [], "compliance_requirements": [], "tags": [] }
+      }
+    }
+  ]
+}
+```
+
+Response returns `entity_id` for each node. Capture all four IDs.
+
+**Step 3 — Connect nodes and mark wired (`patch_workflow_graph` call 2):**
+
+```json
+{
+  "operation": "patch_workflow_graph",
+  "project_id": "<project_id>",
+  "workflow_id": "<workflow_id>",
+  "operations": [
+    { "op": "connect_nodes", "from_entity_id": "<connection_id>", "to_entity_id": "<validation_id>" },
+    { "op": "connect_nodes", "from_entity_id": "<validation_id>", "to_entity_id": "<raw_dp_id>" },
+    { "op": "connect_nodes", "from_entity_id": "<validation_id>", "to_entity_id": "<quarantine_dp_id>" },
+    { "op": "update_workflow", "patch": { "metadata": { "graph_wired": true } } }
+  ]
+}
+```
+
+> For SFTP sources, use `connector_type: "sftp"` with `configuration: { "path":
+> "/data/<entity-type>.csv", "format": "csv" }` (or `"pipe-delimited"` for txt files).
+> The rest of the flow is identical.
+
+---
+
+### Flow J — Fan-in: multiple source enrichment workflows → single unified consumer DP
+
+When multiple source systems all enrich the same canonical entity, their enrichment
+workflows all write to the same unified consumer data product. `add_node` with an
+existing `entity_id` is **idempotent** — it does not create a duplicate; it wires a
+reference to the existing node.
+
+**First supplier enrichment workflow** creates the unified DP node:
+
+```json
+{
+  "op": "add_node",
+  "entity_type": "data-products",
+  "entity": {
+    "name": "unified-<entity-type>",
+    "kind": "consumer",
+    "status": "draft",
+    "governance": { "classification": "internal", "pii_fields": [], "compliance_requirements": [], "tags": ["unified", "canonical"] }
+  }
+}
+```
+
+The response returns `<unified_dp_id>`. Store this ID.
+
+**Each subsequent supplier enrichment workflow** references the same DP by its existing
+`entity_id` — do NOT omit the `entity_id` or a duplicate will be created:
+
+```json
+{
+  "op": "add_node",
+  "entity_type": "data-products",
+  "entity_id": "<unified_dp_id>"
+}
+```
+
+Then connect each workflow's final transform to the unified DP as usual:
+
+```json
+{ "op": "connect_nodes", "from_entity_id": "<last_transform_id>", "to_entity_id": "<unified_dp_id>" }
+```
+
+After all three suppliers are deployed, `get_data_product` on `unified-<entity-type>`
+will show three upstream lineage connections — one per supplier enrichment workflow.
+
+---
 
 ## MCP mapping (operations and scope)
 
@@ -319,6 +517,20 @@ Notes:
 - **`create_transformation`** / **`create_validation`** — Require an **existing workflow graph** (`get_workflow_graph` / prior `patch_workflow_graph`). If the graph is missing, the tool fails with a not-found style error.
 - **Paid plans vs shared instance** — provisioning is **`loxtep-instances`**, not this Agent-Scope Skill.
 - **Agent issues/goals** — use **`loxtep-agent-workspace`**, not `loxtep_projects`.
+- **`metadata.original_steps` (or any workflow metadata key) has no runtime effect** —
+  storing pipeline logic, step descriptions, or transformation specs in workflow metadata
+  does nothing at runtime. All pipeline behavior MUST be implemented as explicit graph
+  nodes (`add_node` via `patch_workflow_graph`). Metadata is for UI labels and flags only.
+- **`graph_wired: true` is a required completion signal** — after connecting all graph
+  nodes, you MUST call `patch_workflow_graph` with `op: "update_workflow"` and
+  `patch: { "metadata": { "graph_wired": true } }`. Without this flag, deployment may
+  fail and the UI does not show the workflow as fully configured.
+- **Org-level connector ≠ workflow graph connection node** — `create_connector` (via
+  `loxtep_connectors`) creates an org-scoped credential store entry. A workflow graph
+  connection node is a separate entity added via `patch_workflow_graph add_node
+  entity_type: "connections"` with a `connector_id` referencing the org connector.
+  Both are required: the connector stores credentials; the connection node wires them
+  into the workflow graph. Calling only `create_connector` does nothing to the graph.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 ## Agent-Scope Skill scope (`.loxtep/skills/data-workflows.yaml`)

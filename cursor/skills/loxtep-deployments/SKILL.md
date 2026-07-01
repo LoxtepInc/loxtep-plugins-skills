@@ -7,8 +7,6 @@ description:
   check deployment status, list deployments, or inspect runtime mappings.
   Customer MCP loxtep_deployments. Not the same as loxtep_instances (provisioning)
   or loxtep_workflows (authoring). See docs/skills-user-stories.md.
-metadata:
-  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/loxtep-deployments/SKILL.md
 ---
 
 # Deployments (Customer MCP)
@@ -58,6 +56,12 @@ and inspect runtime mappings.
 
 ## Pitfalls
 
+- **Deploy is required after ANY graph change** — adding or removing nodes, wiring edges,
+  updating transformation configs, or changing the trigger schedule are all design-time
+  operations that have no runtime effect until `deploy_workflow` is called again. A workflow
+  with `graph_wired: true` but not yet (re)deployed will not reflect those changes at runtime.
+  Always redeploy after modifying a workflow graph, even if the workflow was previously
+  deployed successfully.
 - **Instance provisioning** is `loxtep_instances` — different facade. This Agent-Scope Skill
   assumes the target instance already exists.
 - **Workflow authoring** (create, update, graph) is `loxtep_workflows` via the

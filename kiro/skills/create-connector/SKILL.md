@@ -84,6 +84,29 @@ SDK connectors use `auth_type: "jwt"` \u2014 no OAuth, no external credential te
 | CRUD connection node | `loxtep_connections` | `create_connection`, `update_connection`, `delete_connection`, `list_connections`, `get_connection`, `test_connection` | **project** | Always `project_id` |
 | Apply template | `loxtep_templates` | `apply_template` | **project** | `project_id`, `template_type`, `template_slug` |
 
+## Org connector vs workflow connection node (CRITICAL distinction)
+
+| Concept | Tool | Operation | Scope | Purpose |
+|---------|------|-----------|-------|---------|
+| **Org-level connector** | `loxtep_connectors` | `create_connector` | organization | Stores credentials and config. Reusable across projects and workflows. Created once per source system. |
+| **Workflow graph connection node** | `loxtep_workflows` | `patch_workflow_graph add_node entity_type: "connections"` | project / workflow | Wires the connector into a specific workflow graph. References the org connector via `connector_id`. Created per workflow. |
+
+**Both are required for a working ingestion workflow.** The connector alone does nothing
+at runtime. The connection node alone has nothing to authenticate with. Typical sequence:
+
+```
+1. loxtep_connectors \u2192 create_connector          # org-level, stores credentials
+2. loxtep_connectors \u2192 test_connection           # verify credentials work
+3. loxtep_workflows \u2192 create_workflow            # workflow entity, pass connector_id
+4. loxtep_workflows \u2192 patch_workflow_graph       # add_node entity_type: "connections"
+                                                 #   with connector_id referencing step 1
+```
+
+Do NOT confuse `loxtep_connections` (project-scoped connection entity, used mainly for
+OAuth flows) with `patch_workflow_graph add_node entity_type: "connections"` (graph node
+inside a workflow). For scheduled REST/SFTP ingestion, use `patch_workflow_graph` directly
+to add the connection node \u2014 you do not need to call `create_connection` first.
+
 ## Pitfalls
 
 - **`list_connector_types`** is **global** \u2014 do not assume org context for discovery.

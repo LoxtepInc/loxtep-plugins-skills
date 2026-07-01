@@ -199,6 +199,10 @@ key parameters.
 | `unapply_schema` | organization | — | — |
 | `list_schema_applications` | organization | — | — |
 | `tag_pii_fields` | organization | `schema_id`, `fields` | — |
+| `patch_schema` | organization | — | — |
+| `add_schema_version` | organization | — | — |
+| `get_schema_impact` | organization | — | — |
+| `install_schema_pack` | organization | — | — |
 
 ```json
 { "operation": "get_schema", "schema_id": "sch_…" }
