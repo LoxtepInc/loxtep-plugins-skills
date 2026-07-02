@@ -275,6 +275,9 @@ key parameters.
 | `list_thesaurus_terms` | organization | — | — |
 | `get_thesaurus_term` | organization | `term_id` | — |
 | `create_thesaurus_term` | organization | `term` | `aliases` |
+| `create_enterprise_override` | organization | `canonical_key`, `enterprise_definition`, `divergence_reason` | `scheme`, `aliases`, `baseline_assumption`, `override_source`, `linked_data_product_ids`, `organization_id` |
+| `list_enterprise_overrides` | organization | — | `override_status`, `override_source`, `organization_id` |
+| `resolve_semantic_gap` | organization | `issue_id`, `canonical_key`, `enterprise_definition`, `divergence_reason` | `baseline_assumption`, `linked_data_product_ids`, `organization_id` |
 | `update_thesaurus_term` | organization | `term_id` | `aliases` |
 | `delete_thesaurus_term` | organization | `term_id` | — |
 | `append_thesaurus_synonym` | organization | — | — |

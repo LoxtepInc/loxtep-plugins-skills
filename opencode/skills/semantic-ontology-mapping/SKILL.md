@@ -1,12 +1,13 @@
 ---
 name: semantic-ontology-mapping
 description:
-  Use when the user wants to perform business domain semantic modeling, ontological
-  mapping across systems, process context mapping, semantic crosswalk construction,
-  or knowledge graph schema design. Covers concept identification, relationship
-  typing, conflict resolution, process-concept bindings, and taxonomy development.
-  Complements data-product-modeling (physical manifestation) and loxtep-ontology
-  (MCP CRUD operations). User story S21.
+  Use when the user wants to perform business domain semantic modeling,
+  ontological mapping across systems, process context mapping, semantic
+  crosswalk construction, or knowledge graph schema design. Covers concept
+  identification, relationship typing, conflict resolution, process-concept
+  bindings, and taxonomy development. Complements data-product-modeling
+  (physical manifestation) and loxtep-ontology (MCP CRUD operations). User story
+  S21.
 ---
 
 # Semantic & Ontological Mapping for Business Environments
@@ -21,19 +22,45 @@ machine-readable, and actionable.
   "**crosswalk**", "what does **[term]** mean", "**concept** alignment",
   "**taxonomy**", "**knowledge graph** schema", "**domain** modeling",
   "**vocabulary** conflict", "different teams use different **names**",
-  "**process context**", "map our **business processes** to data"
+  "**process context**",   "map our **business processes** to data"
+- "**Minimal Ontology**", "**enterprise override**", "**delta-first**",
+  "**divergence** from baseline", "**override coverage**", "when **not** to override"
+
+## Minimal Ontology Principle (methodology)
+
+Model **deltas**, not the entire universe:
+
+| Layer | Steward work |
+| ----- | ------------ |
+| Vocabulary pack | Baseline definitions (industry / connector pack) |
+| Non-divergent fields | **Inherit** pack — no override, no Gold friction |
+| Divergent fields | Flag in Govern + **enterprise override** with `divergence_reason` |
+| Unknowns | **Semantic gaps** (low-confidence context, decision overrides) → steward resolution |
+
+### When **not** to override
+
+- Pack baseline matches operational meaning — use pack term as-is.
+- Cosmetic naming preference without semantic difference — use aliases/synonyms instead.
+- One-off ETL transform detail — document in transformation, not ontology override.
+
+### Maintainability — flag divergence for honest Gold gates
+
+Gold promotion uses **override-coverage** (% of **flagged divergent** fields with
+active overrides). **Unflagged fields do not count.** If stewards never mark deltas,
+coverage is vacuously 100% and Gold does not prove semantic documentation. **Always
+flag + override real divergences** before promotion.
 
 ## Core Concepts
 
 ### Semantic Model Components
 
-| Component          | What                                          | Example                              |
-| ------------------ | --------------------------------------------- | ------------------------------------ |
-| Concept            | A business entity or idea                     | "Customer", "Order", "Revenue"       |
-| Relationship       | How concepts connect                          | "Order" has-a "Line Item"            |
-| Constraint         | Business rules governing concepts             | "Order.total > 0"                    |
-| Crosswalk          | Mapping equivalent concepts across systems    | CRM.Contact ≈ ERP.Customer           |
-| Process Binding    | Which processes produce/consume concepts      | "Fulfillment" consumes "Order"       |
+| Component       | What                                       | Example                        |
+| --------------- | ------------------------------------------ | ------------------------------ |
+| Concept         | A business entity or idea                  | "Customer", "Order", "Revenue" |
+| Relationship    | How concepts connect                       | "Order" has-a "Line Item"      |
+| Constraint      | Business rules governing concepts          | "Order.total > 0"              |
+| Crosswalk       | Mapping equivalent concepts across systems | CRM.Contact ≈ ERP.Customer     |
+| Process Binding | Which processes produce/consume concepts   | "Fulfillment" consumes "Order" |
 
 ### Relationship Types
 
@@ -42,6 +69,14 @@ machine-readable, and actionable.
 - `transforms-into`, `equivalent-to`, `broader-than`, `conflicts-with`
 
 ## Happy-path flows
+
+### Flow — Enterprise delta (override) instead of full rebinding
+
+1. Identify fields where **your** meaning differs from pack baseline (not all fields).
+2. Document `divergence_reason` per field (Govern step in Studio).
+3. `create_enterprise_override` via **`loxtep-ontology`** — link `linked_data_product_ids`.
+4. Track **Open Gaps** for inference/context unknowns; resolve with `resolve_semantic_gap`.
+5. Promote to Gold when **override-coverage** ≥ org threshold (default 80%) on divergent fields only.
 
 ### Flow — Domain Ontology Construction
 
@@ -94,72 +129,87 @@ machine-readable, and actionable.
 
 ## Process Decomposition Levels
 
-| Level | Scope                  | Maps To                    |
-| ----- | ---------------------- | -------------------------- |
-| L0    | Value chain            | Organization strategy      |
-| L1    | Process area           | Domain in Loxtep           |
-| L2    | Discrete process       | Workflow in Loxtep         |
-| L3    | Activity               | Workflow node (transform)  |
-| L4    | Task                   | Individual operation       |
+| Level | Scope            | Maps To                   |
+| ----- | ---------------- | ------------------------- |
+| L0    | Value chain      | Organization strategy     |
+| L1    | Process area     | Domain in Loxtep          |
+| L2    | Discrete process | Workflow in Loxtep        |
+| L3    | Activity         | Workflow node (transform) |
+| L4    | Task             | Individual operation      |
 
 ## MCP mapping
 
-| `operation` | Scope | Notes |
-|-------------|-------|-------|
-| `create_ontology_concept` | organization | Node type with properties |
-| `create_ontology_relationship` | organization | Edge between entity types |
-| `get_ontology_relationships` | organization | Query graph edges |
-| `update_ontology_concept` | organization | Modify concept definition |
-| `delete_ontology_concept` | organization | Soft-delete (tombstone) |
-| `create_thesaurus_term` | organization | Canonical term + aliases |
-| `sync_vocabulary` | organization | Bulk vocabulary sync |
-| `resolve_canonical_key` | organization | Alias → canonical resolution |
-| `register_namespace_mapping` | organization | Cross-system prefix mapping |
-| `list_namespace_mappings` | organization | View registered namespaces |
+| `operation`                    | Scope        | Notes                        |
+| ------------------------------ | ------------ | ---------------------------- |
+| `create_ontology_concept`      | organization | Node type with properties    |
+| `create_ontology_relationship` | organization | Edge between entity types    |
+| `get_ontology_relationships`   | organization | Query graph edges            |
+| `update_ontology_concept`      | organization | Modify concept definition    |
+| `delete_ontology_concept`      | organization | Soft-delete (tombstone)      |
+| `create_thesaurus_term`        | organization | Canonical term + aliases     |
+| `sync_vocabulary`              | organization | Bulk vocabulary sync         |
+| `resolve_canonical_key`        | organization | Alias → canonical resolution |
+| `register_namespace_mapping`   | organization | Cross-system prefix mapping  |
+| `list_namespace_mappings`      | organization | View registered namespaces   |
+| `create_enterprise_override`   | organization | Delta definition when pack baseline wrong (see **loxtep-ontology**) |
+| `list_enterprise_overrides`    | organization | Audit active/proposed overrides |
+| `resolve_semantic_gap`         | organization | Close gap issue + create `agent_gap` override |
 
 ## Coupling with data-product-modeling
 
-| Semantic Artifact        | Data Product Artifact              |
-| ------------------------ | ---------------------------------- |
-| Concept                  | Schema fields                      |
-| Concept definition       | `metadata.business_glossary` entry |
-| Relationship (produces)  | Lineage edge (source → consumer)   |
-| Process input            | Source DP consumed by workflow      |
-| Process output           | Consumer DP produced by workflow    |
-| Crosswalk mapping        | Field-level lineage transformation |
-| Taxonomy term            | `metadata.tags` + domain           |
-| Controlled vocabulary    | Schema enum values                 |
+| Semantic Artifact       | Data Product Artifact              |
+| ----------------------- | ---------------------------------- |
+| Concept                 | Schema fields                      |
+| Concept definition      | `metadata.business_glossary` entry |
+| Relationship (produces) | Lineage edge (source → consumer)   |
+| Process input           | Source DP consumed by workflow     |
+| Process output          | Consumer DP produced by workflow   |
+| Crosswalk mapping       | Field-level lineage transformation |
+| Taxonomy term           | `metadata.tags` + domain           |
+| Controlled vocabulary   | Schema enum values                 |
 
 ## Anti-Patterns
 
-- **Semantic drift:** Same term means different things over time → version definitions
-- **Phantom concepts:** Terms in docs that don't exist in data model → formalize or remove
+- **Semantic drift:** Same term means different things over time → version
+  definitions
+- **Phantom concepts:** Terms in docs that don't exist in data model → formalize
+  or remove
 - **Overloaded fields:** One field stores multiple concept types → decompose
 - **Shadow taxonomies:** Unofficial classifications in spreadsheets → formalize
 - **Semantic silos:** Teams using incompatible vocabularies → build crosswalk
 
 ## Pitfalls
 
-- **Confusing with loxtep-ontology:** That Agent-Scope Skill is for MCP CRUD operations on
-  ontology entities. This Agent-Scope Skill is the *methodology* for deciding what to create.
-- **Confusing with loxtep-procedures:** Procedures are Organizational Skills (process graph instances).
-  This Agent-Scope Skill defines the *types* and *context* that procedures reference.
+- **Confusing with loxtep-ontology:** That Agent-Scope Skill is for MCP CRUD
+  operations on ontology entities. This Agent-Scope Skill is the _methodology_
+  for deciding what to create.
+- **Confusing with loxtep-procedures:** Procedures are Organizational Skills
+  (process graph instances). This Agent-Scope Skill defines the _types_ and
+  _context_ that procedures reference.
 - **Skipping conflict resolution:** Don't just pick one team's definition.
   Document all contexts and create explicit resolution.
 - **Over-modeling:** Not every concept needs formal ontology treatment. Focus on
   concepts that cross system/team boundaries or cause confusion.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+
 ## Agent-Scope Skill scope (`.loxtep/skills/semantic-ontology-mapping.yaml`)
 
-Resource scope and operation permissions for this Agent-Scope Skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+Resource scope and operation permissions for this Agent-Scope Skill, conformant
+with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json)
+schema. Any resource type or operation not listed is **denied (fail-closed)**.
+Identifier lists are empty placeholders — fill them with the specific resources
+in your workspace. This declaration does not change the hosted MCP config
+(`mcp.loxtep.io`).
 
 ```yaml
 # .loxtep/skills/semantic-ontology-mapping.yaml
 # Conforms to https://loxtep.io/schemas/skill-package-v1.json
 # Fail-closed: this Agent-Scope Skill's facades are RBAC-governed and carry no data-mesh resource scope.
 name: semantic-ontology-mapping
-description: Semantic/ontology mapping methodology — RBAC-governed; no data-mesh resource scope.
+description:
+  Semantic/ontology mapping methodology — RBAC-governed; no data-mesh resource
+  scope.
 scope:
   data_products: []
   connectors: []
@@ -168,6 +218,7 @@ scope:
   queues: []
 permissions: {}
 ```
+
 <!-- END loxtep skill-scope (skill-package-v1) -->
 
 ## Optional attribution
@@ -181,4 +232,5 @@ permissions: {}
 ## References
 
 - [User story catalog](../../../docs/skills-user-stories.md)
-- Comprehensive methodology: `.agents/skills/semantic-ontology-mapping/SKILL.md` (main repo)
+- Comprehensive methodology: `.agents/skills/semantic-ontology-mapping/SKILL.md`
+  (main repo)
