@@ -33,7 +33,7 @@ durable, governed, and compounding — not ephemeral prompt fragments.
 | Field | Value |
 |-------|-------|
 | **Definition** | Governed, structured data assets and their interconnections — the factual foundation that AI systems read from and reason over. |
-| **Loxtep realization** | Governed data products (source + consumer) on the rstreams streaming backbone; entity context graph (`loxtep_process_intel` → `get_entity_context`, `query_entity_context`); catalog discovery (`loxtep_catalog` → `run_discovery`, `search_catalog`). |
+| **Loxtep realization** | Governed data products (source + consumer) on the rstreams streaming backbone; entity context graph (`loxtep_process_intel` → `get_entity_context`, `query_entity_context`); catalog discovery (`loxtep_catalog` → `search_catalog`). |
 | **Status** | ✅ Shipped |
 
 ### Part 2: Semantics + Ontology

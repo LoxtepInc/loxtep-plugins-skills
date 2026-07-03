@@ -99,7 +99,7 @@ Each story lists **primary skill** (where the narrative lives) and **supporting 
 | Field | Detail |
 |-------|--------|
 | **Persona** | Analyst, data steward |
-| **Happy path** | `search_catalog` → `get_catalog_entry` / `get_evidence` / `get_lineage_impact` / `get_governance_flags` → optional `run_discovery`; `list_domains`, `list_tags` |
+| **Happy path** | `search_catalog` → `get_catalog_entry` / `get_evidence` / `get_lineage_impact` / `get_governance_flags`; `list_domains`, `list_tags` |
 | **MCP** | `loxtep_catalog` (catalog-scoped ops: `search_catalog`, `get_catalog_entry`, … per facade list) |
 | **Primary skill** | `discover-govern-lineage` |
 

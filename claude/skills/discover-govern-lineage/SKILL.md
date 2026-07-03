@@ -2,7 +2,7 @@
 name: discover-govern-lineage
 description:
   Use when the user wants to discover data in the catalog, search assets, lineage impact,
-  evidence, governance flags, run discovery, list domains or tags, or understand "what
+  evidence, governance flags, list domains or tags, or understand "what
   connects to what" in Discover. Distinguishes projection logic (the derivation that
   transforms source data) from consumer data products (the resulting entity that holds
   derived data). Customer MCP tool loxtep_catalog. User story S5.
@@ -13,7 +13,7 @@ metadata:
 
 # Discover, lineage, and governance (Customer MCP)
 
-**Story S5:** Find and trust data — **search**, **catalog entries**, **lineage**, **evidence**, **governance**, **discovery**, **domains**, **tags**.
+**Story S5:** Find and trust data — **search**, **catalog entries**, **lineage**, **evidence**, **governance**, **domains**, **tags**.
 
 ## Terminology: Projection vs Consumer Data Product
 
@@ -35,8 +35,8 @@ In lineage views:
 
 ## When to use
 
-- “Search the **catalog**”, “**lineage** for this table”, “**governance** flags”, “**run discovery**”
-- `search_catalog`, `get_catalog_entry`, `get_evidence`, `get_lineage_impact`, `get_governance_flags`, `run_discovery`, `list_domains`, `list_tags`
+- "Search the **catalog**", "**lineage** for this table", "**governance** flags"
+- `search_catalog`, `get_catalog_entry`, `get_evidence`, `get_lineage_impact`, `get_governance_flags`, `list_domains`, `list_tags`
 
 ## Prerequisites
 
@@ -49,11 +49,6 @@ In lineage views:
 1. `loxtep_catalog` → `search_catalog` (query / filters per API).
 2. `get_catalog_entry` for a chosen asset id.
 3. Optional: `get_lineage_impact`, `get_evidence`, `get_governance_flags`.
-
-### Flow — Run discovery
-
-1. `run_discovery` with parameters your deployment supports (async possible — confirm response shape).
-2. Follow with `search_catalog` or `get_catalog_entry` to review new/updated entries.
 
 ### Flow — Domains and tags
 
@@ -69,14 +64,12 @@ In lineage views:
 | Evidence | `loxtep_catalog` | `get_evidence` | **catalog** |
 | Lineage | `loxtep_catalog` | `get_lineage_impact` | **catalog** |
 | Governance | `loxtep_catalog` | `get_governance_flags` | **catalog** |
-| Discovery job | `loxtep_catalog` | `run_discovery` | **catalog** |
 | Domains | `loxtep_catalog` | `list_domains` | **catalog** |
 | Tags | `loxtep_catalog` | `list_tags` | **catalog** |
 
 ## Pitfalls
 
 - Do not confuse **catalog** scope with **project**-scoped workflow tools — different facades.
-- Heavy discovery may be asynchronous; poll or use platform UI if MCP returns a job id.
 - **Empty or sparse results** — Discovery/search tools may need platform-injected search/evidence services in the AI runtime; behavior can differ between local tests and production.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->

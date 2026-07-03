@@ -114,7 +114,7 @@ Example:
 | `loxtep_data_products` | `create_data_product`, `update_data_product`, `delete_data_product`, `list_data_products`, `get_data_product`, `get_data_product_lexicon`, `get_data_product_sdk_config`, `list_delivery_interfaces`, `create_delivery_interface` | project / organization |
 | `loxtep_schemas` | `create_schema`, `update_schema`, `delete_schema`, `get_schema`, `list_schema_versions`, `tag_pii_fields` | organization |
 | `loxtep_quality` | `create_quality_rule`, `update_quality_rule`, `delete_quality_rule`, `list_quality_rules`, `get_quality_rule`, `test_quality_rule` | organization |
-| `loxtep_catalog` | `search_catalog`, `get_catalog_entry`, `get_evidence`, `get_lineage_impact`, `get_governance_flags`, `run_discovery`, `list_domains`, `list_tags` | catalog |
+| `loxtep_catalog` | `search_catalog`, `get_catalog_entry`, `get_evidence`, `get_lineage_impact`, `get_governance_flags`, `list_domains`, `list_tags` | catalog |
 | `loxtep_analytics` | `execute_query`, `list_tables`, `get_table_schema`, `get_query_results` | organization |
 | `loxtep_workspace` | `list_versions`, `create_snapshot`, `restore_version`, `compare_versions`, `reindex_workspace`, `get_queue_info`, `replay_events`, `read_queue_events` | project / organization |
 | `loxtep_process_intel` | `get_entity_context`, `query_entity_context`, `create_entity_context`, `list_decision_traces`, `record_decision_trace` | organization |

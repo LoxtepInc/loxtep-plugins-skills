@@ -231,7 +231,6 @@ key parameters.
 | `get_evidence` | catalog | `entry_id` | — |
 | `get_lineage_impact` | catalog | `entry_id` | — |
 | `get_governance_flags` | catalog | `entry_id` | — |
-| `run_discovery` | catalog | `target` | — |
 | `get_catalog_entry` | catalog | `entry_id` | — |
 | `list_domains` | catalog | — | — |
 | `list_tags` | catalog | — | — |
