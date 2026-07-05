@@ -1,15 +1,20 @@
 ---
 name: create-connector
 description:
-  Use when the user wants to connect Shopify, Salesforce, QuickBooks, Slack, or another SaaS/API
-  into Loxtep — OAuth, API keys, SDK connectors, list connector types, create org connector,
-  get OAuth URL, add connection nodes to a project, or apply connector templates. Customer MCP
-  loxtep_connectors, loxtep_connections, loxtep_templates. User story S1; then use data-workflows
-  for graph and data products. For SDK-based programmatic ingestion, use the SDK connector flow.
-  See docs/skills-user-stories.md.
+  DEPRECATED — use connect-external-system instead. Same OAuth/API key/SDK flows for Shopify,
+  Salesforce, etc. Customer MCP loxtep_connectors, loxtep_connections, loxtep_templates.
+  Kept for backward-compatible skill_name attribution only.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/create-connector/SKILL.md
+  deprecated: true
+  replaced_by: connect-external-system
 ---
 
-# Connect systems and ingest (Customer MCP)
+# Connect systems and ingest (DEPRECATED)
+
+> **Use `connect-external-system` instead.** This skill is retained only for legacy
+> `_metadata.skill_name: create-connector` attribution. All new work should load
+> **`connect-external-system`**.
 
 **Story S1:** Bring external systems (e.g. **Shopify**) into the mesh: org-level **connector**, then **project connection** (and optionally **connector template**). After connections exist, use **`data-workflows`** for workflow graph and data products.
 

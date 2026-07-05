@@ -414,7 +414,11 @@ rejected, and a check that cannot complete blocks the operation.
 | --- | --- |
 | `loxtep-mcp-session` | Orient: capabilities, RBAC grants, recommended session order |
 | `loxtep-instances` | Provision/manage runtime instances |
-| `create-connector` | Connect external systems |
+| **`connect-external-system`** | Connect external systems (PKO P1; replaces `create-connector`) |
+| **`loxtep-journey-orchestrator`** | Orchestrate Connect→AI-ready journey P0–P7 |
+| **`promote-data-product`** | Medallion promotion after semantics (PKO P4) |
+| **`mcp-integration`** | Hosted MCP setup and validation (PKO P5) |
+| `create-connector` | **Deprecated** — use `connect-external-system` |
 | `data-workflows` | Author and deploy data workflows |
 | `data-product-modeling` | Model source/consumer data products |
 | `discover-govern-lineage` | Discovery, governance, lineage |

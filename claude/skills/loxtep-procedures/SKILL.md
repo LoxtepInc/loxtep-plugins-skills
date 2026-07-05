@@ -4,6 +4,8 @@ description:
   Use when the user wants process graph procedures — list, get, create, update,
   delete procedures, import/export process graphs, or query procedure dependencies.
   Customer MCP loxtep_procedures. User story S9. See docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/loxtep-procedures/SKILL.md
 ---
 
 # Procedures & Process Graph (Customer MCP)
@@ -97,6 +99,9 @@ PKO-compliant JSON-LD graphs. Distinct from data-mesh **workflows** in
 - **Data mesh workflows** (`create_workflow`, `patch_workflow_graph`) live under
   **`loxtep_workflows`** / **`data-workflows`** Agent-Scope Skill — different product
   object.
+- **Platform PKO procedures** — stable `@id` values like `procedure#connect-external-system`.
+  Use `get_procedure` to read step `metadata.skill_ref` / `metadata.api_ref` / HITL gates;
+  use **`loxtep-journey-orchestrator`** to walk P0–P7.
 - **Ontology/vocabulary management** (thesaurus terms, ontology concepts,
   namespace mappings) is **`loxtep_ontology`** — different facade. Procedures
   are *instances* in the graph; ontology concepts describe the *types*.
