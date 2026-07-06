@@ -155,10 +155,12 @@ key parameters.
 | `list_workflows` | project | `project_id` | — |
 | `get_workflow` | project | `project_id`, `workflow_id` | — |
 | `get_workflow_graph` | project | `project_id`, `workflow_id` | — |
-| `patch_workflow_graph` | project | `project_id`, `workflow_id`, `ops` | — |
+| `patch_workflow_graph` | project | `project_id`, `workflow_id`, `ops` | `dry_run` |
 | `preview_transform` | project | `project_id`, `transform` | `sample` |
 | `create_transformation` | project | `project_id`, `workflow_id`, `transformation` | — |
 | `create_validation` | project | `project_id`, `workflow_id`, `validation` | — |
+| `get_entity_schemas` | project | `project_id` | `pattern` |
+| `save_workflow_bundle` | project | `project_id`, `files` | `dry_run` |
 
 ```json
 { "operation": "list_workflows", "project_id": "proj_…" }
@@ -264,6 +266,7 @@ key parameters.
 | `get_queue_info` | organization | `data_product_id` | — |
 | `replay_events` | organization | `data_product_id` | `start`, `end` |
 | `read_queue_events` | organization | — | — |
+| `trigger_bot` | organization | — | — |
 
 ```json
 { "operation": "list_versions", "project_id": "proj_…" }
