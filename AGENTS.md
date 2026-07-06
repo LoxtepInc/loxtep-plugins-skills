@@ -453,7 +453,7 @@ eval scoring. It's optional, backward-compatible, and ignored for tool logic. Th
 | --- | --- | --- | --- |
 | Cursor | Cursor IDE | `cursor/` | MCP config, rules, skills, assets — native OAuth via `url` |
 | Claude | Claude Code & Cowork | `claude/` | MCP config, skills — native OAuth via `url` |
-| OpenCode | OpenCode | `opencode/` | `opencode.json`, skills — native OAuth via `url` |
+| OpenCode | OpenCode | `opencode/` | `opencode.json` (`type: remote`), skills — native OAuth |
 | Kiro | Kiro IDE | `kiro/` | MCP config + power + README — native OAuth via `url` |
 | Antigravity | Antigravity IDE | `antigravity/` | MCP config — uses `mcp-remote` bridge |
 | Codex | OpenAI Codex | `codex/` | TOML snippet + README — native OAuth via `url` |

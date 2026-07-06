@@ -13,7 +13,7 @@ that platform over hosted OAuth.
 
 The hosted MCP registers **19 grouped tools** named `loxtep_projects`, `loxtep_workflows`, `loxtep_data_products`, and so on. Each call sets **`operation`** to the flat action name (e.g. `list_projects`, `create_data_product`) plus that action's arguments. Tool definitions and scopes are published on the hosted MCP server.
 
-Scoped **Agent-Scope Skills** (19 per client) teach agents the platform model — data products, governance, semantic layer, streaming workflows, deployments, queue tracing — so they work inside boundaries instead of inventing field names and bypassing access rules.
+Scoped **Agent-Scope Skills** (23 per client) teach agents the platform model — data products, governance, semantic layer, streaming workflows, deployments, queue tracing — so they work inside boundaries instead of inventing field names and bypassing access rules.
 
 ## What makes Loxtep different
 
@@ -40,83 +40,114 @@ Each AI tool has a native way to install Loxtep — marketplace plugins, powers,
 
 ### Cursor
 
-Install the **`loxtep`** plugin from the Cursor Marketplace, or from Git:
+**Recommended:** search **Loxtep** on the [Cursor Marketplace](https://cursor.com/marketplace) and install the **`loxtep`** plugin (MCP + 23 skills + auth rule).
 
-**Settings → Plugins → Install from Git** → `https://github.com/LoxtepInc/loxtep-plugins-skills` (path: `cursor/`)
+**Team rollout:** Cursor **Dashboard → Settings → Plugins → Import** → `https://github.com/LoxtepInc/loxtep-plugins-skills` (plugin path `cursor/`).
 
-This installs the hosted MCP server, 19 scoped skills, and an auth-recovery rule. On first use Cursor opens OAuth in the browser — sign in and you're connected.
+**Local clone:** **Settings → Plugins** → install from directory → select the cloned `cursor/` folder.
+
+**MCP only (no skills):** **Settings → Tools & MCP** → add server, or merge into `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project):
+
+```json
+{ "mcpServers": { "loxtep": { "url": "https://mcp.loxtep.io/ai/mcp/stream" } } }
+```
+
+OAuth runs in the browser on first connect; tokens refresh automatically.
 
 See [`cursor/README.md`](cursor/README.md) for details.
 
 ### Claude Code & Cowork
 
-Install the **`loxtep-claude`** plugin via the marketplace:
+**Recommended:** add this repo as a marketplace, then install the plugin by name:
 
 ```bash
-# Step 1: Add the repo as a marketplace
-claude plugin marketplace add https://github.com/LoxtepInc/loxtep-plugins-skills
-
-# Step 2: Install the plugin
-claude plugin install loxtep-claude
+claude plugin marketplace add LoxtepInc/loxtep-plugins-skills
+claude plugin install loxtep-claude@loxtep
 ```
 
-Or install directly from a local clone:
+In an interactive Claude Code session you can also run `/plugin install loxtep-claude@loxtep`.
+
+Or install from a local clone:
 
 ```bash
 claude plugin install /path/to/loxtep-plugins-skills/claude
 ```
 
-This gives you the hosted MCP, 20 skills, and auth recovery. OAuth runs on first tool call.
+This gives you hosted MCP, 23 skills, and auth recovery. OAuth runs on first tool call.
 
 See [`claude/README.md`](claude/README.md) for details.
 
 ### Kiro
 
-Install Loxtep as a **Kiro Power** — this gives you MCP, skills, and step-by-step steering guides for each workflow area:
+**Recommended (full experience):** install the **Kiro Power** — MCP + 13 steering guides + skills context.
 
-1. Open the Powers panel in Kiro
-2. Add the Loxtep power from `kiro/power/` in this repo (or copy `kiro/mcp.json` into `.kiro/settings/mcp.json`)
+1. Open the **Powers** panel (ghost + lightning icon)
+2. **Add Custom Power → Import power from a folder**
+3. Select `kiro/power/` from this repo (contains `POWER.md`, `mcp.json`, `steering/`)
 
-The Power includes 13 steering files (connectors, workflows, analytics, governance, etc.) that load contextually based on your task.
+Kiro registers the Power’s MCP server in `~/.kiro/settings/mcp.json` automatically.
+
+**MCP only:** command palette → **Kiro: Open workspace MCP config** (or user config) → merge `kiro/mcp.json`, or copy to `.kiro/settings/mcp.json` / `~/.kiro/settings/mcp.json`.
 
 See [`kiro/README.md`](kiro/README.md) for details.
 
 ### OpenCode
 
-Copy the config and skills into your project:
-
-```bash
-# MCP config
-cp opencode/opencode.json ./opencode.json
-
-# Skills (project-local)
-cp -r opencode/skills/ .opencode/skills/
-```
-
-Or add to your existing `opencode.json`:
+Merge into your project `opencode.json` (or copy `opencode/opencode.json`):
 
 ```json
-{ "mcp": { "loxtep": { "type": "http", "url": "https://mcp.loxtep.io/ai/mcp/stream" } } }
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "loxtep": {
+      "type": "remote",
+      "url": "https://mcp.loxtep.io/ai/mcp/stream",
+      "enabled": true
+    }
+  }
+}
 ```
+
+Install skills:
+
+```bash
+cp -r opencode/skills/ .opencode/skills/
+# or global: cp -r opencode/skills/ ~/.config/opencode/skills/
+```
+
+If OAuth does not start automatically: `opencode mcp auth loxtep`
 
 See [`opencode/README.md`](opencode/README.md) for details.
 
 ### Codex
 
-Add to `~/.codex/config.toml`:
+Add to `~/.codex/config.toml` (see `codex/config.snippet.toml`):
 
 ```toml
 [mcp_servers.loxtep]
 url = "https://mcp.loxtep.io/ai/mcp/stream"
 ```
 
-Copy skills from `codex/skills/` into your workspace. See [`codex/README.md`](codex/README.md) for details.
+Authenticate on first use (or explicitly):
+
+```bash
+codex mcp login loxtep
+```
+
+Install skills (user-global):
+
+```bash
+mkdir -p ~/.agents/skills
+cp -r codex/skills/* ~/.agents/skills/
+```
+
+See [`codex/README.md`](codex/README.md) for details.
 
 ### Antigravity
 
-Antigravity doesn't support MCP OAuth natively yet — use `mcp-remote` as a bridge:
+Antigravity does not support hosted MCP OAuth natively — use `mcp-remote` as a bridge.
 
-Open **Agent panel → "..." → Manage MCP Servers → View raw config** and add:
+**IDE:** Agent panel → **⋯ → MCP Servers → Manage MCP Servers → View raw config** (edits `~/.gemini/config/mcp_config.json`).
 
 ```json
 {
@@ -129,7 +160,14 @@ Open **Agent panel → "..." → Manage MCP Servers → View raw config** and ad
 }
 ```
 
-Requires Node.js 18+. `mcp-remote` handles OAuth locally. See [`antigravity/README.md`](antigravity/README.md) for details.
+Install skills (shared across Antigravity IDE + CLI):
+
+```bash
+mkdir -p ~/.gemini/skills
+cp -r antigravity/skills/* ~/.gemini/skills/
+```
+
+Requires Node.js 18+. See [`antigravity/README.md`](antigravity/README.md) for details.
 
 ### Manual / other clients
 
@@ -157,12 +195,12 @@ For clients without OAuth support, wrap with `mcp-remote` (see Antigravity above
 
 | Plugin | Platform | Path | Description |
 |--------|----------|------|-------------|
-| **Cursor** | Cursor IDE | [cursor/](cursor/) | Marketplace plugin **`loxtep`** (path `cursor/`). Hosted MCP, 20 skills, auth rule. |
-| **Claude** | Claude Code & Cowork | [claude/](claude/) | Marketplace plugin **`loxtep-claude`** (path `claude/`). Same surface — hosted MCP, 20 skills, auth rule. |
-| **OpenCode** | OpenCode | [opencode/](opencode/) | MCP + 20 skills for terminal/desktop/IDE. Native OAuth; optional skill permissions. |
-| **Kiro** | Kiro IDE | [kiro/](kiro/) | MCP, 20 skills, optional Kiro Power steering guides. Native OAuth. |
-| **Antigravity** | Google Antigravity | [antigravity/](antigravity/) | MCP + 20 skills via `mcp-remote` OAuth bridge. |
-| **Codex** | OpenAI Codex | [codex/](codex/) | MCP + 20 skills; TOML config snippet. Native OAuth. |
+| **Cursor** | Cursor IDE | [cursor/](cursor/) | Marketplace plugin **`loxtep`**. Hosted MCP, 23 skills, auth rule. |
+| **Claude** | Claude Code & Cowork | [claude/](claude/) | Marketplace plugin **`loxtep-claude@loxtep`**. Hosted MCP, 23 skills, auth rule. |
+| **OpenCode** | OpenCode | [opencode/](opencode/) | `opencode.json` (`type: remote`) + 23 skills. Native OAuth. |
+| **Kiro** | Kiro IDE | [kiro/](kiro/) | Kiro Power (`kiro/power/`) or MCP config. 23 skills + 13 steering guides. |
+| **Antigravity** | Google Antigravity | [antigravity/](antigravity/) | `~/.gemini/config/mcp_config.json` via `mcp-remote`. 23 skills in `~/.gemini/skills/`. |
+| **Codex** | OpenAI Codex | [codex/](codex/) | `~/.codex/config.toml` + skills in `~/.agents/skills/`. Native OAuth. |
 
 ## Repository layout
 

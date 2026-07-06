@@ -1,8 +1,10 @@
 {
+  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "loxtep": {
-      "type": "http",
-      "url": "https://mcp.loxtep.io/ai/mcp/stream"
+      "type": "remote",
+      "url": "https://mcp.loxtep.io/ai/mcp/stream",
+      "enabled": true
     }
   },
   "permission": {

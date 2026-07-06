@@ -36,14 +36,37 @@ This directory lives in the [loxtep-plugins-skills](https://github.com/LoxtepInc
 
 ## Install
 
-Edit `~/.codex/config.toml` and add the snippet from `config.snippet.toml` (or below). See [Codex MCP](https://developers.openai.com/codex/mcp) and [config reference](https://developers.openai.com/codex/config-reference).
+### 1. MCP server
+
+Edit `~/.codex/config.toml` (or project `.codex/config.toml`) and add the snippet from `config.snippet.toml`:
 
 ```toml
 [mcp_servers.loxtep]
 url = "https://mcp.loxtep.io/ai/mcp/stream"
 ```
 
-On first use, Codex opens OAuth in the browser. Tokens refresh automatically.
+See [Codex MCP](https://developers.openai.com/codex/mcp) and [config reference](https://developers.openai.com/codex/config-reference).
+
+### 2. Authenticate
+
+OAuth runs on first use. To log in explicitly:
+
+```bash
+codex mcp login loxtep
+```
+
+### 3. Install skills
+
+Codex discovers skills from `~/.agents/skills/<slug>/SKILL.md`:
+
+```bash
+mkdir -p ~/.agents/skills
+cp -r codex/skills/* ~/.agents/skills/
+```
+
+Optionally add project norms to `AGENTS.md` — see [Codex AGENTS.md guide](https://developers.openai.com/codex/guides/agents-md).
+
+> **Dev environment:** `https://mcpdev.loxtep.io/ai/mcp/stream`
 
 ## Developer workflows
 

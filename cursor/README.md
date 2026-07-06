@@ -38,9 +38,12 @@ You are not duct-taping integrations. You are **publishing governed data product
 
 ## Quick start
 
-1. **Install the plugin** in Cursor (marketplace, or Settings → Plugins → Install from Git with `https://github.com/LoxtepInc/loxtep-plugins-skills` and `cursor/` as the plugin path if supported).
+1. **Install the plugin** (pick one):
+   - **Marketplace (recommended):** [cursor.com/marketplace](https://cursor.com/marketplace) → search **Loxtep** → Install **`loxtep`**
+   - **Team import:** Cursor **Dashboard → Settings → Plugins → Import** → `https://github.com/LoxtepInc/loxtep-plugins-skills` (path `cursor/`)
+   - **Local directory:** clone this repo → **Settings → Plugins** → install from `cursor/`
 
-2. **Or add manually** — merge the following into your `.cursor/mcp.json` or project `.mcp.json`:
+2. **Or add MCP only** — **Settings → Tools & MCP**, or merge into `~/.cursor/mcp.json` (global) / `.cursor/mcp.json` (project):
 
    ```json
    {

@@ -38,15 +38,14 @@ You are not duct-taping integrations. You are **publishing governed data product
 
 ## Quick start
 
-1. **Install via marketplace** — add the repo as a marketplace, then install by name:
+1. **Install via marketplace** (recommended):
 
    ```bash
-   # Add the marketplace (one-time)
-   claude plugin marketplace add https://github.com/LoxtepInc/loxtep-plugins-skills
-
-   # Install the plugin
-   claude plugin install loxtep-claude
+   claude plugin marketplace add LoxtepInc/loxtep-plugins-skills
+   claude plugin install loxtep-claude@loxtep
    ```
+
+   In Claude Code you can also run `/plugin install loxtep-claude@loxtep`.
 
    Or install from a local clone:
 
@@ -54,7 +53,7 @@ You are not duct-taping integrations. You are **publishing governed data product
    claude plugin install /path/to/loxtep-plugins-skills/claude
    ```
 
-2. **Or add the MCP server manually** — merge the following into your `.claude/mcp.json` (gives you tools but not skills/rules):
+2. **Or add MCP only** — merge into `~/.claude/mcp.json` or project `.mcp.json` (tools only; no bundled skills/rules):
 
    ```json
    {

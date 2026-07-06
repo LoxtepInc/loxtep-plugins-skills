@@ -11,7 +11,7 @@
     {
       "name": "loxtep-claude",
       "source": "./claude",
-      "description": "Loxtep for Claude Code and Cowork — hosted MCP at mcp.loxtep.io, 19 grouped loxtep_* tools, OAuth login, 20 skills, auth recovery rule.",
+      "description": "Loxtep for Claude Code and Cowork — hosted MCP at mcp.loxtep.io, 19 grouped loxtep_* tools, OAuth login, 23 skills, auth recovery rule.",
       "version": "1.1.2",
       "author": {
         "name": "Loxtep"

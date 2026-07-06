@@ -39,10 +39,13 @@ This directory lives in the [loxtep-plugins-skills](https://github.com/LoxtepInc
 
 ### 1. Add the Loxtep MCP server
 
-Antigravity does not yet support MCP OAuth natively, so use `mcp-remote` as a local bridge.
+Antigravity does not support hosted MCP OAuth natively — use `mcp-remote` as a local bridge.
 
-- Open the "..." dropdown in the Agent panel → **Manage MCP Servers** → **View raw config**.
-- Add the `loxtep` entry from `mcp_config.json` in this repo:
+**IDE:** Agent panel → **⋯ → MCP Servers → Manage MCP Servers → View raw config**
+
+This edits `~/.gemini/config/mcp_config.json` (global). Workspace-local config can live at `.agents/mcp_config.json`.
+
+Add the `loxtep` entry from `mcp_config.json` in this repo:
 
 ```json
 {
@@ -55,13 +58,24 @@ Antigravity does not yet support MCP OAuth natively, so use `mcp-remote` as a lo
 }
 ```
 
-Save and refresh. For dev: use `https://mcpdev.loxtep.io/ai/mcp/stream`.
+Save and **Refresh** under **Settings → Customizations → Installed MCP Servers**. For dev: use `https://mcpdev.loxtep.io/ai/mcp/stream`.
 
-### 2. Authenticate
+### 2. Install skills
+
+Skills for Antigravity IDE + CLI (shared):
+
+```bash
+mkdir -p ~/.gemini/skills
+cp -r antigravity/skills/* ~/.gemini/skills/
+```
+
+Verify with `/skills` in Antigravity CLI if installed.
+
+### 3. Authenticate
 
 On first connection, `mcp-remote` opens the browser for OAuth. Tokens cache locally and refresh automatically.
 
-### 3. Use the tools
+### 4. Use the tools
 
 The agent sees `loxtep_*` tools; each call sets **`operation`** plus arguments.
 
@@ -101,7 +115,8 @@ See [AGENTS.md](../AGENTS.md) for the full tool map.
 
 | Issue | Fix |
 | --- | --- |
-| "Unauthorized" on connect | Use `mcp-remote` as shown; native `serverUrl` OAuth is not supported. |
+| "Unauthorized" on connect | Use `mcp-remote` as shown; native `serverUrl` OAuth is not supported for Loxtep yet. |
+| Config not picked up | Confirm `~/.gemini/config/mcp_config.json` (global) or `.agents/mcp_config.json` (workspace); refresh MCP in Settings → Customizations. |
 | Browser doesn't open | Run `npx mcp-remote https://mcp.loxtep.io/ai/mcp/stream` manually first. |
 | `npx` not found | Install Node.js 18+ and ensure `npx` is on PATH. |
 

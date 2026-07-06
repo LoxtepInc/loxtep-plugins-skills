@@ -39,18 +39,24 @@ This directory lives in the [loxtep-plugins-skills](https://github.com/LoxtepInc
 
 ### 1. Add the Loxtep MCP server
 
-In your project's `opencode.json` (or global config):
+In your project `opencode.json` or global OpenCode config:
 
 ```json
 {
+  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "loxtep": {
-      "type": "http",
-      "url": "https://mcp.loxtep.io/ai/mcp/stream"
+      "type": "remote",
+      "url": "https://mcp.loxtep.io/ai/mcp/stream",
+      "enabled": true
     }
   }
 }
 ```
+
+Or copy the bundled config: `cp opencode/opencode.json ./opencode.json`
+
+If OAuth does not start on first use: `opencode mcp auth loxtep`
 
 ### 2. Install skills
 
@@ -58,15 +64,15 @@ In your project's `opencode.json` (or global config):
 # Project-local (recommended)
 cp -r opencode/skills/ .opencode/skills/
 
-# Or global (available in all projects)
+# Global (all projects)
 cp -r opencode/skills/ ~/.config/opencode/skills/
 ```
 
-OpenCode also discovers skills from `.claude/skills/` and `.agents/skills/` paths.
+OpenCode also discovers `.claude/skills/` and `.agents/skills/` paths.
 
 ### 3. Connect
 
-On first use, OpenCode opens a browser window for OAuth login. Tokens refresh automatically.
+OAuth runs in the browser on first tool use. Tokens refresh automatically.
 
 ### 4. Use the tools
 

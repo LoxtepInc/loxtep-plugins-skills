@@ -36,9 +36,20 @@ This directory lives in the [loxtep-plugins-skills](https://github.com/LoxtepInc
 
 ## Install
 
-1. **Add the Loxtep MCP server** to Kiro:
-   - **Workspace:** Copy `mcp.json` into `.kiro/settings/mcp.json`, or merge the `loxtep` entry.
-   - **User (global):** Copy into `~/.kiro/settings/mcp.json`.
+### Option A — Kiro Power (recommended)
+
+Full MCP + steering guides + onboarding:
+
+1. **Powers** panel (ghost + lightning icon) → **Add Custom Power**
+2. **Import power from a folder** → select `kiro/power/` from this repo
+3. Complete Power onboarding; MCP registers under `~/.kiro/settings/mcp.json`
+
+Or **Import power from GitHub** → this repo URL (folder must contain `POWER.md` at the power root — use the `kiro/power/` path when installing from a local clone).
+
+### Option B — MCP only
+
+1. Command palette → **Kiro: Open workspace MCP config** (project) or **Kiro: Open user MCP config** (global)
+2. Merge the `loxtep` entry from `kiro/mcp.json`:
 
    ```json
    {
@@ -50,9 +61,11 @@ This directory lives in the [loxtep-plugins-skills](https://github.com/LoxtepInc
    }
    ```
 
-2. **Connect** — On first use, Kiro opens OAuth in the browser. Tokens refresh automatically.
+3. **Connect** — OAuth opens in the browser on first use.
 
-3. **Use the tools** — MCP panel lists `loxtep_*` tools. Pass **`operation`** plus action arguments.
+### Skills reference
+
+Skill bundles live under `kiro/skills/<slug>/SKILL.md`. When using the Power, **`steering/`** files are the primary workflow context. For other setups, copy skills into your project docs or reference them from agent instructions.
 
 > **Dev environment:** `https://mcpdev.loxtep.io/ai/mcp/stream`
 
