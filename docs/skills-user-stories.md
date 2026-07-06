@@ -11,7 +11,7 @@ Each story lists **primary skill** (where the narrative lives) and **supporting 
 | ID | Story | Primary skill |
 |----|--------|----------------|
 | S0 | Know who I am and which org I am in | `loxtep-mcp-session` (capabilities / denials); `data-workflows` (session ops in flows) |
-| S1 | Connect a SaaS store or API (e.g. Shopify) and bring data into a project | **`connect-external-system`** (replaces deprecated `create-connector`) |
+| S1 | Connect a SaaS store or API (e.g. Shopify) and bring data into a project | **`connect-external-system`** |
 | S2 | Build a **data product** that unifies data across channels (omnichannel) | `data-workflows` |
 | S3 | Send data product updates to an **external webhook** | `data-workflows` |
 | S4 | Configure **org-level** schemas, semantics, PII, and quality rules | `org-semantics-quality` |
@@ -56,7 +56,6 @@ Use `loxtep_procedures` → `get_procedure` to read step `metadata.skill_ref` an
 | **Happy path** | `list_connector_types` → `get_connector_oauth_url` (Shopify: include `connection_config.shop`) or `create_connector` → `create_connection` in project → wire graph via `patch_workflow_graph` (see S2) |
 | **MCP** | `loxtep_connectors` (global/org), `loxtep_connections` (project), `loxtep_workflows` for graph |
 | **Primary skill** | **`connect-external-system`** |
-| **Deprecated alias** | `create-connector` (same flows; use new skill name) |
 | **Edge cases** | OAuth timeout; connector type not in catalog — request new types from Loxtep |
 
 ---
@@ -231,12 +230,10 @@ Use `loxtep_procedures` → `get_procedure` to read step `metadata.skill_ref` an
 |--------------|---------|---------------------|
 | `loxtep-auth` | S12 | — |
 | `loxtep-instances` | S11 | `loxtep_instances` |
-| `create-connector` | S1 | `loxtep_connectors`, `loxtep_connections`, `loxtep_templates` (connector flows) |
-| `data-workflows` | S0, S2, S3 (+ orchestrates S1 with **connect-external-system**) | `loxtep_session`, `loxtep_projects`, `loxtep_templates`, `loxtep_workflows`, `loxtep_connections`, `loxtep_data_products` |
 | **`connect-external-system`** | S1 | `loxtep_connectors`, `loxtep_connections`, `loxtep_templates` |
+| `data-workflows` | S0, S2, S3 (+ orchestrates S1 with **connect-external-system**) | `loxtep_session`, `loxtep_projects`, `loxtep_templates`, `loxtep_workflows`, `loxtep_connections`, `loxtep_data_products` |
 | **`loxtep-journey-orchestrator`** | S16 | `loxtep_procedures`, cross-facade journey |
 | **`promote-data-product`** | S17 | `loxtep_data_products` |
-| `create-connector` | — | **Deprecated** — use **`connect-external-system`** |
 | `discover-govern-lineage` | S5 | `loxtep_catalog` |
 | `org-semantics-quality` | S4 | `loxtep_schemas`, `loxtep_quality` |
 | `loxtep-analytics` | S6 | `loxtep_analytics` |

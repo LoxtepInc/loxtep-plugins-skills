@@ -1,4 +1,6 @@
-# Connect systems and ingest (Customer MCP)
+# Connect external system (Customer MCP)
+
+**PKO:** `procedure#connect-external-system` (P1) → `procedure#capture-connector-samples`.
 
 **Story S1:** Bring external systems (e.g. **Shopify**) into the mesh: org-level **connector**, then **project connection** (and optionally **connector template**). After connections exist, use **`data-workflows`** for workflow graph and data products.
 
@@ -17,6 +19,9 @@
 - **`project_id`** for `loxtep_connections` and for `apply_template` on project templates.
 
 ## Happy-path flows
+
+After `POST /connectors/{connector_id}/test` succeeds, route to **capture-connector-samples**
+(standalone — never deploy to obtain samples).
 
 ### Flow — OAuth (e.g. Shopify)
 
@@ -92,7 +97,7 @@ Not available via Customer MCP — request new connector types through Loxtep su
 {
   "operation": "create_connector",
   "connector_type": "shopify",
-  "_metadata": { "skill_name": "create-connector" }
+  "_metadata": { "skill_name": "connect-external-system" }
 }
 ```
 
@@ -103,7 +108,7 @@ SDK connector example:
   "operation": "create_connector",
   "connector_type": "sdk",
   "metadata": { "name": "My SDK Connector" },
-  "_metadata": { "skill_name": "create-connector" }
+  "_metadata": { "skill_name": "connect-external-system" }
 }
 ```
 

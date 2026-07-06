@@ -22,7 +22,7 @@
   },
   "stories": {
     "S0": { "status": "PASS", "skill": "loxtep-mcp-session" },
-    "S1": { "status": "PARTIAL", "skill": "create-connector" },
+    "S1": { "status": "PARTIAL", "skill": "connect-external-system" },
     "S2": { "status": "FAIL", "skill": "data-workflows" },
     "S3": { "status": "FAIL", "skill": "data-workflows" },
     "S4": { "status": "FAIL", "skill": "org-semantics-quality" },

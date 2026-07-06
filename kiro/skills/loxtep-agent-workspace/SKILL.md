@@ -30,7 +30,7 @@ description:
 ## Pitfalls
 
 - **`agent_orchestration_create_workstream`** ≠ **`create_project`** on `loxtep_projects`. Naming collision in English — always pick the **tool** from user intent.
-- Data pipeline work → **`data-workflows`** + **`create-connector`**.
+- Data pipeline work → **`data-workflows`** + **`connect-external-system`**.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 ## Agent-Scope Skill scope (`.loxtep/skills/loxtep-agent-workspace.yaml`)

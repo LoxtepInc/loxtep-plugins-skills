@@ -189,10 +189,13 @@ The Loxtep platform uses this for per-skill eval and analytics when available.
 | `loxtep-mcp-session` |
 | `loxtep-auth` |
 | `loxtep-instances` |
-| `create-connector` |
+| `connect-external-system` |
+| `loxtep-journey-orchestrator` |
 | `data-workflows` |
 | `data-product-modeling` |
+| `promote-data-product` |
 | `discover-govern-lineage` |
+| `governance-policies` |
 | `org-semantics-quality` |
 | `loxtep-analytics` |
 | `loxtep-workspace` |
@@ -205,13 +208,14 @@ The Loxtep platform uses this for per-skill eval and analytics when available.
 | `loxtep-sdk` |
 | `loxtep-semantic-layer` |
 | `semantic-ontology-mapping` |
+| `mcp-integration` |
 
 ```json
 {
   "operation": "create_connector",
   "connector_type": "shopify",
   "metadata": { "api_key": "..." },
-  "_metadata": { "skill_name": "create-connector" }
+  "_metadata": { "skill_name": "connect-external-system" }
 }
 ```
 

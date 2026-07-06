@@ -1,7 +1,7 @@
-# .loxtep/skills/create-connector.yaml
+# .loxtep/skills/connect-external-system.yaml
 # Conforms to https://loxtep.io/schemas/skill-package-v1.json
 # Scoped to ONLY the identifiers listed; least-privilege per operation. Fail-closed.
-name: create-connector
+name: connect-external-system
 description: Manage connectors and project connection nodes.
 scope:
   data_products: []

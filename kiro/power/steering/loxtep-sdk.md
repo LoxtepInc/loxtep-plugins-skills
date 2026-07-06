@@ -207,7 +207,7 @@ export function createRuntimeClient() {
 
 ## Bootstrapping from an SDK Connector
 
-If an SDK connector already exists (created via UI, API, or MCP — see the **`create-connector`** skill), export its `sdk_config` directly:
+If an SDK connector already exists (created via UI, API, or MCP — see the **`connect-external-system`** skill), export its `sdk_config` directly:
 
 ```bash
 # Export as shell exports (source-able)
@@ -236,7 +236,7 @@ node -e "
 "
 ```
 
-> To create an SDK connector in the first place, see the **`create-connector`** skill (Flow — SDK Connector).
+> To create an SDK connector in the first place, see the **`connect-external-system`** skill (Flow — SDK Connector).
 
 ## Shell exports from an existing data product
 

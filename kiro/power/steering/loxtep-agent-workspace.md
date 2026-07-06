@@ -22,7 +22,7 @@
 ## Pitfalls
 
 - **`agent_orchestration_create_project`** ≠ **`create_project`** on `loxtep_projects`. Naming collision in English — always pick the **tool** from user intent.
-- Data pipeline work → **`data-workflows`** + **`create-connector`**.
+- Data pipeline work → **`data-workflows`** + **`connect-external-system`**.
 
 ## Optional attribution
 

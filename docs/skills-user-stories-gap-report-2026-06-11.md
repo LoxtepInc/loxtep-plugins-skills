@@ -46,7 +46,7 @@
 | Story | Skill | Status | Primary blocker |
 |-------|-------|--------|-----------------|
 | S0 | loxtep-mcp-session | **PASS** | — |
-| S1 | create-connector | **PARTIAL** | OAuth track BLOCKED; `test_connection` RBAC |
+| S1 | connect-external-system | **PARTIAL** | OAuth track BLOCKED; `test_connection` RBAC |
 | S2 | data-workflows | **PARTIAL** | `get_data_product` not found after create; graph param docs drift |
 | S3 | data-workflows | **FAIL** | `consumptions:create` permission denied |
 | S4 | org-semantics-quality | **PARTIAL** | Create/read split; org-scoped list broken |
@@ -265,7 +265,7 @@
 | AGENTS.md / matrix: `read_queue_events` on `loxtep_workspace` | Not in hosted MCP enum |
 | Roadmap: "Semantic layer search (MCP) 🟢 GA" | Facade not deployed |
 | `data-workflows` Flow E | Must use `from_entity_id`/`to_entity_id` for connect |
-| `create-connector` minimal metadata | Multi-instance orgs need `metadata.instance_id` |
+| `connect-external-system` minimal metadata | Multi-instance orgs need `metadata.instance_id` |
 | S1 Shopify happy path | Needs `connection_config.shop` + browser OAuth |
 
 ---

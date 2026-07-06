@@ -8,10 +8,15 @@
   "permission": {
     "skill": {
       "loxtep-*": "allow",
-      "create-connector": "allow",
+      "connect-external-system": "allow",
       "data-workflows": "allow",
+      "data-product-modeling": "allow",
+      "promote-data-product": "allow",
       "discover-govern-lineage": "allow",
-      "org-semantics-quality": "allow"
+      "governance-policies": "allow",
+      "org-semantics-quality": "allow",
+      "semantic-ontology-mapping": "allow",
+      "mcp-integration": "allow"
     }
   }
 }

@@ -31,7 +31,7 @@
     },
     "S1": {
       "status": "PARTIAL",
-      "skill": "create-connector"
+      "skill": "connect-external-system"
     },
     "S2": {
       "status": "FAIL",

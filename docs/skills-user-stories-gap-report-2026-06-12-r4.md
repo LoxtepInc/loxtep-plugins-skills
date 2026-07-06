@@ -29,7 +29,7 @@ Run 4 is the first pass with **zero story-level FAILs**. The big wins are the da
 | Story | Skill | Status | Primary blocker |
 |-------|-------|--------|-----------------|
 | S0 | loxtep-mcp-session | **PASS** | — |
-| S1 | create-connector | **PARTIAL** | `create_connection` expects `type` not `connector_type` in MCP schema |
+| S1 | connect-external-system | **PARTIAL** | `create_connection` expects `type` not `connector_type` in MCP schema |
 | S2 | data-workflows | **PASS** | — |
 | S3 | data-workflows | **PASS** | — |
 | S4 | org-semantics-quality | **PARTIAL** | `get_schema` not found after successful create |

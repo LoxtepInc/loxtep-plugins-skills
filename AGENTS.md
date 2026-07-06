@@ -418,19 +418,26 @@ rejected, and a check that cannot complete blocks the operation.
 | --- | --- |
 | `loxtep-mcp-session` | Orient: capabilities, RBAC grants, recommended session order |
 | `loxtep-instances` | Provision/manage runtime instances |
-| `create-connector` | Connect external systems |
+| `connect-external-system` | Connect external systems (OAuth, API key, SDK) |
+| `loxtep-journey-orchestrator` | Connect→AI-ready journey orchestration (P0–P7) |
 | `data-workflows` | Author and deploy data workflows |
 | `data-product-modeling` | Model source/consumer data products |
+| `promote-data-product` | Medallion promotion and readiness checks |
 | `discover-govern-lineage` | Discovery, governance, lineage |
+| `governance-policies` | Deploy-time governance policy authoring |
 | `org-semantics-quality` | Semantic layer + quality rules |
 | `loxtep-analytics` | DuckDB analytics |
 | `loxtep-workspace` | Snapshots, versions, workspace index |
+| `loxtep-deployments` | Deploy projects/workflows to runtime instances |
+| `loxtep-queue-tracing` | Debug deployments via queue event tracing |
 | `loxtep-process-intel` | Entity context + decision traces + unified context retrieval |
 | `loxtep-ontology` | Ontology, vocabulary, namespaces |
 | `loxtep-procedures` | Process graph procedures |
 | `loxtep-agent-workspace` | Agent orchestration (issues/goals/agents) |
 | `loxtep-sdk` | Using the `@loxtep/sdk` runtime + CLI |
+| `loxtep-semantic-layer` | Org semantic layer search and completeness |
 | `semantic-ontology-mapping` | Mapping external vocabularies to the ontology |
+| `mcp-integration` | Hosted MCP access setup and validation (P5) |
 
 ### Skill attribution (optional)
 

@@ -1,6 +1,6 @@
 # Data mesh studio (Customer MCP)
 
-End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **data products**, and **delivery interfaces**, plus **session** context. Pair with **`create-connector`** for SaaS/API ingest (Shopify, etc.) or **SDK connector** for programmatic ingestion, and **`loxtep-instances`** for runtime provisioning.
+End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **data products**, and **delivery interfaces**, plus **session** context. Pair with **`connect-external-system`** for SaaS/API ingest (Shopify, etc.) or **SDK connector** for programmatic ingestion, and **`loxtep-instances`** for runtime provisioning.
 
 ## When to use
 
@@ -8,7 +8,7 @@ End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **d
 - **S2:** Create an **omnichannel** or unified **data product** across multiple sources in a project.
 - **S3:** Register a **delivery interface** (e.g., webhook subscription) for data product updates (`create_delivery_interface`).
 - User asks for **projects**, **flows**, **templates**, **connections** (project nodes), **data products**, **delivery interfaces**, or **patch workflow graph**.
-- **SDK / programmatic ingestion:** If the user wants to write events from their own code (not a SaaS connector), use the **`create-connector`** skill's **SDK Connector flow** (`connector_type: "sdk"`) to create the connector, then **`loxtep-sdk`** for SDK client usage. This skill handles the workflow graph and data products that receive those events.
+- **SDK / programmatic ingestion:** If the user wants to write events from their own code (not a SaaS connector), use the **`connect-external-system`** skill's **SDK Connector flow** (`connector_type: "sdk"`) to create the connector, then **`loxtep-sdk`** for SDK client usage. This skill handles the workflow graph and data products that receive those events.
 
 ## Prerequisites
 
@@ -37,7 +37,7 @@ End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **d
 
 ### Flow C — Omnichannel data product (S2)
 
-1. Ensure **project** exists; add **connections** per channel (see **`create-connector`** skill).
+1. Ensure **project** exists; add **connections** per channel (see **`connect-external-system`** skill).
 2. `loxtep_workflows` → `create_workflow` to create the workflow entity.
 3. `loxtep_workflows` → `patch_workflow_graph` to add nodes (connection + data product) and wire edges. **See Flow E below for the exact format.**
 4. `get_data_product` / `get_data_product_lexicon` to verify; `update_data_product` as needed.

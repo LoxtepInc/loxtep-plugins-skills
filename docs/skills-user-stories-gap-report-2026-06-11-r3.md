@@ -29,7 +29,7 @@ Scorecard headline unchanged, but **several systemic blockers moved** — org-sc
 | Story | Skill | Status | Primary blocker |
 |-------|-------|--------|-----------------|
 | S0 | loxtep-mcp-session | **PASS** | — |
-| S1 | create-connector | **PARTIAL** | `delete_connector` DB migration (`connector_shares.deleted_at`) |
+| S1 | connect-external-system | **PARTIAL** | `delete_connector` DB migration (`connector_shares.deleted_at`) |
 | S2 | data-workflows | **FAIL** | `get_data_product` / `list_data_products` after successful create |
 | S3 | data-workflows | **FAIL** | Consumption create blocked by DP read path |
 | S4 | org-semantics-quality | **FAIL** | Schema/quality create need DP entity resolver |

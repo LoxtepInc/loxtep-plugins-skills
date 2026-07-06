@@ -6,7 +6,7 @@ description:
   (webhook subscriptions), session context, or "ingest / unify / expose sales data".
   Customer MCP tools loxtep_session, loxtep_projects, loxtep_templates, loxtep_workflows,
   loxtep_connections, loxtep_data_products. Stories S0, S2, S3; orchestrates with
-  create-connector for S1. See docs/skills-user-stories.md.
+  connect-external-system for S1. See docs/skills-user-stories.md.
 trigger: |
   TRIGGER when: User asks about or mentions creating/listing/updating data products, workflows,
   connections, connectors, ingestion pipelines, data mesh, omnichannel products, delivery
@@ -21,7 +21,7 @@ metadata:
 
 # Data mesh studio (Customer MCP)
 
-End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **data products**, and **delivery interfaces** (webhook subscriptions, API endpoints, exports, database syncs, BI connections, event streams), plus **session** context. Pair with **`create-connector`** for SaaS/API ingest (Shopify, etc.) or **SDK connector** for programmatic ingestion, and **`loxtep-instances`** for runtime provisioning.
+End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **data products**, and **delivery interfaces** (webhook subscriptions, API endpoints, exports, database syncs, BI connections, event streams), plus **session** context. Pair with **`connect-external-system`** for SaaS/API ingest (Shopify, etc.) or **SDK connector** for programmatic ingestion, and **`loxtep-instances`** for runtime provisioning.
 
 ## When to use
 
@@ -29,7 +29,7 @@ End-to-end playbooks for **projects**, **workflow graphs**, **connections**, **d
 - **S2:** Create an **omnichannel** or unified **data product** across multiple sources in a project.
 - **S3:** Register a **delivery interface** (e.g., webhook subscription) for data product updates (`create_delivery_interface`).
 - User asks for **projects**, **flows**, **templates**, **connections** (project nodes), **data products**, **delivery interfaces**, or **patch workflow graph**.
-- **SDK / programmatic ingestion:** If the user wants to write events from their own code (not a SaaS connector), use the **`create-connector`** Agent-Scope Skill's **SDK Connector flow** (`connector_type: "sdk"`) to create the connector, then **`loxtep-sdk`** for SDK client usage. This Agent-Scope Skill handles the workflow graph and data products that receive those events.
+- **SDK / programmatic ingestion:** If the user wants to write events from their own code (not a SaaS connector), use the **`connect-external-system`** Agent-Scope Skill's **SDK Connector flow** (`connector_type: "sdk"`) to create the connector, then **`loxtep-sdk`** for SDK client usage. This Agent-Scope Skill handles the workflow graph and data products that receive those events.
 
 ## Prerequisites
 
@@ -83,7 +83,7 @@ Step 14 ─ deploy_workflow (ingestion + enrichment each)
 > add *workflow graph connection nodes* (`patch_workflow_graph add_node entity_type:
 > "connections"`) that reference the org connector via `connector_id`. Both are required
 > and they are different things — see **Flow I** for concrete examples. See also
-> **`create-connector`** skill.
+> **`connect-external-system`** skill.
 
 ---
 
@@ -102,7 +102,7 @@ Step 14 ─ deploy_workflow (ingestion + enrichment each)
 
 ### Flow C — Omnichannel data product (S2)
 
-1. Ensure **project** exists; add **connections** per channel (see the **`create-connector`** Agent-Scope Skill).
+1. Ensure **project** exists; add **connections** per channel (see the **`connect-external-system`** Agent-Scope Skill).
 2. `loxtep_workflows` → `create_workflow` to create the workflow entity.
 3. `loxtep_workflows` → `patch_workflow_graph` to add nodes (connection + data product) and wire edges. **See Flow E below for the exact format.**
 4. `get_data_product` / `get_data_product_lexicon` to verify; `update_data_product` as needed.
@@ -343,7 +343,7 @@ Notes:
 ### Flow I — Scheduled REST/SFTP ingestion workflow (source integration)
 
 For ingesting data on a cron schedule from a REST API or SFTP file source into a raw
-source data product. The org-level connector must exist first (see **`create-connector`**).
+source data product. The org-level connector must exist first (see **`connect-external-system`**).
 
 **Step 1 — Create ingestion workflow with cron trigger:**
 

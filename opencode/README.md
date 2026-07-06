@@ -97,7 +97,7 @@ OpenCode discovers `loxtep_*` tools and skills automatically. Skills load on-dem
 
 Hosted at `https://mcp.loxtep.io/ai/mcp/stream` — **19 grouped `loxtep_*` tools** covering projects, workflows, connectors, **data products**, schemas, quality, catalog, **semantic layer**, ontology, analytics, deployments, workspace/queue ops, process intelligence, and agent orchestration.
 
-### Skills (19 bundles)
+### Skills (23 bundles)
 
 See [docs/skills-user-stories.md](../docs/skills-user-stories.md). Skills live under `opencode/skills/<slug>/SKILL.md`.
 
@@ -106,10 +106,13 @@ See [docs/skills-user-stories.md](../docs/skills-user-stories.md). Skills live u
 | `loxtep-mcp-session` | Session, RBAC, recommended order |
 | `loxtep-auth` | Auth recovery |
 | `loxtep-instances` | Runtime instances |
-| `create-connector` | External system connectors |
+| `connect-external-system` | External system connectors |
+| `loxtep-journey-orchestrator` | Connect→AI-ready journey (P0–P7) |
 | `data-workflows` | Streaming workflows and graphs |
 | `data-product-modeling` | Source/consumer data products |
+| `promote-data-product` | Medallion promotion |
 | `discover-govern-lineage` | Catalog, governance, lineage |
+| `governance-policies` | Deploy-time governance policies |
 | `org-semantics-quality` | Schemas, PII, quality rules |
 | `loxtep-analytics` | SQL |
 | `loxtep-workspace` | Snapshots, versions, queues |
@@ -122,6 +125,7 @@ See [docs/skills-user-stories.md](../docs/skills-user-stories.md). Skills live u
 | `loxtep-sdk` | `@loxtep/sdk` runtime + CLI |
 | `loxtep-semantic-layer` | Semantic layer search |
 | `semantic-ontology-mapping` | External vocabulary mapping |
+| `mcp-integration` | Hosted MCP access (P5) |
 
 ## Skill permissions (optional)
 
@@ -130,10 +134,15 @@ See [docs/skills-user-stories.md](../docs/skills-user-stories.md). Skills live u
   "permission": {
     "skill": {
       "loxtep-*": "allow",
-      "create-connector": "allow",
+      "connect-external-system": "allow",
       "data-workflows": "allow",
+      "data-product-modeling": "allow",
+      "promote-data-product": "allow",
       "discover-govern-lineage": "allow",
-      "org-semantics-quality": "allow"
+      "governance-policies": "allow",
+      "org-semantics-quality": "allow",
+      "semantic-ontology-mapping": "allow",
+      "mcp-integration": "allow"
     }
   }
 }

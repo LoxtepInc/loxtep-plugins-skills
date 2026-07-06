@@ -42,7 +42,7 @@ Machine-readable log: [`skills-user-stories-gap-report-2026-06-11-r2.json`](./sk
 | Story | Skill | Status | Primary blocker |
 |-------|-------|--------|-----------------|
 | S0 | loxtep-mcp-session | **PASS** | — |
-| S1 | create-connector | **PARTIAL** | OAuth redirect allowlist; `test_connection` RBAC; no `delete_connector` |
+| S1 | connect-external-system | **PARTIAL** | OAuth redirect allowlist; `test_connection` RBAC; no `delete_connector` |
 | S2 | data-workflows | **PARTIAL** | Create DP OK; read/list/delete not found |
 | S3 | data-workflows | **FAIL** | `consumptions:create` denied |
 | S4 | org-semantics-quality | **FAIL** | CWS requires DP that read path can't find; `list_quality_rules` CWS bug |

@@ -237,7 +237,7 @@ async function run() {
   }
 
   // S1
-  await runStorySteps('S1', 'create-connector', [
+  await runStorySteps('S1', 'connect-external-system', [
     async () => {
       const res = await callMcp('loxtep_connectors', { operation: 'list_connector_types' });
       return logStep('S1', 'list_connector_types', 'loxtep_connectors', 'list_connector_types', res);

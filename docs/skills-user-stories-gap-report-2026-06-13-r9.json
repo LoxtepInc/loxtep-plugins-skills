@@ -37,7 +37,7 @@
     "S12": { "status": "PASS", "skill": "loxtep-auth" },
     "S1": {
       "status": "PARTIAL",
-      "skill": "create-connector",
+      "skill": "connect-external-system",
       "notes": "SDK connector OK; Shopify OAuth blocked — missing loxtep-dev/connectors/shopify/client-id"
     },
     "S2": { "status": "PASS", "skill": "data-workflows" },

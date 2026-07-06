@@ -31,7 +31,7 @@ This power covers the full platform lifecycle:
 Each steering file covers an independent workflow area. Load the one matching user intent:
 
 - **data-workflows** — Projects, workflow graphs, connections, data products, delivery interfaces, deployment (Stories S0, S2, S3)
-- **create-connector** — Connect Shopify, Salesforce, or any SaaS/API; OAuth, API key, and SDK connector flows (Story S1)
+- **connect-external-system** — Connect Shopify, Salesforce, or any SaaS/API; OAuth, API key, and SDK connector flows (Story S1)
 - **discover-govern-lineage** — Catalog search, lineage impact, evidence, governance flags, discovery (Story S5)
 - **org-semantics-quality** — Org-level schemas, PII tagging, schema versions, quality rules (Story S4)
 - **loxtep-analytics** — SQL analytics, list tables, table schema, execute queries (Story S6)
@@ -129,7 +129,7 @@ Example:
 | ID | Story | Steering File |
 |----|-------|---------------|
 | S0 | Session and org context | data-workflows |
-| S1 | Connect SaaS/API (Shopify, etc.) | create-connector |
+| S1 | Connect SaaS/API (Shopify, etc.) | connect-external-system |
 | S2 | Omnichannel data product | data-workflows |
 | S3 | Webhook delivery for data product updates | data-workflows |
 | S4 | Org schemas, PII, quality rules | org-semantics-quality |

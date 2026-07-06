@@ -102,7 +102,7 @@ Hosted at `https://mcp.loxtep.io/ai/mcp/stream` — **19 grouped `loxtep_*` tool
 
 `rules/loxtep-mcp-auth.mdc` — guides the agent to reconnect the hosted MCP server when auth fails (OAuth 2.1 recovery).
 
-### Skills (19 bundles)
+### Skills (23 bundles)
 
 Scoped skill bundles under `claude/skills/<slug>/SKILL.md`. See [docs/skills-user-stories.md](../docs/skills-user-stories.md) for the full user-story catalog.
 
@@ -111,10 +111,13 @@ Scoped skill bundles under `claude/skills/<slug>/SKILL.md`. See [docs/skills-use
 | `loxtep-mcp-session` | Orient: capabilities, RBAC grants, recommended session order |
 | `loxtep-auth` | Authentication flows and token management |
 | `loxtep-instances` | Provision/manage runtime instances |
-| `create-connector` | Connect external systems |
+| `connect-external-system` | Connect external systems (OAuth, API key, SDK) |
+| `loxtep-journey-orchestrator` | Connect→AI-ready journey orchestration (P0–P7) |
 | `data-workflows` | Author streaming workflows and graph operations |
 | `data-product-modeling` | Model source/consumer data products |
+| `promote-data-product` | Medallion promotion and readiness checks |
 | `discover-govern-lineage` | Catalog discovery, governance, lineage |
+| `governance-policies` | Deploy-time governance policy authoring |
 | `org-semantics-quality` | Schemas, semantics, PII, quality rules |
 | `loxtep-analytics` | SQL analytics |
 | `loxtep-workspace` | Snapshots, versions, workspace index |
@@ -127,6 +130,7 @@ Scoped skill bundles under `claude/skills/<slug>/SKILL.md`. See [docs/skills-use
 | `loxtep-sdk` | `@loxtep/sdk` runtime + CLI |
 | `loxtep-semantic-layer` | Semantic layer search, artifacts, completeness |
 | `semantic-ontology-mapping` | Map external vocabularies to the ontology |
+| `mcp-integration` | Hosted MCP access setup and validation (P5) |
 
 ## Submission (Claude plugin discovery)
 
