@@ -1,7 +1,7 @@
 {
   "name": "loxtep",
   "displayName": "Loxtep",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Governed real-time data products, semantic layer, and AI context for Cursor. Hosted MCP + skills: streaming workflows, catalog/lineage, schemas, quality, deployments, and queue tracing.",
   "author": { "name": "Loxtep" },
   "homepage": "https://github.com/LoxtepInc/loxtep-plugins-skills/tree/main/cursor",
