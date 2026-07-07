@@ -108,9 +108,9 @@ Example:
 | `loxtep_projects` | `list_projects`, `get_project`, `create_project`, `update_project`, `delete_project` | organization |
 | `loxtep_instances` | `list_instances`, `create_instance` | organization |
 | `loxtep_connectors` | `list_connector_types`, `list_connectors`, `create_connector`, `get_connector_oauth_url` | global / organization |
-| `loxtep_connections` | `create_connection`, `update_connection`, `delete_connection`, `list_connections`, `get_connection`, `test_connection` | project |
+| `loxtep_connections` | `update_connection`, `delete_connection`, `list_connections`, `get_connection`, `test_connection` | project |
 | `loxtep_templates` | `list_templates`, `get_template`, `apply_template` | organization / project |
-| `loxtep_workflows` | `create_workflow`, `update_workflow`, `delete_workflow`, `list_workflows`, `get_workflow`, `get_workflow_graph`, `patch_workflow_graph`, `preview_transform`, `create_transformation`, `create_validation` | project |
+| `loxtep_workflows` | `get_entity_schemas`, `save_workflow_bundle`, `create_workflow`, `update_workflow`, `delete_workflow`, `list_workflows`, `get_workflow`, `get_workflow_graph`, `patch_workflow_graph`, `preview_transform` | project |
 | `loxtep_data_products` | `create_data_product`, `update_data_product`, `delete_data_product`, `list_data_products`, `get_data_product`, `get_data_product_lexicon`, `get_data_product_sdk_config`, `list_delivery_interfaces`, `create_delivery_interface` | project / organization |
 | `loxtep_schemas` | `create_schema`, `update_schema`, `delete_schema`, `get_schema`, `list_schema_versions`, `tag_pii_fields` | organization |
 | `loxtep_quality` | `create_quality_rule`, `update_quality_rule`, `delete_quality_rule`, `list_quality_rules`, `get_quality_rule`, `test_quality_rule` | organization |

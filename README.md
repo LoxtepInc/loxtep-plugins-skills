@@ -15,6 +15,10 @@ The hosted MCP registers **19 grouped tools** named `loxtep_projects`, `loxtep_w
 
 Scoped **Agent-Scope Skills** (23 per client) teach agents the platform model — data products, governance, semantic layer, streaming workflows, deployments, queue tracing — so they work inside boundaries instead of inventing field names and bypassing access rules.
 
+### Workflow authoring (read this before connect + ingest)
+
+All MCP clients share one contract: **[docs/agent-workflow-authoring.md](docs/agent-workflow-authoring.md)**. New ingestion flows use **`save_workflow_bundle`** (full JSON, validate with `dry_run: true` first). P1 connect ends at **`connector_id` + samples**; P2 bundle design is **`data-workflows`** Flow E.
+
 ## What makes Loxtep different
 
 | Generic workflow tool | Loxtep |

@@ -60,12 +60,12 @@ for (const [client, count] of Object.entries(skillCounts)) {
 
 for (const client of clients) {
   if (exists(`${client}/skills/create-connector/SKILL.md`)) {
-    add('error', `${client}/skills/create-connector/SKILL.md`, 'deprecated skill still present');
+    add('error', `${client}/skills/create-connector/SKILL.md`, 'removed skill still present');
   }
 }
 
 if (exists('.loxtep/skills/create-connector.yaml')) {
-  add('error', '.loxtep/skills/create-connector.yaml', 'deprecated scope file still present');
+  add('error', '.loxtep/skills/create-connector.yaml', 'removed scope file still present');
 }
 
 if (!exists('.loxtep/skills/connect-external-system.yaml')) {

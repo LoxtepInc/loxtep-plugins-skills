@@ -65,6 +65,19 @@ payload; `organization`-scoped operations may accept an optional `domain_id`;
 
 ---
 
+## Workflow authoring (mandatory — all agents)
+
+**Cross-tool doc:** [docs/agent-workflow-authoring.md](docs/agent-workflow-authoring.md)
+
+- **P1 Connect ends with** `connector_id` + samples — **no** workflow graph MCP calls during connect.
+- **P2 Design:** connection nodes live **inside the bundle** (`connections/{id}.json` with `connector_id`).
+- **New flows:** `get_entity_schemas` → compose full JSON `files` → `save_workflow_bundle` (`dry_run: true` first).
+- **`patch_workflow_graph`:** Studio UI incremental edits on an existing open flow only.
+
+Skills: `connect-external-system` (P1), `data-workflows` Flow E (P2 bundle), `loxtep-journey-orchestrator` (journey gates).
+
+---
+
 ## MCP tool surface
 
 All tools require OAuth auth. Tables below list each operation, its scope, and its
@@ -131,23 +144,26 @@ key parameters.
 { "operation": "list_connector_types" }
 ```
 
-### `loxtep_connections` — workflow connection nodes
+### `loxtep_connections` — workflow connection nodes (read/update only)
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
-| `create_connection` | project | `project_id`, `name`, `type` | `configuration` |
 | `update_connection` | project | `project_id`, `connection_id` | `configuration` |
 | `delete_connection` | project | `project_id`, `connection_id` | — |
 | `list_connections` | project | `project_id` | — |
 | `get_connection` | project | `project_id`, `connection_id` | — |
 | `test_connection` | project | `project_id`, `connection_id` | — |
 
+New connection nodes are created inside **`save_workflow_bundle`** (`connections/{id}.json`).
+
 ```json
 { "operation": "list_connections", "project_id": "proj_…" }
 ```
 
-### `loxtep_workflows` — workflows, graph, transforms
+### `loxtep_workflows` — workflows, graph, bundle
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
+| `get_entity_schemas` | project | `project_id` | `pattern` |
+| `save_workflow_bundle` | project | `project_id`, `files` | `dry_run` |
 | `create_workflow` | project | `project_id`, `name` | `description` |
 | `update_workflow` | project | `project_id`, `workflow_id` | `name`, `description` |
 | `delete_workflow` | project | `project_id`, `workflow_id` | — |
@@ -157,10 +173,6 @@ key parameters.
 | `get_workflow_graph` | project | `project_id`, `workflow_id` | — |
 | `patch_workflow_graph` | project | `project_id`, `workflow_id`, `ops` | `dry_run` |
 | `preview_transform` | project | `project_id`, `transform` | `sample` |
-| `create_transformation` | project | `project_id`, `workflow_id`, `transformation` | — |
-| `create_validation` | project | `project_id`, `workflow_id`, `validation` | — |
-| `get_entity_schemas` | project | `project_id` | `pattern` |
-| `save_workflow_bundle` | project | `project_id`, `files` | `dry_run` |
 
 ```json
 { "operation": "list_workflows", "project_id": "proj_…" }
