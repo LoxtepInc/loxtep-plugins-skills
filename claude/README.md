@@ -74,8 +74,8 @@ You are not duct-taping integrations. You are **publishing governed data product
 ## Developer workflows
 
 1. **Orient** — `loxtep_session` → `get_current_user` → RBAC grants; search catalog or semantic layer before inventing field names.
-2. **Ingest (streaming)** — connector → connection node → workflow graph → events on the bus.
-3. **Productize** — create a **data product** with schema, domain, lineage — not just a destination table.
+2. **Ingest (streaming)** — connector → workflow bundle (connection + transforms + `data-products/{id}.json`) → deploy → events on the bus.
+3. **Productize** — data product **emerges from workflow deploy** with schema, domain, lineage — not via standalone `create_data_product`.
 4. **Govern** — quality rules, PII fields, semantic definitions, ontology concepts.
 5. **Consume** — SQL analytics , webhooks, SDK readers against governed products.
 6. **Context for AI** — entity context, decision traces, vocabulary sync so the next agent session starts smarter.
@@ -84,7 +84,7 @@ You are not duct-taping integrations. You are **publishing governed data product
 ## Example prompts
 
 - "Search the semantic layer for how we define churn and which data products implement it"
-- "Create a **source** data product for Shopify orders with schema v1 and tag email as PII"
+- "Design a **source** data product for Shopify orders (schema v1, email as PII) and deploy the ingestion workflow"
 - "Show lineage impact if we deprecate the `unified_orders` product"
 - "Patch the ingestion workflow graph to add a validation node before the data product sink"
 - "Record entity context for this customer-360 decision trace"

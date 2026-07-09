@@ -15,7 +15,9 @@ trigger: |
   "ingest data", "setup ingestion", "unify data", "data mesh", "delivery interface",
   "delivery workflow", "webhook subscription". Always invoke before making direct
   loxtep_data_products or loxtep_workflows MCP calls. AGENT AUTHORING: use save_workflow_bundle
-  only — not piecemeal patch_workflow_graph for new flows.
+  only — not piecemeal patch_workflow_graph for new flows. NEVER call create_data_product for
+  new ingestion/enrichment/consumption — embed data-products/{id}.json in the bundle, save,
+  then deploy.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/opencode/skills/data-workflows/SKILL.md
 ---
@@ -45,7 +47,17 @@ User editing open flow in Studio UI (tiny incremental change)?
 
 After connect-external-system (P1)?
   → You have connector_id + samples — start at get_entity_schemas, compose bundle
+
+User asks to "create a source/consumer data product"?
+  → Design schema first (data-product-modeling) — NO create_data_product MCP call
+  → Embed data-products/{id}.json in save_workflow_bundle files → deploy_workflow
+  → Verify get_data_product shows workflow_id + deployment_bindings after deploy
 ```
+
+**Data products are created by workflow design + deploy — not by `create_data_product`.**
+Standalone MCP `create_data_product` produces orphan design-time records without
+`workflow_id`, queues, or `deployment_bindings`. Correct DPs carry
+`managed_by: "design-time"` and `deployed_by: "workflow-deployment"` after deploy.
 
 **Connection nodes** reference org **connectors** via `connector_id` inside the
 bundle (`connections/{connection_id}.json`).
@@ -385,6 +397,27 @@ and queue to target:
 Skill for the full naming hierarchy and how to resolve queue/bot names from the
 runtime-mapping API.
 
+### Flow J — Ingestion data product (workflow-first — mandatory)
+
+When the user asks to **create**, **provision**, or **stand up** a source (or
+consumer) data product — including demand-driven / output-first design — follow
+this sequence. Do **not** call `create_data_product`.
+
+| Step | Action | Skill / tool |
+| ---- | ------ | ------------ |
+| 1 | Connect external system (if needed) | `connect-external-system` → `connector_id` + samples |
+| 2 | Design desired output schema + provenance | `data-product-modeling` (design only — no MCP create) |
+| 3 | Read entity types | `get_entity_schemas` (`pattern`: `ingestion` \| `enrichment` \| `consumption`) |
+| 4 | Compose full `files` map | `workflow.json`, `connections/`, `transformations/`, `data-products/{id}.json` |
+| 5 | Validate + persist bundle | `save_workflow_bundle` (`dry_run: true` → fix → `dry_run: false`) |
+| 6 | Deploy to instance | `deploy_workflow` or `deploy_project` (Flow H) |
+| 7 | Verify runtime DP | `get_data_product` — expect `workflow_id`, `deployment_bindings`, `managed_by: "design-time"` |
+
+Put the designed schema on the **`data-products/{id}.json`** node (governance,
+metadata, or schema fields per `get_entity_schemas`). Use `update_data_product`
+**after deploy** for medallion, lineage, or schema revisions — not for initial
+provisioning.
+
 ### Flow G — Build your own SDK-ingestion data product (end to end)
 
 When a customer wants to write events from their own code into a new data
@@ -432,7 +465,7 @@ Notes:
 | 4    | Templates                          | `loxtep_templates`     | `list_templates`, `get_template`, `apply_template`                                                                                                                                                                                                                                         | organization / **project** for `apply_template` | `apply_template`: `project_id`, `template_type`, `template_slug`                         |
 | 5    | Workflows                          | `loxtep_workflows`     | `get_entity_schemas`, `save_workflow_bundle`, `list_workflows`, `get_workflow`, `get_workflow_graph`, `preview_transform`, `create_workflow`, `update_workflow`, `delete_workflow`, `patch_workflow_graph` (Studio UI edits only) | **project**                                     | `project_id`                                                                             |
 | 6    | Existing connection entities       | `loxtep_connections`   | `update_connection`, `delete_connection`, `list_connections`, `get_connection`, `test_connection` | **project**                                     | `project_id`                                                                             |
-| 7    | Data products                      | `loxtep_data_products` | `create_data_product`, `update_data_product`, `delete_data_product`, `list_data_products`, `get_data_product`, `get_data_product_lexicon`                                                                                                                                                  | **project** or org per op                       | `project_id` where required                                                              |
+| 7    | Data products (inspect/update after deploy) | `loxtep_data_products` | `list_data_products`, `get_data_product`, `get_data_product_lexicon`, `update_data_product`, `delete_data_product`                                                                                                                                                           | **project** or org per op                       | **Do not** `create_data_product` — author via bundle `data-products/{id}.json` |
 | 8    | Delivery interfaces                | `loxtep_data_products` | `list_delivery_interfaces`, `create_delivery_interface`                                                                                                                                                                                                                                    | **organization**                                | `data_product_id`, `endpoint_url`, `delivery_type`, …                                    |
 | 9    | Deploy project                     | `loxtep_deployments`   | `deploy_project`                                                                                                                                                                                                                                                                           | **project**                                     | `project_id`, `instance_id`, optional `force_redeploy`                                   |
 | 9b   | Deploy single workflow             | `loxtep_deployments`   | `deploy_workflow`                                                                                                                                                                                                                                                                          | **project**                                     | `project_id`, `workflow_id`, `instance_id`, optional `force_redeploy`, `skip_validation` |
@@ -441,6 +474,10 @@ Notes:
 
 ## Pitfalls
 
+- **`create_data_product` for new ingest flows** — Wrong path. Standalone create
+  bypasses the workflow graph, queues, bots, and deployment bindings. Always
+  embed `data-products/{id}.json` in `save_workflow_bundle`, then deploy. See
+  Flow J. Use **`data-product-modeling`** for schema design only.
 - Missing **`project_id`** on project-scoped workflow/connection ops.
 - **Deployment required before SDK ingestion** — Creating workflows,
   connections, and data products via MCP only defines the graph. Queues and bots
@@ -513,8 +550,10 @@ permissions:
 
 ```json
 {
-  "operation": "create_data_product",
+  "operation": "save_workflow_bundle",
   "project_id": "...",
+  "dry_run": true,
+  "files": { "...": "..." },
   "_metadata": { "skill_name": "data-workflows" }
 }
 ```

@@ -71,8 +71,9 @@ payload; `organization`-scoped operations may accept an optional `domain_id`;
 
 - **P1 Connect ends with** `connector_id` + samples — **no** workflow graph MCP calls during connect.
 - **P2 Design:** connection nodes live **inside the bundle** (`connections/{id}.json` with `connector_id`).
-- **New flows:** `get_entity_schemas` → compose full JSON `files` → `save_workflow_bundle` (`dry_run: true` first).
+- **New flows:** `get_entity_schemas` → compose full JSON `files` (include `data-products/{id}.json`) → `save_workflow_bundle` (`dry_run: true` first). **No** standalone `create_data_product`.
 - **`patch_workflow_graph`:** Studio UI incremental edits on an existing open flow only.
+- **P2 Deploy:** `deploy_workflow` / `deploy_project` — data product emerges with `workflow_id` + `deployment_bindings`
 
 Skills: `connect-external-system` (P1), `data-workflows` Flow E (P2 bundle), `loxtep-journey-orchestrator` (journey gates).
 
@@ -180,6 +181,10 @@ New connection nodes are created inside **`save_workflow_bundle`** (`connections
 
 ### `loxtep_data_products` — data products & consumptions
 `kind` is `source` (atomic, domain-owned) or `consumer` (composed projection).
+
+**Agent provisioning:** Do **not** call `create_data_product` for new ingest flows.
+Author `data-products/{id}.json` inside `save_workflow_bundle`, deploy, then use
+`get_data_product` / `update_data_product`. See [agent-workflow-authoring.md](docs/agent-workflow-authoring.md).
 
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |

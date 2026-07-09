@@ -39,7 +39,9 @@ Coordinates the **data-ingestion track** (P0–P7) defined in
    design; never deploy solely to fetch samples.
 2. **Bundle-only agent authoring** — P2 design uses `save_workflow_bundle` only.
    Do not use piecemeal `patch_workflow_graph` for new flows. Handoff from P1 =
-   `connector_id` + samples → `data-workflows` Flow E.
+   `connector_id` + samples → `data-workflows` Flow E. **Do not** call
+   `create_data_product` — embed `data-products/{id}.json` in the bundle; deploy
+   provisions the runtime DP.
 3. **HITL gates** — honor `metadata.hitl_gate` and `metadata.hitl_audience`;
    route via `resolve_hitl_audience()` when assignee not explicit.
 4. **Cross-track** — P3 feeds `procedure#bridge-dp-semantics-to-cdlc` and

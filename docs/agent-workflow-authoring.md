@@ -25,6 +25,21 @@ New flows are authored with **`save_workflow_bundle`**. Connection, transformati
 
 ---
 
+## Do not create data products directly (MCP)
+
+**Agents must not call `create_data_product` for new source or consumer data products.**
+
+| Correct path | Wrong path |
+| ------------ | ---------- |
+| Design schema (`data-product-modeling`) → `data-products/{id}.json` in bundle → `save_workflow_bundle` → `deploy_workflow` | Standalone `create_data_product` with ODPS payload |
+
+After deploy, a runtime data product carries `workflow_id`, `managed_by: "design-time"`,
+`deployed_by: "workflow-deployment"`, and `deployment_bindings` (queues, etc.).
+Use `get_data_product` / `update_data_product` **after deploy** for verification,
+governance, and medallion — not for initial provisioning.
+
+---
+
 ## Phase boundaries (Connect → Ingest)
 
 | Phase | Procedure | Ends with | Do NOT in this phase |

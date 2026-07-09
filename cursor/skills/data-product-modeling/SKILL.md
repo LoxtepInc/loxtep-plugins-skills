@@ -7,16 +7,34 @@ description:
   medallion promotion (Bronze→Silver→Gold), schema design, lineage mapping,
   delivery interface configuration, and reverse modeling (begin with the end
   in mind). Complements loxtep-ontology (vocabulary/concepts) and
-  org-semantics-quality (governance). User story S20.
+  org-semantics-quality (governance). User story S20. DESIGN ONLY for new DPs —
+  creation is via data-workflows save_workflow_bundle + deploy, never create_data_product.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/data-product-modeling/SKILL.md
 ---
 
 # Data Product Modeling (Demand-Driven Design)
 
-**Story S20:** Design and create data products using output-first methodology —
-define the desired shape, trace provenance backward, resolve gaps, specify
-transforms, and wire the pipeline.
+**Story S20:** Design data products using output-first methodology — define the
+desired shape, trace provenance backward, resolve gaps, specify transforms, and
+wire the pipeline via **`data-workflows`** (bundle + deploy).
+
+## Creation guardrail (CRITICAL — read first)
+
+**Do not call `create_data_product` to provision new source or consumer data products.**
+
+| Phase | This skill (`data-product-modeling`) | **`data-workflows`** |
+| ----- | ------------------------------------ | -------------------- |
+| Design | Output schema, provenance, transforms, medallion plan | — |
+| Create | **Never** — no standalone MCP create | `data-products/{id}.json` in `save_workflow_bundle` |
+| Runtime | Post-deploy `update_data_product`, promotion, delivery | `deploy_workflow` → queues + `deployment_bindings` |
+
+A correctly provisioned DP has `workflow_id`, `managed_by: "design-time"`,
+`deployed_by: "workflow-deployment"`, and `deployment_bindings` after deploy —
+not a standalone `create_data_product` response.
+
+When the user says "**create** a data product", treat it as: **design here →
+author bundle → deploy → verify with `get_data_product`.**
 
 ## When to use
 
@@ -67,7 +85,12 @@ transforms, and wire the pipeline.
 5. **Specify transforms:** For each field: source_format → desired_format.
 6. **Architecture decision:** Single source DP with multi-source workflow, or
    multiple source DPs + consumer composition?
-7. **Create the data product:** Use `create_data_product` with ODPS document.
+7. **Wire the pipeline:** Hand off to **`data-workflows`** Flow J — embed the
+   designed schema in `data-products/{id}.json` within `save_workflow_bundle`
+   (`dry_run: true` first), then `deploy_workflow`. **Do not** call
+   `create_data_product`.
+8. **Verify after deploy:** `get_data_product` — confirm `workflow_id` and
+   `deployment_bindings` are present.
 
 ### Flow — Demand-Driven Consumer Modeling (output-first)
 
@@ -75,11 +98,15 @@ transforms, and wire the pipeline.
    (e.g., HubSpot contact properties, webhook payload shape)
 2. **Trace provenance:** For each output field, identify which source DP provides it.
 3. **Identify existing source DPs:** Check catalog for available sources.
-4. **Gap analysis:** Which source DPs don't exist yet? Create them first.
+4. **Gap analysis:** Which source DPs don't exist yet? Design + deploy them via
+   **`data-workflows`** first (not `create_data_product`).
 5. **Specify transforms:** JOIN keys, aggregations, derivations, filters.
 6. **Design workflow:** Trigger (event/cron), transform chain, delivery config.
-7. **Create consumer DP:** Use `create_data_product` with kind=consumer.
-8. **Configure delivery interface:** Set up webhook/API/SQL delivery endpoint.
+7. **Wire consumer DP:** **`data-workflows`** — `data-products/{id}.json` in
+   consumption bundle + `save_workflow_bundle` + deploy. **Do not** call
+   `create_data_product`.
+8. **Configure delivery interface:** After deploy, `create_delivery_interface`
+   on the runtime data product.
 
 ### Flow — Medallion Promotion (Bronze → Silver)
 
@@ -141,7 +168,7 @@ Transform Logic:  [expression]
 | `list_data_products` | `loxtep_data_products` | organization | Filters: `kind`, `domain_id`, `status`, `medallion` |
 | `get_data_product` | `loxtep_data_products` | organization | Full ODPS document by `data_product_id` |
 | `get_data_product_lexicon` | `loxtep_data_products` | organization | Glossary/lexicon for a data product |
-| `create_data_product` | `loxtep_data_products` | organization | ODPS payload; set `kind`, `domain_id`, `owner` |
+| `create_data_product` | `loxtep_data_products` | organization | **Agents: do not use** for new DPs. Author via workflow bundle + deploy. |
 | `update_data_product` | `loxtep_data_products` | organization | Partial update; use for schema, metadata, status |
 | `delete_data_product` | `loxtep_data_products` | project | Remove a data product by `project_id`, `data_product_id` |
 | `create_delivery_interface` | `loxtep_data_products` | organization | Delivery interface (webhook/API/export/DB sync/BI/event stream) for a data product. |
@@ -156,20 +183,23 @@ Transform Logic:  [expression]
 ```
 "I need a data product that looks like X"
   │
+  ├── Design output schema + provenance (this skill — no MCP create)
+  │
   ├── Single source system provides all fields?
-  │   └── YES → Source DP (kind: source), connector-ingestion workflow
+  │   └── YES → Source DP in ingestion bundle (kind: source) → data-workflows Flow J
   │
   ├── Need to combine multiple sources?
-  │   └── YES → Consumer DP (kind: consumer), delivery workflow
-  │             (template: `data-product-consumption`)
-  │             Create source DPs for each system first
+  │   └── YES → Consumer DP in consumption bundle → deploy source DPs first via Flow J
   │
   └── Primary source + supplementary enrichment?
-      └── Source DP with enrichment transform in workflow
+      └── Source DP with enrichment transform → data-workflows Flow F
 ```
 
 ## Pitfalls
 
+- **Direct `create_data_product`** — Bypasses workflow graph, queues, and
+  deployment bindings. Design in this skill; provision via **`data-workflows`**
+  bundle + deploy.
 - **Supply-driven thinking** — Don't start with "what data do we have?" Start
   with "what data do we need?" and work backward.
 - **God data product** — One DP with 200+ fields serving all use cases. Decompose.
@@ -185,6 +215,7 @@ Transform Logic:  [expression]
 - **loxtep-procedures:** Process graphs → map to workflow pipelines
 - **loxtep-process-intel:** Runtime entity context → validate DP data at runtime
 - **discover-govern-lineage:** Catalog discovery, governance policies
+- **data-workflows:** Bundle authoring, deploy, runtime verification (mandatory for creation)
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 ## Agent-Scope Skill scope (`.loxtep/skills/data-product-modeling.yaml`)
