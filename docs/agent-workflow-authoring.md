@@ -12,10 +12,34 @@ implement this contract. Hosted MCP tool surface matches it.
 
 | Scenario | Path |
 | -------- | ---- |
-| New ingestion / enrichment / consumption flow | `get_entity_schemas` → compose full `files` map → `save_workflow_bundle` (`dry_run: true` first) |
-| After P1 connect (OAuth, API key, SDK org connector) | Handoff = `connector_id` + captured samples → **P2 bundle** (`connections/{id}.json` in `files`) |
+| **Start of any flow** | **Flow B** — `list_projects` / `create_project` → record `project_id`; optional GitHub attach via `update_project` `github_*` |
+| New ingestion / enrichment / consumption flow | Write `workflows/{workflow_id}/` JSON **locally** → build `files` from disk → `save_workflow_bundle` (`dry_run: true` first) |
+| GitHub-attached project | **Repo is source of truth** — edit local files, commit, sync to Loxtep via `save_workflow_bundle` (not inline-only MCP payloads) |
+| After P1 connect (OAuth, API key, SDK org connector) | Handoff = `connector_id` + captured samples → **P2 bundle** (`connections/{id}.json` in local `files`) |
 | User editing an **already open** flow in Studio (small change) | `patch_workflow_graph` only |
 | Apply catalog starter template | `apply_template` (writes a bundle internally) |
+
+---
+
+## Do not author bundles inline-only (MCP)
+
+**`save_workflow_bundle` uploads to Loxtep's org workspace store** (S3:
+`organizations/.../workflows/{workflow_id}/`). Agents must **also** write the
+same JSON to the repo:
+
+```
+workflows/{workflow_id}/workflow.json
+workflows/{workflow_id}/connections/{id}.json
+workflows/{workflow_id}/data-products/{id}.json
+…
+```
+
+| Correct | Wrong |
+| ------- | ----- |
+| Write local files → build `files` map from disk → `save_workflow_bundle` | Entire `files` map composed only inside the MCP tool call — no local copy |
+
+When the project is **GitHub-attached**, local repo files are the source of
+truth; sync pushes local → Loxtep project.
 
 ---
 
@@ -52,14 +76,18 @@ governance, and medallion — not for initial provisioning.
 
 ## P2 bundle workflow (canonical)
 
-1. **`get_entity_schemas`** — `pattern`: `ingestion` | `enrichment` | `consumption`
-2. **Compose `files`** under `workflows/{workflow_id}/`:
+0. **Project** — `create_project` or reuse (`list_projects`); optional GitHub
+   attach (`update_project` `github_*`). Code-first repos: `loxtep init` →
+   `loxtep attach` (see **`loxtep-sdk`**).
+1. **Write local files** under `workflows/{workflow_id}/`
+2. **`get_entity_schemas`** — `pattern`: `ingestion` | `enrichment` | `consumption`
+3. **Build `files` map from on-disk JSON** under `workflows/{workflow_id}/`:
    - `workflow.json`
    - `connections/{id}.json` (`connector_id` from P1)
    - `transformations/{id}.json`, `validations/{id}.json` as needed
    - `data-products/{id}.json` with `upstream_entity_id` chain
-3. **`save_workflow_bundle`** — `dry_run: true`, fix errors, then `dry_run: false`
-4. **`deploy_workflow`** — see `data-workflows` Flow H
+4. **`save_workflow_bundle`** — `dry_run: true`, fix errors, then `dry_run: false`
+5. **`deploy_workflow`** — see `data-workflows` Flow H
 
 Pre-assign UUIDs. Wire with **`upstream_entity_id`**, not separate connect steps.
 

@@ -70,7 +70,8 @@ payload; `organization`-scoped operations may accept an optional `domain_id`;
 **Cross-tool doc:** [docs/agent-workflow-authoring.md](docs/agent-workflow-authoring.md)
 
 - **P1 Connect ends with** `connector_id` + samples — **no** workflow graph MCP calls during connect.
-- **P2 Design:** connection nodes live **inside the bundle** (`connections/{id}.json` with `connector_id`).
+- **P0 Project:** `create_project` (or reuse) **before** P2 — record `project_id`; optional GitHub attach via `update_project` `github_*`.
+- **P2 Design:** connection nodes live **inside the bundle** (`connections/{id}.json` with `connector_id`); write `workflows/{workflow_id}/` **locally** before `save_workflow_bundle`.
 - **New flows:** `get_entity_schemas` → compose full JSON `files` (include `data-products/{id}.json`) → `save_workflow_bundle` (`dry_run: true` first). **No** standalone `create_data_product`.
 - **`patch_workflow_graph`:** Studio UI incremental edits on an existing open flow only.
 - **P2 Deploy:** `deploy_workflow` / `deploy_project` — data product emerges with `workflow_id` + `deployment_bindings`

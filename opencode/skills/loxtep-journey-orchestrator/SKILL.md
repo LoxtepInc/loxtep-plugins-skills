@@ -37,17 +37,21 @@ Coordinates the **data-ingestion track** (P0–P7) defined in
 
 1. **Samples before deploy** — run `capture-connector-samples` before studio
    design; never deploy solely to fetch samples.
-2. **Bundle-only agent authoring** — P2 design uses `save_workflow_bundle` only.
+2. **Project before P2** — `create_project` (or reuse via `list_projects`) and
+   record `project_id` before any workflow/bundle MCP calls. Optional GitHub
+   attach via `update_project` `github_*`; when attached, local repo files lead
+   and sync to Loxtep.
+3. **Bundle-only agent authoring** — P2 design uses `save_workflow_bundle` only.
    Do not use piecemeal `patch_workflow_graph` for new flows. Handoff from P1 =
    `connector_id` + samples → `data-workflows` Flow E. **Do not** call
    `create_data_product` — embed `data-products/{id}.json` in the bundle; deploy
    provisions the runtime DP.
-3. **HITL gates** — honor `metadata.hitl_gate` and `metadata.hitl_audience`;
+4. **HITL gates** — honor `metadata.hitl_gate` and `metadata.hitl_audience`;
    route via `resolve_hitl_audience()` when assignee not explicit.
-4. **Cross-track** — P3 feeds `procedure#bridge-dp-semantics-to-cdlc` and
+5. **Cross-track** — P3 feeds `procedure#bridge-dp-semantics-to-cdlc` and
    `procedure#cdlc-memory-promotion-intake`; P3 `dependsOn` deployed glossary
    via `procedure#cdlc-approve-and-deploy-artifact`.
-5. **Load platform graph** — system org seed via `graph-seed-platform-pko` bot;
+6. **Load platform graph** — system org seed via `graph-seed-platform-pko` bot;
    tenants read via `query_context` / federated `get_procedure`.
 
 ## Stage gates (skill stories → PKO)

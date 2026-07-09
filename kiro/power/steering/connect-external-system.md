@@ -1,4 +1,4 @@
-> **Cross-tool authoring contract:** [docs/agent-workflow-authoring.md](../../docs/agent-workflow-authoring.md) — bundle-only for new flows; `save_workflow_bundle`, not piecemeal `patch_workflow_graph`.
+> **Cross-tool authoring contract:** [docs/agent-workflow-authoring.md](../../docs/agent-workflow-authoring.md) — project first (Flow B); write `workflows/{id}/` locally; bundle-only for new flows; `save_workflow_bundle`, not piecemeal `patch_workflow_graph`.
 
 
 # Connect external system (Customer MCP)
@@ -12,7 +12,11 @@
 | Phase | Ends with | Do NOT do in this phase |
 | ----- | --------- | ------------------------ |
 | **P1 Connect** | `connector_id`, tested credentials, captured samples | Any workflow graph writes (`save_workflow_bundle`, `patch_workflow_graph`, etc.) |
-| **P2 Design** | Full workflow JSON saved via `save_workflow_bundle` | Piecemeal graph patches for new flows |
+| **P2 Design** | Full workflow JSON saved via `save_workflow_bundle` (local files first) | Piecemeal graph patches for new flows |
+
+**Prerequisite:** A Loxtep **project** must exist before P2 (`create_project` or
+reuse — see **`data-workflows`** Flow B). When GitHub-attached, write bundle JSON
+under `workflows/{workflow_id}/` locally and sync to Loxtep.
 
 **Connection nodes are workflow entities.** For agent-authored ingestion, include
 them in the **`save_workflow_bundle`** `files` map (`connections/{id}.json` with

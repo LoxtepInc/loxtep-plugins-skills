@@ -52,6 +52,12 @@ User asks to "create a source/consumer data product"?
   → Design schema first (data-product-modeling) — NO create_data_product MCP call
   → Embed data-products/{id}.json in save_workflow_bundle files → deploy_workflow
   → Verify get_data_product shows workflow_id + deployment_bindings after deploy
+
+Starting any new flow?
+  → create_project (or list_projects + reuse) FIRST — all workflow ops need project_id
+  → Write workflows/{workflow_id}/... JSON files to disk in the repo
+  → THEN save_workflow_bundle (reads files map built from local paths — not inline-only)
+  → If GitHub-attached: local repo is source of truth; sync local → Loxtep project
 ```
 
 **Data products are created by workflow design + deploy — not by `create_data_product`.**
@@ -61,6 +67,47 @@ Standalone MCP `create_data_product` produces orphan design-time records without
 
 **Connection nodes** reference org **connectors** via `connector_id` inside the
 bundle (`connections/{connection_id}.json`).
+
+## Project and local bundle files (CRITICAL — before P2)
+
+**Every flow starts with a Loxtep project.** Workflows, connections, and data
+products are **project-scoped** — you need `project_id` on all P2+ MCP calls.
+
+| Step | Action |
+| ---- | ------ |
+| 0a | `list_projects` / `get_project` — reuse an existing project when appropriate |
+| 0b | `create_project` when none exists — `{ "operation": "create_project", "name": "..." }` |
+| 0c (optional) | **Attach GitHub** — `update_project` with `github_*` fields (or `github_action` on `create_project`) so the Loxtep project links to the repo |
+| 0d (code-first repos) | CLI bootstrap: `loxtep init` → `loxtep attach` — see **`loxtep-sdk`** |
+
+### Write bundles to disk — do not author inline-only
+
+`save_workflow_bundle` persists to Loxtep's org workspace store (S3 under
+`organizations/.../workflows/{workflow_id}/`). That is **server-side state** —
+not a substitute for files in the user's repo.
+
+| Correct | Wrong |
+| ------- | ----- |
+| Write JSON under `workflows/{workflow_id}/` locally → build the `files` map from those paths → `save_workflow_bundle` | Compose the entire `files` map only inside the MCP tool-call argument with **no local files** |
+
+**Local layout** (repo root or code-first project root):
+
+```
+workflows/{workflow_id}/
+  workflow.json
+  connections/{connection_id}.json
+  transformations/{transformation_id}.json
+  validations/{validation_id}.json
+  data-products/{data_product_id}.json
+```
+
+When the project is **GitHub-attached**, the **repo is source of truth**: edit
+locally, commit, then sync to the Loxtep project (`save_workflow_bundle` and/or
+`loxtep` CLI — not API-only authoring). GitHub sync events use the
+`workflows-github-sync-requested` queue (see **`loxtep-queue-tracing`**).
+
+**Agent sequence:** project → write local files → dry-run save → fix → persist
+→ deploy.
 
 ## When to use
 
@@ -102,22 +149,57 @@ bundle (`connections/{connection_id}.json`).
 1. `loxtep_session` → `{ "operation": "get_current_user" }`
 2. `loxtep_session` → `{ "operation": "get_current_organization" }`
 
-### Flow B — New project then template (studio bootstrap)
+### Flow B — Project bootstrap (mandatory before any flow)
 
-1. `loxtep_projects` → `create_project` (`name`, optional `template_slug`, …).
-2. `loxtep_templates` → `list_templates` / `get_template` (optional).
-3. `loxtep_templates` → `apply_template` with `project_id`, `template_type`,
-   `template_slug`.
+**Do this before connect, bundle authoring, or deploy.** Skip only when
+`project_id` is already known and the project exists.
+
+1. `loxtep_session` → `get_current_user` (confirm RBAC + org).
+2. `loxtep_projects` → `list_projects` — reuse when the user names an existing
+   mesh project.
+3. If none exists: `create_project` with `name` (optional `description`,
+   `domain_id`).
+4. **Optional — GitHub attach:** `update_project` with `project_id` and
+   `github_*` fields (or pass `github_action` on `create_project`) to link the
+   Loxtep project to the customer's GitHub repo. Required for repo ↔ platform
+   sync workflows.
+5. **Code-first repos:** run `loxtep init` and `loxtep attach` in the repo root
+   (see **`loxtep-sdk`**) instead of hand-rolling paths when the CLI is
+   available.
+6. Record `project_id` — every subsequent workflow MCP call in this session
+   uses it.
+
+Optional template bootstrap (after project exists):
+
+1. `loxtep_templates` → `list_templates` / `get_template`.
+2. `apply_template` with `project_id`, `template_type`, `template_slug` — writes
+   a starter bundle (still materialize/sync locally when GitHub-attached).
+
+### Flow B2 — GitHub-attached repo (local → Loxtep sync)
+
+When the project is linked to GitHub (step 4 above):
+
+1. **Author locally** under `workflows/{workflow_id}/` — never inline-only MCP
+   payloads.
+2. **Commit** to Git when the user expects version control.
+3. **Sync to Loxtep** — build the `files` map from the on-disk JSON and call
+   `save_workflow_bundle` (`dry_run: true` first, then persist). This uploads
+   local state to the org workspace store.
+4. **Deploy** — `deploy_workflow` / `deploy_project` (Flow H).
+
+The platform store and the repo are two copies; **GitHub-attached projects
+expect the repo to lead** and sync pushes local → Loxtep.
 
 ### Flow C — Omnichannel data product (S2)
 
-1. Ensure **project** exists; ensure **connectors** exist per channel (see
+1. Ensure **project** exists (**Flow B**); ensure **connectors** exist per channel (see
    **`connect-external-system`**).
-2. **`get_entity_schemas`** with `pattern: "ingestion"` (or enrichment/export as
+2. **Write** workflow bundle files locally under `workflows/{workflow_id}/`.
+3. **`get_entity_schemas`** with `pattern: "ingestion"` (or enrichment/export as
    needed).
-3. Compose a full **workflow JSON bundle** (see Flow E) and
+4. Compose / validate the **`files`** map from on-disk JSON and
    **`save_workflow_bundle`** (`dry_run: true` first, then persist).
-4. `get_data_product` / `get_data_product_lexicon` to verify;
+5. `get_data_product` / `get_data_product_lexicon` to verify;
    `update_data_product` as needed.
 
 ### Flow D — Delivery interface for data product updates (S3)
@@ -201,7 +283,12 @@ calls. The studio is **S3-first composable JSON**: write the full flow, validate
 }
 ```
 
-**Step 2 — Compose `files`** (paths relative to `workflows/{workflow_id}/`):
+**Step 2 — Write local files, then build `files` map:**
+
+Create JSON on disk under `workflows/{workflow_id}/` (see layout above). Read
+those files into the `files` argument — **do not** skip writing to disk.
+
+**Step 3 — Validate then save** (`dry_run: true` first):
 
 ```json
 {
@@ -262,7 +349,7 @@ calls. The studio is **S3-first composable JSON**: write the full flow, validate
 }
 ```
 
-**Step 3 — Validate then save:** run with `dry_run: true`; fix
+**Step 4 — Validate then save:** run with `dry_run: true`; fix
 `validation_errors`, `relationship_errors`, or `topology_errors`; then
 `dry_run: false`.
 
@@ -405,10 +492,12 @@ this sequence. Do **not** call `create_data_product`.
 
 | Step | Action | Skill / tool |
 | ---- | ------ | ------------ |
+| 0 | Create or select project | **Flow B** — `create_project` / `list_projects` |
+| 0b (optional) | Attach GitHub + local layout | **Flow B2** — `update_project` `github_*`; write `workflows/{id}/` locally |
 | 1 | Connect external system (if needed) | `connect-external-system` → `connector_id` + samples |
 | 2 | Design desired output schema + provenance | `data-product-modeling` (design only — no MCP create) |
 | 3 | Read entity types | `get_entity_schemas` (`pattern`: `ingestion` \| `enrichment` \| `consumption`) |
-| 4 | Compose full `files` map | `workflow.json`, `connections/`, `transformations/`, `data-products/{id}.json` |
+| 4 | Compose full `files` map **from on-disk JSON** | `workflow.json`, `connections/`, `transformations/`, `data-products/{id}.json` |
 | 5 | Validate + persist bundle | `save_workflow_bundle` (`dry_run: true` → fix → `dry_run: false`) |
 | 6 | Deploy to instance | `deploy_workflow` or `deploy_project` (Flow H) |
 | 7 | Verify runtime DP | `get_data_product` — expect `workflow_id`, `deployment_bindings`, `managed_by: "design-time"` |
@@ -474,6 +563,12 @@ Notes:
 
 ## Pitfalls
 
+- **Inline-only bundle authoring** — Composing the `files` map solely inside a
+  `save_workflow_bundle` tool call with no `workflows/{workflow_id}/` files on
+  disk. Write locally first; MCP upload/sync is step two. See Flow B2.
+- **Skipping project setup** — Calling `get_entity_schemas` or
+  `save_workflow_bundle` without `project_id` from **Flow B**. Create or select
+  the project before any P2 work.
 - **`create_data_product` for new ingest flows** — Wrong path. Standalone create
   bypasses the workflow graph, queues, bots, and deployment bindings. Always
   embed `data-products/{id}.json` in `save_workflow_bundle`, then deploy. See
