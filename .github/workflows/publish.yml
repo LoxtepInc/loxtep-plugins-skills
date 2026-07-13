@@ -1,0 +1,99 @@
+name: Publish release
+
+# On every push to main:
+#   1. Gate on URL safety — fail if any shipped MCP config points at a non-prod
+#      host (Requirements 1.5, 3.4 / Property 2).
+#   2. Run the install-doc audit.
+#   3. If the marketplace version changed vs. the previous commit, cut a git tag
+#      (v<version>) and publish a GitHub release with the bundled configs/skills
+#      as an artifact, so installs resolve to a pinned version, not `main`
+#      (Requirement 1.2).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.claude-plugin/marketplace.json'
+      - '.cursor-plugin/marketplace.json'
+      - 'claude/**'
+      - 'cursor/**'
+      - 'opencode/**'
+      - 'kiro/**'
+      - 'antigravity/**'
+      - 'codex/**'
+      - 'scripts/**'
+      - '.github/workflows/publish.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Gate: shipped configs must never reference a non-prod host.
+      - name: URL-safety lint (fail on non-prod host)
+        run: node scripts/lint-config-urls.mjs
+
+      - name: Install-doc audit
+        run: node scripts/audit-install-docs.mjs
+
+      - name: Read version
+        id: ver
+        run: |
+          VERSION=$(node -p "require('./.claude-plugin/marketplace.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Detect version change
+        id: changed
+        run: |
+          PREV=$(git show HEAD~1:.claude-plugin/marketplace.json 2>/dev/null | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log(JSON.parse(s).version)}catch{console.log('')}})" || echo "")
+          CUR="${{ steps.ver.outputs.version }}"
+          echo "prev=$PREV cur=$CUR"
+          if [ "$PREV" != "$CUR" ]; then
+            echo "bumped=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "bumped=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Guard against existing tag
+        if: steps.changed.outputs.bumped == 'true'
+        id: tagcheck
+        run: |
+          TAG="${{ steps.ver.outputs.tag }}"
+          if git ls-remote --tags origin "refs/tags/$TAG" | grep -q "$TAG"; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Package release artifact
+        if: steps.changed.outputs.bumped == 'true' && steps.tagcheck.outputs.exists == 'false'
+        run: |
+          zip -r "loxtep-plugins-skills-${{ steps.ver.outputs.tag }}.zip" \
+            claude cursor opencode kiro antigravity codex \
+            .claude-plugin .cursor-plugin README.md AGENTS.md LICENSE \
+            -x '*/node_modules/*'
+
+      - name: Create tag and release
+        if: steps.changed.outputs.bumped == 'true' && steps.tagcheck.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.ver.outputs.tag }}"
+          git tag "$TAG"
+          git push origin "$TAG"
+          gh release create "$TAG" \
+            "loxtep-plugins-skills-$TAG.zip" \
+            --title "$TAG" \
+            --notes "Automated release for marketplace version ${{ steps.ver.outputs.version }}. Install pinned to this tag rather than main."

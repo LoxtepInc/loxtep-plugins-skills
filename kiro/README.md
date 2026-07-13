@@ -1,8 +1,8 @@
 # Loxtep for Kiro
 
-**Loxtep is the Enterprise Context Layer — turning organizational knowledge, expertise, and norms into machine-usable context for AI. Operable from Kiro over hosted MCP.**
+**Loxtep is the AI-first, governed data layer for your business. Build agents in Kiro; Loxtep ingests your data, gives them trustworthy context, and governs every access over hosted MCP.**
 
-[Loxtep](https://loxtep.io) is not another pipeline tool. Most stacks give you pipes: connect A to B, schedule a job, move on. Loxtep gives you **data products** — versioned, governed, discoverable datasets with schemas, lineage, quality rules, and delivery interfaces — backed by **real-time event streaming**, not batch glue code.
+[Loxtep](https://loxtep.io) handles the data underneath your agents. Connect a source — Postgres, Shopify, Stripe, a webhook — and Loxtep ingests it into **governed data products** (versioned, with schema, lineage, and quality) that your agents query over MCP, with **audit and field masking on by default**. No pipelines to hand-roll, no field names to invent.
 
 Because AI agents need more than API access, Loxtep maintains a **semantic layer, ontology, and runtime context** (entity knowledge, decision traces, process graphs) that your Kiro agent can query and extend.
 

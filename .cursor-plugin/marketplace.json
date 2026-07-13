@@ -1,6 +1,6 @@
 {
   "name": "loxtep",
-  "description": "Loxtep data mesh platform plugins — governed data products, streaming workflows, semantic layer, and AI context via hosted MCP (OAuth 2.1).",
+  "description": "Loxtep — the AI-first, governed data layer for your business. Connect your data and query it from your AI tool over a hosted MCP server, with audit and field masking on by default.",
   "version": "1.1.6",
   "owner": {
     "name": "Loxtep",
@@ -10,7 +10,7 @@
     {
       "name": "loxtep",
       "source": "./cursor",
-      "description": "Loxtep for Cursor — hosted MCP at mcp.loxtep.io, 19 grouped loxtep_* tools, OAuth login, 23 skills, auth recovery rule. Install this entry for Cursor IDE.",
+      "description": "Loxtep for Cursor — the AI-first governed data layer. Hosted MCP at mcp.loxtep.io, 21 grouped loxtep_* tools, OAuth login, skills, auth recovery rule. Install this entry for Cursor IDE.",
       "version": "1.1.6",
       "author": {
         "name": "Loxtep"
