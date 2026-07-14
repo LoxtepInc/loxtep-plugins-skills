@@ -37,7 +37,7 @@ bundle (`connections/{connection_id}.json`).
 - **S2:** Create an **omnichannel** or unified **data product** across multiple
   sources in a project.
 - **S3:** Register a **delivery interface** (e.g., webhook subscription) for
-  data product updates (`create_delivery_interface`).
+  data product updates (`create_target`).
 - User asks for **projects**, **flows**, **templates**, **data products**,
   **delivery interfaces**, or composing/saving workflow bundles.
 - **SDK / programmatic ingestion:** If the user wants to write events from their
@@ -59,7 +59,7 @@ bundle (`connections/{connection_id}.json`).
 ## How MCP calls work
 
 1. **Tool name** — one of `loxtep_session`, `loxtep_projects`,
-   `loxtep_templates`, `loxtep_workflows`, `loxtep_connections`,
+   `loxtep_templates`, `loxtep_workflows`, `loxtep_triggers`,
    `loxtep_data_products`.
 2. **`operation`** — flat tool id (e.g. `list_workflows`).
 3. **Other fields** — API args at top level next to `operation`.
@@ -95,11 +95,11 @@ bundle (`connections/{connection_id}.json`).
 > calls — the user-facing name is "delivery workflow."
 
 1. Obtain `data_product_id` (`list_data_products` / `get_data_product`).
-2. `loxtep_data_products` → `create_delivery_interface` with `data_product_id`,
+2. `loxtep_data_products` → `create_target` with `data_product_id`,
    `endpoint_url`, optional `headers`, `secret_token`, `filters`,
    `delivery_type` (e.g. `webhook`, `api_endpoint`, `export`, `database_sync`,
    `bi_connect`, `event_stream`).
-3. Optional: `list_delivery_interfaces` to audit active delivery interfaces.
+3. Optional: `list_targets` to audit active delivery interfaces.
 
 ### Flow F — Enrich/stage from an existing data product (enrichment workflow)
 
@@ -412,9 +412,9 @@ Notes:
 | 3    | List/create/update/delete projects | `loxtep_projects`      | `list_projects`, `get_project`, `create_project`, `update_project`, `delete_project`                                                                                                                                                                                                       | organization                                    | `name`, ids                                                                              |
 | 4    | Templates                          | `loxtep_templates`     | `list_templates`, `get_template`, `apply_template`                                                                                                                                                                                                                                         | organization / **project** for `apply_template` | `apply_template`: `project_id`, `template_type`, `template_slug`                         |
 | 5    | Workflows                          | `loxtep_workflows`     | `get_entity_schemas`, `save_workflow_bundle`, `list_workflows`, `get_workflow`, `get_workflow_graph`, `preview_transform`, `create_workflow`, `update_workflow`, `delete_workflow`, `patch_workflow_graph` (Studio UI edits only) | **project**                                     | `project_id`                                                                             |
-| 6    | Existing connection entities       | `loxtep_connections`   | `update_connection`, `delete_connection`, `list_connections`, `get_connection`, `test_connection` | **project**                                     | `project_id`                                                                             |
+| 6    | Existing connection entities       | `loxtep_triggers`   | `update_trigger`, `delete_trigger`, `list_triggers`, `get_trigger`, `test_trigger` | **project**                                     | `project_id`                                                                             |
 | 7    | Data products                      | `loxtep_data_products` | `create_data_product`, `update_data_product`, `delete_data_product`, `list_data_products`, `get_data_product`, `get_data_product_lexicon`                                                                                                                                                  | **project** or org per op                       | `project_id` where required                                                              |
-| 8    | Delivery interfaces                | `loxtep_data_products` | `list_delivery_interfaces`, `create_delivery_interface`                                                                                                                                                                                                                                    | **organization**                                | `data_product_id`, `endpoint_url`, `delivery_type`, …                                    |
+| 8    | Delivery interfaces                | `loxtep_data_products` | `list_targets`, `create_target`                                                                                                                                                                                                                                    | **organization**                                | `data_product_id`, `endpoint_url`, `delivery_type`, …                                    |
 | 9    | Deploy project                     | `loxtep_deployments`   | `deploy_project`                                                                                                                                                                                                                                                                           | **project**                                     | `project_id`, `instance_id`, optional `force_redeploy`                                   |
 | 9b   | Deploy single workflow             | `loxtep_deployments`   | `deploy_workflow`                                                                                                                                                                                                                                                                          | **project**                                     | `project_id`, `workflow_id`, `instance_id`, optional `force_redeploy`, `skip_validation` |
 | 10   | List/get deployments               | `loxtep_deployments`   | `list_deployments`, `get_deployment`                                                                                                                                                                                                                                                       | **organization**                                | `deployment_id`, optional filters                                                        |

@@ -33,7 +33,7 @@
 |---|---|---|---|---|
 | 8 | All fields have ontology bindings | `loxtep_ontology` → `bind_field_to_ontology` | `client.data_products.promote()` triggers engine validation | via MCP/SDK |
 | 9 | Active data contract with SLA | `loxtep_data_products` → `create_data_contract` | `client.data_contracts.create()` | `loxtep data-contracts create` |
-| 10 | ≥1 delivery interface | `loxtep_data_products` → `create_delivery_interface` | `client.data_products.delivery.create()` | via SDK |
+| 10 | ≥1 delivery interface | `loxtep_data_products` → `create_target` | `client.targets.create()` | via SDK |
 | 11 | Graph sync | Auto-handled by Silver promotion engine | — | — |
 | 12 | PROV-O lineage | `update_data_product` lineage field | `client.data_products.update()` | same |
 
@@ -69,7 +69,7 @@
 1. get_promotion_readiness          → see what's missing
 2. bind_field_to_ontology (×N)      → bind each field to a concept URI
 3. create_data_contract             → with SLA terms
-4. create_delivery_interface        → at least one endpoint
+4. create_target        → at least one endpoint
 5. get_promotion_readiness          → confirm all green
 6. promote_data_product             → target_tier: "gold"
 ```

@@ -19,12 +19,12 @@ from the data product name or UUID — no manual runtime-mapping lookups needed.
 
 ### Delivery interfaces
 
-The SDK exposes delivery interface management under `data_products.delivery`:
+The SDK exposes delivery interface management under `targets`:
 
 ```ts
 // Primary namespace (preferred)
-const interfaces = await client.data_products.delivery.list(dataProductId);
-await client.data_products.delivery.create(dataProductId, {
+const interfaces = await client.targets.list(dataProductId);
+await client.targets.create(dataProductId, {
   endpoint_url: 'https://example.com/webhook',
   delivery_type: 'webhook',
 });
@@ -93,14 +93,14 @@ client.data_products.invalidate_cache('my-data-product'); // specific
 client.data_products.invalidate_cache(); // all
 ```
 
-### Lower-level escape hatch: `flows.get_writer`
+### Lower-level escape hatch: `workflows.get_writer`
 
 For cases where you need explicit control over bot_id and queue name (e.g.,
 writing to a queue that isn't a data product, or using a non-standard bot
-identity), use the lower-level `flows.get_writer()`:
+identity), use the lower-level `workflows.get_writer()`:
 
 ```ts
-const writer = await client.flows.get_writer({
+const writer = await client.workflows.get_writer({
   bot_id: 'custom-bot-id',
   queue: 'explicit-queue-name',
 });
@@ -127,7 +127,7 @@ events.
 - The `runtime_mapping` that maps entities → containers → bot_ids/queue_ids
 
 **If you skip deployment**, SDK calls to `data_products.get_writer()` or
-`flows.get_writer()` will fail with "data product not deployed" or "queue not
+`workflows.get_writer()` will fail with "data product not deployed" or "queue not
 found" errors.
 
 **How to deploy:** Use the `loxtep_deployments` MCP facade:
@@ -242,7 +242,7 @@ of this document.
 1. Resolve the runtime mapping (via MCP `get_runtime_mapping` or CLI
    `loxtep config export`)
 2. Configure the SDK client with the deployed `bot_id` and target queue
-3. Use `flows.get_writer()` which writes directly to the stream bus queue
+3. Use `workflows.get_writer()` which writes directly to the stream bus queue
 
 **Quick path — export config from a deployed connector:**
 
@@ -259,8 +259,8 @@ automatically.
 | Facade                 | `operation`                   | Permission | Notes                                            |
 | ---------------------- | ----------------------------- | ---------- | ------------------------------------------------ |
 | `loxtep_data_products` | `get_data_product_sdk_config` | read       | Returns SDK connection config for a data product |
-| `loxtep_data_products` | `create_delivery_interface`   | write      | Create a delivery interface                      |
-| `loxtep_data_products` | `list_delivery_interfaces`    | read       | List active delivery interfaces                  |
+| `loxtep_data_products` | `create_target`   | write      | Create a delivery interface                      |
+| `loxtep_data_products` | `list_targets`    | read       | List active delivery interfaces                  |
 | `loxtep_deployments`   | `deploy_workflow`             | write      | Deploy a single workflow to an instance          |
 | `loxtep_deployments`   | `list_deployments`            | read       | List deployment records (poll for status)        |
 | `loxtep_deployments`   | `get_deployment`              | read       | Get a single deployment record by ID             |

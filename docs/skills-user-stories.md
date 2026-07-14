@@ -52,7 +52,7 @@ Platform PKO procedures: `platform-backend/graph/platform-pko/` · architecture:
 | **PKO**              | `procedure#connect-external-system` → `procedure#capture-connector-samples` → `procedure#design-ingestion-workflow`                                              |
 | **Preconditions**    | MCP auth; optional `project_id` for templates only (not required for org connector)                                                                               |
 | **Happy path**       | `list_connector_types` → OAuth or `create_connector` → test connector → `capture_connector_samples` → hand off to **`data-workflows`** (`save_workflow_bundle`) |
-| **MCP**              | `loxtep_connectors`, `loxtep_connections`, `loxtep_templates`                                                                                                     |
+| **MCP**              | `loxtep_connectors`, `loxtep_triggers`, `loxtep_templates`                                                                                                     |
 | **Primary skill**    | **`connect-external-system`**                                                                                                                                     |
 
 ---
@@ -115,7 +115,7 @@ For the full S0–S15 narrative detail and MCP operation → skill index, see
 | `operation`                                                                              | Primary skill                                                       |
 | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
 | `list_connector_types`, `create_connector`, `get_connector_oauth_url`, `capture_connector_samples` | **`connect-external-system`** |
-| `list_connections`, `get_connection`, `test_connection`, `update_connection`                         | **`data-workflows`** (inspect/update existing entities only) |
+| `list_triggers`, `get_trigger`, `test_trigger`, `update_trigger`                         | **`data-workflows`** (inspect/update existing entities only) |
 | `get_entity_schemas`, `save_workflow_bundle`, `list_workflows`, `get_workflow`, `get_workflow_graph` | **`data-workflows`** (Flow E bundle authoring)               |
 | `deploy_project`, `deploy_workflow`, `list_deployments`, `get_deployment`                | `loxtep-deployments` (+ **`loxtep-journey-orchestrator`** for P2)   |
 | `get_promotion_readiness`, `promote_data_product`                                        | **`promote-data-product`**                                          |

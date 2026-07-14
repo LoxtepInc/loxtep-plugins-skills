@@ -379,13 +379,13 @@ async function run() {
     },
     async () => {
       if (!fixture.project_id) {
-        return skipped('S1', 'list_connections', 'loxtep_connections', 'list_connections', 'no project_id');
+        return skipped('S1', 'list_triggers', 'loxtep_triggers', 'list_triggers', 'no project_id');
       }
-      const res = await callMcp('loxtep_connections', {
-        operation: 'list_connections',
+      const res = await callMcp('loxtep_triggers', {
+        operation: 'list_triggers',
         project_id: fixture.project_id,
       });
-      return logStep('S1', 'list_connections', 'loxtep_connections', 'list_connections', res);
+      return logStep('S1', 'list_triggers', 'loxtep_triggers', 'list_triggers', res);
     },
   ]);
 
@@ -543,18 +543,18 @@ async function run() {
     await runStorySteps('S3', 'data-workflows', [
       async () => {
         const res = await callMcp('loxtep_data_products', {
-          operation: 'list_delivery_interfaces',
+          operation: 'list_targets',
           data_product_id: fixture.data_product_id,
         });
-        return logStep('S3', 'list_delivery_interfaces', 'loxtep_data_products', 'list_delivery_interfaces', res);
+        return logStep('S3', 'list_targets', 'loxtep_data_products', 'list_targets', res);
       },
       async () => {
         const res = await callMcp('loxtep_data_products', {
-          operation: 'create_delivery_interface',
+          operation: 'create_target',
           data_product_id: fixture.data_product_id,
           endpoint_url: 'https://example.com/webhook/mcp-story-test',
         });
-        return logStep('S3', 'create_delivery_interface', 'loxtep_data_products', 'create_delivery_interface', res);
+        return logStep('S3', 'create_target', 'loxtep_data_products', 'create_target', res);
       },
     ]);
   } else {
