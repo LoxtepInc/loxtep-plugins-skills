@@ -39,6 +39,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
+          package-manager-cache: false
 
       # Gate: shipped configs must never reference a non-prod host.
       - name: URL-safety lint (fail on non-prod host)
