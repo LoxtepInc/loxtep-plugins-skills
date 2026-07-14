@@ -20,7 +20,7 @@ description:
 
 1. **`loxtep_session`** → **`get_current_user`** — use **`permissions`** (effective `resource` / `action` grants) and **`roles`**.
 2. **`loxtep_session`** → **`get_current_organization`**
-3. Pass **`project_id`** for project-scoped facades (`loxtep_workflows`, `loxtep_connections`, `loxtep_data_products`, …).
+3. Pass **`project_id`** for project-scoped facades (`loxtep_workflows`, `loxtep_triggers`, `loxtep_data_products`, …).
 4. Use the client’s **ListTools** output for **`loxtep_*`** parameter schemas.
 
 ## Permission denials

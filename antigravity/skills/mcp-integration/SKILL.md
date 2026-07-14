@@ -47,7 +47,7 @@ Do **not** suggest local stdio MCP servers or `npx @loxtep/customer-mcp-server`.
 | Phase | Primary facades |
 | ----- | ---------------- |
 | P0 | `loxtep_session` |
-| P1 | `loxtep_connectors`, `loxtep_connections` |
+| P1 | `loxtep_connectors`, `loxtep_triggers` |
 | P2 | `loxtep_workflows`, `loxtep_deployments` |
 | P3 | `loxtep_data_products`, `loxtep_schemas`, `loxtep_semantic_layer` |
 | P4 | `loxtep_data_products` (`promote_data_product`) |
