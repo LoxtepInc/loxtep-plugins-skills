@@ -33,12 +33,12 @@ for await (const event of reader) {
 }
 ```
 
-### Lower-level escape hatch: `flows.get_writer`
+### Lower-level escape hatch: `workflows.get_writer`
 
-For cases where you need explicit control over bot_id and queue name, use the lower-level `flows.get_writer()`:
+For cases where you need explicit control over bot_id and queue name, use the lower-level `workflows.get_writer()`:
 
 ```ts
-const writer = client.flows.get_writer(flowId, {
+const writer = client.workflows.get_writer(flowId, {
   bot_id: 'custom-bot-id',
   output_queue_name: 'explicit-queue-name',
 });
@@ -58,7 +58,7 @@ await writer.close();
 - Queue registrations on the stream bus
 - The `runtime_mapping` that maps entities → containers → bot_ids/queue_ids
 
-**If you skip deployment**, SDK calls to `flows.get_writer()` or direct queue writes will fail with "queue not found" or "no deployed workflow" errors.
+**If you skip deployment**, SDK calls to `workflows.get_writer()` or direct queue writes will fail with "queue not found" or "no deployed workflow" errors.
 
 **How to deploy:** Use the `loxtep_deployments` MCP facade:
 1. `deploy_project` — triggers async deployment (requires `project_id` + `instance_id`)
@@ -164,7 +164,7 @@ The SDK writes events through the **stream bus** — not via HTTP.
 
 1. Resolve the runtime mapping (via MCP `get_runtime_mapping` or CLI `loxtep config export`)
 2. Configure the SDK client with the deployed `bot_id` and target queue
-3. Use `flows.get_writer()` which writes directly to the stream bus queue
+3. Use `workflows.get_writer()` which writes directly to the stream bus queue
 
 The **workflow must be deployed** before the SDK can write. The `get_runtime_mapping` response tells you which `bot_id` and queue to target for a given connection/data product entity.
 

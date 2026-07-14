@@ -75,7 +75,7 @@ Before any project work, confirm identity and org context:
 
 1. `loxtep_session` → `get_current_user` — returns `permissions` (effective resource/action grants), `roles`, and org context.
 2. `loxtep_session` → `get_current_organization` — confirms organizational scope and governance settings.
-3. For project-scoped tools (`loxtep_workflows`, `loxtep_connections`, `loxtep_data_products`), always include `project_id`.
+3. For project-scoped tools (`loxtep_workflows`, `loxtep_triggers`, `loxtep_data_products`), always include `project_id`.
 4. Use the **semantic layer** and **ontology** to resolve canonical business terms instead of guessing field names.
 
 ### Permission Denials
@@ -108,10 +108,10 @@ Example:
 | `loxtep_projects` | `list_projects`, `get_project`, `create_project`, `update_project`, `delete_project` | organization |
 | `loxtep_instances` | `list_instances`, `create_instance` | organization |
 | `loxtep_connectors` | `list_connector_types`, `list_connectors`, `create_connector`, `get_connector_oauth_url` | global / organization |
-| `loxtep_connections` | `update_connection`, `delete_connection`, `list_connections`, `get_connection`, `test_connection` | project |
+| `loxtep_triggers` | `update_trigger`, `delete_trigger`, `list_triggers`, `get_trigger`, `test_trigger` | project |
 | `loxtep_templates` | `list_templates`, `get_template`, `apply_template` | organization / project |
 | `loxtep_workflows` | `get_entity_schemas`, `save_workflow_bundle`, `create_workflow`, `update_workflow`, `delete_workflow`, `list_workflows`, `get_workflow`, `get_workflow_graph`, `patch_workflow_graph`, `preview_transform` | project |
-| `loxtep_data_products` | `create_data_product`, `update_data_product`, `delete_data_product`, `list_data_products`, `get_data_product`, `get_data_product_lexicon`, `get_data_product_sdk_config`, `list_delivery_interfaces`, `create_delivery_interface` | project / organization |
+| `loxtep_data_products` | `create_data_product`, `update_data_product`, `delete_data_product`, `list_data_products`, `get_data_product`, `get_data_product_lexicon`, `get_data_product_sdk_config`, `list_targets`, `create_target` | project / organization |
 | `loxtep_schemas` | `create_schema`, `update_schema`, `delete_schema`, `get_schema`, `list_schema_versions`, `tag_pii_fields` | organization |
 | `loxtep_quality` | `create_quality_rule`, `update_quality_rule`, `delete_quality_rule`, `list_quality_rules`, `get_quality_rule`, `test_quality_rule` | organization |
 | `loxtep_catalog` | `search_catalog`, `get_catalog_entry`, `get_evidence`, `get_lineage_impact`, `get_governance_flags`, `list_domains`, `list_tags` | catalog |
@@ -164,7 +164,7 @@ Example:
 
 ### Project-Scoped Tool Errors
 
-- Always include `project_id` for: `loxtep_workflows`, `loxtep_connections`, `loxtep_data_products` (CRUD ops), `loxtep_workspace` (version ops)
+- Always include `project_id` for: `loxtep_workflows`, `loxtep_triggers`, `loxtep_data_products` (CRUD ops), `loxtep_workspace` (version ops)
 - Get `project_id` from `loxtep_projects` → `list_projects` or `create_project`
 
 ## Best Practices

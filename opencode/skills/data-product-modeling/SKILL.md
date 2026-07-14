@@ -70,8 +70,8 @@ author bundle → deploy → verify with `get_data_product`.**
 - **Delivery workflow** — A workflow with `workflow_type: 'consumption'` that
   pushes data to external systems. The enum value `'consumption'` is unchanged
   in API calls; "delivery workflow" is the user-facing name.
-- **`create_delivery_interface`** — MCP operation to create a delivery interface.
-- **`list_delivery_interfaces`** — MCP operation to list delivery interfaces.
+- **`create_target`** — MCP operation to create a delivery interface.
+- **`list_targets`** — MCP operation to list delivery interfaces.
 
 ## Happy-path flows
 
@@ -105,7 +105,7 @@ author bundle → deploy → verify with `get_data_product`.**
 7. **Wire consumer DP:** **`data-workflows`** — `data-products/{id}.json` in
    consumption bundle + `save_workflow_bundle` + deploy. **Do not** call
    `create_data_product`.
-8. **Configure delivery interface:** After deploy, `create_delivery_interface`
+8. **Configure delivery interface:** After deploy, `create_target`
    on the runtime data product.
 
 ### Flow — Medallion Promotion (Bronze → Silver)
@@ -127,7 +127,7 @@ author bundle → deploy → verify with `get_data_product`.**
 2. Remediate each unsatisfied prerequisite:
    - Ontology bindings: `bind_field_to_ontology` for each unbound field via `loxtep_ontology`.
    - Data contract: `create_data_contract` with SLA terms via `loxtep_data_products`.
-   - Consumption endpoint: `create_delivery_interface` via `loxtep_data_products`.
+   - Consumption endpoint: `create_target` via `loxtep_data_products`.
    - Graph sync: auto-handled by Silver promotion.
    - PROV-O lineage: document upstream lineage via `update_data_product` lineage field.
 3. `get_promotion_readiness` again to confirm.
@@ -171,8 +171,8 @@ Transform Logic:  [expression]
 | `create_data_product` | `loxtep_data_products` | organization | **Agents: do not use** for new DPs. Author via workflow bundle + deploy. |
 | `update_data_product` | `loxtep_data_products` | organization | Partial update; use for schema, metadata, status |
 | `delete_data_product` | `loxtep_data_products` | project | Remove a data product by `project_id`, `data_product_id` |
-| `create_delivery_interface` | `loxtep_data_products` | organization | Delivery interface (webhook/API/export/DB sync/BI/event stream) for a data product. |
-| `list_delivery_interfaces` | `loxtep_data_products` | organization | Active delivery interfaces. |
+| `create_target` | `loxtep_data_products` | organization | Delivery interface (webhook/API/export/DB sync/BI/event stream) for a data product. |
+| `list_targets` | `loxtep_data_products` | organization | Active delivery interfaces. |
 | `get_promotion_readiness` | `loxtep_data_products` | organization | Check prerequisites, progress, promotability for a data product. |
 | `promote_data_product` | `loxtep_data_products` | organization | Execute tier transition (Silver/Gold). Validates prerequisites server-side. |
 | `create_data_contract` | `loxtep_data_products` | organization | Create contract with SLA/quality terms. Required for Gold. |

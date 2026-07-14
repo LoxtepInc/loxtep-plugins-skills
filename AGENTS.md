@@ -69,12 +69,11 @@ payload; `organization`-scoped operations may accept an optional `domain_id`;
 
 **Cross-tool doc:** [docs/agent-workflow-authoring.md](docs/agent-workflow-authoring.md)
 
-- **P1 Connect ends with** `connector_id` + samples — **no** workflow graph MCP calls during connect.
-- **P0 Project:** `create_project` (or reuse) **before** P2 — record `project_id`; optional GitHub attach via `update_project` `github_*`.
-- **P2 Design:** connection nodes live **inside the bundle** (`connections/{id}.json` with `connector_id`); write `workflows/{workflow_id}/` **locally** before `save_workflow_bundle`.
-- **New flows:** `get_entity_schemas` → compose full JSON `files` (include `data-products/{id}.json`) → `save_workflow_bundle` (`dry_run: true` first). **No** standalone `create_data_product`.
+- **New flows:** `get_entity_schemas` → compose full JSON `files` → `save_workflow_bundle` (`dry_run: true` first).
+- **P1 Connect ends with** `connector_id` + samples — no workflow graph writes during connect.
+- **P2 Design:** connection nodes live **inside the bundle** (`connections/{id}.json` with `connector_id`).
+- **Forbidden for new flows:** piecemeal `patch_workflow_graph` instead of `save_workflow_bundle`.
 - **`patch_workflow_graph`:** Studio UI incremental edits on an existing open flow only.
-- **P2 Deploy:** `deploy_workflow` / `deploy_project` — data product emerges with `workflow_id` + `deployment_bindings`
 
 Skills: `connect-external-system` (P1), `data-workflows` Flow E (P2 bundle), `loxtep-journey-orchestrator` (journey gates).
 
@@ -90,6 +89,7 @@ key parameters.
 | --- | --- | --- | --- |
 | `get_current_user` | organization | — | — |
 | `get_current_organization` | organization | — | — |
+| `logout` | organization | — | — |
 
 ```json
 { "operation": "get_current_user" }
@@ -146,35 +146,29 @@ key parameters.
 { "operation": "list_connector_types" }
 ```
 
-### `loxtep_connections` — workflow connection nodes (read/update only)
+### `loxtep_triggers` — Ingest source bindings (list/get/update/delete/test), a.k.a. connections. New trigger entities are authored inside save_workflow_bundle (connections/{id}.json with connector_id). Deprecated aliases
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
-| `update_connection` | project | `project_id`, `connection_id` | `configuration` |
-| `delete_connection` | project | `project_id`, `connection_id` | — |
-| `list_connections` | project | `project_id` | — |
-| `get_connection` | project | `project_id`, `connection_id` | — |
-| `test_connection` | project | `project_id`, `connection_id` | — |
+| `update_trigger` | project | — | — |
+| `delete_trigger` | project | — | — |
+| `list_triggers` | project | — | — |
+| `get_trigger` | project | — | — |
+| `test_trigger` | project | — | — |
 
-New connection nodes are created inside **`save_workflow_bundle`** (`connections/{id}.json`).
-
-```json
-{ "operation": "list_connections", "project_id": "proj_…" }
-```
-
-### `loxtep_workflows` — workflows, graph, bundle
+### `loxtep_workflows` — workflows, graph, transforms
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
 | `get_entity_schemas` | project | `project_id` | `pattern` |
 | `save_workflow_bundle` | project | `project_id`, `files` | `dry_run` |
+| `list_workflows` | project | `project_id` | — |
+| `get_workflow` | project | `project_id`, `workflow_id` | — |
+| `get_workflow_graph` | project | `project_id`, `workflow_id` | — |
 | `create_workflow` | project | `project_id`, `name` | `description` |
 | `update_workflow` | project | `project_id`, `workflow_id` | `name`, `description` |
 | `delete_workflow` | project | `project_id`, `workflow_id` | — |
 | `archive_workflow` | project | `project_id`, `workflow_id` | `instance_id`, `force` |
-| `list_workflows` | project | `project_id` | — |
-| `get_workflow` | project | `project_id`, `workflow_id` | — |
-| `get_workflow_graph` | project | `project_id`, `workflow_id` | — |
-| `patch_workflow_graph` | project | `project_id`, `workflow_id`, `ops` | `dry_run` |
 | `preview_transform` | project | `project_id`, `transform` | `sample` |
+| `patch_workflow_graph` | project | `project_id`, `workflow_id`, `ops` | `dry_run` |
 
 ```json
 { "operation": "list_workflows", "project_id": "proj_…" }
@@ -182,10 +176,6 @@ New connection nodes are created inside **`save_workflow_bundle`** (`connections
 
 ### `loxtep_data_products` — data products & consumptions
 `kind` is `source` (atomic, domain-owned) or `consumer` (composed projection).
-
-**Agent provisioning:** Do **not** call `create_data_product` for new ingest flows.
-Author `data-products/{id}.json` inside `save_workflow_bundle`, deploy, then use
-`get_data_product` / `update_data_product`. See [agent-workflow-authoring.md](docs/agent-workflow-authoring.md).
 
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
@@ -197,8 +187,8 @@ Author `data-products/{id}.json` inside `save_workflow_bundle`, deploy, then use
 | `get_data_product_lexicon` | organization | `data_product_id` | — |
 | `get_data_product_sdk_config` | organization | `data_product_id` | — |
 | `enrich_schema_descriptions` | organization | — | — |
-| `list_delivery_interfaces` | organization | — | — |
-| `create_delivery_interface` | organization | — | — |
+| `list_targets` | organization | — | — |
+| `create_target` | organization | — | — |
 | `get_promotion_readiness` | organization | — | — |
 | `promote_data_product` | organization | — | — |
 | `create_data_contract` | organization | — | — |
@@ -366,6 +356,9 @@ Author `data-products/{id}.json` inside `save_workflow_bundle`, deploy, then use
 | `agent_orchestration_get_workstream` | organization | `workstream_id` | — |
 | `agent_orchestration_list_agents` | organization | — | — |
 | `agent_orchestration_get_agent` | organization | `agent_id` | — |
+| `agent_orchestration_update_issue` | organization | — | — |
+| `agent_orchestration_add_issue_comment` | organization | — | — |
+| `agent_orchestration_update_workstream` | organization | — | — |
 
 ```json
 { "operation": "agent_orchestration_list_issues" }
@@ -436,26 +429,19 @@ rejected, and a check that cannot complete blocks the operation.
 | --- | --- |
 | `loxtep-mcp-session` | Orient: capabilities, RBAC grants, recommended session order |
 | `loxtep-instances` | Provision/manage runtime instances |
-| `connect-external-system` | Connect external systems (OAuth, API key, SDK) |
-| `loxtep-journey-orchestrator` | Connect→AI-ready journey orchestration (P0–P7) |
+| `connect-external-system` | Connect external systems (P1) |
 | `data-workflows` | Author and deploy data workflows |
 | `data-product-modeling` | Model source/consumer data products |
-| `promote-data-product` | Medallion promotion and readiness checks |
 | `discover-govern-lineage` | Discovery, governance, lineage |
-| `governance-policies` | Deploy-time governance policy authoring |
 | `org-semantics-quality` | Semantic layer + quality rules |
 | `loxtep-analytics` | DuckDB analytics |
 | `loxtep-workspace` | Snapshots, versions, workspace index |
-| `loxtep-deployments` | Deploy projects/workflows to runtime instances |
-| `loxtep-queue-tracing` | Debug deployments via queue event tracing |
 | `loxtep-process-intel` | Entity context + decision traces + unified context retrieval |
 | `loxtep-ontology` | Ontology, vocabulary, namespaces |
 | `loxtep-procedures` | Process graph procedures |
 | `loxtep-agent-workspace` | Agent orchestration (issues/goals/agents) |
 | `loxtep-sdk` | Using the `@loxtep/sdk` runtime + CLI |
-| `loxtep-semantic-layer` | Org semantic layer search and completeness |
 | `semantic-ontology-mapping` | Mapping external vocabularies to the ontology |
-| `mcp-integration` | Hosted MCP access setup and validation (P5) |
 
 ### Skill attribution (optional)
 
@@ -471,7 +457,7 @@ eval scoring. It's optional, backward-compatible, and ignored for tool logic. Th
 | --- | --- | --- | --- |
 | Cursor | Cursor IDE | `cursor/` | MCP config, rules, skills, assets — native OAuth via `url` |
 | Claude | Claude Code & Cowork | `claude/` | MCP config, skills — native OAuth via `url` |
-| OpenCode | OpenCode | `opencode/` | `opencode.json` (`type: remote`), skills — native OAuth |
+| OpenCode | OpenCode | `opencode/` | `opencode.json`, skills — native OAuth via `url` |
 | Kiro | Kiro IDE | `kiro/` | MCP config + power + README — native OAuth via `url` |
 | Antigravity | Antigravity IDE | `antigravity/` | MCP config — uses `mcp-remote` bridge |
 | Codex | OpenAI Codex | `codex/` | TOML snippet + README — native OAuth via `url` |

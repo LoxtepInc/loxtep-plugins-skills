@@ -1,19 +1,29 @@
 # Loxtep Plugins & Skills
 
-Plugins and skills for using [Loxtep](https://loxtep.io) from AI coding and productivity tools.
+Plugins and skills for connecting your AI coding tool to [Loxtep](https://loxtep.io).
 
-Loxtep is the **Enterprise Context Layer**: the system that turns organizational
-knowledge, expertise, and norms into machine-usable context for AI across
-heterogeneous systems. Built on **governed data products** on a **real-time
-streaming** backbone — with a **semantic layer**, **ontology**, **process graph**,
-and **AI context** (entity knowledge, decision traces, Organizational Skills) that
-agents query instead of inventing. One source of truth, many interfaces:
-MCP, REST, SQL, SDK, streaming, and graph. These plugins connect your MCP client to
-that platform over hosted OAuth.
+**Loxtep is the AI-first, governed data layer for your business.** You build
+agents in the tools you already use — Claude Code, Cursor, Codex, OpenCode, Kiro,
+Antigravity — and Loxtep handles the hard part: **ingesting your data, giving
+your agents trustworthy context, and governing every access** (audit + field
+masking on by default). Connect a source (Postgres, Shopify, Stripe, a webhook),
+and your agents query governed data over a hosted MCP server instead of
+hand-rolling pipelines or inventing field names.
 
-The hosted MCP registers **19 grouped tools** named `loxtep_projects`, `loxtep_workflows`, `loxtep_data_products`, and so on. Each call sets **`operation`** to the flat action name (e.g. `list_projects`, `create_data_product`) plus that action's arguments. Tool definitions and scopes are published on the hosted MCP server.
+The hosted MCP registers **21 grouped tools** named `loxtep_projects`,
+`loxtep_workflows`, `loxtep_data_products`, and so on. Each call sets
+**`operation`** to the flat action name (e.g. `list_projects`,
+`create_data_product`) plus that action's arguments. Tool definitions and scopes
+are published on the hosted MCP server.
 
-Scoped **Agent-Scope Skills** (23 per client) teach agents the platform model — data products, governance, semantic layer, streaming workflows, deployments, queue tracing — so they work inside boundaries instead of inventing field names and bypassing access rules.
+New here? Start with the **Starter set** — session/auth, connect one source, and
+query — then opt into the full skill set when you need it. See
+[docs/starter-subset.md](docs/starter-subset.md).
+
+Scoped **Agent-Scope Skills** teach agents the platform model — connecting
+sources, data products, governance, semantic layer, streaming workflows,
+deployments — so they work inside boundaries instead of inventing field names and
+bypassing access rules.
 
 ### Workflow authoring (read this before connect + ingest)
 
@@ -23,7 +33,7 @@ All MCP clients share one contract: **[docs/agent-workflow-authoring.md](docs/ag
 
 | Generic workflow tool | Loxtep |
 | --- | --- |
-| Pipelines as the unit of work | **Data products** — owned, versioned, cataloged assets with contracts and SLAs |
+| Pipelines as the unit of work | **Data products** — owned, versioned, governed datasets your agents can trust |
 | Batch ETL / cron jobs | **Event streaming** — flows built for continuous, real-time data movement |
 | Docs about data definitions | **Semantic layer + ontology** — canonical terms, namespaces, mappings agents can resolve |
 | "The AI read our wiki" | **AI context** — entity context, decision traces, process intelligence wired to the platform |
@@ -44,9 +54,9 @@ Each AI tool has a native way to install Loxtep — marketplace plugins, powers,
 
 ### Cursor
 
-**Recommended:** search **Loxtep** on the [Cursor Marketplace](https://cursor.com/marketplace) and install the **`loxtep`** plugin (MCP + 23 skills + auth rule).
+**Recommended:** Cursor **Dashboard → Settings → Plugins → Import** → `https://github.com/LoxtepInc/loxtep-plugins-skills` (plugin path `cursor/`). Installs MCP + skills + auth rule.
 
-**Team rollout:** Cursor **Dashboard → Settings → Plugins → Import** → `https://github.com/LoxtepInc/loxtep-plugins-skills` (plugin path `cursor/`).
+> A one-click Cursor Marketplace listing is in review; until it is live, use the Import or local-clone paths below.
 
 **Local clone:** **Settings → Plugins** → install from directory → select the cloned `cursor/` folder.
 

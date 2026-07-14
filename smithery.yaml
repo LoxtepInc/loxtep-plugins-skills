@@ -1,0 +1,6 @@
+# Smithery listing for the Loxtep hosted MCP server.
+# https://smithery.ai/docs
+startCommand:
+  type: http
+  # Loxtep MCP is hosted-only (Streamable HTTP, OAuth 2.1). No local command.
+  url: https://mcp.loxtep.io/ai/mcp/stream

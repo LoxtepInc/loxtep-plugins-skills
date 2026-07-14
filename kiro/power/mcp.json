@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "loxtep": {
-      "url": "https://mcpdev.loxtep.io/ai/mcp/stream"
+      "url": "https://mcp.loxtep.io/ai/mcp/stream"
     }
   }
 }

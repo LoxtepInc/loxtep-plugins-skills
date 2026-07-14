@@ -100,7 +100,7 @@ Pre-assign UUIDs. Wire with **`upstream_entity_id`**, not separate connect steps
 | Author new flow | `save_workflow_bundle` |
 | Read schemas / patterns | `get_entity_schemas` |
 | Studio canvas incremental edit | `patch_workflow_graph` |
-| Inspect existing connection entity | `list_connections`, `get_connection`, `test_connection`, `update_connection` |
+| Inspect existing connection entity | `list_triggers`, `get_trigger`, `test_trigger`, `update_trigger` |
 
 ---
 
