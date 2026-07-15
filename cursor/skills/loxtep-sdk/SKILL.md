@@ -264,6 +264,25 @@ automatically.
 | `loxtep_deployments`   | `deploy_workflow`             | write      | Deploy a single workflow to an instance          |
 | `loxtep_deployments`   | `list_deployments`            | read       | List deployment records (poll for status)        |
 | `loxtep_deployments`   | `get_deployment`              | read       | Get a single deployment record by ID             |
+| `loxtep_approvals`     | `list_pending_approvals`      | read       | SDK: `client.approvals.list_pending()`           |
+| `loxtep_approvals`     | `resolve_approval`            | write      | SDK: `client.approvals.approve()` / `.reject()`  |
+
+## Approving pipeline gates from code (`client.approvals`)
+
+The `define` PKO pipeline (schema → meaning → relationships → quality → promote)
+pauses at each `hitl_gate: approval` step and creates an `approval_request` — the
+same record surfaced in the web inbox and delivered over Slack/email. Resolve it
+programmatically instead of switching to the UI:
+
+```ts
+const pending = await client.approvals.list_pending();
+for (const approval of pending.items) {
+  await client.approvals.approve(approval.approval_request_id);
+}
+```
+
+`organization_id` defaults from the client's constructor option; pass it per-call
+to override (`client.approvals.resolve(id, 'reject', organizationId)`).
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 

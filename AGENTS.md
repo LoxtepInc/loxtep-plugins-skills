@@ -49,7 +49,7 @@ Clients without native MCP OAuth (e.g. Antigravity) bridge via `mcp-remote`:
 
 ## How calls work
 
-The server registers **21 grouped tools** (area facades, all named `loxtep_*`).
+The server registers **22 grouped tools** (area facades, all named `loxtep_*`).
 Each call sets **`operation`** to the flat action name, plus that action's
 arguments. Example: call the tool **`loxtep_connectors`** with:
 
@@ -409,6 +409,26 @@ key parameters.
 | `run_mining_pass` | organization | — | — |
 | `list_candidates` | organization | — | — |
 | `act_on_candidate` | organization | — | — |
+
+### `loxtep_approvals` — pipeline HITL gate approvals
+Programmatic parity with the web inbox and Slack/email channels: `list_pending_approvals`
+returns the org's pending approval requests (including PKO pipeline gates from `define`,
+e.g. mapping review, relationship review, quality-rule review, and promote); `resolve_approval`
+approves or rejects one — the same decision the inbox/Slack buttons make, resolving the shared
+approval record.
+
+| Operation | Scope | Required | Optional |
+| --- | --- | --- | --- |
+| `list_pending_approvals` | organization | — | — |
+| `resolve_approval` | organization | `approval_request_id`, `action` (`approve`\|`reject`) | — |
+
+```json
+{ "operation": "list_pending_approvals" }
+```
+
+```json
+{ "operation": "resolve_approval", "approval_request_id": "ar_…", "action": "approve" }
+```
 
 ---
 
