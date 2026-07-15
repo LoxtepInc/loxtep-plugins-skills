@@ -27,6 +27,7 @@ Coordinates the **data-ingestion track** (P0–P7) defined in
 | P2    | `procedure#design-ingestion-workflow`      | StudioAgent       | `data-workflows`                         |
 | P2    | `procedure#deploy-ingestion-workflow`      | DeployAgent       | `loxtep-deployments`, `loxtep-instances` |
 | P3    | `procedure#define-data-product-semantics`  | SemanticsAgent    | `semantic-ontology-mapping`              |
+|       | (10 steps: select → infer mapping → **review** → apply glossary → **promote mapping** → infer relationships → **review** → persist → infer quality rules → **review**; bold = `hitl_gate: approval`) | | |
 | P4    | `procedure#promote-data-product-medallion` | CatalogAgent      | `promote-data-product`                   |
 | P5    | `procedure#register-delivery-interface`    | DeliveryAgent     | `data-product-modeling`                  |
 | P5    | `procedure#enable-agent-mcp-access`        | OrchestratorAgent | `loxtep-mcp-session`, `mcp-integration`  |
@@ -47,7 +48,12 @@ Coordinates the **data-ingestion track** (P0–P7) defined in
    `create_data_product` — embed `data-products/{id}.json` in the bundle; deploy
    provisions the runtime DP.
 4. **HITL gates** — honor `metadata.hitl_gate` and `metadata.hitl_audience`;
-   route via `resolve_hitl_audience()` when assignee not explicit.
+   route via `resolve_hitl_audience()` when assignee not explicit. The backend
+   **PKO execution engine** auto-runs `hitl_gate: none` steps and parks
+   `hitl_gate: approval` steps as an `approval_request` (same record surfaced
+   in the Define workspace inbox, Slack, and email). Resolve programmatically
+   via MCP **`loxtep_approvals`** (`list_pending_approvals`, `resolve_approval`)
+   or SDK `client.approvals` — do not re-implement gate logic in the agent.
 5. **Cross-track** — P3 feeds `procedure#bridge-dp-semantics-to-cdlc` and
    `procedure#cdlc-memory-promotion-intake`; P3 `dependsOn` deployed glossary
    via `procedure#cdlc-approve-and-deploy-artifact`.
@@ -62,7 +68,7 @@ Coordinates the **data-ingestion track** (P0–P7) defined in
 | Connect  | S1            | P1 connect + capture       | Samples in connector metadata      |
 | Studio   | S2            | P2 design                  | Graph saved with sample evidence   |
 | Deploy   | S14           | P2 deploy                  | Deployment `deployed` + smoke pass |
-| Define   | S4, semantics | P3 define                  | Semantic mapping promoted          |
+| Define   | S4, semantics | P3 define                  | Fields → meaning → relationships → quality reviewed & promoted |
 | Promote  | S17           | P4 promote                 | Medallion tier applied             |
 | Deliver  | S3            | P5 register + enable MCP   | Interface + MCP validated          |
 | Govern   | S5            | P6 govern                  | Access policy enforced             |

@@ -49,10 +49,14 @@ Do **not** suggest local stdio MCP servers or `npx @loxtep/customer-mcp-server`.
 | P0 | `loxtep_session` |
 | P1 | `loxtep_connectors`, `loxtep_triggers` |
 | P2 | `loxtep_workflows`, `loxtep_deployments` |
-| P3 | `loxtep_data_products`, `loxtep_schemas`, `loxtep_semantic_layer` |
-| P4 | `loxtep_data_products` (`promote_data_product`) |
+| P3 | `loxtep_data_products`, `loxtep_schemas`, `loxtep_semantic_layer`, `loxtep_approvals` (mapping/relationship/quality review gates) |
+| P4 | `loxtep_data_products` (`promote_data_product`), `loxtep_approvals` (promote gate) |
 | P5 | `loxtep_data_products` (delivery interfaces) |
 | P6–P7 | `loxtep_catalog`, `governance` APIs via MCP where exposed |
+
+P3's HITL gates auto-run inference and park on `awaiting_approval`; `loxtep_approvals`
+(`list_pending_approvals`, `resolve_approval`) resolves the same shared approval record
+as the Define workspace inbox, Slack, and email — no UI required for programmatic agents.
 
 Orient first with **`loxtep-mcp-session`** — `get_current_user` returns RBAC grants.
 
