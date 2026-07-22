@@ -1,0 +1,12 @@
+# .loxtep/skills/loxtep-semantic-layer.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Fail-closed: this Agent-Scope Skill's facades are RBAC-governed and carry no data-mesh resource scope.
+name: loxtep-semantic-layer
+description: Semantic layer search, artifact retrieval, and completeness — RBAC-governed; no data-mesh resource scope.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions: {}

@@ -1,14 +1,16 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: governance-policies
 description:
-  Use when the user wants to author, edit, lift, or reason about GOVERNANCE POLICIES — the
-  deploy-time gate that blocks a deployment or requires approval before a data product or workflow
-  goes live. Covers the policy schema, rules, condition syntax (freeze / quality_score /
-  classification / pii), enforcement modes (block vs audit), scope, status, and the approval gate.
-  NOT on the MCP tool surface: policies are managed via the governance REST API or the console, not
-  loxtep_* tools. To inspect governance flags on existing data instead, use discover-govern-lineage
-  (loxtep_catalog get_governance_flags). User story S5 (governance authoring). See
-  docs/skills-user-stories.md.
+  Use when the user wants to author, edit, lift, or reason about GOVERNANCE
+  POLICIES — the deploy-time gate that blocks a deployment or requires approval
+  before a data product or workflow goes live. Covers the policy schema, rules,
+  condition syntax (freeze / quality_score / classification / pii), enforcement
+  modes (block vs audit), scope, status, and the approval gate. NOT on the MCP
+  tool surface: policies are managed via the governance REST API or the console,
+  not loxtep_* tools. To inspect governance flags on existing data instead, use
+  discover-govern-lineage (loxtep_catalog get_governance_flags). User story S5
+  (governance authoring). See docs/skills-user-stories.md.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/kiro/skills/governance-policies/SKILL.md
 ---
@@ -121,3 +123,32 @@ everything beneath it. Moving a project into a governed domain subjects it to th
 - **Dormant**: POST `status: draft`. **Trial**: `status: active` + `enforcement: audit`.
 - **Enforce**: `status: active` + `enforcement: block`. **Pause**: PUT `status: draft`.
 - **Remove**: `DELETE /governance/policies/{id}`.
+
+<!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+
+## Agent-Scope Skill scope (`.loxtep/skills/governance-policies.yaml`)
+
+Resource scope and operation permissions for this Agent-Scope Skill, conformant
+with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json)
+schema. Any resource type or operation not listed is **denied (fail-closed)**.
+Identifier lists are empty placeholders — fill them with the specific resources
+in your workspace. This declaration does not change the hosted MCP config
+(`mcp.loxtep.io`).
+
+```yaml
+# .loxtep/skills/governance-policies.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Fail-closed: policy CRUD is RBAC-governed via the governance API/console, not a data-mesh
+# resource scope and not on the MCP tool surface.
+name: governance-policies
+description: Author and manage deploy-time governance policies — RBAC-governed; no data-mesh resource scope.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions: {}
+```
+
+<!-- END loxtep skill-scope (skill-package-v1) -->

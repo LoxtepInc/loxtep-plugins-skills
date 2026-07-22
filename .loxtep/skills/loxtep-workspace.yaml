@@ -2,13 +2,15 @@
 # Conforms to https://loxtep.io/schemas/skill-package-v1.json
 # Scoped to ONLY the identifiers listed; least-privilege per operation. Fail-closed.
 name: loxtep-workspace
-description: Workspace versioning plus read-only queue inspection (replay is not performed over MCP).
+description: Workspace versioning plus queue inspection and event reading (replay is not performed over MCP).
 scope:
   data_products: []
   connectors: []
   workflows: []
   domains: []
   queues: []
+  instances: []
 permissions:
   data_products: [read]
   queues: [read]
+  instances: [read]

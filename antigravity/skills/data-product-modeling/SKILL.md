@@ -1,3 +1,4 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: data-product-modeling
 description:
@@ -5,10 +6,11 @@ description:
   demand-driven (output-first) methodology. Covers source data product design
   (atomic, domain-owned), consumer data product design (composed/projected),
   medallion promotion (Bronze→Silver→Gold), schema design, lineage mapping,
-  delivery interface configuration, and reverse modeling (begin with the end
-  in mind). Complements loxtep-ontology (vocabulary/concepts) and
+  delivery interface configuration, and reverse modeling (begin with the end in
+  mind). Complements loxtep-ontology (vocabulary/concepts) and
   org-semantics-quality (governance). User story S20. DESIGN ONLY for new DPs —
-  creation is via data-workflows save_workflow_bundle + deploy, never create_data_product.
+  creation is via data-workflows save_workflow_bundle + deploy, never
+  create_data_product.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/antigravity/skills/data-product-modeling/SKILL.md
 ---
@@ -218,9 +220,15 @@ Transform Logic:  [expression]
 - **data-workflows:** Bundle authoring, deploy, runtime verification (mandatory for creation)
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+
 ## Agent-Scope Skill scope (`.loxtep/skills/data-product-modeling.yaml`)
 
-Resource scope and operation permissions for this Agent-Scope Skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+Resource scope and operation permissions for this Agent-Scope Skill, conformant
+with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json)
+schema. Any resource type or operation not listed is **denied (fail-closed)**.
+Identifier lists are empty placeholders — fill them with the specific resources
+in your workspace. This declaration does not change the hosted MCP config
+(`mcp.loxtep.io`).
 
 ```yaml
 # .loxtep/skills/data-product-modeling.yaml
@@ -238,6 +246,7 @@ permissions:
   data_products: [read, create, write, delete]
   domains: [read]
 ```
+
 <!-- END loxtep skill-scope (skill-package-v1) -->
 
 ## Optional attribution

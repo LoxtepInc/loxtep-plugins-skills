@@ -1,12 +1,14 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: loxtep-deployments
-version: 1.0.0
-scope: organization
 description:
   Use when the user wants to deploy a project or workflow to a runtime instance,
   check deployment status, list deployments, or inspect runtime mappings.
-  Customer MCP loxtep_deployments. Not the same as loxtep_instances (provisioning)
-  or loxtep_workflows (authoring). See docs/skills-user-stories.md.
+  Customer MCP loxtep_deployments. Not the same as loxtep_instances
+  (provisioning) or loxtep_workflows (authoring). See
+  docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/antigravity/skills/loxtep-deployments/SKILL.md
 ---
 
 # Deployments (Customer MCP)
@@ -74,16 +76,21 @@ and inspect runtime mappings.
   Poll `get_deployment` for async deploy completion.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+
 ## Agent-Scope Skill scope (`.loxtep/skills/loxtep-deployments.yaml`)
 
-Resource scope and operation permissions for this Agent-Scope Skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+Resource scope and operation permissions for this Agent-Scope Skill, conformant
+with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json)
+schema. Any resource type or operation not listed is **denied (fail-closed)**.
+Identifier lists are empty placeholders — fill them with the specific resources
+in your workspace. This declaration does not change the hosted MCP config
+(`mcp.loxtep.io`).
 
 ```yaml
 # .loxtep/skills/loxtep-deployments.yaml
 # Conforms to https://loxtep.io/schemas/skill-package-v1.json
 # Fail-closed: this Agent-Scope Skill's facades are RBAC-governed and carry no data-mesh resource scope.
 name: loxtep-deployments
-version: 1.0.0
 description: Deployment lifecycle management — RBAC-governed; no data-mesh resource scope.
 scope:
   data_products: []
@@ -93,6 +100,7 @@ scope:
   queues: []
 permissions: {}
 ```
+
 <!-- END loxtep skill-scope (skill-package-v1) -->
 
 ## Optional attribution

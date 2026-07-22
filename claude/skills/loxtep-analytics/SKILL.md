@@ -1,9 +1,12 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: loxtep-analytics
 description:
-  Use when the user wants SQL analytics over the mesh, SQL queries, list tables, table
-  schema, execute query, or poll query results. Customer MCP loxtep_analytics. User story S6.
-  See docs/skills-user-stories.md.
+  Use when the user wants SQL analytics over the mesh, SQL queries, list tables,
+  table schema, execute query, or poll query results. Customer MCP
+  loxtep_analytics. User story S6. See docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/claude/skills/loxtep-analytics/SKILL.md
 ---
 
 # Analytics and SQL (Customer MCP)
@@ -41,9 +44,15 @@ description:
 - **Execution environment** — Analytics runs against governed mesh tables via `loxtep_analytics`, not an arbitrary external database URL.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+
 ## Agent-Scope Skill scope (`.loxtep/skills/loxtep-analytics.yaml`)
 
-Resource scope and operation permissions for this Agent-Scope Skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+Resource scope and operation permissions for this Agent-Scope Skill, conformant
+with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json)
+schema. Any resource type or operation not listed is **denied (fail-closed)**.
+Identifier lists are empty placeholders — fill them with the specific resources
+in your workspace. This declaration does not change the hosted MCP config
+(`mcp.loxtep.io`).
 
 ```yaml
 # .loxtep/skills/loxtep-analytics.yaml
@@ -60,6 +69,7 @@ scope:
 permissions:
   data_products: [read]
 ```
+
 <!-- END loxtep skill-scope (skill-package-v1) -->
 
 ## Optional attribution

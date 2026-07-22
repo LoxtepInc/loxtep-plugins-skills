@@ -10,5 +10,5 @@ scope:
   domains: []
   queues: []
 permissions:
-  data_products: [read, create, write]
+  data_products: [read, create, write, delete]
   domains: [read]

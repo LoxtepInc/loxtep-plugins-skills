@@ -30,15 +30,6 @@ function add(severity, file, message) {
   findings.push({ severity, file, message });
 }
 
-function countSkills(client) {
-  const dir = path.join(ROOT, client, 'skills');
-  if (!fs.existsSync(dir)) return 0;
-  return fs
-    .readdirSync(dir, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && exists(path.join(client, 'skills', d.name, 'SKILL.md')))
-    .length;
-}
-
 function grepFiles(pattern, files) {
   const re = new RegExp(pattern, 'm');
   for (const file of files) {
@@ -48,15 +39,10 @@ function grepFiles(pattern, files) {
   }
 }
 
+// Skill file content/count parity across clients is covered by
+// `node scripts/generate-skills.mjs --check` (see check-skills-sync.yml) --
+// this audit focuses on customer-facing install docs and shipped configs.
 const clients = ['cursor', 'claude', 'opencode', 'kiro', 'antigravity', 'codex'];
-const skillCounts = Object.fromEntries(clients.map((c) => [c, countSkills(c)]));
-const expectedSkills = Math.max(...Object.values(skillCounts));
-
-for (const [client, count] of Object.entries(skillCounts)) {
-  if (count !== expectedSkills) {
-    add('error', `${client}/skills/`, `skill bundle count ${count} != expected ${expectedSkills}`);
-  }
-}
 
 for (const client of clients) {
   if (exists(`${client}/skills/create-connector/SKILL.md`)) {
@@ -117,8 +103,6 @@ for (const [file, snippet] of requiredSnippets) {
 
 const report = {
   checkedAt: new Date().toISOString(),
-  skillCounts,
-  expectedSkills,
   findings,
   ok: findings.every((f) => f.severity !== 'error'),
 };

@@ -1,3 +1,5 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
+
 # Workspace versions and operations (Customer MCP)
 
 **Story S7:** **Versioning**, **snapshots**, **restore/compare**, **reindex**, **queue visibility**, **event reading**, **event replay**.
@@ -52,6 +54,38 @@
 - **`get_queue_info` / `replay_events`** — If the data product could not be loaded, verify your instance connection and permissions, not just MCP login.
 - **`read_queue_events`** — Requires queue observability for your instance. The `queue_name` must be the full namespace-prefixed queue name.
 
+<!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+
+## Agent-Scope Skill scope (`.loxtep/skills/loxtep-workspace.yaml`)
+
+Resource scope and operation permissions for this Agent-Scope Skill, conformant
+with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json)
+schema. Any resource type or operation not listed is **denied (fail-closed)**.
+Identifier lists are empty placeholders — fill them with the specific resources
+in your workspace. This declaration does not change the hosted MCP config
+(`mcp.loxtep.io`).
+
+```yaml
+# .loxtep/skills/loxtep-workspace.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Scoped to ONLY the identifiers listed; least-privilege per operation. Fail-closed.
+name: loxtep-workspace
+description: Workspace versioning plus queue inspection and event reading (replay is not performed over MCP).
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+  instances: []
+permissions:
+  data_products: [read]
+  queues: [read]
+  instances: [read]
+```
+
+<!-- END loxtep skill-scope (skill-package-v1) -->
+
 ## Optional attribution
 
 `_metadata: { "skill_name": "loxtep-workspace" }`
@@ -62,4 +96,4 @@
 
 ## References
 
-- See the user story catalog in the Loxtep plugins-skills repository
+- [User story catalog](../../../docs/skills-user-stories.md)

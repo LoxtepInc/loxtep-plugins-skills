@@ -1,10 +1,62 @@
-# Ontology, Vocabulary & Namespace Mappings (Customer MCP)
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 
-**Story S13:** Manage **ontology concepts**, **vocabulary/thesaurus terms**, and **namespace mappings** — the schema layer that underpins process graphs, entity context, and semantic search.
+# Ontology, vocabulary, and namespace management (Customer MCP)
+
+**Story S13:** Manage **ontology concepts**, **vocabulary terms** (thesaurus),
+and **namespace mappings** for the semantic layer — the schema/vocabulary
+management surface.
 
 ## When to use
 
-- "**Thesaurus** terms", "**vocabulary** sync", "**ontology** concept/relationship", "**namespace** mapping", "**canonical key**", "resolve **term**"
+- "**Thesaurus** terms", "**vocabulary** sync", "**ontology** concept",
+  "**namespace** mapping", "**canonical key**", "create/update/delete
+  **vocabulary** term", "register **namespace**"
+- "**Enterprise override**", "**semantic gap**", "**Minimal Ontology**",
+  "**divergence**", "**Govern step**", "resolve gap", "override coverage"
+
+## Minimal Ontology Principle (MOP)
+
+Loxtep uses a **delta-first** semantic model: vocabulary **packs** supply baseline
+definitions; stewards record **enterprise overrides** only where meaning **diverges**
+from that baseline. Gold promotion measures **override coverage on divergent fields**,
+not blanket ontology binding on every schema field.
+
+### Precedence (context injection)
+
+When resolving meaning for a field or term:
+
+1. **Active enterprise override** (linked to the data product when scoped)
+2. **Organization thesaurus / steward edits**
+3. **Registered vocabulary pack** baseline
+4. **Inferred mapping** (auto-accept only above org `auto_accept_threshold`)
+
+### When to create an override
+
+Create an override when:
+
+- Pack baseline does **not** match how your business uses the field (Govern step:
+  "meaning differs from baseline" + required `divergence_reason`)
+- Inference conflict blocks auto-accept (`needs_review` + active override on same key)
+- A **semantic gap** issue was opened (low-confidence context or decision-trace
+  override) and a steward resolves it manually
+
+**Do not** override when pack baseline is accurate — inherit pack descriptions and
+skip divergent-field promotion work.
+
+### Maintainability — document deltas or Gold is vacuously easy
+
+Gold **`override-coverage`** is the ratio of **divergent fields** that have an
+**active enterprise override**, vs total divergent fields (default threshold **80%**,
+org-configurable via `organizations.attributes.semantic.delta_coverage_threshold`).
+
+If **no field is flagged as divergent** (`semantic_divergence`, `divergence_reason`,
+or inference review conflict), divergent count is **zero** and coverage is **100%**
+without any overrides. That is intentional for products that truly match the pack —
+but teams must **flag real deltas** in the Govern step (or gap resolution) or Gold
+becomes easier than the legacy "bind every field" gate without documenting semantics.
+
+**Operational rule:** whenever steward meaning differs from baseline, flag the field
+and create an override before pursuing Gold.
 
 ## Prerequisites
 
@@ -12,60 +64,152 @@
 
 ## Happy-path flows
 
-### Flow — Vocabulary term CRUD
+### Flow — Enterprise override (Govern / manual)
 
-1. `create_thesaurus_term` with `canonical_key`, `scheme` (field | entity | custom), `aliases`, `broader`, `narrower`, `related`, optional `domain`.
-2. `get_thesaurus_term` by `term_id` — returns full term with aliases and hierarchy.
-3. `update_thesaurus_term` with `term_id` + partial fields.
-4. `delete_thesaurus_term` by `term_id` — soft-deletes (tombstone). Warns if referenced by ontology relationships or procedure steps.
-5. `list_thesaurus_terms` — filter by `scheme`, `domain`, `canonical_key_prefix`.
-6. `resolve_canonical_key` — resolves aliases to canonical terms.
+1. Confirm divergence is real (pack baseline is wrong for your org — not preference).
+2. `create_enterprise_override` with:
+   - `canonical_key` (usually the schema field name)
+   - `enterprise_definition`, `divergence_reason` (required)
+   - `override_source`: `govern_step` | `manual` | `inferred_rejection` | `agent_gap`
+   - `linked_data_product_ids`: scope override to the data product
+3. `list_enterprise_overrides` with optional `override_status`, `override_source`
+   filters — UI: **Semantics → Enterprise overrides**.
 
-### Flow — Bulk vocabulary sync
+Requires **`admin:vocabulary`** (or org admin).
 
-1. `sync_vocabulary` with `domain`, `terms` array, `mode` (full_sync | additive_only).
-2. Use `dry_run: true` to preview the diff before applying.
-3. Returns structured report: created, updated, tombstoned (full_sync only), unchanged, conflicts.
-4. In `full_sync` mode, terms in Loxtep but not in submitted set are tombstoned.
-5. Conflicts (same canonical_key, different scheme) are skipped and reported.
+### Flow — Resolve semantic gap (convergence)
 
-### Flow — Ontology concept management
+1. List open gap issues (UI **Open Gaps** tab, or agent-orchestration issues with
+   `run_kind=semantic_gap_candidate`).
+2. Steward **names the term** and documents meaning — v1 does not auto-extract from
+   question text.
+3. `resolve_semantic_gap` with `issue_id`, `canonical_key`, `enterprise_definition`,
+   `divergence_reason` — creates override with `override_source=agent_gap` and closes
+   the issue.
 
-1. `create_ontology_concept` with required `name`, `namespace`, `node_type` (entity | microservice | taxonomy | pattern | custom); optional `description`, `uri`, `parent_concepts`.
-2. `update_ontology_concept` for partial field updates.
-3. `delete_ontology_concept` — tombstones the concept, warns about dependent relationships.
-4. `get_ontology_relationships` — filter by `source_entity_type`, `target_entity_type`, `relation_type`, `namespace`.
-5. `create_ontology_relationship` with `source_entity_type`, `target_entity_type`, `relation_type`, `relation_uri`, `join_field`, `description`.
+Requires **`semantic_gaps:resolve`** (plus override create permissions).
 
-### Flow — Namespace mapping registration
+### Flow — Vocabulary sync (bulk)
 
-1. `register_namespace_mapping` with `prefix`, `uri`, `mappings` (array of `{external_term, internal_concept_id}`).
-2. W3C PKO (`https://w3id.org/pko`) is pre-registered — no user action needed.
-3. `list_namespace_mappings` — returns all registered prefixes, URIs, and mapping counts.
-4. `get_namespace_mapping` — returns full mapping table for a specific prefix.
-5. Re-registering an existing prefix merges new mappings (additive) unless `overwrite: true`.
+1. `list_thesaurus_terms` with `domain` filter to see current state.
+2. `sync_vocabulary` with `mode: "full_sync"` or `"additive_only"` and
+   `dry_run: true` to preview changes.
+3. `sync_vocabulary` with `dry_run: false` to apply.
 
-### Flow — Prepare for process graph import
+### Flow — Single term CRUD
 
-1. Register any custom namespace mappings via `register_namespace_mapping`.
-2. Sync vocabulary terms via `sync_vocabulary` (ensures terms exist before import).
-3. Create ontology concepts for entity types referenced in the graph.
-4. Then use `loxtep_procedures` → `import_process_graph` — namespace resolution uses registered mappings automatically.
+1. `create_thesaurus_term` with `canonical_key`, `scheme`, `aliases`.
+2. `get_thesaurus_term` by `term_id` to verify.
+3. `update_thesaurus_term` for partial field changes.
+4. `delete_thesaurus_term` to soft-delete (tombstone).
+
+### Flow — Ontology concept creation
+
+1. `create_ontology_concept` with required `name`, `namespace`, and `node_type`
+   (optional `description`, `uri`, `parent_concepts`).
+2. `create_ontology_relationship` linking source → target entity types.
+3. `get_ontology_relationships` with filters to verify graph edges.
+4. `update_ontology_concept` / `delete_ontology_concept` as needed.
+
+### Flow — Namespace registration
+
+1. `list_namespace_mappings` to see existing registrations.
+2. `register_namespace_mapping` with `prefix`, `uri`, and `mappings` array.
+3. `get_namespace_mapping` by prefix to verify.
+4. Use `import_process_graph` (in `loxtep_procedures`) — registered namespaces
+   auto-resolve during import.
+
+### Flow — Resolve canonical key
+
+1. `resolve_canonical_key` with an alias or variant spelling.
+2. Returns the canonical term with scheme and precedence.
 
 ## MCP mapping
 
-| `operation` | Scope |
-|-------------|-------|
-| `list_thesaurus_terms`, `get_thesaurus_term`, `create_thesaurus_term`, `update_thesaurus_term`, `delete_thesaurus_term`, `sync_vocabulary`, `resolve_canonical_key`, `get_ontology_relationships`, `create_ontology_concept`, `create_ontology_relationship`, `update_ontology_concept`, `delete_ontology_concept`, `register_namespace_mapping`, `list_namespace_mappings`, `get_namespace_mapping` | organization |
+| `operation`                    | Scope        | Notes                                                                                                                  |
+| ------------------------------ | ------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `list_thesaurus_terms`         | organization | Filters: `scheme`, `domain`, `canonical_key_prefix`                                                                    |
+| `get_thesaurus_term`           | organization | Single term by `term_id`                                                                                               |
+| `create_thesaurus_term`        | organization | Conflict error if `canonical_key` exists                                                                               |
+| `update_thesaurus_term`        | organization | Partial update by `term_id`                                                                                            |
+| `delete_thesaurus_term`        | organization | Soft-delete; warns if referenced                                                                                       |
+| `sync_vocabulary`              | organization | Bulk sync with `dry_run` support                                                                                       |
+| `resolve_canonical_key`        | organization | Alias → canonical resolution                                                                                           |
+| `get_ontology_relationships`   | organization | Filters: `source_entity_type`, `target_entity_type`, `relation_type`, `namespace`                                      |
+| `create_ontology_concept`      | organization | Required: `name`, `namespace`, `node_type`; optional: `description`, `uri`, `parent_concepts`. URI uniqueness enforced |
+| `create_ontology_relationship` | organization | Validates both entity types exist                                                                                      |
+| `update_ontology_concept`      | organization | Partial field updates                                                                                                  |
+| `delete_ontology_concept`      | organization | Soft-delete; warns about dependent relationships                                                                       |
+| `register_namespace_mapping`   | organization | Additive merge by default; `overwrite: true` replaces                                                                  |
+| `list_namespace_mappings`      | organization | Includes system-scoped (W3C PKO) + org-scoped                                                                          |
+| `get_namespace_mapping`        | organization | Full mapping table for a prefix                                                                                        |
+| `create_enterprise_override`   | organization | `canonical_key`, `enterprise_definition`, `divergence_reason`; optional `baseline_assumption`, `linked_data_product_ids`, `override_source` |
+| `list_enterprise_overrides`    | organization | Filters: `override_status`, `override_source`                                                                          |
+| `resolve_semantic_gap`         | organization | `issue_id` + override fields; marks AO issue done, `override_source=agent_gap`                                         |
 
-## Pitfalls
+## Prerequisites
 
-- **Process intelligence** (entity context, decision traces) is **`loxtep_process_intel`** — different concern (runtime state vs schema definition).
-- **Procedures** (process graphs) are **`loxtep_procedures`** — ontology defines the schema, procedures define the processes.
-- **Conflict on create** — `create_thesaurus_term` returns conflict if `canonical_key` already exists for the org. Use `update_thesaurus_term` instead.
-- **URI uniqueness** — `create_ontology_concept` returns conflict if `uri` matches an existing concept.
-- **Relationship validation** — `create_ontology_relationship` fails if source or target entity types don't exist as ontology concepts. Create concepts first.
-- **Tombstone pattern** — Deletes are soft (tombstone). Terms/concepts are excluded from queries but preserved for audit.
+- MCP auth. Operations are **organization**-scoped.
+- Override CRUD: **`admin:vocabulary`**. Gap resolve: **`semantic_gaps:resolve`**.
+
+## Pitfalls (MOP-specific)
+
+- **Skipping divergent flags:** Gold promotion passes with zero overrides if no field
+  is marked divergent — flag deltas in Govern when meaning differs.
+- **Override without reason:** `divergence_reason` is required — audits and promotion
+  gates depend on it.
+- **CDLC orgs:** new overrides may default to `proposed`; only **`active`** overrides
+  count toward Gold coverage and context injection.
+- **Duplicate canonical_key:** POST returns **409** — update existing term instead.
+
+## Pitfalls (general)
+
+- **Runtime intelligence** (entity context, decision traces) is
+  **`loxtep_process_intel`** — different facade. This Agent-Scope Skill is for
+  **schema/vocabulary management**, not runtime queries.
+- **Process graph CRUD** (procedures, steps, import/export) is
+  **`loxtep_procedures`** — different facade. Ontology concepts describe the
+  _types_ in the graph; procedures are the _instances_.
+- **Catalog search** is **`loxtep_catalog`** — use that for discovery across all
+  artifact types. This Agent-Scope Skill manages the underlying ontology that
+  catalog entries reference.
+- **`sync_vocabulary` with `full_sync`** will tombstone terms not in the
+  submitted set — use `additive_only` if you only want to add/update.
+- **Namespace mappings** are used by `import_process_graph` (in
+  `loxtep_procedures`) to auto-resolve external ontology terms. Register
+  mappings _before_ importing graphs that use custom namespaces.
+- **W3C PKO** (`https://w3id.org/pko`) is pre-registered as a system-scoped
+  mapping — no need to register it manually.
+- **`delete_thesaurus_term`** and **`delete_ontology_concept`** use soft-delete
+  (tombstone pattern). They warn about dependents but do not cascade.
+
+<!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+
+## Agent-Scope Skill scope (`.loxtep/skills/loxtep-ontology.yaml`)
+
+Resource scope and operation permissions for this Agent-Scope Skill, conformant
+with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json)
+schema. Any resource type or operation not listed is **denied (fail-closed)**.
+Identifier lists are empty placeholders — fill them with the specific resources
+in your workspace. This declaration does not change the hosted MCP config
+(`mcp.loxtep.io`).
+
+```yaml
+# .loxtep/skills/loxtep-ontology.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
+name: loxtep-ontology
+description: Ontology, vocabulary, and namespace management — RBAC-governed; no data-mesh resource scope.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions: {}
+```
+
+<!-- END loxtep skill-scope (skill-package-v1) -->
 
 ## Optional attribution
 
@@ -77,4 +221,4 @@
 
 ## References
 
-- See the user story catalog in the Loxtep plugins-skills repository
+- [User story catalog](../../../docs/skills-user-stories.md)

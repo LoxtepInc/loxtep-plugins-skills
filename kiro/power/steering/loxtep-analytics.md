@@ -1,10 +1,12 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
+
 # Analytics and SQL (Customer MCP)
 
 **Story S6:** Explore curated mesh data with **SQL** — discover tables, inspect schema, run queries, fetch results.
 
 ## When to use
 
-- "Run **SQL**", "**list tables**", "**schema** for table", "**execute_query**", "get **query results**"
+- “Run **SQL**”, “**list tables**”, “**schema** for table”, “**execute_query**”, “get **query results**”
 
 ## Prerequisites
 
@@ -32,6 +34,35 @@
 - Wrong **org** or missing permissions show as auth or empty results.
 - **Execution environment** — Analytics runs against governed mesh tables via `loxtep_analytics`, not an arbitrary external database URL.
 
+<!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+
+## Agent-Scope Skill scope (`.loxtep/skills/loxtep-analytics.yaml`)
+
+Resource scope and operation permissions for this Agent-Scope Skill, conformant
+with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json)
+schema. Any resource type or operation not listed is **denied (fail-closed)**.
+Identifier lists are empty placeholders — fill them with the specific resources
+in your workspace. This declaration does not change the hosted MCP config
+(`mcp.loxtep.io`).
+
+```yaml
+# .loxtep/skills/loxtep-analytics.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Scoped to ONLY the identifiers listed; least-privilege per operation. Fail-closed.
+name: loxtep-analytics
+description: Read-only SQL analytics over data products.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions:
+  data_products: [read]
+```
+
+<!-- END loxtep skill-scope (skill-package-v1) -->
+
 ## Optional attribution
 
 `_metadata: { "skill_name": "loxtep-analytics" }`
@@ -42,4 +73,4 @@
 
 ## References
 
-- See the user story catalog in the Loxtep plugins-skills repository
+- [User story catalog](../../../docs/skills-user-stories.md)

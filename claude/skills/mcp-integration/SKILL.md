@@ -1,13 +1,14 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: mcp-integration
 description:
-  Configure and validate Loxtep hosted MCP access for agent consumption — OAuth to
-  mcp.loxtep.io, map loxtep_* facades to data products, and verify tool reachability.
-  Maps to PKO procedure procedure#enable-agent-mcp-access (P5). User story S16 step.
-  See docs/skills-user-stories.md and loxtep-mcp-session.
+  Configure and validate Loxtep hosted MCP access for agent consumption — OAuth
+  to mcp.loxtep.io, map loxtep_* facades to data products, and verify tool
+  reachability. Maps to PKO procedure procedure#enable-agent-mcp-access (P5).
+  User story S16 step. See docs/skills-user-stories.md and loxtep-mcp-session.
 metadata:
-  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/mcp-integration/SKILL.md
   pko_procedure: procedure#enable-agent-mcp-access
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/claude/skills/mcp-integration/SKILL.md
 ---
 
 # Loxtep hosted MCP integration (Customer MCP)

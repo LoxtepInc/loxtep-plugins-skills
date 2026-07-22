@@ -1,3 +1,4 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: loxtep-agent-workspace
 description:
@@ -9,6 +10,7 @@ compatibility: opencode
 metadata:
   platform: loxtep
   category: agent-workspace
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/loxtep-agent-workspace/SKILL.md
 ---
 
 # Agent orchestration workspace (Customer MCP)
@@ -60,11 +62,9 @@ in your workspace. This declaration does not change the hosted MCP config
 ```yaml
 # .loxtep/skills/loxtep-agent-workspace.yaml
 # Conforms to https://loxtep.io/schemas/skill-package-v1.json
-# Fail-closed: this Agent-Scope Skill's facades are RBAC-governed and carry no data-mesh resource scope.
+# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
 name: loxtep-agent-workspace
-description:
-  Agent orchestration (issues/goals/agents) — RBAC-governed; no data-mesh
-  resource scope.
+description: Agent orchestration (issues/goals/agents) — RBAC-governed; no data-mesh resource scope.
 scope:
   data_products: []
   connectors: []

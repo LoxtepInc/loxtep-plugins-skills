@@ -1,3 +1,4 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: loxtep-ontology
 description:
@@ -5,6 +6,8 @@ description:
   terms, namespace mappings, or sync vocabularies. Customer MCP loxtep_ontology.
   User story S13. Not the same as loxtep_process_intel (runtime intelligence) or
   loxtep_procedures (process graph CRUD). See docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/claude/skills/loxtep-ontology/SKILL.md
 ---
 
 # Ontology, vocabulary, and namespace management (Customer MCP)
@@ -204,11 +207,9 @@ in your workspace. This declaration does not change the hosted MCP config
 ```yaml
 # .loxtep/skills/loxtep-ontology.yaml
 # Conforms to https://loxtep.io/schemas/skill-package-v1.json
-# Fail-closed: this Agent-Scope Skill's facades are RBAC-governed and carry no data-mesh resource scope.
+# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
 name: loxtep-ontology
-description:
-  Ontology, vocabulary, and namespace management — RBAC-governed; no data-mesh
-  resource scope.
+description: Ontology, vocabulary, and namespace management — RBAC-governed; no data-mesh resource scope.
 scope:
   data_products: []
   connectors: []

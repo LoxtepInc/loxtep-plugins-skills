@@ -1,3 +1,4 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: semantic-ontology-mapping
 description:
@@ -9,6 +10,7 @@ description:
   (physical manifestation) and loxtep-ontology (MCP CRUD operations). User story
   S21.
 metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/semantic-ontology-mapping/SKILL.md
 ---
 
 # Semantic & Ontological Mapping for Business Environments
@@ -206,11 +208,9 @@ in your workspace. This declaration does not change the hosted MCP config
 ```yaml
 # .loxtep/skills/semantic-ontology-mapping.yaml
 # Conforms to https://loxtep.io/schemas/skill-package-v1.json
-# Fail-closed: this Agent-Scope Skill's facades are RBAC-governed and carry no data-mesh resource scope.
+# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
 name: semantic-ontology-mapping
-description:
-  Semantic/ontology mapping methodology — RBAC-governed; no data-mesh resource
-  scope.
+description: Semantic/ontology mapping methodology — RBAC-governed; no data-mesh resource scope.
 scope:
   data_products: []
   connectors: []

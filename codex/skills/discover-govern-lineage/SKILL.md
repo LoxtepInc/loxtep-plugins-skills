@@ -1,12 +1,13 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: discover-govern-lineage
 description:
-  Use when the user wants to discover data in the catalog, search assets, lineage impact,
-  evidence, governance flags, list domains or tags, or understand "what
-  connects to what" in Discover. Distinguishes projection logic (the derivation that
-  transforms source data) from consumer data products (the resulting entity that holds
-  derived data). Customer MCP tool loxtep_catalog. User story S5.
-  See docs/skills-user-stories.md.
+  Use when the user wants to discover data in the catalog, search assets,
+  lineage impact, evidence, governance flags, list domains or tags, or
+  understand "what connects to what" in Discover. Distinguishes projection logic
+  (the derivation that transforms source data) from consumer data products (the
+  resulting entity that holds derived data). Customer MCP tool loxtep_catalog.
+  User story S5. See docs/skills-user-stories.md.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/codex/skills/discover-govern-lineage/SKILL.md
 ---
@@ -73,9 +74,15 @@ In lineage views:
 - **Empty or sparse results** — Discovery/search tools may need platform-injected search/evidence services in the AI runtime; behavior can differ between local tests and production.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+
 ## Agent-Scope Skill scope (`.loxtep/skills/discover-govern-lineage.yaml`)
 
-Resource scope and operation permissions for this Agent-Scope Skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+Resource scope and operation permissions for this Agent-Scope Skill, conformant
+with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json)
+schema. Any resource type or operation not listed is **denied (fail-closed)**.
+Identifier lists are empty placeholders — fill them with the specific resources
+in your workspace. This declaration does not change the hosted MCP config
+(`mcp.loxtep.io`).
 
 ```yaml
 # .loxtep/skills/discover-govern-lineage.yaml
@@ -93,6 +100,7 @@ permissions:
   data_products: [read]
   domains: [read]
 ```
+
 <!-- END loxtep skill-scope (skill-package-v1) -->
 
 ## Optional attribution

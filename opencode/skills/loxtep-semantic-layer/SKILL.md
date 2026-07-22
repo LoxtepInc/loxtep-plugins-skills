@@ -1,7 +1,6 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: loxtep-semantic-layer
-version: 1.0.0
-scope: organization
 description:
   Use when the user wants to search the semantic layer, retrieve semantic
   artifacts, check semantic completeness, or manage canonical knowledge
@@ -9,6 +8,8 @@ description:
   organization. Customer MCP loxtep_semantic_layer. Not the same as
   loxtep_ontology (vocabulary/namespace management) or loxtep_catalog
   (discovery/governance). See docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/opencode/skills/loxtep-semantic-layer/SKILL.md
 ---
 
 # Semantic Layer (Customer MCP)
@@ -153,10 +154,7 @@ in your workspace. This declaration does not change the hosted MCP config
 # Conforms to https://loxtep.io/schemas/skill-package-v1.json
 # Fail-closed: this Agent-Scope Skill's facades are RBAC-governed and carry no data-mesh resource scope.
 name: loxtep-semantic-layer
-version: 1.0.0
-description:
-  Semantic layer search, artifact retrieval, and completeness — RBAC-governed;
-  no data-mesh resource scope.
+description: Semantic layer search, artifact retrieval, and completeness — RBAC-governed; no data-mesh resource scope.
 scope:
   data_products: []
   connectors: []

@@ -227,6 +227,12 @@ For clients without OAuth support, wrap with `mcp-remote` (see Antigravity above
 
 See each directory's `README.md` for install and usage instructions.
 
+Every skill under `claude/skills/`, `cursor/skills/`, `codex/skills/`,
+`kiro/skills/`, `opencode/skills/`, `antigravity/skills/`, plus
+`kiro/power/steering/` and the `claude`/`cursor` `rules/*.mdc` auth rule, is
+**generated** from a single canonical source in `skills/`. See
+[CONTRIBUTING.md](CONTRIBUTING.md) before editing a skill.
+
 ## Skill attribution (optional)
 
 When invoking Loxtep MCP tools, agents may pass `_metadata` in tool arguments for

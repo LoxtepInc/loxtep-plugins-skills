@@ -1,5 +1,4 @@
-> **Cross-tool authoring contract:** [docs/agent-workflow-authoring.md](../../docs/agent-workflow-authoring.md) — project first (Flow B); write `workflows/{id}/` locally; bundle-only for new flows; `save_workflow_bundle`, not piecemeal `patch_workflow_graph`.
-
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 
 # Connect external system (Customer MCP)
 
@@ -16,7 +15,8 @@
 
 **Prerequisite:** A Loxtep **project** must exist before P2 (`create_project` or
 reuse — see **`data-workflows`** Flow B). When GitHub-attached, write bundle JSON
-under `workflows/{workflow_id}/` locally and sync to Loxtep.
+under `workflows/{workflow_id}/` locally and sync to Loxtep — do not author
+inline-only MCP payloads.
 
 **Connection nodes are workflow entities.** For agent-authored ingestion, include
 them in the **`save_workflow_bundle`** `files` map (`connections/{id}.json` with
@@ -110,3 +110,32 @@ SDK bootstrap (post-deploy) uses **`loxtep-sdk`**; see **`data-workflows`** Flow
 ## Auth
 
 Reconnect the Loxtep MCP server to re-trigger OAuth — see **`loxtep-auth`**.
+
+<!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+
+## Agent-Scope Skill scope (`.loxtep/skills/connect-external-system.yaml`)
+
+Resource scope and operation permissions for this Agent-Scope Skill, conformant
+with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json)
+schema. Any resource type or operation not listed is **denied (fail-closed)**.
+Identifier lists are empty placeholders — fill them with the specific resources
+in your workspace. This declaration does not change the hosted MCP config
+(`mcp.loxtep.io`).
+
+```yaml
+# .loxtep/skills/connect-external-system.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Scoped to ONLY the identifiers listed; least-privilege per operation. Fail-closed.
+name: connect-external-system
+description: Manage connectors and project connection nodes.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions:
+  connectors: [read, create, write, delete]
+```
+
+<!-- END loxtep skill-scope (skill-package-v1) -->

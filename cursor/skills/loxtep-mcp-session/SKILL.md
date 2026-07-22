@@ -1,10 +1,12 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: loxtep-mcp-session
 description:
-  Use when the user asks what they can do with Loxtep MCP, hits permission denied / 403,
-  wants to know their RBAC grants, or needs the recommended session order before other tools.
-  Covers get_current_user (permissions), get_current_organization, project_id, and ListTools.
-  Complements loxtep-auth for JWT recovery. See docs/skills-user-stories.md S0.
+  Use when the user asks what they can do with Loxtep MCP, hits permission
+  denied / 403, wants to know their RBAC grants, or needs the recommended
+  session order before other tools. Covers get_current_user (permissions),
+  get_current_organization, project_id, and ListTools. Complements loxtep-auth
+  for JWT recovery. See docs/skills-user-stories.md S0.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/loxtep-mcp-session/SKILL.md
 ---
@@ -40,14 +42,20 @@ metadata:
 - **ListTools** shows facades and parameters; it does not replace **`get_current_user`** for “what am I allowed?” — use both.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+
 ## Agent-Scope Skill scope (`.loxtep/skills/loxtep-mcp-session.yaml`)
 
-Resource scope and operation permissions for this Agent-Scope Skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+Resource scope and operation permissions for this Agent-Scope Skill, conformant
+with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json)
+schema. Any resource type or operation not listed is **denied (fail-closed)**.
+Identifier lists are empty placeholders — fill them with the specific resources
+in your workspace. This declaration does not change the hosted MCP config
+(`mcp.loxtep.io`).
 
 ```yaml
 # .loxtep/skills/loxtep-mcp-session.yaml
 # Conforms to https://loxtep.io/schemas/skill-package-v1.json
-# Fail-closed: this Agent-Scope Skill's facades are RBAC-governed and carry no data-mesh resource scope.
+# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
 name: loxtep-mcp-session
 description: Session and RBAC orientation — no data-mesh resource access.
 scope:
@@ -58,6 +66,7 @@ scope:
   queues: []
 permissions: {}
 ```
+
 <!-- END loxtep skill-scope (skill-package-v1) -->
 
 ## Optional attribution

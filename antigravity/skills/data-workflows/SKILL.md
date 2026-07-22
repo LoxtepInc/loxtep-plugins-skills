@@ -1,3 +1,4 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: data-workflows
 description:
@@ -19,7 +20,7 @@ trigger: |
   new ingestion/enrichment/consumption — embed data-products/{id}.json in the bundle, save,
   then deploy.
 metadata:
-  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/opencode/skills/data-workflows/SKILL.md
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/antigravity/skills/data-workflows/SKILL.md
 ---
 
 # Data mesh studio (Customer MCP)

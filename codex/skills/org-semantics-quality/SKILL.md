@@ -1,11 +1,15 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: org-semantics-quality
 description:
-  Use when the user wants org-level schema definitions, semantic definitions, PII tagging,
-  schema versions, quality rules, test quality rules, or governance on definitions — not
-  catalog search. Customer MCP loxtep_schemas and loxtep_quality. User story S4. Pair with
-  discover-govern-lineage and loxtep-process-intel for catalog vs ontology vs thesaurus.
-  See docs/skills-user-stories.md.
+  Use when the user wants org-level schema definitions, semantic definitions,
+  PII tagging, schema versions, quality rules, test quality rules, or governance
+  on definitions — not catalog search. Customer MCP loxtep_schemas and
+  loxtep_quality. User story S4. Pair with discover-govern-lineage and
+  loxtep-process-intel for catalog vs ontology vs thesaurus. See
+  docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/codex/skills/org-semantics-quality/SKILL.md
 ---
 
 # Org semantics, schemas, and quality (Customer MCP)
@@ -50,14 +54,20 @@ description:
 - **403 / permission denied** — Schema and quality tools enforce RBAC (`schemas:*`, `quality:*`); session may be valid but role may not allow the operation.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+
 ## Agent-Scope Skill scope (`.loxtep/skills/org-semantics-quality.yaml`)
 
-Resource scope and operation permissions for this Agent-Scope Skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+Resource scope and operation permissions for this Agent-Scope Skill, conformant
+with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json)
+schema. Any resource type or operation not listed is **denied (fail-closed)**.
+Identifier lists are empty placeholders — fill them with the specific resources
+in your workspace. This declaration does not change the hosted MCP config
+(`mcp.loxtep.io`).
 
 ```yaml
 # .loxtep/skills/org-semantics-quality.yaml
 # Conforms to https://loxtep.io/schemas/skill-package-v1.json
-# Fail-closed: this Agent-Scope Skill's facades are RBAC-governed and carry no data-mesh resource scope.
+# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
 name: org-semantics-quality
 description: Org schema and quality-rule governance — RBAC-governed; no data-mesh resource scope.
 scope:
@@ -68,6 +78,7 @@ scope:
   queues: []
 permissions: {}
 ```
+
 <!-- END loxtep skill-scope (skill-package-v1) -->
 
 ## Optional attribution

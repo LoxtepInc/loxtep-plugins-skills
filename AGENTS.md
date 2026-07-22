@@ -376,6 +376,8 @@ key parameters.
 | `create_canonical_knowledge` | organization | — | — |
 | `get_canonical_knowledge` | organization | — | — |
 | `update_canonical_knowledge` | organization | — | — |
+| `import_semantic_bundle` | organization | — | — |
+| `export_semantic_bundle` | organization | — | — |
 
 ```json
 { "operation": "search_semantic_layer", "query": "revenue" }
@@ -410,25 +412,11 @@ key parameters.
 | `list_candidates` | organization | — | — |
 | `act_on_candidate` | organization | — | — |
 
-### `loxtep_approvals` — pipeline HITL gate approvals
-Programmatic parity with the web inbox and Slack/email channels: `list_pending_approvals`
-returns the org's pending approval requests (including PKO pipeline gates from `define`,
-e.g. mapping review, relationship review, quality-rule review, and promote); `resolve_approval`
-approves or rejects one — the same decision the inbox/Slack buttons make, resolving the shared
-approval record.
-
+### `loxtep_approvals` — Approvals
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
 | `list_pending_approvals` | organization | — | — |
-| `resolve_approval` | organization | `approval_request_id`, `action` (`approve`\|`reject`) | — |
-
-```json
-{ "operation": "list_pending_approvals" }
-```
-
-```json
-{ "operation": "resolve_approval", "approval_request_id": "ar_…", "action": "approve" }
-```
+| `resolve_approval` | organization | — | — |
 
 ---
 

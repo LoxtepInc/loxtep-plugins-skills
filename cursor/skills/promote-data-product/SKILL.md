@@ -1,14 +1,17 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: promote-data-product
 description:
-  Promote a data product through medallion readiness checks and catalog promotion.
-  Maps to PKO procedure procedure#promote-data-product-medallion (P4). Use MCP
-  promote_data_product and quality/glossary validation before domain-owner approval.
+  Promote a data product through medallion readiness checks and catalog
+  promotion. Maps to PKO procedure procedure#promote-data-product-medallion
+  (P4). Use MCP promote_data_product and quality/glossary validation before
+  domain-owner approval.
 license: MIT
 metadata:
   platform: loxtep
   category: catalog
   pko_procedure: procedure#promote-data-product-medallion
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/promote-data-product/SKILL.md
 ---
 
 # Promote data product (medallion)

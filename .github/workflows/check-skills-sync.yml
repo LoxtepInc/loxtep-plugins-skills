@@ -1,0 +1,41 @@
+name: Check skills sync
+
+# Gates PRs on the canonical skill source (skills/**) staying in sync with the
+# generated per-tool output (claude/skills/**, cursor/skills/**, ...,
+# kiro/power/steering/**, claude/rules/**, cursor/rules/**). See
+# CONTRIBUTING.md -- edit skills/<slug>/SKILL.md and run
+# `node scripts/generate-skills.mjs`, never the generated output directly.
+
+on:
+  pull_request:
+    paths:
+      - 'skills/**'
+      - '.loxtep/skills/**'
+      - 'claude/skills/**'
+      - 'cursor/skills/**'
+      - 'codex/skills/**'
+      - 'kiro/skills/**'
+      - 'opencode/skills/**'
+      - 'antigravity/skills/**'
+      - 'kiro/power/steering/**'
+      - 'claude/rules/**'
+      - 'cursor/rules/**'
+      - 'scripts/generate-skills.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Verify generated skill output matches canonical source
+        run: node scripts/generate-skills.mjs --check

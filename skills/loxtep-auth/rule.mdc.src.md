@@ -1,0 +1,81 @@
+---
+description: When Loxtep hosted MCP returns auth errors, reconnect to re-trigger OAuth 2.1.
+alwaysApply: true
+perTool:
+  cursor:
+    description: When Loxtep hosted MCP returns auth errors, call mcp_auth first (Cursor authenticate button).
+    globs: .cursor/rules/*.mdc
+---
+
+# Loxtep Hosted MCP — Authentication
+
+Loxtep MCP is **hosted only** — connect with a URL and OAuth 2.1 (PKCE). **Do not** suggest `npx @loxtep/customer-mcp-server`, local stdio MCP, or `~/.loxtep/customer-mcp.json`.
+
+## Expected configuration
+
+```json
+{
+  "mcpServers": {
+    "loxtep": {
+      "url": "https://mcp.loxtep.io/ai/mcp/stream"
+    }
+  }
+}
+```
+
+**Dev:** `https://mcpdev.loxtep.io/ai/mcp/stream` · **Prod:** `https://mcp.loxtep.io/ai/mcp/stream`
+
+## When auth errors occur
+
+When a call to any **Loxtep MCP** tool (`loxtep_*` with an `operation` field) fails with:
+
+- **`Unauthorized`** or **`{"error":"Unauthorized"}`**
+- **"No valid authentication token found"**
+- **"RBAC requires JWT token in Authorization header or x-jwt-token header"**
+- **HTTP 401** on the MCP connection
+
+<!-- tool:cursor -->
+the agent **MUST immediately** call **`mcp_auth`** on the Loxtep MCP server:
+
+```typescript
+// ✅ DO — Cursor shows the Authenticate button
+CallMcpTool({
+  server: '<loxtep-mcp-server-id>', // e.g. project-0-loxtep-loxtep
+  toolName: 'mcp_auth',
+  arguments: {},
+});
+```
+
+Tell the user to **click Authenticate**, then **retry** the failed tool call after `mcp_auth` succeeds.
+
+```typescript
+// ❌ DON'T — resurrect deprecated local stdio MCP or dump Settings/OAuth docs first
+```
+
+### Fallback (only if `mcp_auth` fails)
+
+1. Disconnect and reconnect the Loxtep MCP server in Cursor MCP settings.
+2. Complete sign-in in the browser when prompted.
+3. Retry the failed tool call.
+<!-- /tool -->
+<!-- tool:!cursor -->
+then:
+
+1. Disconnect and reconnect the Loxtep MCP server in MCP settings (re-triggers OAuth).
+2. Complete sign-in in the browser when prompted.
+3. **Retry** the failed tool call.
+
+Tokens refresh in the background. Re-authenticate if the session expires (~7 days) or is revoked.
+<!-- /tool -->
+
+## Troubleshooting
+
+<!-- tool:cursor -->
+1. **`mcp_auth` unavailable** — Reconnect the `loxtep` MCP server in settings, then call `mcp_auth` again.
+2. **Session limit (HTTP 429)** — Close another org session in the Loxtep UI, then `mcp_auth` again.
+3. **403 permission denied** — Not auth; check `loxtep_session` → `get_current_user` → `permissions` (see `loxtep-mcp-session` skill).
+<!-- /tool -->
+<!-- tool:!cursor -->
+1. **Session limit (HTTP 429)** — Close another org session in the Loxtep UI, then reconnect.
+2. **403 permission denied** — Not auth; check `loxtep_session` → `get_current_user` → `permissions` (see `loxtep-mcp-session` skill).
+<!-- /tool -->

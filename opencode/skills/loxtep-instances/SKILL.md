@@ -1,3 +1,4 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: loxtep-instances
 description:
@@ -7,11 +8,8 @@ description:
   app, not MCP), regions, or "create a Loxtep instance". Self-hosted install
   flow: get_deployment_urls -> register_infrastructure -> get_infrastructure ->
   create_instance.
-license: MIT
-compatibility: opencode
 metadata:
-  platform: loxtep
-  category: instances
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/opencode/skills/loxtep-instances/SKILL.md
 ---
 
 # Loxtep instances (Customer MCP)
@@ -118,7 +116,7 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
 ```
 
 The earlier shape that only sent `cross_account_role_arn` is **wrong** — the API
-rejects self-hosted without all three `observe_api` ARNs`.
+rejects self-hosted without all three `observe_api` ARNs.
 
 ### Wrong patterns (validation / API error)
 
@@ -189,7 +187,7 @@ re-registration when the org is already configured:
 
 The final step — see the [self-hosted example](#self-hosted-example-shape)
 above. Pass the role ARN you registered in step 2 plus the two rstreams secret
-ARNNs the user created in their AWS account. `payment_method_id` is required
+ARNs the user created in their AWS account. `payment_method_id` is required
 (upfront Loxtep billing applies for self-hosted too — AWS resources are billed
 separately to the customer account).
 
@@ -226,11 +224,9 @@ in your workspace. This declaration does not change the hosted MCP config
 ```yaml
 # .loxtep/skills/loxtep-instances.yaml
 # Conforms to https://loxtep.io/schemas/skill-package-v1.json
-# Fail-closed: this Agent-Scope Skill's facades are RBAC-governed and carry no data-mesh resource scope.
+# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
 name: loxtep-instances
-description:
-  Runtime instance provisioning — RBAC/billing-governed; no data-mesh resource
-  scope.
+description: Runtime instance provisioning — RBAC/billing-governed; no data-mesh resource scope.
 scope:
   data_products: []
   connectors: []
@@ -253,4 +249,4 @@ re-trigger OAuth (Agent-Scope Skill **loxtep-auth**).
 
 ## References
 
-- [User story catalog](../../docs/skills-user-stories.md) (story **S11**)
+- [User story catalog](../../../docs/skills-user-stories.md) (story **S11**)

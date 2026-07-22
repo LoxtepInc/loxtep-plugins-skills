@@ -1,18 +1,20 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: connect-external-system
 description:
   Use when the user wants to connect Shopify, Salesforce, QuickBooks, Slack, or
   another SaaS/API into Loxtep — OAuth, API keys, SDK connectors, list connector
-  types, create org connector, get OAuth URL, or capture connector samples.
-  Maps to PKO procedure procedure#connect-external-system. Does NOT wire
-  ingestion workflows — hand off to data-workflows for save_workflow_bundle.
-  Customer MCP loxtep_connectors, loxtep_templates.
+  types, create org connector, get OAuth URL, or capture connector samples. Maps
+  to PKO procedure procedure#connect-external-system. Does NOT wire ingestion
+  workflows — hand off to data-workflows for save_workflow_bundle. Customer MCP
+  loxtep_connectors, loxtep_templates.
 license: MIT
 compatibility: opencode
 metadata:
   platform: loxtep
   category: connectors
   pko_procedure: procedure#connect-external-system
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/kiro/skills/connect-external-system/SKILL.md
 ---
 
 # Connect external system (Customer MCP)
@@ -125,3 +127,32 @@ SDK bootstrap (post-deploy) uses **`loxtep-sdk`**; see **`data-workflows`** Flow
 ## Auth
 
 Reconnect the Loxtep MCP server to re-trigger OAuth — see **`loxtep-auth`**.
+
+<!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+
+## Agent-Scope Skill scope (`.loxtep/skills/connect-external-system.yaml`)
+
+Resource scope and operation permissions for this Agent-Scope Skill, conformant
+with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json)
+schema. Any resource type or operation not listed is **denied (fail-closed)**.
+Identifier lists are empty placeholders — fill them with the specific resources
+in your workspace. This declaration does not change the hosted MCP config
+(`mcp.loxtep.io`).
+
+```yaml
+# .loxtep/skills/connect-external-system.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Scoped to ONLY the identifiers listed; least-privilege per operation. Fail-closed.
+name: connect-external-system
+description: Manage connectors and project connection nodes.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions:
+  connectors: [read, create, write, delete]
+```
+
+<!-- END loxtep skill-scope (skill-package-v1) -->

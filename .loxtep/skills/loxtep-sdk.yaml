@@ -7,8 +7,10 @@ scope:
   data_products: []
   connectors: []
   workflows: []
+  deployments: []
   domains: []
   queues: []
 permissions:
   data_products: [read, write]
+  deployments: [read, write]
   queues: [read, write]

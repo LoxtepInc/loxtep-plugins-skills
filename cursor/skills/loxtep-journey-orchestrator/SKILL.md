@@ -1,3 +1,4 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: loxtep-journey-orchestrator
 description:
@@ -10,6 +11,7 @@ metadata:
   platform: loxtep
   category: orchestration
   pko_track: data-ingestion
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/loxtep-journey-orchestrator/SKILL.md
 ---
 
 # Loxtep journey orchestrator

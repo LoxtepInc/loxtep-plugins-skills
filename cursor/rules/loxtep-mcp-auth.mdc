@@ -1,5 +1,8 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
-description: When Loxtep hosted MCP returns auth errors, call mcp_auth first (Cursor authenticate button).
+description:
+  When Loxtep hosted MCP returns auth errors, call mcp_auth first (Cursor
+  authenticate button).
 globs: .cursor/rules/*.mdc
 alwaysApply: true
 ---

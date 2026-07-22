@@ -1,3 +1,4 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: loxtep-sdk
 description:
@@ -5,7 +6,7 @@ description:
   tools to SDK methods, and avoid mixing JWT with IAM. Use when adding Loxtep
   SDK usage, queue readers/writers, or pairing MCP with runtime code.
 metadata:
-  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/opencode/skills/loxtep-sdk/SKILL.md
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/codex/skills/loxtep-sdk/SKILL.md
 ---
 
 # Loxtep Node SDK (Agent-Scope Skill)

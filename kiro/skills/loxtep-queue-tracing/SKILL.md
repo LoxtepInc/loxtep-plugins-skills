@@ -1,11 +1,14 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: loxtep-queue-tracing
 description:
-  Use when debugging deployments, workflow execution, or data flow issues by reading
-  queue events from the live runtime. Trace actions through the platform event queues to
-  see what actually happened. Combines loxtep_workspace (read_queue_events) with
-  knowledge of queue naming conventions. User story S7 extension.
-  See docs/skills-user-stories.md.
+  Use when debugging deployments, workflow execution, or data flow issues by
+  reading queue events from the live runtime. Trace actions through the platform
+  event queues to see what actually happened. Combines loxtep_workspace
+  (read_queue_events) with knowledge of queue naming conventions. User story S7
+  extension. See docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/kiro/skills/loxtep-queue-tracing/SKILL.md
 ---
 
 # Queue tracing for debugging (Customer MCP)

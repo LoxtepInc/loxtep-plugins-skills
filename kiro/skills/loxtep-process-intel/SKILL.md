@@ -1,11 +1,15 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: loxtep-process-intel
 description:
-  Runtime process intelligence — entity context, decision traces, and unified context retrieval.
-  Use when the user wants to read or write entity context, query entity context, perform unified
-  multi-backend context queries, or list/record decision traces. Customer MCP loxtep_process_intel.
-  User story S8. Not the same as loxtep_ontology (vocabulary/ontology management) or loxtep_catalog
-  (discovery). See docs/skills-user-stories.md.
+  Runtime process intelligence — entity context, decision traces, and unified
+  context retrieval. Use when the user wants to read or write entity context,
+  query entity context, perform unified multi-backend context queries, or
+  list/record decision traces. Customer MCP loxtep_process_intel. User story S8.
+  Not the same as loxtep_ontology (vocabulary/ontology management) or
+  loxtep_catalog (discovery). See docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/kiro/skills/loxtep-process-intel/SKILL.md
 ---
 
 # Process intelligence (Customer MCP)
@@ -62,14 +66,20 @@ description:
 - **Connectivity** — Process-intel tools require valid MCP authentication and access to your organization's process-intelligence data.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+
 ## Agent-Scope Skill scope (`.loxtep/skills/loxtep-process-intel.yaml`)
 
-Resource scope and operation permissions for this Agent-Scope Skill, conformant with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json) schema. Any resource type or operation not listed is **denied (fail-closed)**. Identifier lists are empty placeholders — fill them with the specific resources in your workspace. This declaration does not change the hosted MCP config (`mcp.loxtep.io`).
+Resource scope and operation permissions for this Agent-Scope Skill, conformant
+with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json)
+schema. Any resource type or operation not listed is **denied (fail-closed)**.
+Identifier lists are empty placeholders — fill them with the specific resources
+in your workspace. This declaration does not change the hosted MCP config
+(`mcp.loxtep.io`).
 
 ```yaml
 # .loxtep/skills/loxtep-process-intel.yaml
 # Conforms to https://loxtep.io/schemas/skill-package-v1.json
-# Fail-closed: this Agent-Scope Skill's facades are RBAC-governed and carry no data-mesh resource scope.
+# Fail-closed: this skill's facades are RBAC-governed and carry no data-mesh resource scope.
 name: loxtep-process-intel
 description: Runtime process intelligence — RBAC-governed; no data-mesh resource scope.
 scope:
@@ -80,6 +90,7 @@ scope:
   queues: []
 permissions: {}
 ```
+
 <!-- END loxtep skill-scope (skill-package-v1) -->
 
 ## Optional attribution
