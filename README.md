@@ -10,8 +10,8 @@ masking on by default). Connect a source (Postgres, Shopify, Stripe, a webhook),
 and your agents query governed data over a hosted MCP server instead of
 hand-rolling pipelines or inventing field names.
 
-The hosted MCP registers **21 grouped tools** named `loxtep_projects`,
-`loxtep_workflows`, `loxtep_data_products`, and so on. Each call sets
+The hosted MCP registers **10 job facades** (`loxtep_session`, `loxtep_connect`,
+`loxtep_workspace`, `loxtep_build`, …). Each call sets
 **`operation`** to the flat action name (e.g. `list_projects`,
 `create_data_product`) plus that action's arguments. Tool definitions and scopes
 are published on the hosted MCP server.
@@ -277,7 +277,7 @@ The Loxtep platform uses this for per-skill eval and analytics when available.
 }
 ```
 
-(Call the MCP tool **`loxtep_connectors`** with the JSON above as arguments.)
+(Call the MCP tool **`loxtep_connect`** with the JSON above as arguments.)
 
 Tools ignore `_metadata` for tool logic; it is used only for request attribution.
 

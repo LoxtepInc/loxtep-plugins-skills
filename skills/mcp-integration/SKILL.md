@@ -97,19 +97,10 @@ Orient first with **`loxtep-mcp-session`** — `get_current_user` returns RBAC g
 **PKO P5:** `procedure#enable-agent-mcp-access` — grant agents hosted MCP access after
 delivery interfaces are registered.
 
-**Legacy facade → job facade mapping** (deprecated names still route server-side):
-
-| Legacy | Job facade |
-| ------ | ---------- |
-| `loxtep_connectors`, `loxtep_templates` | `loxtep_connect` |
-| `loxtep_projects`, `loxtep_instances` | `loxtep_workspace` |
-| `loxtep_workflows`, `loxtep_triggers`, `loxtep_data_products`, deploy writes | `loxtep_build` |
-| `loxtep_schemas`, `loxtep_quality` | `loxtep_define` |
-| `loxtep_ontology`, `loxtep_semantic_layer` | `loxtep_meaning` |
-| `loxtep_cdlc`, `loxtep_approvals`, `loxtep_context_mining` | `loxtep_review` |
-| `loxtep_catalog`, `loxtep_analytics` | `loxtep_query` |
-| `loxtep_deployments` (reads), queue inspection | `loxtep_observe` |
-| `loxtep_process_intel`, `loxtep_procedures`, `loxtep_agent_workspace` | `loxtep_context` |
+**10 MCP job facades (greenfield — no deprecated aliases):** `loxtep_session`, `loxtep_connect`,
+`loxtep_workspace`, `loxtep_build`, `loxtep_define`, `loxtep_meaning`, `loxtep_review`,
+`loxtep_query`, `loxtep_observe`, `loxtep_context`. Old names such as `loxtep_connectors`,
+`loxtep_workflows`, or `loxtep_data_products` are **not** registered on the hosted server.
 
 **PKO phase → facade (P0–P7):**
 

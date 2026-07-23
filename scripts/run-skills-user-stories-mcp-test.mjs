@@ -299,19 +299,19 @@ async function run() {
   setStory('S12', 'loxtep-auth', ['PASS']);
 
   // Bootstrap project + instances
-  r = await callMcp('loxtep_projects', {
+  r = await callMcp('loxtep_workspace', {
     operation: 'create_project',
     name: `mcp-story-test-${REPORT_DATE}-${REPORT_SUFFIX}`,
     description: 'MCP skills user stories gap test',
   });
-  logStep('S2', 'create_project', 'loxtep_projects', 'create_project', r);
+  logStep('S2', 'create_project', 'loxtep_workspace', 'create_project', r);
   if (r.ok) {
     const p = parsePayload(r);
     fixture.project_id = p?.project_id ?? p?.id ?? fixture.project_id;
   }
 
-  r = await callMcp('loxtep_instances', { operation: 'list_instances' });
-  logStep('S11', 'list_instances', 'loxtep_instances', 'list_instances', r);
+  r = await callMcp('loxtep_workspace', { operation: 'list_instances' });
+  logStep('S11', 'list_instances', 'loxtep_workspace', 'list_instances', r);
   if (r.ok) {
     const p = parsePayload(r);
     const list = p?.items ?? p?.instances ?? p?.data?.items ?? (Array.isArray(p?.data) ? p.data : null);
@@ -323,11 +323,11 @@ async function run() {
   // S1
   await runStorySteps('S1', 'connect-external-system', [
     async () => {
-      const res = await callMcp('loxtep_connectors', { operation: 'list_connector_types' });
-      return logStep('S1', 'list_connector_types', 'loxtep_connectors', 'list_connector_types', res);
+      const res = await callMcp('loxtep_connect', { operation: 'list_connector_types' });
+      return logStep('S1', 'list_connector_types', 'loxtep_connect', 'list_connector_types', res);
     },
     async () => {
-      const res = await callMcp('loxtep_connectors', {
+      const res = await callMcp('loxtep_connect', {
         operation: 'create_connector',
         connector_type: 'sdk',
         metadata: {
@@ -341,51 +341,51 @@ async function run() {
         fixture.connector_id =
           p?.connector_id ?? p?.id ?? p?.connector?.connector_id ?? fixture.connector_id;
       }
-      return logStep('S1', 'create_connector sdk', 'loxtep_connectors', 'create_connector', res);
+      return logStep('S1', 'create_connector sdk', 'loxtep_connect', 'create_connector', res);
     },
     async () => {
-      const res = await callMcp('loxtep_connectors', {
-        operation: 'get_connector_oauth_url',
+      const res = await callMcp('loxtep_connect', {
+        operation: 'get_oauth_url',
         connector_type: 'shopify',
         ...(fixture.project_id ? { project_id: fixture.project_id } : {}),
         connection_config: { shop: 'mcp-story-test.myshopify.com' },
       });
-      return logStep('S1', 'get_connector_oauth_url shopify', 'loxtep_connectors', 'get_connector_oauth_url', res);
+      return logStep('S1', 'get_oauth_url shopify', 'loxtep_connect', 'get_oauth_url', res);
     },
     async () => {
       if (!fixture.project_id) {
-        return skipped('S1', 'get_connector_oauth_url shopify no shop', 'loxtep_connectors', 'get_connector_oauth_url', 'no project_id');
+        return skipped('S1', 'get_oauth_url shopify no shop', 'loxtep_connect', 'get_oauth_url', 'no project_id');
       }
-      const res = await callMcp('loxtep_connectors', {
-        operation: 'get_connector_oauth_url',
+      const res = await callMcp('loxtep_connect', {
+        operation: 'get_oauth_url',
         connector_type: 'shopify',
         project_id: fixture.project_id,
       });
-      return logStep('S1', 'get_connector_oauth_url shopify no shop', 'loxtep_connectors', 'get_connector_oauth_url', res, {
+      return logStep('S1', 'get_oauth_url shopify no shop', 'loxtep_connect', 'get_oauth_url', res, {
         note: res.ok ? 'unexpected pass' : 'expected validation fail without connection_config.shop',
       });
     },
     async () => {
       if (!fixture.connector_id) {
-        return skipped('S1', 'capture_connector_samples', 'loxtep_connectors', 'capture_connector_samples', 'no connector_id');
+        return skipped('S1', 'capture_samples', 'loxtep_connect', 'capture_samples', 'no connector_id');
       }
-      const res = await callMcp('loxtep_connectors', {
-        operation: 'capture_connector_samples',
+      const res = await callMcp('loxtep_connect', {
+        operation: 'capture_samples',
         connector_id: fixture.connector_id,
       });
-      return logStep('S1', 'capture_connector_samples', 'loxtep_connectors', 'capture_connector_samples', res, {
+      return logStep('S1', 'capture_samples', 'loxtep_connect', 'capture_samples', res, {
         note: 'P1 connect ends here; connection nodes are created in save_workflow_bundle (S2)',
       });
     },
     async () => {
       if (!fixture.project_id) {
-        return skipped('S1', 'list_triggers', 'loxtep_triggers', 'list_triggers', 'no project_id');
+        return skipped('S1', 'list_triggers', 'loxtep_build', 'list_triggers', 'no project_id');
       }
-      const res = await callMcp('loxtep_triggers', {
+      const res = await callMcp('loxtep_build', {
         operation: 'list_triggers',
         project_id: fixture.project_id,
       });
-      return logStep('S1', 'list_triggers', 'loxtep_triggers', 'list_triggers', res);
+      return logStep('S1', 'list_triggers', 'loxtep_build', 'list_triggers', res);
     },
   ]);
 
@@ -395,23 +395,23 @@ async function run() {
 
     await runStorySteps('S2', 'data-workflows', [
       async () => {
-        const res = await callMcp('loxtep_workflows', {
+        const res = await callMcp('loxtep_build', {
           operation: 'get_entity_schemas',
           project_id: fixture.project_id,
           pattern: 'ingestion',
         });
-        return logStep('S2', 'get_entity_schemas ingestion', 'loxtep_workflows', 'get_entity_schemas', res);
+        return logStep('S2', 'get_entity_schemas ingestion', 'loxtep_build', 'get_entity_schemas', res);
       },
       async () => {
         bundleDraft = buildMcpStoryIngestionBundle(fixture, REPORT_DATE);
-        const res = await callMcp('loxtep_workflows', {
+        const res = await callMcp('loxtep_build', {
           operation: 'save_workflow_bundle',
           project_id: fixture.project_id,
           dry_run: true,
           files: bundleDraft.files,
         });
         applyBundleResultToFixture(fixture, res, bundleDraft);
-        return logStep('S2', 'save_workflow_bundle dry_run', 'loxtep_workflows', 'save_workflow_bundle', res, {
+        return logStep('S2', 'save_workflow_bundle dry_run', 'loxtep_build', 'save_workflow_bundle', res, {
           note: fixture.connector_id
             ? 'SDK connection node uses connector_id from S1'
             : 'webhook fallback (no connector_id from S1)',
@@ -422,62 +422,62 @@ async function run() {
           return skipped(
             'S2',
             'save_workflow_bundle persist',
-            'loxtep_workflows',
+            'loxtep_build',
             'save_workflow_bundle',
             'dry_run did not produce bundle'
           );
         }
-        const res = await callMcp('loxtep_workflows', {
+        const res = await callMcp('loxtep_build', {
           operation: 'save_workflow_bundle',
           project_id: fixture.project_id,
           dry_run: false,
           files: bundleDraft.files,
         });
         applyBundleResultToFixture(fixture, res, bundleDraft);
-        return logStep('S2', 'save_workflow_bundle persist', 'loxtep_workflows', 'save_workflow_bundle', res);
+        return logStep('S2', 'save_workflow_bundle persist', 'loxtep_build', 'save_workflow_bundle', res);
       },
       async () => {
-        const res = await callMcp('loxtep_workflows', {
+        const res = await callMcp('loxtep_build', {
           operation: 'list_workflows',
           project_id: fixture.project_id,
         });
-        return logStep('S2', 'list_workflows', 'loxtep_workflows', 'list_workflows', res);
+        return logStep('S2', 'list_workflows', 'loxtep_build', 'list_workflows', res);
       },
       async () => {
         if (!fixture.workflow_id) {
-          return skipped('S2', 'get_workflow', 'loxtep_workflows', 'get_workflow', 'no workflow_id');
+          return skipped('S2', 'get_workflow', 'loxtep_build', 'get_workflow', 'no workflow_id');
         }
-        const res = await callMcp('loxtep_workflows', {
+        const res = await callMcp('loxtep_build', {
           operation: 'get_workflow',
           project_id: fixture.project_id,
           workflow_id: fixture.workflow_id,
         });
-        return logStep('S2', 'get_workflow', 'loxtep_workflows', 'get_workflow', res);
+        return logStep('S2', 'get_workflow', 'loxtep_build', 'get_workflow', res);
       },
       async () => {
         if (!fixture.workflow_id) {
-          return skipped('S2', 'get_workflow_graph', 'loxtep_workflows', 'get_workflow_graph', 'no workflow_id');
+          return skipped('S2', 'get_workflow_graph', 'loxtep_build', 'get_workflow_graph', 'no workflow_id');
         }
-        const res = await callMcp('loxtep_workflows', {
+        const res = await callMcp('loxtep_build', {
           operation: 'get_workflow_graph',
           project_id: fixture.project_id,
           workflow_id: fixture.workflow_id,
         });
-        return logStep('S2', 'get_workflow_graph', 'loxtep_workflows', 'get_workflow_graph', res);
+        return logStep('S2', 'get_workflow_graph', 'loxtep_build', 'get_workflow_graph', res);
       },
       async () => {
         if (!fixture.data_product_id) {
-          return skipped('S2', 'get_data_product', 'loxtep_data_products', 'get_data_product', 'no data_product_id');
+          return skipped('S2', 'get_data_product', 'loxtep_build', 'get_data_product', 'no data_product_id');
         }
-        const res = await callMcp('loxtep_data_products', {
+        const res = await callMcp('loxtep_build', {
           operation: 'get_data_product',
           data_product_id: fixture.data_product_id,
         });
-        return logStep('S2', 'get_data_product', 'loxtep_data_products', 'get_data_product', res);
+        return logStep('S2', 'get_data_product', 'loxtep_build', 'get_data_product', res);
       },
       async () => {
-        const res = await callMcp('loxtep_data_products', { operation: 'list_data_products' });
-        return logStep('S2', 'list_data_products', 'loxtep_data_products', 'list_data_products', res);
+        const res = await callMcp('loxtep_build', { operation: 'list_data_products' });
+        return logStep('S2', 'list_data_products', 'loxtep_build', 'list_data_products', res);
       },
     ]);
   } else {
@@ -542,19 +542,19 @@ async function run() {
   if (fixture.data_product_id) {
     await runStorySteps('S3', 'data-workflows', [
       async () => {
-        const res = await callMcp('loxtep_data_products', {
+        const res = await callMcp('loxtep_build', {
           operation: 'list_targets',
           data_product_id: fixture.data_product_id,
         });
-        return logStep('S3', 'list_targets', 'loxtep_data_products', 'list_targets', res);
+        return logStep('S3', 'list_targets', 'loxtep_build', 'list_targets', res);
       },
       async () => {
-        const res = await callMcp('loxtep_data_products', {
+        const res = await callMcp('loxtep_build', {
           operation: 'create_target',
           data_product_id: fixture.data_product_id,
           endpoint_url: 'https://example.com/webhook/mcp-story-test',
         });
-        return logStep('S3', 'create_target', 'loxtep_data_products', 'create_target', res);
+        return logStep('S3', 'create_target', 'loxtep_build', 'create_target', res);
       },
     ]);
   } else {
@@ -816,18 +816,18 @@ async function run() {
 
   // Cleanup
   if (fixture.connector_id) {
-    const res = await callMcp('loxtep_connectors', {
+    const res = await callMcp('loxtep_connect', {
       operation: 'delete_connector',
       connector_id: fixture.connector_id,
     });
-    logStep('S1', 'delete_connector cleanup', 'loxtep_connectors', 'delete_connector', res);
+    logStep('S1', 'delete_connector cleanup', 'loxtep_connect', 'delete_connector', res);
   }
   if (fixture.project_id) {
-    const res = await callMcp('loxtep_projects', {
+    const res = await callMcp('loxtep_workspace', {
       operation: 'delete_project',
       project_id: fixture.project_id,
     });
-    logStep('S2', 'delete_project cleanup', 'loxtep_projects', 'delete_project', res);
+    logStep('S2', 'delete_project cleanup', 'loxtep_workspace', 'delete_project', res);
   }
 
   // Ensure all stories set

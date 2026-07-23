@@ -101,7 +101,7 @@ OpenCode discovers `loxtep_*` tools and skills automatically. Skills load on-dem
 
 ### Loxtep Customer MCP
 
-Hosted at `https://mcp.loxtep.io/ai/mcp/stream` — **19 grouped `loxtep_*` tools** covering projects, workflows, connectors, **data products**, schemas, quality, catalog, **semantic layer**, ontology, analytics, deployments, workspace/queue ops, process intelligence, and agent orchestration.
+Hosted at `https://mcp.loxtep.io/ai/mcp/stream` — **10 MCP job facades** (`loxtep_session`, `loxtep_connect`, `loxtep_workspace`, `loxtep_build`, …) covering projects, workflows, connectors, **data products**, schemas, quality, catalog, **semantic layer**, ontology, analytics, deployments, workspace/queue ops, process intelligence, and agent orchestration.
 
 ### Skills (23 bundles)
 

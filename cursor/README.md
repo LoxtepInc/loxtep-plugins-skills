@@ -57,7 +57,7 @@ You are not duct-taping integrations. You are **publishing governed data product
 
 3. **Connect** — On first use, Cursor opens a browser window for OAuth login. Sign in to Loxtep; tokens refresh automatically. No `npx`, no token files.
 
-4. **Use the tools** — In the MCP palette you will see grouped tools like `loxtep_projects` and `loxtep_data_products`. Pass **`operation`** (e.g. `list_projects`, `create_data_product`) and the fields that action needs.
+4. **Use the tools** — In the MCP palette you will see grouped tools like `loxtep_workspace` and `loxtep_build`. Pass **`operation`** (e.g. `list_projects`, `create_data_product`) and the fields that action needs.
 
 ## Developer workflows
 
@@ -83,7 +83,7 @@ You are not duct-taping integrations. You are **publishing governed data product
 
 ### Loxtep Customer MCP
 
-Hosted at `https://mcp.loxtep.io/ai/mcp/stream` — **19 grouped `loxtep_*` tools** with `operation`-based dispatch covering projects, workflows, connectors, **data products**, schemas, quality rules, catalog, **semantic layer**, ontology, analytics, deployments, workspace/queue ops, process intelligence, and agent orchestration.
+Hosted at `https://mcp.loxtep.io/ai/mcp/stream` — **10 MCP job facades** (`loxtep_session`, `loxtep_connect`, `loxtep_workspace`, `loxtep_build`, …) with `operation`-based dispatch covering projects, workflows, connectors, **data products**, schemas, quality rules, catalog, **semantic layer**, ontology, analytics, deployments, workspace/queue ops, process intelligence, and agent orchestration.
 
 ### Auth recovery rule
 

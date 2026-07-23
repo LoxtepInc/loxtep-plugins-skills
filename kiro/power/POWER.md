@@ -1,7 +1,7 @@
 ---
 name: "loxtep"
 displayName: "Loxtep Enterprise Context Layer"
-description: "Loxtep is the Enterprise Context Layer — turning organizational knowledge into machine-usable context for AI. Manage governed data products, semantic ontology, process graphs, entity context, and decision traces. 19 grouped MCP tools with per-call operation."
+description: "Loxtep is the Enterprise Context Layer — turning organizational knowledge into machine-usable context for AI. Manage governed data products, semantic ontology, process graphs, entity context, and decision traces. 10 MCP job facades with per-call operation."
 keywords: ["loxtep", "context-layer", "data-product", "workflow", "connector", "semantic-layer", "ontology", "governance", "process-intelligence", "streaming"]
 author: "Loxtep"
 ---
@@ -12,7 +12,7 @@ author: "Loxtep"
 
 Loxtep is the **Enterprise Context Layer** — the system that turns organizational knowledge, expertise, and norms into machine-usable context for AI. Built on **governed data products** over a **real-time streaming** backbone with a **semantic layer**, **ontology**, **process graph**, and **AI context** (entity knowledge, decision traces) that agents query instead of inventing.
 
-Connect external systems (Shopify, Salesforce, APIs) via workflows, create versioned and governed data products, and expose organizational context through a semantic layer and process intelligence. The Customer MCP provides **19 grouped tools** (`loxtep_*`) — each call sets `operation` to a flat action name plus arguments.
+Connect external systems (Shopify, Salesforce, APIs) via workflows, create versioned and governed data products, and expose organizational context through a semantic layer and process intelligence. The hosted MCP provides **10 job facades** (`loxtep_session`, `loxtep_connect`, `loxtep_workspace`, `loxtep_build`, …) — each call sets `operation` to a flat action name plus arguments.
 
 This power covers the full platform lifecycle:
 - **Authentication** and session management
@@ -75,7 +75,7 @@ Before any project work, confirm identity and org context:
 
 1. `loxtep_session` → `get_current_user` — returns `permissions` (effective resource/action grants), `roles`, and org context.
 2. `loxtep_session` → `get_current_organization` — confirms organizational scope and governance settings.
-3. For project-scoped tools (`loxtep_workflows`, `loxtep_triggers`, `loxtep_data_products`), always include `project_id`.
+3. For project-scoped operations on **`loxtep_build`** or **`loxtep_workspace`**, always include `project_id`.
 4. Use the **semantic layer** and **ontology** to resolve canonical business terms instead of guessing field names.
 
 ### Permission Denials
@@ -86,13 +86,13 @@ Before any project work, confirm identity and org context:
 
 ## How MCP Calls Work
 
-All 19 tools follow the same pattern:
+All 10 tools follow the same pattern:
 
-1. **Tool name** — e.g. `loxtep_projects`, `loxtep_workflows`, `loxtep_connectors`
-2. **`operation`** — flat action name (e.g. `list_projects`, `create_workflow`)
+1. **Tool name** — e.g. `loxtep_connect`, `loxtep_build`, `loxtep_workspace`
+2. **`operation`** — flat action name (e.g. `list_projects`, `save_workflow_bundle`)
 3. **Other fields** — API arguments at top level next to `operation`
 
-Example:
+Example (call **`loxtep_workspace`**, not `loxtep_projects`):
 ```json
 {
   "operation": "create_project",
@@ -102,27 +102,7 @@ Example:
 
 ## MCP Tools Reference
 
-| Tool | Operations | Scope |
-|------|-----------|-------|
-| `loxtep_session` | `get_current_user`, `get_current_organization` | organization |
-| `loxtep_projects` | `list_projects`, `get_project`, `create_project`, `update_project`, `delete_project` | organization |
-| `loxtep_instances` | `list_instances`, `create_instance` | organization |
-| `loxtep_connectors` | `list_connector_types`, `list_connectors`, `create_connector`, `get_connector_oauth_url` | global / organization |
-| `loxtep_triggers` | `update_trigger`, `delete_trigger`, `list_triggers`, `get_trigger`, `test_trigger` | project |
-| `loxtep_templates` | `list_templates`, `get_template`, `apply_template` | organization / project |
-| `loxtep_workflows` | `get_entity_schemas`, `save_workflow_bundle`, `create_workflow`, `update_workflow`, `delete_workflow`, `list_workflows`, `get_workflow`, `get_workflow_graph`, `patch_workflow_graph`, `preview_transform` | project |
-| `loxtep_data_products` | `create_data_product`, `update_data_product`, `delete_data_product`, `list_data_products`, `get_data_product`, `get_data_product_lexicon`, `get_data_product_sdk_config`, `list_targets`, `create_target` | project / organization |
-| `loxtep_schemas` | `create_schema`, `update_schema`, `delete_schema`, `get_schema`, `list_schema_versions`, `tag_pii_fields` | organization |
-| `loxtep_quality` | `create_quality_rule`, `update_quality_rule`, `delete_quality_rule`, `list_quality_rules`, `get_quality_rule`, `test_quality_rule` | organization |
-| `loxtep_catalog` | `search_catalog`, `get_catalog_entry`, `get_evidence`, `get_lineage_impact`, `get_governance_flags`, `list_domains`, `list_tags` | catalog |
-| `loxtep_analytics` | `execute_query`, `list_tables`, `get_table_schema`, `get_query_results` | organization |
-| `loxtep_workspace` | `list_versions`, `create_snapshot`, `restore_version`, `compare_versions`, `reindex_workspace`, `get_queue_info`, `replay_events`, `read_queue_events` | project / organization |
-| `loxtep_process_intel` | `get_entity_context`, `query_entity_context`, `create_entity_context`, `list_decision_traces`, `record_decision_trace` | organization |
-| `loxtep_procedures` | `list_procedures`, `get_procedure`, `create_procedure`, `update_procedure`, `delete_procedure`, `import_process_graph`, `export_process_graph`, `get_procedure_dependencies` | organization |
-| `loxtep_ontology` | `list_thesaurus_terms`, `get_thesaurus_term`, `create_thesaurus_term`, `update_thesaurus_term`, `delete_thesaurus_term`, `sync_vocabulary`, `resolve_canonical_key`, `get_ontology_relationships`, `create_ontology_concept`, `create_ontology_relationship`, `update_ontology_concept`, `delete_ontology_concept`, `register_namespace_mapping`, `list_namespace_mappings`, `get_namespace_mapping` | organization |
-| `loxtep_agent_workspace` | `agent_orchestration_create_issue`, `agent_orchestration_list_issues`, `agent_orchestration_get_issue`, `agent_orchestration_create_goal`, `agent_orchestration_list_goals`, `agent_orchestration_get_goal`, `agent_orchestration_list_projects`, `agent_orchestration_create_project`, `agent_orchestration_get_project`, `agent_orchestration_list_agents`, `agent_orchestration_get_agent` | organization |
-| `loxtep_semantic_layer` | `search_semantic_layer`, `get_semantic_artifact`, `get_semantic_completeness` | organization |
-| `loxtep_deployments` | `deploy_project`, `deploy_workflow`, `list_deployments`, `get_deployment`, `get_runtime_mapping` | project / organization |
+See [AGENTS.md](../../AGENTS.md) for the full 10-facade operation tables (`loxtep_session` through `loxtep_context`). Deprecated 22-facade names are not registered on the hosted server.
 
 ## Story Index
 
@@ -164,8 +144,8 @@ Example:
 
 ### Project-Scoped Tool Errors
 
-- Always include `project_id` for: `loxtep_workflows`, `loxtep_triggers`, `loxtep_data_products` (CRUD ops), `loxtep_workspace` (version ops)
-- Get `project_id` from `loxtep_projects` → `list_projects` or `create_project`
+- Always include `project_id` for project-scoped ops on **`loxtep_build`** (workflows, triggers, data products, deploy writes) and **`loxtep_workspace`** (version ops)
+- Get `project_id` from **`loxtep_workspace`** → `list_projects` or `create_project`
 
 ## Best Practices
 

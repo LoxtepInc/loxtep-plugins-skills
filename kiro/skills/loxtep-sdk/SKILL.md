@@ -325,8 +325,9 @@ permissions:
 and SDK config → `loxtep_build` (`create_delivery`, `list_deliveries`,
 `get_sdk_config`). Approvals → `loxtep_review` (`list_pending`, `resolve`).
 
-Legacy facade names (`loxtep_deployments`, `loxtep_data_products`) still route
-server-side.
+Use the **10 MCP job facades** above when calling hosted MCP tools; the SDK namespaces
+mirror those facades (`client.build`, `client.observe`, …). Deprecated 22-facade names
+are not accepted by the hosted server.
 
 ## Auth (single mental model)
 

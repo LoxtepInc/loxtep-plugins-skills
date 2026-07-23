@@ -68,8 +68,8 @@ Platform PKO procedures: `platform-backend/graph/platform-pko/` · architecture:
 | **Persona**          | Data engineer, integrator                                                                                                                                         |
 | **PKO**              | `procedure#connect-external-system` → `procedure#capture-connector-samples` → `procedure#design-ingestion-workflow`                                              |
 | **Preconditions**    | MCP auth; optional `project_id` for templates only (not required for org connector)                                                                               |
-| **Happy path**       | `list_connector_types` → OAuth or `create_connector` → test connector → `capture_connector_samples` → hand off to **`data-workflows`** (`save_workflow_bundle`) |
-| **MCP**              | `loxtep_connectors`, `loxtep_triggers`, `loxtep_templates`                                                                                                     |
+| **Happy path**       | `list_connector_types` → OAuth or `create_connector` → test connector → `capture_samples` → hand off to **`data-workflows`** (`save_workflow_bundle`) |
+| **MCP**              | `loxtep_connect`, `loxtep_build` (triggers/templates live under connect/build)                                                                                                     |
 | **Primary skill**    | **`connect-external-system`**                                                                                                                                     |
 
 ---
@@ -82,7 +82,7 @@ Platform PKO procedures: `platform-backend/graph/platform-pko/` · architecture:
 | **PKO**           | `procedure#design-ingestion-workflow` after P1 handoff (`connector_id` + samples)                                                                       |
 | **Preconditions** | MCP auth; `project_id`; optional `connector_id` from S1 for SDK connection nodes in bundle                                                            |
 | **Happy path**    | `get_entity_schemas` (`pattern: ingestion`) → compose `files` → `save_workflow_bundle` (`dry_run: true`) → fix errors → `save_workflow_bundle` persist |
-| **MCP**           | `loxtep_workflows` (`get_entity_schemas`, `save_workflow_bundle`, `list_workflows`, `get_workflow`, `get_workflow_graph`), `loxtep_data_products`     |
+| **MCP**           | `loxtep_build` (`get_entity_schemas`, `save_workflow_bundle`, `list_workflows`, `get_workflow`, `get_workflow_graph`), data product ops on same facade     |
 | **Primary skill** | **`data-workflows`** (Flow E)                                                                                                                           |
 
 ---
@@ -131,7 +131,7 @@ For the full S0–S15 narrative detail and MCP operation → skill index, see
 
 | `operation` | Primary skill |
 | ----------- | ------------- |
-| `list_connector_types`, `create_connector`, `get_connector_oauth_url`, `capture_connector_samples` | **`connect-external-system`** |
+| `list_connector_types`, `create_connector`, `get_oauth_url`, `capture_samples` | **`connect-external-system`** |
 | `list_triggers`, `get_trigger`, `test_trigger`, `update_trigger` | **`data-workflows`** |
 | `get_entity_schemas`, `save_workflow_bundle`, `list_workflows`, `get_workflow`, `get_workflow_graph` | **`data-workflows`** |
 | `deploy_project`, `deploy_workflow`, `list_deployments`, `get_deployment` | `loxtep-deployments` |

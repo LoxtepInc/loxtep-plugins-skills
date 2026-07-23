@@ -51,7 +51,7 @@ Clients without native MCP OAuth (e.g. Antigravity) bridge via `mcp-remote`:
 
 The server registers **10 grouped tools** (job-based facades, all named `loxtep_*`).
 Each call sets **`operation`** to the flat action name, plus that action's
-arguments. Example: call the tool **`loxtep_connectors`** with:
+arguments. Example: call the tool **`loxtep_connect`** with:
 
 ```json
 { "operation": "create_connector", "connector_type": "shopify", "metadata": { "api_key": "…" } }
