@@ -16,7 +16,7 @@ metadata:
 
 ## Tool shape
 
-- **MCP tool:** `loxtep_instances`
+- **MCP tool:** `loxtep_workspace`
 - **Arguments:**
   `{ "operation": "list_instances" | "create_instance" | "get_deployment_urls" | "register_infrastructure" | "get_infrastructure", ...fields }`
 

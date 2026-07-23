@@ -3,8 +3,8 @@
 # Agent orchestration workspace (Customer MCP)
 
 **Story S10:** **Issues**, **goals**, **agent projects**, **agents** — this is
-the **agent workspace**, not **data mesh** repos (`loxtep_projects` /
-`loxtep_workflows`).
+the **agent workspace**, not **data mesh** repos (`loxtep_workspace` /
+`loxtep_build`).
 
 ## When to use
 
@@ -20,18 +20,18 @@ the **agent workspace**, not **data mesh** repos (`loxtep_projects` /
 
 ## MCP tool and operations
 
-- **Tool:** `loxtep_agent_workspace`
-- **`operation`** values (flat names): `agent_orchestration_create_issue`,
-  `agent_orchestration_list_issues`, `agent_orchestration_get_issue`,
-  `agent_orchestration_create_goal`, `agent_orchestration_list_goals`,
-  `agent_orchestration_get_goal`, `agent_orchestration_list_workstreams`,
-  `agent_orchestration_create_workstream`, `agent_orchestration_get_workstream`,
-  `agent_orchestration_list_agents`, `agent_orchestration_get_agent`
+- **Tool:** `loxtep_context`
+- **`operation`** values (flat names): `create_issue`,
+  `list_issues`, `get_issue`,
+  `create_goal`, `list_goals`,
+  `get_goal`, `list_workstreams`,
+  `create_workstream`, `get_workstream`,
+  `list_agents`, `get_agent`
 
 ## Pitfalls
 
-- **`agent_orchestration_create_workstream`** ≠ **`create_project`** on
-  `loxtep_projects`. Naming collision in English — always pick the **tool** from
+- **`create_workstream`** ≠ **`create_project`** on
+  `loxtep_workspace`. Naming collision in English — always pick the **tool** from
   user intent.
 - Data pipeline work → **`data-workflows`** + **`connect-external-system`**.
 

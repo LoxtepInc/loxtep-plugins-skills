@@ -2,44 +2,46 @@
 ---
 name: promote-data-product
 description:
-  Promote a data product through medallion readiness checks and catalog
-  promotion. Maps to PKO procedure procedure#promote-data-product-medallion
-  (P4). Use MCP promote_data_product and quality/glossary validation before
-  domain-owner approval.
+  Use when a data product is ready to be trusted and published for wider use.
+  Runs the readiness checklist, validates quality and definitions, and routes to
+  the domain owner for approval. This is the final step of Organize.
 license: MIT
 metadata:
   platform: loxtep
   category: catalog
-  pko_procedure: procedure#promote-data-product-medallion
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/kiro/skills/promote-data-product/SKILL.md
 ---
 
-# Promote data product (medallion)
-
-**PKO:** `procedure#promote-data-product-medallion` — follows
-`procedure#define-data-product-semantics`, precedes
-`procedure#register-delivery-interface`.
+# Publish data product as trusted
 
 ## When to use
 
-- User asks to promote a data product tier / medallion / readiness
-- After semantic mapping is applied (`define-data-product-semantics`)
-- Before registering delivery interfaces
+- "My data product is ready — publish it"
+- "Run the readiness check"
+- After definitions and quality rules have been reviewed and approved
+- Before setting up delivery (the Use step)
 
-## Steps (from PKO)
+## Steps
 
-1. Run readiness checklist (`org-semantics-quality`)
-2. Quality and glossary checks
-3. Propose promotion — **HITL:** `domain_owner` approval
-4. Apply via MCP `promote_data_product` or catalog API
-5. Notify stakeholders (`trigger_event: data-product-promoted`)
+1. Run readiness checklist — `get_promotion_readiness`
+2. Remediate any failing checks with `org-semantics-quality`
+3. Route to domain owner for approval — `list_pending`, `resolve`
+4. Apply — `promote_data_product`
+5. Confirm — `get_data_product` to verify promoted status
 
 ## Pitfalls
 
-- Do not skip semantics (P3) — promotion assumes glossary bindings exist
-- Governance audience is **domain owner**, not generic org admin
+- Definitions must be reviewed before running this — use `semantic-ontology-mapping` first
+- Approval routes to the **domain owner**, not a generic admin
 
 ## References
 
-- PKO: `platform-backend/graph/platform-pko/promote-data-product-medallion.jsonld`
-- Journey: **`loxtep-journey-orchestrator`**
+- Next step: **`data-product-modeling`** (delivery interfaces)
+- Full journey: **`loxtep-journey-orchestrator`**
+
+## Implementation notes
+
+- PKO: `procedure#promote-data-product-medallion` (P4)
+- Follows `procedure#define-data-product-semantics`, precedes `procedure#register-delivery-interface`
+- `hitl_gate: approval` — audience: `domain_owner`
+- PKO graph: `platform-backend/graph/platform-pko/promote-data-product-medallion.jsonld`

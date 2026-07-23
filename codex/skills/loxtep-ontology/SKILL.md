@@ -2,19 +2,17 @@
 ---
 name: loxtep-ontology
 description:
-  Use when the user wants to manage ontology concepts, vocabulary/thesaurus
-  terms, namespace mappings, or sync vocabularies. Customer MCP loxtep_ontology.
-  User story S13. Not the same as loxtep_process_intel (runtime intelligence) or
-  loxtep_procedures (process graph CRUD). See docs/skills-user-stories.md.
+  Use when the user wants to manage ontology concepts, vocabulary terms,
+  namespace mappings, or sync vocabularies. Part of the Organize step for
+  defining shared meaning across systems.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/codex/skills/loxtep-ontology/SKILL.md
 ---
 
-# Ontology, vocabulary, and namespace management (Customer MCP)
+# Ontology, vocabulary, and namespace management
 
-**Story S13:** Manage **ontology concepts**, **vocabulary terms** (thesaurus),
-and **namespace mappings** for the semantic layer — the schema/vocabulary
-management surface.
+Manage **ontology concepts**, **vocabulary terms** (thesaurus), and **namespace
+mappings** for the semantic layer.
 
 ## When to use
 
@@ -101,17 +99,17 @@ Requires **`semantic_gaps:resolve`** (plus override create permissions).
 
 ### Flow — Vocabulary sync (bulk)
 
-1. `list_thesaurus_terms` with `domain` filter to see current state.
+1. `list_terms` with `domain` filter to see current state.
 2. `sync_vocabulary` with `mode: "full_sync"` or `"additive_only"` and
    `dry_run: true` to preview changes.
 3. `sync_vocabulary` with `dry_run: false` to apply.
 
 ### Flow — Single term CRUD
 
-1. `create_thesaurus_term` with `canonical_key`, `scheme`, `aliases`.
-2. `get_thesaurus_term` by `term_id` to verify.
-3. `update_thesaurus_term` for partial field changes.
-4. `delete_thesaurus_term` to soft-delete (tombstone).
+1. `create_term` with `canonical_key`, `scheme`, `aliases`.
+2. `get_term` by `term_id` to verify.
+3. `update_term` for partial field changes.
+4. `delete_term` to soft-delete (tombstone).
 
 ### Flow — Ontology concept creation
 
@@ -126,7 +124,7 @@ Requires **`semantic_gaps:resolve`** (plus override create permissions).
 1. `list_namespace_mappings` to see existing registrations.
 2. `register_namespace_mapping` with `prefix`, `uri`, and `mappings` array.
 3. `get_namespace_mapping` by prefix to verify.
-4. Use `import_process_graph` (in `loxtep_procedures`) — registered namespaces
+4. Use `import_process_graph` (in `loxtep_context`) — registered namespaces
    auto-resolve during import.
 
 ### Flow — Resolve canonical key
@@ -138,11 +136,11 @@ Requires **`semantic_gaps:resolve`** (plus override create permissions).
 
 | `operation`                    | Scope        | Notes                                                                                                                  |
 | ------------------------------ | ------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| `list_thesaurus_terms`         | organization | Filters: `scheme`, `domain`, `canonical_key_prefix`                                                                    |
-| `get_thesaurus_term`           | organization | Single term by `term_id`                                                                                               |
-| `create_thesaurus_term`        | organization | Conflict error if `canonical_key` exists                                                                               |
-| `update_thesaurus_term`        | organization | Partial update by `term_id`                                                                                            |
-| `delete_thesaurus_term`        | organization | Soft-delete; warns if referenced                                                                                       |
+| `list_terms`         | organization | Filters: `scheme`, `domain`, `canonical_key_prefix`                                                                    |
+| `get_term`           | organization | Single term by `term_id`                                                                                               |
+| `create_term`        | organization | Conflict error if `canonical_key` exists                                                                               |
+| `update_term`        | organization | Partial update by `term_id`                                                                                            |
+| `delete_term`        | organization | Soft-delete; warns if referenced                                                                                       |
 | `sync_vocabulary`              | organization | Bulk sync with `dry_run` support                                                                                       |
 | `resolve_canonical_key`        | organization | Alias → canonical resolution                                                                                           |
 | `get_ontology_relationships`   | organization | Filters: `source_entity_type`, `target_entity_type`, `relation_type`, `namespace`                                      |
@@ -175,22 +173,22 @@ Requires **`semantic_gaps:resolve`** (plus override create permissions).
 ## Pitfalls (general)
 
 - **Runtime intelligence** (entity context, decision traces) is
-  **`loxtep_process_intel`** — different facade. This Agent-Scope Skill is for
+  **`loxtep_context`** — different facade. This Agent-Scope Skill is for
   **schema/vocabulary management**, not runtime queries.
 - **Process graph CRUD** (procedures, steps, import/export) is
-  **`loxtep_procedures`** — different facade. Ontology concepts describe the
+  **`loxtep_context`** — different facade. Ontology concepts describe the
   _types_ in the graph; procedures are the _instances_.
-- **Catalog search** is **`loxtep_catalog`** — use that for discovery across all
+- **Catalog search** is **`loxtep_query`** — use that for discovery across all
   artifact types. This Agent-Scope Skill manages the underlying ontology that
   catalog entries reference.
 - **`sync_vocabulary` with `full_sync`** will tombstone terms not in the
   submitted set — use `additive_only` if you only want to add/update.
 - **Namespace mappings** are used by `import_process_graph` (in
-  `loxtep_procedures`) to auto-resolve external ontology terms. Register
+  `loxtep_context`) to auto-resolve external ontology terms. Register
   mappings _before_ importing graphs that use custom namespaces.
 - **W3C PKO** (`https://w3id.org/pko`) is pre-registered as a system-scoped
   mapping — no need to register it manually.
-- **`delete_thesaurus_term`** and **`delete_ontology_concept`** use soft-delete
+- **`delete_term`** and **`delete_ontology_concept`** use soft-delete
   (tombstone pattern). They warn about dependents but do not cascade.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->

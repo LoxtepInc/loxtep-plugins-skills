@@ -128,7 +128,7 @@ events.
 `workflows.get_writer()` will fail with "data product not deployed" or "queue not
 found" errors.
 
-**How to deploy:** Use the `loxtep_deployments` MCP facade:
+**How to deploy:** Use **`loxtep_build`** MCP facade:
 
 1. `deploy_project` — triggers async deployment (requires `project_id` +
    `instance_id`)
@@ -256,14 +256,14 @@ automatically.
 
 | Facade                 | `operation`                   | Permission | Notes                                            |
 | ---------------------- | ----------------------------- | ---------- | ------------------------------------------------ |
-| `loxtep_data_products` | `get_data_product_sdk_config` | read       | Returns SDK connection config for a data product |
-| `loxtep_data_products` | `create_target`   | write      | Create a delivery interface                      |
-| `loxtep_data_products` | `list_targets`    | read       | List active delivery interfaces                  |
-| `loxtep_deployments`   | `deploy_workflow`             | write      | Deploy a single workflow to an instance          |
-| `loxtep_deployments`   | `list_deployments`            | read       | List deployment records (poll for status)        |
-| `loxtep_deployments`   | `get_deployment`              | read       | Get a single deployment record by ID             |
-| `loxtep_approvals`     | `list_pending_approvals`      | read       | SDK: `client.approvals.list_pending()`           |
-| `loxtep_approvals`     | `resolve_approval`            | write      | SDK: `client.approvals.approve()` / `.reject()`  |
+| `loxtep_build` | `get_sdk_config` | read | Returns SDK connection config for a data product |
+| `loxtep_build` | `create_delivery` | write | Create a delivery interface |
+| `loxtep_build` | `list_deliveries` | read | List active delivery interfaces |
+| `loxtep_build` | `deploy_workflow` | write | Deploy a single workflow to an instance |
+| `loxtep_observe` | `list_deployments` | read | List deployment records (poll for status) |
+| `loxtep_observe` | `get_deployment` | read | Get a single deployment record by ID |
+| `loxtep_review` | `list_pending` | read | SDK: `client.approvals.list_pending()` |
+| `loxtep_review` | `resolve` | write | SDK: `client.approvals.approve()` / `.reject()` |
 
 ## Approving pipeline gates from code (`client.approvals`)
 
@@ -283,6 +283,17 @@ for (const approval of pending.items) {
 to override (`client.approvals.resolve(id, 'reject', organizationId)`).
 
 <!-- SCOPE_BLOCK -->
+
+## Implementation notes
+
+**MCP facade mapping:** deploy writes (`deploy_project`, `deploy_workflow`,
+`get_runtime_mapping`) → `loxtep_build`. Deployment status reads
+(`list_deployments`, `get_deployment`) → `loxtep_observe`. Delivery interfaces
+and SDK config → `loxtep_build` (`create_delivery`, `list_deliveries`,
+`get_sdk_config`). Approvals → `loxtep_review` (`list_pending`, `resolve`).
+
+Legacy facade names (`loxtep_deployments`, `loxtep_data_products`) still route
+server-side.
 
 ## Auth (single mental model)
 

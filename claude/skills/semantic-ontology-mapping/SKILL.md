@@ -2,22 +2,18 @@
 ---
 name: semantic-ontology-mapping
 description:
-  Use when the user wants to perform business domain semantic modeling,
-  ontological mapping across systems, process context mapping, semantic
-  crosswalk construction, or knowledge graph schema design. Covers concept
-  identification, relationship typing, conflict resolution, process-concept
-  bindings, and taxonomy development. Complements data-product-modeling
-  (physical manifestation) and loxtep-ontology (MCP CRUD operations). User story
-  S21.
+  Use when the user wants to define what business terms mean, map concepts
+  across systems, resolve vocabulary conflicts, or build a shared language for
+  their data. This is the meaning-definition work inside the Organize step.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/claude/skills/semantic-ontology-mapping/SKILL.md
 ---
 
 # Semantic & Ontological Mapping for Business Environments
 
-**Story S21:** Systematic discovery, formalization, and alignment of business
-semantics across organizational boundaries — making implicit knowledge explicit,
-machine-readable, and actionable.
+Systematic discovery, formalization, and alignment of business semantics across
+organizational boundaries — making implicit knowledge explicit, machine-readable,
+and actionable.
 
 ## When to use
 
@@ -46,12 +42,12 @@ Model **deltas**, not the entire universe:
 - Cosmetic naming preference without semantic difference — use aliases/synonyms instead.
 - One-off ETL transform detail — document in transformation, not ontology override.
 
-### Maintainability — flag divergence for honest Gold gates
+### Maintainability — flag divergence before publishing as trusted
 
-Gold promotion uses **override-coverage** (% of **flagged divergent** fields with
-active overrides). **Unflagged fields do not count.** If stewards never mark deltas,
-coverage is vacuously 100% and Gold does not prove semantic documentation. **Always
-flag + override real divergences** before promotion.
+Promotion to trusted tier uses **override-coverage** (% of **flagged divergent**
+fields with active overrides). **Unflagged fields do not count.** If stewards never
+mark deltas, coverage is vacuously 100% and the readiness check does not prove
+semantic documentation. **Always flag + override real divergences** before promotion.
 
 ## Core Concepts
 
@@ -127,7 +123,7 @@ flag + override real divergences** before promotion.
    - **Canonical renaming:** Neutral umbrella term + qualified subtypes
    - **Context namespacing:** `sales.customer` vs `finance.customer`
    - **Polyhierarchy:** Concept exists in multiple taxonomies
-4. Register resolution: `create_thesaurus_term` with aliases.
+4. Register resolution: `create_term` with aliases.
 5. Update affected data products' `business_glossary`.
 
 ## Process Decomposition Levels
@@ -142,21 +138,21 @@ flag + override real divergences** before promotion.
 
 ## MCP mapping
 
-| `operation`                    | Scope        | Notes                        |
-| ------------------------------ | ------------ | ---------------------------- |
-| `create_ontology_concept`      | organization | Node type with properties    |
-| `create_ontology_relationship` | organization | Edge between entity types    |
-| `get_ontology_relationships`   | organization | Query graph edges            |
-| `update_ontology_concept`      | organization | Modify concept definition    |
-| `delete_ontology_concept`      | organization | Soft-delete (tombstone)      |
-| `create_thesaurus_term`        | organization | Canonical term + aliases     |
-| `sync_vocabulary`              | organization | Bulk vocabulary sync         |
-| `resolve_canonical_key`        | organization | Alias → canonical resolution |
-| `register_namespace_mapping`   | organization | Cross-system prefix mapping  |
-| `list_namespace_mappings`      | organization | View registered namespaces   |
-| `create_enterprise_override`   | organization | Delta definition when pack baseline wrong (see **loxtep-ontology**) |
-| `list_enterprise_overrides`    | organization | Audit active/proposed overrides |
-| `resolve_semantic_gap`         | organization | Close gap issue + create `agent_gap` override |
+| `operation` | Facade | Scope | Notes |
+| ----------- | ------ | ----- | ----- |
+| `create_ontology_concept` | `loxtep_meaning` | organization | Node type with properties |
+| `create_ontology_relationship` | `loxtep_meaning` | organization | Edge between entity types |
+| `get_ontology_relationships` | `loxtep_meaning` | organization | Query graph edges |
+| `update_ontology_concept` | `loxtep_meaning` | organization | Modify concept definition |
+| `delete_ontology_concept` | `loxtep_meaning` | organization | Soft-delete (tombstone) |
+| `create_term` | `loxtep_meaning` | organization | Canonical term + aliases |
+| `sync_vocabulary` | `loxtep_meaning` | organization | Bulk vocabulary sync |
+| `resolve_canonical_key` | `loxtep_meaning` | organization | Alias → canonical resolution |
+| `register_namespace_mapping` | `loxtep_meaning` | organization | Cross-system prefix mapping |
+| `list_namespace_mappings` | `loxtep_meaning` | organization | View registered namespaces |
+| `create_enterprise_override` | `loxtep_meaning` | organization | Delta when pack baseline wrong |
+| `list_enterprise_overrides` | `loxtep_meaning` | organization | Audit active/proposed overrides |
+| `resolve_semantic_gap` | `loxtep_meaning` | organization | Close gap issue + create override |
 
 ## Coupling with data-product-modeling
 
@@ -221,6 +217,16 @@ permissions: {}
 ```
 
 <!-- END loxtep skill-scope (skill-package-v1) -->
+
+## Implementation notes
+
+**MCP facade:** ontology and vocabulary CRUD use **`loxtep_meaning`**
+(`create_term`, `create_ontology_concept`, `register_namespace_mapping`, etc.).
+Legacy names: `loxtep_ontology`, `loxtep_semantic_layer`.
+
+**Medallion / override-coverage:** promotion readiness uses internal tier names
+(Bronze/Silver/Gold) and override-coverage on flagged divergent fields — see
+**`promote-data-product`** and **`data-product-modeling`**.
 
 ## Optional attribution
 

@@ -2,20 +2,18 @@
 ---
 name: loxtep-procedures
 description:
-  Use when the user wants process graph procedures — list, get, create, update,
-  delete procedures, import/export process graphs, or query procedure
-  dependencies. Customer MCP loxtep_procedures. User story S9. See
-  docs/skills-user-stories.md.
+  Use when the user wants to manage business process graphs — list, get, create,
+  update, or delete procedures, import/export process graphs, or query procedure
+  dependencies.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/codex/skills/loxtep-procedures/SKILL.md
 ---
 
-# Procedures & Process Graph (Customer MCP)
+# Procedures & Process Graph
 
-**Story S9:** Manage **business procedures**, their **step graphs**, and
+Manage **business procedures**, their **step graphs**, and
 **inter-procedure dependencies** in the process graph. Import/export
-PKO-compliant JSON-LD graphs. Distinct from data-mesh **workflows** in
-`loxtep_workflows`.
+JSON-LD graphs.
 
 ## When to use
 
@@ -85,27 +83,27 @@ PKO-compliant JSON-LD graphs. Distinct from data-mesh **workflows** in
 
 ## MCP mapping
 
-| `operation` | Scope | Notes |
-|-------------|-------|-------|
-| `list_procedures` | organization | Filters: `status`, `name`, `domain_id`, `has_step_with_agent`, `has_trigger_type`, `has_dependents`, `depends_on`, `created_after`, `created_before` |
-| `get_procedure` | organization | Full step graph with decisions, triggers, dependencies, metadata |
-| `create_procedure` | organization | Required: `organization_id`, `name`; optional: `description`, `status`, `domain_id`, `steps`, `decisions`, `triggers`, `dependencies`, `metadata` |
-| `update_procedure` | organization | Partial updates; arrays use full-replacement semantics |
-| `delete_procedure` | organization | Soft-delete (tombstone); warns about downstream dependents |
-| `import_process_graph` | organization | Inline JSON-LD (≤ 4 MB) or S3 reference; idempotent upsert |
-| `export_process_graph` | organization | Formats: `jsonld`, `yaml`, `summary`; `preserve_namespaces` option |
-| `get_procedure_dependencies` | organization | Direction: upstream/downstream/both; depth 1–10; cycle detection |
+| `operation` | Facade | Scope | Notes |
+|-------------|--------|-------|-------|
+| `list_procedures` | `loxtep_context` | organization | Filters: `status`, `name`, `domain_id`, … |
+| `get_procedure` | `loxtep_context` | organization | Full step graph with decisions, triggers, dependencies, metadata |
+| `create_procedure` | `loxtep_context` | organization | Required: `organization_id`, `name`; optional graph fields |
+| `update_procedure` | `loxtep_context` | organization | Partial updates; arrays use full-replacement semantics |
+| `delete_procedure` | `loxtep_context` | organization | Soft-delete (tombstone); warns about downstream dependents |
+| `import_process_graph` | `loxtep_context` | organization | Inline JSON-LD (≤ 4 MB) or S3 reference; idempotent upsert |
+| `export_process_graph` | `loxtep_context` | organization | Formats: `jsonld`, `yaml`, `summary`; `preserve_namespaces` option |
+| `get_procedure_dependencies` | `loxtep_context` | organization | Direction: upstream/downstream/both; depth 1–10; cycle detection |
 
 ## Pitfalls
 
 - **Data mesh workflows** (`create_workflow`, `patch_workflow_graph`) live under
-  **`loxtep_workflows`** / **`data-workflows`** Agent-Scope Skill — different product
+  **`loxtep_build`** / **`data-workflows`** Agent-Scope Skill — different product
   object.
 - **Platform PKO procedures** — stable `@id` values like `procedure#connect-external-system`.
   Use `get_procedure` to read step `metadata.skill_ref` / `metadata.api_ref` / HITL gates;
   use **`loxtep-journey-orchestrator`** to walk P0–P7.
 - **Ontology/vocabulary management** (thesaurus terms, ontology concepts,
-  namespace mappings) is **`loxtep_ontology`** — different facade. Procedures
+  namespace mappings) is **`loxtep_meaning`** — different facade. Procedures
   are *instances* in the graph; ontology concepts describe the *types*.
 - **`delete_procedure` uses soft-delete** (tombstone pattern). The procedure and
   all children are marked with `tombstoned_at` and excluded from queries. A
@@ -156,6 +154,15 @@ permissions: {}
 ```
 
 <!-- END loxtep skill-scope (skill-package-v1) -->
+
+## Implementation notes
+
+All MCP operations in this skill use the **`loxtep_context`** job facade.
+Legacy name: `loxtep_procedures`.
+
+**Platform PKO procedures** — stable `@id` values like `procedure#connect-external-system`.
+Use `get_procedure` to read step `metadata.skill_ref` / `metadata.api_ref` / HITL gates;
+use **`loxtep-journey-orchestrator`** to walk Connect → Organize → Use.
 
 ## Optional attribution
 

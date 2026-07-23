@@ -1,8 +1,8 @@
 <!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 
-# Org semantics, schemas, and quality (Customer MCP)
+# Schemas and quality rules
 
-**Story S4:** Model **definitions** at organization scope: **schemas** (CRUD, versions, PII) and **quality rules** (CRUD, test).
+Define and manage schemas, PII classifications, and quality rules at the organization level.
 
 ## When to use
 
@@ -32,13 +32,13 @@
 
 | Area | Tool | `operation` | Scope |
 |------|------|-------------|-------|
-| Schemas | `loxtep_schemas` | `create_schema`, `update_schema`, `delete_schema`, `get_schema`, `list_schema_versions`, `tag_pii_fields` | organization |
-| Quality | `loxtep_quality` | `create_quality_rule`, `update_quality_rule`, `delete_quality_rule`, `list_quality_rules`, `get_quality_rule`, `test_quality_rule` | organization |
+| Schemas | `loxtep_define` | `create_schema`, `update_schema`, `delete_schema`, `get_schema`, `list_schema_versions`, `tag_pii_fields` | organization |
+| Quality | `loxtep_define` | `create_quality_rule`, `update_quality_rule`, `delete_quality_rule`, `list_quality_rules`, `get_quality_rule`, `test_quality_rule` | organization |
 
 ## Pitfalls
 
-- **Ontology relationships / thesaurus** for entity intelligence live under **`loxtep_process_intel`**, not `loxtep_schemas`.
-- **Catalog discovery** is **`loxtep_catalog`** (`discover-govern-lineage` Agent-Scope Skill).
+- **Ontology relationships / thesaurus** for entity intelligence live under **`loxtep_context`**, not `loxtep_define`.
+- **Catalog discovery** is **`loxtep_query`** (`discover-govern-lineage` Agent-Scope Skill).
 - **403 / permission denied** — Schema and quality tools enforce RBAC (`schemas:*`, `quality:*`); session may be valid but role may not allow the operation.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->

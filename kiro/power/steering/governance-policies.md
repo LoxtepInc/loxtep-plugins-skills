@@ -33,7 +33,7 @@ or the governance REST API (IAM/SigV4-signed; a plain JWT bearer is rejected):
 | Delete | `DELETE /governance/policies/{policy_id}` |
 
 For *inspecting* governance flags on existing data products, switch to the
-`discover-govern-lineage` skill (`loxtep_catalog` → `get_governance_flags`).
+`discover-govern-lineage` skill (`loxtep_observe` → `get_governance_flags`).
 
 ## Policy schema (POST body)
 

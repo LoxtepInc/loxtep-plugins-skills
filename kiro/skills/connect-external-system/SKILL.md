@@ -2,53 +2,43 @@
 ---
 name: connect-external-system
 description:
-  Use when the user wants to connect Shopify, Salesforce, QuickBooks, Slack, or
-  another SaaS/API into Loxtep — OAuth, API keys, SDK connectors, list connector
-  types, create org connector, get OAuth URL, or capture connector samples. Maps
-  to PKO procedure procedure#connect-external-system. Does NOT wire ingestion
-  workflows — hand off to data-workflows for save_workflow_bundle. Customer MCP
-  loxtep_connectors, loxtep_templates.
+  Use when the user wants to connect a data source — Shopify, Salesforce,
+  QuickBooks, Slack, or any SaaS/API — into Loxtep. Covers OAuth, API keys, SDK
+  connectors, and capturing sample data. This is the Connect step: stops at
+  samples, does not wire workflows.
 license: MIT
 compatibility: opencode
 metadata:
   platform: loxtep
   category: connectors
-  pko_procedure: procedure#connect-external-system
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/kiro/skills/connect-external-system/SKILL.md
 ---
 
-# Connect external system (Customer MCP)
+# Connect external system
 
-**PKO:** `procedure#connect-external-system` (P1) →
-`procedure#capture-connector-samples` → **`procedure#design-ingestion-workflow`**
-(P2, `data-workflows` skill).
+## Step boundary (CRITICAL)
 
-## Phase boundary (CRITICAL)
+| Step | Ends with | Do NOT do in this step |
+| ---- | --------- | ----------------------- |
+| **Connect** | `connector_id`, tested credentials, captured samples | Any workflow writes |
+| **Organize** (next step) | Full workflow saved and deployed | Piecemeal graph patches for new flows |
 
-| Phase | Ends with | Do NOT do in this phase |
-| ----- | --------- | ------------------------ |
-| **P1 Connect** | `connector_id`, tested credentials, captured samples | Any workflow graph writes (`save_workflow_bundle`, `patch_workflow_graph`, etc.) |
-| **P2 Design** | Full workflow JSON saved via `save_workflow_bundle` (local files first) | Piecemeal graph patches for new flows |
+**Prerequisite:** A Loxtep **project** must exist before building the workflow
+(`create_project` or reuse — see **`data-workflows`**). When GitHub-attached,
+write bundle JSON under `workflows/{workflow_id}/` locally and sync to Loxtep.
 
-**Prerequisite:** A Loxtep **project** must exist before P2 (`create_project` or
-reuse — see **`data-workflows`** Flow B). When GitHub-attached, write bundle JSON
-under `workflows/{workflow_id}/` locally and sync to Loxtep — do not author
-inline-only MCP payloads.
+**Connection nodes are workflow entities.** Include them in the workflow bundle
+(`connections/{id}.json` with `connector_id`) during the next step — not here.
 
-**Connection nodes are workflow entities.** For agent-authored ingestion, include
-them in the **`save_workflow_bundle`** `files` map (`connections/{id}.json` with
-`connector_id`) during P2 — inside **`save_workflow_bundle`**, not during P1 connect.
-
-After P1 completes, invoke **`data-workflows`** Flow E (compose bundle → dry run →
-save).
+After Connect completes, hand off to **`data-workflows`** to build the workflow.
 
 ## When to use
 
 - "Connect **Shopify** / **Salesforce** / …"
 - "**OAuth** for a connector" or "**API key** connector"
 - "**SDK connector**" or "programmatic ingestion"
-- `list_connector_types`, `create_connector`, `get_connector_oauth_url`,
-  `capture_connector_samples`
+- `list_connector_types`, `create_connector`, `get_oauth_url`,
+  `capture_samples`
 - Apply a **connector** catalog template (`apply_template` with connector
   template)
 
@@ -67,52 +57,52 @@ or deploying — use **`data-workflows`** and **`loxtep-deployments`**.
 
 | Step | Action | Tool | `operation` |
 | ---- | ------ | ---- | ----------- |
-| 1 | Discover types | `loxtep_connectors` | `list_connector_types` |
-| 2 | Start OAuth | `loxtep_connectors` | `get_connector_oauth_url` |
+| 1 | Discover types | `loxtep_connect` | `list_connector_types` |
+| 2 | Start OAuth | `loxtep_connect` | `get_oauth_url` |
 | 3 | User completes browser OAuth | — | — |
-| 4 | Test connector | `loxtep_connectors` | (connector test via API after OAuth) |
-| 5 | Capture samples | `loxtep_connectors` | `capture_connector_samples` |
+| 4 | Test connector | `loxtep_connect` | (connector test via API after OAuth) |
+| 5 | Capture samples | `loxtep_connect` | `capture_samples` |
 | 6 | **Hand off to studio** | — | **`data-workflows`** with `connector_id` |
 
 ### Flow — API key connector
 
 | Step | Action | Tool | `operation` |
 | ---- | ------ | ---- | ----------- |
-| 1 | `list_connector_types` | `loxtep_connectors` | `list_connector_types` |
-| 2 | `create_connector` with `connector_type` + credentials/metadata | `loxtep_connectors` | `create_connector` |
-| 3 | Capture samples | `loxtep_connectors` | `capture_connector_samples` |
+| 1 | `list_connector_types` | `loxtep_connect` | `list_connector_types` |
+| 2 | `create_connector` with `connector_type` + credentials/metadata | `loxtep_connect` | `create_connector` |
+| 3 | Capture samples | `loxtep_connect` | `capture_samples` |
 | 4 | **Hand off to studio** | — | **`data-workflows`** with `connector_id` |
 
 ### Flow — SDK connector
 
 | Step | Action | Tool | `operation` |
 | ---- | ------ | ---- | ----------- |
-| 1 | Confirm `"sdk"` in types | `loxtep_connectors` | `list_connector_types` |
-| 2 | Create SDK connector | `loxtep_connectors` | `create_connector` |
+| 1 | Confirm `"sdk"` in types | `loxtep_connect` | `list_connector_types` |
+| 2 | Create SDK connector | `loxtep_connect` | `create_connector` |
 | 3 | **Hand off to studio** | — | **`data-workflows`** — SDK connection goes in bundle |
 
 SDK bootstrap (post-deploy) uses **`loxtep-sdk`**; see **`data-workflows`** Flow G.
 
 ### Flow — Connector template from catalog
 
-1. `loxtep_templates` → `list_templates` / `get_template` (optional).
-2. `loxtep_templates` → `apply_template` with `project_id`, `template_type`,
+1. `loxtep_connect` → `list_templates` / `get_template` (optional).
+2. `loxtep_connect` → `apply_template` with `project_id`, `template_type`,
    `template_slug`. (Templates write bundles internally — still prefer reviewing
    via `get_workflow_graph` before deploy.)
 
-## MCP mapping (P1 only)
+## MCP mapping
 
 | User intent | Tool | `operation` | Scope |
 | ----------- | ---- | ----------- | ----- |
-| List types | `loxtep_connectors` | `list_connector_types` | global |
-| Create connector | `loxtep_connectors` | `create_connector` | organization |
-| OAuth URL | `loxtep_connectors` | `get_connector_oauth_url` | organization |
-| Capture samples | `loxtep_connectors` | `capture_connector_samples` | organization |
-| Apply template | `loxtep_templates` | `apply_template` | **project** |
+| List types | `loxtep_connect` | `list_connector_types` | global |
+| Create connector | `loxtep_connect` | `create_connector` | organization |
+| OAuth URL | `loxtep_connect` | `get_oauth_url` | organization |
+| Capture samples | `loxtep_connect` | `capture_samples` | organization |
+| Apply template | `loxtep_connect` | `apply_template` | **project** |
 
 ## Pitfalls
 
-- **Workflow graph writes during connect** — P1 ends at samples; use **`data-workflows`** + **`save_workflow_bundle`** for P2.
+- **Workflow graph writes during connect** — Connect ends at samples; use **`data-workflows`** + **`save_workflow_bundle`** for Organize.
 - **`file-transfer` / SFTP:** set `credential_parameter_store_refs` on the
   **connection entity inside the bundle**, not only on the org connector.
 - Org-level connector credentials are **not** auto-merged onto graph nodes at
@@ -120,13 +110,8 @@ SDK bootstrap (post-deploy) uses **`loxtep-sdk`**; see **`data-workflows`** Flow
 
 ## References
 
-- PKO: `platform-backend/graph/platform-pko/connect-external-system.jsonld`
-- Orchestration: **`loxtep-journey-orchestrator`**
-- Studio design: **`data-workflows`** (Flow E — `save_workflow_bundle`)
-
-## Auth
-
-Reconnect the Loxtep MCP server to re-trigger OAuth — see **`loxtep-auth`**.
+- Next step: **`data-workflows`** (build the workflow)
+- Full journey: **`loxtep-journey-orchestrator`**
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 
@@ -156,3 +141,12 @@ permissions:
 ```
 
 <!-- END loxtep skill-scope (skill-package-v1) -->
+
+## Implementation notes
+
+- PKO: `procedure#connect-external-system` (P1) → `procedure#capture-connector-samples` → `procedure#design-ingestion-workflow` (P2)
+- PKO graph: `platform-backend/graph/platform-pko/connect-external-system.jsonld`
+
+## Auth
+
+Reconnect the Loxtep MCP server to re-trigger OAuth — see **`loxtep-auth`**.

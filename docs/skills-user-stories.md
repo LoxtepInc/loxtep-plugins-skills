@@ -21,26 +21,43 @@ Platform PKO procedures: `platform-backend/graph/platform-pko/` · architecture:
 
 ## Story index
 
-| ID  | Story                                                              | Primary skill                                                          |
-| --- | ------------------------------------------------------------------ | ---------------------------------------------------------------------- |
-| S0  | Know who I am and which org I am in                                | `loxtep-mcp-session`                                                   |
-| S1  | Connect a SaaS store or API and bring data into a project          | **`connect-external-system`** |
-| S2  | Build a **data product** that unifies data across channels         | `data-workflows`                                                       |
-| S3  | Send data product updates to an **external webhook**               | `data-workflows`                                                       |
-| S4  | Configure **org-level** schemas, semantics, PII, and quality rules | `org-semantics-quality`                                                |
-| S5  | **Discover** assets, lineage, evidence, governance                 | `discover-govern-lineage`                                              |
-| S6  | **Query** mesh data with SQL / analytics                           | `loxtep-analytics`                                                     |
-| S7  | **Snapshots**, compare versions, reindex workspace, inspect queues | `loxtep-workspace`                                                     |
-| S8  | **Entity / decision** intelligence and unified context retrieval   | `loxtep-process-intel`                                                 |
-| S9  | **Procedures** (process graph) — CRUD, import/export, dependencies | `loxtep-procedures`                                                    |
-| S10 | **Agent** issues/goals/workstreams (not data-mesh projects)        | `loxtep-agent-workspace`                                               |
-| S11 | **Provision** or list runtime instances                            | `loxtep-instances`                                                     |
-| S12 | Recover from **auth** failures on MCP                              | `loxtep-auth`                                                          |
-| S13 | Manage **ontology**, vocabulary, and namespace mappings            | `loxtep-ontology`                                                      |
-| S14 | **Deploy** projects/workflows to runtime instances                 | `loxtep-deployments`                                                   |
-| S15 | **Search** semantic layer, retrieve artifacts, check completeness  | `loxtep-semantic-layer`                                                |
-| S16 | Orchestrate **Connect→AI-ready** journey (P0–P7) with HITL gates   | **`loxtep-journey-orchestrator`**                                      |
-| S17 | **Promote** data product medallion tier after readiness checks     | **`promote-data-product`**                                             |
+### Connect
+
+| ID  | Story | Primary skill |
+| --- | ----- | ------------- |
+| S0  | Know who I am and which org I am in | `loxtep-mcp-session` |
+| S1  | Connect a SaaS store or API and bring data into a project | **`connect-external-system`** |
+| S11 | Provision or list runtime instances | `loxtep-instances` |
+| S12 | Recover from auth failures on MCP | `loxtep-auth` |
+
+### Organize
+
+| ID  | Story | Primary skill |
+| --- | ----- | ------------- |
+| S2  | Build a **data product** that unifies data across channels | `data-workflows` |
+| S4  | Define schemas, semantics, PII, and quality rules | `org-semantics-quality` |
+| S5  | Discover assets, lineage, evidence, governance | `discover-govern-lineage` |
+| S7  | Snapshots, compare versions, reindex workspace, inspect queues | `loxtep-workspace` |
+| S8  | Entity and decision intelligence and unified context retrieval | `loxtep-process-intel` |
+| S9  | Process graphs — CRUD, import/export, dependencies | `loxtep-procedures` |
+| S13 | Manage ontology, vocabulary, and namespace mappings | `loxtep-ontology` |
+| S14 | Deploy projects and workflows to runtime instances | `loxtep-deployments` |
+| S15 | Search semantic layer, retrieve artifacts, check completeness | `loxtep-semantic-layer` |
+| S17 | Publish a data product as trusted after readiness checks | **`promote-data-product`** |
+
+### Use
+
+| ID  | Story | Primary skill |
+| --- | ----- | ------------- |
+| S3  | Send data product updates to an external webhook | `data-workflows` |
+| S6  | Query mesh data with SQL / analytics | `loxtep-analytics` |
+| S10 | Agent issues/goals/workstreams | `loxtep-agent-workspace` |
+
+### Cross-cutting
+
+| ID  | Story | Primary skill |
+| --- | ----- | ------------- |
+| S16 | Orchestrate the full Connect → Organize → Use journey | **`loxtep-journey-orchestrator`** |
 
 ---
 
@@ -70,7 +87,7 @@ Platform PKO procedures: `platform-backend/graph/platform-pko/` · architecture:
 
 ---
 
-## S16 — Journey orchestrator (P0–P7)
+## S16 — Journey orchestrator (Connect → Organize → Use)
 
 | Field             | Detail                                                                                                                                        |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -83,7 +100,7 @@ Platform PKO procedures: `platform-backend/graph/platform-pko/` · architecture:
 
 ---
 
-## S17 — Promote data product (PKO P4)
+## S17 — Publish data product as trusted
 
 | Field             | Detail                                                                                             |
 | ----------------- | -------------------------------------------------------------------------------------------------- |
@@ -97,26 +114,26 @@ Platform PKO procedures: `platform-backend/graph/platform-pko/` · architecture:
 
 ---
 
-## Skill clusters (agent-first additions)
+## Skill clusters
 
-| Skill `name`                      | Stories | PKO procedures                                 |
-| --------------------------------- | ------- | ---------------------------------------------- |
-| **`connect-external-system`**     | S1      | P1 connect, capture                            |
-| **`loxtep-journey-orchestrator`** | S16     | P0–P7 coordination                             |
-| **`promote-data-product`**        | S17     | P4 medallion                                   |
+| Skill `name` | Stories |
+| --------------------------------- | ------- |
+| **`connect-external-system`** | S1 |
+| **`loxtep-journey-orchestrator`** | S16 |
+| **`promote-data-product`** | S17 |
 
 For the full S0–S15 narrative detail and MCP operation → skill index, see
 **`loxtep-plugins-skills/docs/skills-user-stories.md`**.
 
 ---
 
-## MCP operation → skill (connect / journey / promote)
+## MCP operation → skill
 
-| `operation`                                                                              | Primary skill                                                       |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `operation` | Primary skill |
+| ----------- | ------------- |
 | `list_connector_types`, `create_connector`, `get_connector_oauth_url`, `capture_connector_samples` | **`connect-external-system`** |
-| `list_triggers`, `get_trigger`, `test_trigger`, `update_trigger`                         | **`data-workflows`** (inspect/update existing entities only) |
-| `get_entity_schemas`, `save_workflow_bundle`, `list_workflows`, `get_workflow`, `get_workflow_graph` | **`data-workflows`** (Flow E bundle authoring)               |
-| `deploy_project`, `deploy_workflow`, `list_deployments`, `get_deployment`                | `loxtep-deployments` (+ **`loxtep-journey-orchestrator`** for P2)   |
-| `get_promotion_readiness`, `promote_data_product`                                        | **`promote-data-product`**                                          |
-| `import_process_graph`, `export_process_graph`                                           | `loxtep-procedures` (+ platform seed via `graph-seed-platform-pko`) |
+| `list_triggers`, `get_trigger`, `test_trigger`, `update_trigger` | **`data-workflows`** |
+| `get_entity_schemas`, `save_workflow_bundle`, `list_workflows`, `get_workflow`, `get_workflow_graph` | **`data-workflows`** |
+| `deploy_project`, `deploy_workflow`, `list_deployments`, `get_deployment` | `loxtep-deployments` |
+| `get_promotion_readiness`, `promote_data_product` | **`promote-data-product`** |
+| `import_process_graph`, `export_process_graph` | `loxtep-procedures` |

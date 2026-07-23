@@ -4,10 +4,7 @@ name: loxtep-semantic-layer
 description:
   Use when the user wants to search the semantic layer, retrieve semantic
   artifacts, check semantic completeness, or manage canonical knowledge
-  (strategy, positioning, brand voice, org structure, process docs) across the
-  organization. Customer MCP loxtep_semantic_layer. Not the same as
-  loxtep_ontology (vocabulary/namespace management) or loxtep_catalog
-  (discovery/governance). See docs/skills-user-stories.md.
+  (strategy, positioning, brand voice, org structure, process docs).
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/codex/skills/loxtep-semantic-layer/SKILL.md
 ---
@@ -55,12 +52,12 @@ org structure, and process documentation.
 
 | Facade                  | Operation                   | Permission |
 | ----------------------- | --------------------------- | ---------- |
-| `loxtep_semantic_layer` | `search_semantic_layer`     | search     |
-| `loxtep_semantic_layer` | `get_semantic_artifact`     | read       |
-| `loxtep_semantic_layer` | `get_semantic_completeness` | read       |
-| `loxtep_semantic_layer` | `create_canonical_knowledge`| write      |
-| `loxtep_semantic_layer` | `get_canonical_knowledge`   | read       |
-| `loxtep_semantic_layer` | `update_canonical_knowledge`| write      |
+| `loxtep_meaning` | `search_semantic_layer`     | search     |
+| `loxtep_meaning` | `get_semantic_artifact`     | read       |
+| `loxtep_meaning` | `get_semantic_completeness` | read       |
+| `loxtep_meaning` | `create_canonical_knowledge`| write      |
+| `loxtep_meaning` | `get_canonical_knowledge`   | read       |
+| `loxtep_meaning` | `update_canonical_knowledge`| write      |
 
 ## MCP mapping
 
@@ -122,18 +119,18 @@ agents can query for context:
 ## Pitfalls
 
 - **Ontology/vocabulary management** (thesaurus terms, namespace mappings) is
-  **`loxtep_ontology`** - different facade. This Agent-Scope Skill is for
+  **`loxtep_meaning`** - different facade. This Agent-Scope Skill is for
   _querying_ the curated semantic layer and managing canonical knowledge, not
   managing its underlying ontology structure.
-- **Catalog search** is **`loxtep_catalog`** - use that for broad discovery
+- **Catalog search** is **`loxtep_query`** - use that for broad discovery
   across all artifact types. This Agent-Scope Skill is for the
   semantic-layer-specific search and completeness view.
 - **`artifact_types`** (plural) is an array filter - pass multiple types to
   narrow results. Do not confuse with `artifact_type` (singular) used in
   `get_semantic_artifact`.
 - **Canonical knowledge** is for organizational knowledge, not data product
-  schemas or quality rules. Use `loxtep_schemas` for schema management and
-  `loxtep_quality` for quality rules.
+  schemas or quality rules. Use `loxtep_define` for schema management and
+  `loxtep_define` for quality rules.
 - **Do NOT use** workflows, data products, or connectors for storing
   unstructured organizational knowledge. Use canonical knowledge artifacts
   instead.

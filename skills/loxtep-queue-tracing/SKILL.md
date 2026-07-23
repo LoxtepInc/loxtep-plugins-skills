@@ -3,7 +3,7 @@ name: loxtep-queue-tracing
 description:
   Use when debugging deployments, workflow execution, or data flow issues by reading
   queue events from the live runtime. Trace actions through the platform event queues to
-  see what actually happened. Combines loxtep_workspace (read_queue_events) with
+  see what actually happened. Combines loxtep_observe (read_queue_events) with
   knowledge of queue naming conventions. User story S7 extension.
   See docs/skills-user-stories.md.
 ---
@@ -23,7 +23,7 @@ description:
 ## Prerequisites
 
 - MCP auth (`loxtep-auth`)
-- Access to `read_queue_events` operation on `loxtep_workspace` facade
+- Access to `read_queue_events` on **`loxtep_observe`**
 - Knowledge of the instance **namespace** (from your instance record) — derive from the instance record or ask the user
 
 ## Queue naming conventions
@@ -105,17 +105,17 @@ Queue names include a **microservice_id** (`w-{org4}-{inst4}-{proj8}-{wf8}`) and
 - **Most recent events first:** `read_queue_events` returns events in reverse chronological order by default.
 - **Use `search_text`** to filter for specific workflow_id, organization_id, or error messages.
 - **Error queues are gold:** When something fails silently, the error queue (`*-err`) almost always has the real error with stack trace.
-- **Queue names from deployment:** Use `get_runtime_mapping` (loxtep_deployments) to get exact queue names for a deployed workflow.
+- **Queue names from deployment:** Use `get_runtime_mapping` (loxtep_build) to get exact queue names for a deployed workflow.
 - **Namespace from instance:** Get it from `list_instances` → instance record → `connection_details.observe_api.namespace`.
 
 ## MCP operations used
 
 | Operation | Facade | Purpose |
 |-----------|--------|---------|
-| `read_queue_events` | `loxtep_workspace` | Read actual event payloads from any queue |
-| `get_queue_info` | `loxtep_workspace` | Get queue metadata for a data product |
-| `get_runtime_mapping` | `loxtep_deployments` | Resolve deployed queue/bot names |
-| `list_instances` | `loxtep_instances` | Get instance namespace |
+| `read_queue_events` | `loxtep_observe` | Read actual event payloads from any queue |
+| `get_queue_info` | `loxtep_observe` | Get queue metadata for a data product |
+| `get_runtime_mapping` | `loxtep_build` | Resolve deployed queue/bot names |
+| `list_instances` | `loxtep_workspace` | Get instance namespace |
 
 ## Pitfalls
 

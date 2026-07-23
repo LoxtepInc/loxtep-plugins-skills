@@ -1,16 +1,13 @@
 ---
 name: loxtep-process-intel
 description:
-  Runtime process intelligence — entity context, decision traces, and unified context retrieval.
-  Use when the user wants to read or write entity context, query entity context, perform unified
-  multi-backend context queries, or list/record decision traces. Customer MCP loxtep_process_intel.
-  User story S8. Not the same as loxtep_ontology (vocabulary/ontology management) or loxtep_catalog
-  (discovery). See docs/skills-user-stories.md.
+  Use when the user wants to read or write entity context, query what Loxtep
+  knows about a business entity, or record and retrieve decision traces.
 ---
 
-# Process intelligence (Customer MCP)
+# Process intelligence
 
-**Story S8:** Runtime process intelligence — **entity context** and **decision traces**.
+Entity context and decision traces.
 
 ## When to use
 
@@ -57,8 +54,8 @@ description:
 ## Pitfalls
 
 - **Ontology/thesaurus** management (vocabulary terms, ontology concepts, namespace mappings) is now in the **`loxtep-ontology`** Agent-Scope Skill — not here.
-- **Catalog** discovery is **`loxtep_catalog`** — different product surface.
-- **Agent workspace** issues are **`loxtep_agent_workspace`** — not process intel.
+- **Catalog** discovery is **`loxtep_query`** — different product surface.
+- **Agent workspace** issues are **`loxtep_context`** — not process intel.
 - **Connectivity** — Process-intel tools require valid MCP authentication and access to your organization's process-intelligence data.
 
 <!-- SCOPE_BLOCK -->

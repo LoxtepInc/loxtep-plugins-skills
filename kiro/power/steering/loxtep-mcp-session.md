@@ -16,7 +16,7 @@
    - **`roles`** — role assignments.
    - **`user`** / **`organization`** — identity context.
 2. **`loxtep_session`** → **`get_current_organization`** — confirm org scope matches expectations.
-3. For **project-scoped** facades (`loxtep_workflows`, `loxtep_triggers`, `loxtep_data_products`, …), include **`project_id`** on every call that needs it.
+3. For **project-scoped** facades (`loxtep_build`, `loxtep_build`, `loxtep_build`, …), include **`project_id`** on every call that needs it.
 4. Open your MCP client’s **ListTools** (or schema) for **`loxtep_*`** tools — parameter names and descriptions live there; there is no separate “capability discovery” MCP operation.
 
 ## Permission denials

@@ -1,8 +1,8 @@
 <!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 
-# Discover, lineage, and governance (Customer MCP)
+# Discover, lineage, and governance
 
-**Story S5:** Find and trust data — **search**, **catalog entries**, **lineage**, **evidence**, **governance**, **domains**, **tags**.
+Find and trust data — **search**, **catalog entries**, **lineage**, **evidence**, **governance**, **domains**, **tags**.
 
 ## Terminology: Projection vs Consumer Data Product
 
@@ -35,7 +35,7 @@ In lineage views:
 
 ### Flow — Search then drill in
 
-1. `loxtep_catalog` → `search_catalog` (query / filters per API).
+1. `loxtep_query` → `search_catalog` (query / filters per API).
 2. `get_catalog_entry` for a chosen asset id.
 3. Optional: `get_lineage_impact`, `get_evidence`, `get_governance_flags`.
 
@@ -48,13 +48,13 @@ In lineage views:
 
 | User intent | Tool | `operation` | Scope |
 |-------------|------|-------------|-------|
-| Search | `loxtep_catalog` | `search_catalog` | **catalog** |
-| Entry detail | `loxtep_catalog` | `get_catalog_entry` | **catalog** |
-| Evidence | `loxtep_catalog` | `get_evidence` | **catalog** |
-| Lineage | `loxtep_catalog` | `get_lineage_impact` | **catalog** |
-| Governance | `loxtep_catalog` | `get_governance_flags` | **catalog** |
-| Domains | `loxtep_catalog` | `list_domains` | **catalog** |
-| Tags | `loxtep_catalog` | `list_tags` | **catalog** |
+| Search | `loxtep_query` | `search_catalog` | **catalog** |
+| Entry detail | `loxtep_query` | `get_catalog_entry` | **catalog** |
+| Evidence | `loxtep_observe` | `get_evidence` | **catalog** |
+| Lineage | `loxtep_observe` | `get_lineage_impact` | **catalog** |
+| Governance | `loxtep_observe` | `get_governance_flags` | **catalog** |
+| Domains | `loxtep_query` | `list_domains` | **catalog** |
+| Tags | `loxtep_query` | `list_tags` | **catalog** |
 
 ## Pitfalls
 

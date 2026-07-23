@@ -2,19 +2,16 @@
 ---
 name: org-semantics-quality
 description:
-  Use when the user wants org-level schema definitions, semantic definitions,
-  PII tagging, schema versions, quality rules, test quality rules, or governance
-  on definitions — not catalog search. Customer MCP loxtep_schemas and
-  loxtep_quality. User story S4. Pair with discover-govern-lineage and
-  loxtep-process-intel for catalog vs ontology vs thesaurus. See
-  docs/skills-user-stories.md.
+  Use when the user wants to define schemas, tag PII fields, manage quality
+  rules, or govern data definitions at the organization level. Part of the
+  Organize step. Not for catalog search — use discover-govern-lineage for that.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/claude/skills/org-semantics-quality/SKILL.md
 ---
 
-# Org semantics, schemas, and quality (Customer MCP)
+# Schemas and quality rules
 
-**Story S4:** Model **definitions** at organization scope: **schemas** (CRUD, versions, PII) and **quality rules** (CRUD, test).
+Define and manage schemas, PII classifications, and quality rules at the organization level.
 
 ## When to use
 
@@ -44,13 +41,13 @@ metadata:
 
 | Area | Tool | `operation` | Scope |
 |------|------|-------------|-------|
-| Schemas | `loxtep_schemas` | `create_schema`, `update_schema`, `delete_schema`, `get_schema`, `list_schema_versions`, `tag_pii_fields` | organization |
-| Quality | `loxtep_quality` | `create_quality_rule`, `update_quality_rule`, `delete_quality_rule`, `list_quality_rules`, `get_quality_rule`, `test_quality_rule` | organization |
+| Schemas | `loxtep_define` | `create_schema`, `update_schema`, `delete_schema`, `get_schema`, `list_schema_versions`, `tag_pii_fields` | organization |
+| Quality | `loxtep_define` | `create_quality_rule`, `update_quality_rule`, `delete_quality_rule`, `list_quality_rules`, `get_quality_rule`, `test_quality_rule` | organization |
 
 ## Pitfalls
 
-- **Ontology relationships / thesaurus** for entity intelligence live under **`loxtep_process_intel`**, not `loxtep_schemas`.
-- **Catalog discovery** is **`loxtep_catalog`** (`discover-govern-lineage` Agent-Scope Skill).
+- **Ontology relationships / thesaurus** for entity intelligence live under **`loxtep_context`**, not `loxtep_define`.
+- **Catalog discovery** is **`loxtep_query`** (`discover-govern-lineage` Agent-Scope Skill).
 - **403 / permission denied** — Schema and quality tools enforce RBAC (`schemas:*`, `quality:*`); session may be valid but role may not allow the operation.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->

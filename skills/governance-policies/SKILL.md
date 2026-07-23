@@ -7,7 +7,7 @@ description:
   classification / pii), enforcement modes (block vs audit), scope, status, and the approval gate.
   NOT on the MCP tool surface: policies are managed via the governance REST API or the console, not
   loxtep_* tools. To inspect governance flags on existing data instead, use discover-govern-lineage
-  (loxtep_catalog get_governance_flags). User story S5 (governance authoring). See
+  (loxtep_query get_governance_flags). User story S5 (governance authoring). See
   docs/skills-user-stories.md.
 ---
 
@@ -44,7 +44,7 @@ or the governance REST API (IAM/SigV4-signed; a plain JWT bearer is rejected):
 | Delete | `DELETE /governance/policies/{policy_id}` |
 
 For *inspecting* governance flags on existing data products, switch to the
-`discover-govern-lineage` skill (`loxtep_catalog` → `get_governance_flags`).
+`discover-govern-lineage` skill (`loxtep_observe` → `get_governance_flags`).
 
 ## Policy schema (POST body)
 

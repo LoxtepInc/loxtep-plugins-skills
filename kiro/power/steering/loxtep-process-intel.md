@@ -1,8 +1,8 @@
 <!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 
-# Process intelligence (Customer MCP)
+# Process intelligence
 
-**Story S8:** Runtime process intelligence — **entity context** and **decision traces**.
+Entity context and decision traces.
 
 ## When to use
 
@@ -49,8 +49,8 @@
 ## Pitfalls
 
 - **Ontology/thesaurus** management (vocabulary terms, ontology concepts, namespace mappings) is now in the **`loxtep-ontology`** Agent-Scope Skill — not here.
-- **Catalog** discovery is **`loxtep_catalog`** — different product surface.
-- **Agent workspace** issues are **`loxtep_agent_workspace`** — not process intel.
+- **Catalog** discovery is **`loxtep_query`** — different product surface.
+- **Agent workspace** issues are **`loxtep_context`** — not process intel.
 - **Connectivity** — Process-intel tools require valid MCP authentication and access to your organization's process-intelligence data.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
