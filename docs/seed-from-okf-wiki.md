@@ -25,11 +25,11 @@ without hand-modeling an ontology from scratch.
   material.
 - Seeding is a deterministic walk of the bundle that emits Loxtep ontology
   concepts, relationships, thesaurus terms, entity context, canonical knowledge,
-  and process graphs via the **organization-scoped** `loxtep_ontology`,
-  `loxtep_semantic_layer`, `loxtep_process_intel`, and `loxtep_procedures` tools.
+  and process graphs via the **organization-scoped** `loxtep_meaning`,
+  `loxtep_context`, `loxtep_query`, and `loxtep_review` tools.
 - The **one real gap** is that OKF links are *untyped*. We close it with a default
   inference table (source-type × target-type × section) plus an optional explicit
-  `relations:` extension, and reconcile with `loxtep_context_mining`.
+  `relations:` extension, and reconcile with `loxtep_review`.
 - **At team scale**, every user seeds their own wiki as attributed **draft** context;
   the **CDLC** (mining → identity resolution → promotion) solidifies it into one
   governed, canonical org context. See [Multi-author seeding & CDLC promotion](#multi-author-seeding--cdlc-promotion).
@@ -86,20 +86,20 @@ Each row is the contract. All target operations are **organization-scoped** (no
 
 | OKF element | Loxtep primitive | MCP tool · `operation` |
 | --- | --- | --- |
-| `type:` value | Ontology **class** (node type) | `loxtep_ontology` · `create_ontology_concept` (class-level) |
-| A document (`entity`/`concept`/`customer`/…) | Ontology **concept node** + **entity context** | `loxtep_ontology` · `create_ontology_concept`; `loxtep_process_intel` · `create_entity_context` |
-| `title` | Canonical **term** / node label | `loxtep_ontology` · `create_thesaurus_term`; resolved via `resolve_canonical_key` |
-| `description` | **Lexicon** definition / canonical knowledge | `loxtep_semantic_layer` · `create_canonical_knowledge` |
-| `tags` | **Thesaurus** terms + catalog tags | `loxtep_ontology` · `create_thesaurus_term` (as aliases); `loxtep_catalog` · `list_tags` |
-| Markdown cross-link `[X](/path.md)` | Ontology **relationship** (edge) | `loxtep_ontology` · `create_ontology_relationship` (`from`, `to`, `type`) |
-| Document **body** | Embedding material (keyword + vector discovery) | indexed on ingest; queried via `loxtep_semantic_layer` · `search_semantic_layer`, `loxtep_process_intel` · `query_context`, `loxtep_catalog` · `search_catalog` |
-| `resource` (canonical URL) | Provenance / evidence pointer | carried on `create_entity_context`; surfaced via `loxtep_catalog` · `get_evidence` |
-| `sources:` (frontmatter) | Evidence anchors / decision trace | `loxtep_process_intel` · `record_decision_trace` |
-| `synthesis` & procedure-shaped docs | **Process graph (PKO)** | `loxtep_procedures` · `import_process_graph` / `create_procedure` |
-| Top-level directory (`entities/`, `customers/`, …) | **Domain** / namespace | `loxtep_ontology` · `register_namespace_mapping`; `loxtep_catalog` · `list_domains` |
-| `status` (`active`/`archived`/…) | CDLC **lifecycle state** | `loxtep_cdlc` · `transition_lifecycle` |
+| `type:` value | Ontology **class** (node type) | `loxtep_meaning` · `create_ontology_concept` (class-level) |
+| A document (`entity`/`concept`/`customer`/…) | Ontology **concept node** + **entity context** | `loxtep_meaning` · `create_ontology_concept`; `loxtep_context` · `create_entity_context` |
+| `title` | Canonical **term** / node label | `loxtep_meaning` · `create_term`; resolved via `resolve_canonical_key` |
+| `description` | **Lexicon** definition / canonical knowledge | `loxtep_meaning` · `create_canonical_knowledge` |
+| `tags` | **Thesaurus** terms + catalog tags | `loxtep_meaning` · `create_term` (as aliases); `loxtep_query` · `list_tags` |
+| Markdown cross-link `[X](/path.md)` | Ontology **relationship** (edge) | `loxtep_meaning` · `create_ontology_relationship` (`from`, `to`, `type`) |
+| Document **body** | Embedding material (keyword + vector discovery) | indexed on ingest; queried via `loxtep_meaning` · `search_semantic_layer`, `loxtep_context` · `query_context`, `loxtep_query` · `search_catalog` |
+| `resource` (canonical URL) | Provenance / evidence pointer | carried on `create_entity_context`; surfaced via `loxtep_observe` · `get_evidence` |
+| `sources:` (frontmatter) | Evidence anchors / decision trace | `loxtep_context` · `record_decision_trace` |
+| `synthesis` & procedure-shaped docs | **Process graph (PKO)** | `loxtep_context` · `import_process_graph` / `create_procedure` |
+| Top-level directory (`entities/`, `customers/`, …) | **Domain** / namespace | `loxtep_meaning` · `register_namespace_mapping`; `loxtep_query` · `list_domains` |
+| `status` (`active`/`archived`/…) | CDLC **lifecycle state** | `loxtep_review` · `transition_lifecycle` |
 | `confidence` (`high`/`medium`/`low`) | Trust / quality signal | governance flag (carried as concept metadata) |
-| `log.md` entries | Change propagation / re-seed driver | `loxtep_cdlc` · `propagate_change`; `record_decision_trace` |
+| `log.md` entries | Change propagation / re-seed driver | `loxtep_review` · `propagate_change`; `record_decision_trace` |
 
 `index.md` and `log.md` are navigation/provenance only — parse them for structure
 and change history, but **do not** emit them as ontology concepts.
@@ -166,7 +166,7 @@ section the link appears under)**:
 
 ### 3. Reconciled (platform mining) — catches what heuristics miss
 
-After the deterministic pass, run `loxtep_context_mining` · `run_mining_pass`,
+After the deterministic pass, run `loxtep_review` · `run_mining_pass`,
 review `list_candidates`, and `act_on_candidate` to promote high-value inferred
 edges. This is the human-in-the-loop checkpoint.
 
@@ -205,7 +205,7 @@ Re-seeding must be an **upsert**, not a duplicate. Identity rules:
 - On re-seed, the canonical key resolves the existing concept → `update_*` instead
   of `create_*`.
 - **Incremental re-seed:** diff `log.md` (or git) since the last seed; for changed
-  docs call `loxtep_cdlc` · `propagate_change` so dependent artifacts update and
+  docs call `loxtep_review` · `propagate_change` so dependent artifacts update and
   `list_propagation_lineage` records the ripple.
 
 ---
@@ -224,7 +224,7 @@ Re-seeding must be an **upsert**, not a duplicate. Identity rules:
 5. **Nodes** — for each in-scope document, upsert a concept
    (`create_ontology_concept`), keyed by canonical path; definition from
    `description` + body summary.
-6. **Vocabulary** — emit `create_thesaurus_term` for each `title`; fold `tags` and
+6. **Vocabulary** — emit `create_term` for each `title`; fold `tags` and
    naming variants in as aliases. Bulk: `sync_vocabulary`.
 7. **Knowledge & context** — `create_canonical_knowledge` (definition) and
    `create_entity_context` (body + `resource`/`sources` provenance) per node.
@@ -281,7 +281,7 @@ Every seeded record is located on two axes:
   runs the exporter under their own OAuth, so everything they emit is **their** draft
   candidate context — no manual author stamping.
 - **Domain = the shared subject classification.** Domains are org-level
-  (`loxtep_catalog` · `list_domains`). Map each wiki's top-level directories (and/or
+  (`loxtep_query` · `list_domains`). Map each wiki's top-level directories (and/or
   tags) to an existing `domain_id` via `register_namespace_mapping`; leave unmapped
   content unassigned for curation. Domains are **shared across users** — they're how
   two people's "Customers" knowledge lands in the same place.
@@ -316,7 +316,7 @@ User C wiki ─seed→ ┘
    under their own auth; records are draft, attributed, domain-mapped. Namespace the
    canonical key by user while draft (`user:<id>:/entities/.../Shopify.md`) so two
    people's identical paths don't collide.
-2. **Surface candidates** — `loxtep_context_mining` · `run_mining_pass` →
+2. **Surface candidates** — `loxtep_review` · `run_mining_pass` →
    `list_candidates` across all users' drafts.
 3. **Resolve identity** — collapse the same real entity seeded by multiple users into
    one canonical key (`resolve_canonical_key` + thesaurus crosswalk). Five "Shopify"
@@ -326,11 +326,11 @@ User C wiki ─seed→ ┘
    definition (the crosswalk methodology in
    [`semantic-ontology-mapping`](../claude/skills/semantic-ontology-mapping/SKILL.md));
    keep each user's version as provenance.
-5. **Promote** — `loxtep_process_intel` · `promote_candidate` /
-   `loxtep_semantic_layer` · `create_canonical_knowledge` lifts the reconciled concept
-   to org canonical at its `domain_id`; `loxtep_cdlc` · `transition_lifecycle` moves it
+5. **Promote** — `loxtep_context` · `promote_candidate` /
+   `loxtep_meaning` · `create_canonical_knowledge` lifts the reconciled concept
+   to org canonical at its `domain_id`; `loxtep_review` · `transition_lifecycle` moves it
    draft → canonical.
-6. **Propagate** — `loxtep_cdlc` · `propagate_change` updates dependents;
+6. **Propagate** — `loxtep_review` · `propagate_change` updates dependents;
    `list_propagation_lineage` gives the audit trail of what was promoted and why.
 
 ### Governance — who can promote
@@ -381,11 +381,11 @@ offline review; `--domain-map` maps directories to org domains.
 
 After a seed, confirm the three layers answer real questions:
 
-- **Coverage** — `loxtep_semantic_layer` · `get_semantic_completeness` (per domain).
-- **Structured** — `loxtep_ontology` · `get_ontology_relationships` on a known node
+- **Coverage** — `loxtep_meaning` · `get_semantic_completeness` (per domain).
+- **Structured** — `loxtep_meaning` · `get_ontology_relationships` on a known node
   returns the expected typed edges.
-- **Keyword/semantic** — `loxtep_catalog` · `search_catalog` and
-  `loxtep_process_intel` · `query_context` return the source docs for
+- **Keyword/semantic** — `loxtep_query` · `search_catalog` and
+  `loxtep_context` · `query_context` return the source docs for
   natural-language questions that share **no keywords** with them (the real test of
   the embedding layer).
 - **Round-trip** — `resolve_canonical_key` on a `title`/alias returns the right
@@ -438,7 +438,6 @@ its reference implementation.
 
 - OKF v0.1 contract: the source bundle's `WIKI.md` (format) and `.TEMPLATES.md`
   (page templates).
-- MCP tool surface & scopes: [`AGENTS.md`](../AGENTS.md) (`loxtep_ontology`,
-  `loxtep_semantic_layer`, `loxtep_process_intel`, `loxtep_procedures`,
-  `loxtep_catalog`, `loxtep_cdlc`, `loxtep_context_mining`).
+- MCP tool surface & scopes: [`AGENTS.md`](../AGENTS.md) (`loxtep_meaning`,
+  `loxtep_context`, `loxtep_query`, `loxtep_review`).
 - Concept definitions: [`docs/context-layer-glossary.md`](context-layer-glossary.md).

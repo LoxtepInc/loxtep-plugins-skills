@@ -21,15 +21,15 @@ const START = '## MCP tool surface';
 const END = '## Skills (scoped agent access)';
 
 function buildSection(mcpListContent) {
-  const facadesStart = mcpListContent.indexOf('## MCP area facades');
+  const facadesStart = mcpListContent.indexOf('## MCP tools');
   if (facadesStart === -1) {
-    throw new Error('Could not find ## MCP area facades in mcp_tool_list.md');
+    throw new Error('Could not find ## MCP tools in mcp_tool_list.md');
   }
-  const facadesBody = mcpListContent.slice(facadesStart).replace(/^## MCP area facades\n\n/, '');
+  const facadesBody = mcpListContent.slice(facadesStart).replace(/^## MCP tools\n\n/, '');
 
   return `${START}
 
-All tools require OAuth auth. The hosted server registers **10 job-based \`loxtep_*\` tools**.
+All tools require OAuth auth. The hosted server registers **10 \`loxtep_*\` MCP tools**.
 Each call sets \`operation\` to the flat action name plus that action's arguments.
 
 \`\`\`json
@@ -39,7 +39,7 @@ Each call sets \`operation\` to the flat action name plus that action's argument
 Tables below are generated from \`platform-backend/ai/lib/tools/mcp-facades.ts\` in the loxtep monorepo.
 Regenerate: \`node scripts/generate-agents-mcp-section.mjs\` (after \`node platform-backend/ai/scripts/generate-mcp-tool-list.mjs\` in loxtep).
 
-## MCP area facades
+## MCP tools
 
 ${facadesBody}`;
 }

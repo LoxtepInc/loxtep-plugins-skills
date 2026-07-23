@@ -108,7 +108,7 @@ Platform PKO procedures: `platform-backend/graph/platform-pko/` · architecture:
 | **PKO**           | `procedure#promote-data-product-medallion`                                                         |
 | **Preconditions** | P3 semantics applied; domain owner available for HITL                                              |
 | **Happy path**    | Readiness checklist → quality/glossary checks → domain-owner approval → MCP `promote_data_product` |
-| **MCP**           | `loxtep_data_products`: `get_promotion_readiness`, `promote_data_product`                          |
+| **MCP**           | `loxtep_build`: `get_promotion_readiness`, `promote_data_product`                                  |
 | **Primary skill** | **`promote-data-product`**                                                                         |
 | **Related**       | S4 (quality), S5 (lineage), **`loxtep-journey-orchestrator`**                                      |
 

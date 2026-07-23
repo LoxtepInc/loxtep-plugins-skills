@@ -158,7 +158,7 @@ See [AGENTS.md](../../AGENTS.md) for the full 10-facade operation tables (`loxte
 - Use `dry_run: true` on `patch_workflow_graph` to validate before persisting
 - Deploy projects to an instance before attempting SDK event writes
 - Use `entity_type` values with hyphens: `data-products`, `quality-rules` (not underscores)
-- For ontology/vocabulary management, use `loxtep_ontology` (not `loxtep_process_intel`). Process intel is for runtime entity context and decision traces only
+- For ontology/vocabulary management, use `loxtep_meaning` (not `loxtep_context`). Process intel is for runtime entity context and decision traces only
 - Use `sync_vocabulary` with `dry_run: true` to preview vocabulary diffs before applying bulk changes
 - Register namespace mappings via `register_namespace_mapping` before importing graphs that use external ontologies (W3C PKO is pre-registered)
 - Leverage **process intelligence** to understand organizational processes and decision flows before building automated workflows

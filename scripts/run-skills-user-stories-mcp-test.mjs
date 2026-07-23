@@ -488,7 +488,7 @@ async function run() {
   if (fixture.data_product_id) {
     await runStorySteps('S4', 'org-semantics-quality', [
       async () => {
-        const res = await callMcp('loxtep_schemas', {
+        const res = await callMcp('loxtep_define', {
           operation: 'create_schema',
           name: `mcp-story-schema-${REPORT_DATE}`,
           version: '1.0.0',
@@ -501,20 +501,20 @@ async function run() {
           fixture.schema_version_id = p?.schema_version_id ?? p?.data?.schema_version_id;
           fixture.schema_id = p?.schema_id ?? p?.data?.schema_id;
         }
-        return logStep('S4', 'create_schema', 'loxtep_schemas', 'create_schema', res);
+        return logStep('S4', 'create_schema', 'loxtep_define', 'create_schema', res);
       },
       async () => {
         if (!fixture.schema_version_id) {
-          return skipped('S4', 'get_schema', 'loxtep_schemas', 'get_schema', 'no schema_version_id');
+          return skipped('S4', 'get_schema', 'loxtep_define', 'get_schema', 'no schema_version_id');
         }
-        const res = await callMcp('loxtep_schemas', {
+        const res = await callMcp('loxtep_define', {
           operation: 'get_schema',
           schema_version_id: fixture.schema_version_id,
         });
-        return logStep('S4', 'get_schema', 'loxtep_schemas', 'get_schema', res);
+        return logStep('S4', 'get_schema', 'loxtep_define', 'get_schema', res);
       },
       async () => {
-        const res = await callMcp('loxtep_quality', {
+        const res = await callMcp('loxtep_define', {
           operation: 'create_quality_rule',
           data_product_id: fixture.data_product_id,
           name: `mcp-story-qr-${REPORT_DATE}`,
@@ -527,11 +527,11 @@ async function run() {
           const p = parsePayload(res);
           fixture.quality_rule_id = p?.quality_rule_id ?? p?.data_quality_rule_id;
         }
-        return logStep('S4', 'create_quality_rule', 'loxtep_quality', 'create_quality_rule', res);
+        return logStep('S4', 'create_quality_rule', 'loxtep_define', 'create_quality_rule', res);
       },
       async () => {
-        const res = await callMcp('loxtep_quality', { operation: 'list_quality_rules' });
-        return logStep('S4', 'list_quality_rules', 'loxtep_quality', 'list_quality_rules', res);
+        const res = await callMcp('loxtep_define', { operation: 'list_quality_rules' });
+        return logStep('S4', 'list_quality_rules', 'loxtep_define', 'list_quality_rules', res);
       },
     ]);
   } else {
@@ -543,18 +543,18 @@ async function run() {
     await runStorySteps('S3', 'data-workflows', [
       async () => {
         const res = await callMcp('loxtep_build', {
-          operation: 'list_targets',
+          operation: 'list_deliveries',
           data_product_id: fixture.data_product_id,
         });
-        return logStep('S3', 'list_targets', 'loxtep_build', 'list_targets', res);
+        return logStep('S3', 'list_deliveries', 'loxtep_build', 'list_deliveries', res);
       },
       async () => {
         const res = await callMcp('loxtep_build', {
-          operation: 'create_target',
+          operation: 'create_delivery',
           data_product_id: fixture.data_product_id,
           endpoint_url: 'https://example.com/webhook/mcp-story-test',
         });
-        return logStep('S3', 'create_target', 'loxtep_build', 'create_target', res);
+        return logStep('S3', 'create_delivery', 'loxtep_build', 'create_delivery', res);
       },
     ]);
   } else {
@@ -564,44 +564,44 @@ async function run() {
   // S5
   await runStorySteps('S5', 'discover-govern-lineage', [
     async () => {
-      const res = await callMcp('loxtep_catalog', { operation: 'search_catalog', query: 'order', limit: 5 });
-      return logStep('S5', 'search_catalog', 'loxtep_catalog', 'search_catalog', res);
+      const res = await callMcp('loxtep_query', { operation: 'search_catalog', query: 'order', limit: 5 });
+      return logStep('S5', 'search_catalog', 'loxtep_query', 'search_catalog', res);
     },
     async () => {
       if (!fixture.data_product_id) {
-        return skipped('S5', 'get_catalog_entry', 'loxtep_catalog', 'get_catalog_entry', 'no data_product_id');
+        return skipped('S5', 'get_catalog_entry', 'loxtep_query', 'get_catalog_entry', 'no data_product_id');
       }
-      const res = await callMcp('loxtep_catalog', {
+      const res = await callMcp('loxtep_query', {
         operation: 'get_catalog_entry',
         entry_id: fixture.data_product_id,
         entry_type: 'data_product',
       });
-      return logStep('S5', 'get_catalog_entry', 'loxtep_catalog', 'get_catalog_entry', res);
+      return logStep('S5', 'get_catalog_entry', 'loxtep_query', 'get_catalog_entry', res);
     },
     async () => {
-      const res = await callMcp('loxtep_catalog', { operation: 'list_domains' });
-      return logStep('S5', 'list_domains', 'loxtep_catalog', 'list_domains', res);
+      const res = await callMcp('loxtep_query', { operation: 'list_domains' });
+      return logStep('S5', 'list_domains', 'loxtep_query', 'list_domains', res);
     },
     async () => {
-      const res = await callMcp('loxtep_catalog', { operation: 'list_tags' });
-      return logStep('S5', 'list_tags', 'loxtep_catalog', 'list_tags', res);
+      const res = await callMcp('loxtep_query', { operation: 'list_tags' });
+      return logStep('S5', 'list_tags', 'loxtep_query', 'list_tags', res);
     },
     async () => {
       if (!fixture.data_product_id) {
-        return skipped('S5', 'get_lineage_impact', 'loxtep_catalog', 'get_lineage_impact', 'no data_product_id');
+        return skipped('S5', 'get_lineage_impact', 'loxtep_query', 'get_lineage_impact', 'no data_product_id');
       }
-      const res = await callMcp('loxtep_catalog', {
+      const res = await callMcp('loxtep_query', {
         operation: 'get_lineage_impact',
         data_product_id: fixture.data_product_id,
       });
-      return logStep('S5', 'get_lineage_impact', 'loxtep_catalog', 'get_lineage_impact', res);
+      return logStep('S5', 'get_lineage_impact', 'loxtep_query', 'get_lineage_impact', res);
     },
   ]);
 
   // S6 (org-scoped analytics)
   await runStorySteps('S6', 'loxtep-analytics', [
       async () => {
-        const res = await callMcp('loxtep_analytics', {
+        const res = await callMcp('loxtep_query', {
           operation: 'list_tables',
         });
         if (res.ok) {
@@ -611,24 +611,24 @@ async function run() {
             fixture.first_table_name = tables[0].name ?? tables[0].table_name ?? tables[0];
           }
         }
-        return logStep('S6', 'list_tables', 'loxtep_analytics', 'list_tables', res, {
+        return logStep('S6', 'list_tables', 'loxtep_query', 'list_tables', res, {
           note: fixture.first_table_name ? `tables found` : '0 tables',
         });
       },
       async () => {
-        const res = await callMcp('loxtep_analytics', {
+        const res = await callMcp('loxtep_query', {
           operation: 'execute_query',
           query: 'SELECT 1 as ok',
         });
-        return logStep('S6', 'execute_query', 'loxtep_analytics', 'execute_query', res);
+        return logStep('S6', 'execute_query', 'loxtep_query', 'execute_query', res);
       },
       async () => {
         const table = fixture.first_table_name ?? 'nonexistent_table';
-        const res = await callMcp('loxtep_analytics', {
+        const res = await callMcp('loxtep_query', {
           operation: 'get_table_schema',
           table_name: table,
         });
-        return logStep('S6', 'get_table_schema', 'loxtep_analytics', 'get_table_schema', res);
+        return logStep('S6', 'get_table_schema', 'loxtep_query', 'get_table_schema', res);
     },
   ]);
 
@@ -674,60 +674,60 @@ async function run() {
   const entityId = `mcp-story-entity-${REPORT_DATE}`;
   await runStorySteps('S8', 'loxtep-process-intel', [
     async () => {
-      const res = await callMcp('loxtep_process_intel', {
+      const res = await callMcp('loxtep_context', {
         operation: 'create_entity_context',
         entity_id: entityId,
         entity_type: 'customer',
         attributes: { source: 'mcp-story-test', status: 'active' },
       });
-      return logStep('S8', 'create_entity_context', 'loxtep_process_intel', 'create_entity_context', res);
+      return logStep('S8', 'create_entity_context', 'loxtep_context', 'create_entity_context', res);
     },
     async () => {
-      const res = await callMcp('loxtep_process_intel', {
+      const res = await callMcp('loxtep_context', {
         operation: 'get_entity_context',
         entity_id: entityId,
         entity_type: 'customer',
       });
-      return logStep('S8', 'get_entity_context', 'loxtep_process_intel', 'get_entity_context', res);
+      return logStep('S8', 'get_entity_context', 'loxtep_context', 'get_entity_context', res);
     },
     async () => {
-      const res = await callMcp('loxtep_process_intel', {
+      const res = await callMcp('loxtep_context', {
         operation: 'query_entity_context',
         entity_id: entityId,
         entity_type: 'customer',
         query: 'recent decisions',
       });
-      return logStep('S8', 'query_entity_context', 'loxtep_process_intel', 'query_entity_context', res);
+      return logStep('S8', 'query_entity_context', 'loxtep_context', 'query_entity_context', res);
     },
   ]);
 
   // S9
   await runStorySteps('S9', 'loxtep-procedures', [
     async () => {
-      const res = await callMcp('loxtep_procedures', { operation: 'list_procedures' });
-      return logStep('S9', 'list_procedures', 'loxtep_procedures', 'list_procedures', res);
+      const res = await callMcp('loxtep_context', { operation: 'list_procedures' });
+      return logStep('S9', 'list_procedures', 'loxtep_context', 'list_procedures', res);
     },
   ]);
 
   // S10
   await runStorySteps('S10', 'loxtep-agent-workspace', [
     async () => {
-      const res = await callMcp('loxtep_agent_workspace', { operation: 'agent_orchestration_list_issues' });
-      return logStep('S10', 'agent_orchestration_list_issues', 'loxtep_agent_workspace', 'agent_orchestration_list_issues', res);
+      const res = await callMcp('loxtep_context', { operation: 'list_issues' });
+      return logStep('S10', 'list_issues', 'loxtep_context', 'list_issues', res);
     },
     async () => {
-      const res = await callMcp('loxtep_agent_workspace', {
-        operation: 'agent_orchestration_create_issue',
+      const res = await callMcp('loxtep_context', {
+        operation: 'create_issue',
         title: `MCP story test issue ${REPORT_DATE}`,
       });
-      return logStep('S10', 'agent_orchestration_create_issue', 'loxtep_agent_workspace', 'agent_orchestration_create_issue', res);
+      return logStep('S10', 'create_issue', 'loxtep_context', 'create_issue', res);
     },
     async () => {
-      const res = await callMcp('loxtep_agent_workspace', {
-        operation: 'agent_orchestration_create_project',
+      const res = await callMcp('loxtep_context', {
+        operation: 'create_workstream',
         name: `MCP story agent project ${REPORT_DATE}`,
       });
-      return logStep('S10', 'agent_orchestration_create_project', 'loxtep_agent_workspace', 'agent_orchestration_create_project', res);
+      return logStep('S10', 'create_workstream', 'loxtep_context', 'create_workstream', res);
     },
   ]);
 
@@ -736,28 +736,28 @@ async function run() {
   // S13
   await runStorySteps('S13', 'loxtep-ontology', [
     async () => {
-      const res = await callMcp('loxtep_ontology', {
+      const res = await callMcp('loxtep_meaning', {
         operation: 'create_ontology_concept',
         name: `MCP Story Concept ${REPORT_DATE}`,
         label: 'MCP Story Concept',
         namespace: 'mcp-story',
         node_type: 'entity',
       });
-      return logStep('S13', 'create_ontology_concept', 'loxtep_ontology', 'create_ontology_concept', res);
+      return logStep('S13', 'create_ontology_concept', 'loxtep_meaning', 'create_ontology_concept', res);
     },
   ]);
 
   // S14
   await runStorySteps('S14', 'loxtep-deployments', [
     async () => {
-      const res = await callMcp('loxtep_deployments', { operation: 'list_deployments' });
-      return logStep('S14', 'list_deployments', 'loxtep_deployments', 'list_deployments', res);
+      const res = await callMcp('loxtep_build', { operation: 'list_deployments' });
+      return logStep('S14', 'list_deployments', 'loxtep_build', 'list_deployments', res);
     },
     async () => {
       if (!fixture.project_id || !fixture.instance_id) {
-        return skipped('S14', 'deploy_project', 'loxtep_deployments', 'deploy_project', 'missing project_id or instance_id');
+        return skipped('S14', 'deploy_project', 'loxtep_build', 'deploy_project', 'missing project_id or instance_id');
       }
-      const res = await callMcp('loxtep_deployments', {
+      const res = await callMcp('loxtep_build', {
         operation: 'deploy_project',
         project_id: fixture.project_id,
         instance_id: fixture.instance_id,
@@ -766,24 +766,24 @@ async function run() {
         const p = parsePayload(res);
         fixture.deployment_id = p?.deployment_id ?? p?.id;
       }
-      return logStep('S14', 'deploy_project', 'loxtep_deployments', 'deploy_project', res);
+      return logStep('S14', 'deploy_project', 'loxtep_build', 'deploy_project', res);
     },
     async () => {
       if (!fixture.deployment_id) {
-        return skipped('S14', 'get_deployment', 'loxtep_deployments', 'get_deployment', 'no deployment_id');
+        return skipped('S14', 'get_deployment', 'loxtep_build', 'get_deployment', 'no deployment_id');
       }
-      const res = await callMcp('loxtep_deployments', {
+      const res = await callMcp('loxtep_build', {
         operation: 'get_deployment',
         deployment_id: fixture.deployment_id,
       });
-      return logStep('S14', 'get_deployment', 'loxtep_deployments', 'get_deployment', res);
+      return logStep('S14', 'get_deployment', 'loxtep_build', 'get_deployment', res);
     },
   ]);
 
   // S15
   await runStorySteps('S15', 'loxtep-semantic-layer', [
     async () => {
-      const res = await callMcp('loxtep_semantic_layer', {
+      const res = await callMcp('loxtep_meaning', {
         operation: 'search_semantic_layer',
         query: 'customer',
       });
@@ -795,22 +795,22 @@ async function run() {
           fixture.semantic_artifact_id = items[0].id ?? items[0].artifact_id;
         }
       }
-      return logStep('S15', 'search_semantic_layer', 'loxtep_semantic_layer', 'search_semantic_layer', res);
+      return logStep('S15', 'search_semantic_layer', 'loxtep_meaning', 'search_semantic_layer', res);
     },
     async () => {
-      const res = await callMcp('loxtep_semantic_layer', { operation: 'get_semantic_completeness' });
-      return logStep('S15', 'get_semantic_completeness', 'loxtep_semantic_layer', 'get_semantic_completeness', res);
+      const res = await callMcp('loxtep_meaning', { operation: 'get_semantic_completeness' });
+      return logStep('S15', 'get_semantic_completeness', 'loxtep_meaning', 'get_semantic_completeness', res);
     },
     async () => {
       if (!fixture.semantic_artifact_id) {
-        return skipped('S15', 'get_semantic_artifact', 'loxtep_semantic_layer', 'get_semantic_artifact', 'no artifact from search');
+        return skipped('S15', 'get_semantic_artifact', 'loxtep_meaning', 'get_semantic_artifact', 'no artifact from search');
       }
-      const res = await callMcp('loxtep_semantic_layer', {
+      const res = await callMcp('loxtep_meaning', {
         operation: 'get_semantic_artifact',
         artifact_type: fixture.semantic_artifact_type,
         artifact_id: fixture.semantic_artifact_id,
       });
-      return logStep('S15', 'get_semantic_artifact', 'loxtep_semantic_layer', 'get_semantic_artifact', res);
+      return logStep('S15', 'get_semantic_artifact', 'loxtep_meaning', 'get_semantic_artifact', res);
     },
   ]);
 

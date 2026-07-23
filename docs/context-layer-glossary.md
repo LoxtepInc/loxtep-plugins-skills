@@ -33,7 +33,7 @@ durable, governed, and compounding — not ephemeral prompt fragments.
 | Field | Value |
 |-------|-------|
 | **Definition** | Governed, structured data assets and their interconnections — the factual foundation that AI systems read from and reason over. |
-| **Loxtep realization** | Governed data products (source + consumer) on the rstreams streaming backbone; entity context graph (`loxtep_process_intel` → `get_entity_context`, `query_entity_context`); catalog discovery (`loxtep_catalog` → `search_catalog`). |
+| **Loxtep realization** | Governed data products (source + consumer) on the rstreams streaming backbone; entity context graph (`loxtep_context` → `get_entity_context`, `query_entity_context`); catalog discovery (`loxtep_query` → `search_catalog`). |
 | **Status** | ✅ Shipped |
 
 ### Part 2: Semantics + Ontology
@@ -41,7 +41,7 @@ durable, governed, and compounding — not ephemeral prompt fragments.
 | Field | Value |
 |-------|-------|
 | **Definition** | The meaning layer — definitions, relationships, canonical keys, namespaces, and vocabulary that let AI resolve ambiguity and speak the organization's language. |
-| **Loxtep realization** | Semantic layer (`loxtep_semantic_layer`); lexicon and thesaurus (`loxtep_ontology` → `list_thesaurus_terms`, `resolve_canonical_key`); ontology concepts and relationships; namespace mappings; connector vocabulary inference pipeline. |
+| **Loxtep realization** | Semantic layer (`loxtep_meaning` → `search_semantic_layer`, `create_canonical_knowledge`); lexicon and thesaurus (`loxtep_meaning` → `list_terms`, `resolve_canonical_key`); ontology concepts and relationships; namespace mappings; connector vocabulary inference pipeline. |
 | **Status** | ✅ Shipped |
 
 ### Part 3: Skills (Procedures + Norms)
@@ -49,7 +49,7 @@ durable, governed, and compounding — not ephemeral prompt fragments.
 | Field | Value |
 |-------|-------|
 | **Definition** | Encoded procedural knowledge ("how work gets done") and the access norms that constrain agent behavior. |
-| **Loxtep realization** | Organizational Skills via the process graph (`loxtep_procedures`); Agent-Scope Skills via scoped `.loxtep/skills/` bundles and `SKILL.md` files; decision traces (`loxtep_process_intel` → `list_decision_traces`). |
+| **Loxtep realization** | Organizational Skills via the process graph (`loxtep_context` → `list_procedures`, `create_procedure`); Agent-Scope Skills via scoped `.loxtep/skills/` bundles and `SKILL.md` files; decision traces (`loxtep_context` → `list_decision_traces`). |
 | **Status** | ✅ Shipped |
 
 ---
@@ -61,7 +61,7 @@ durable, governed, and compounding — not ephemeral prompt fragments.
 | Field | Value |
 |-------|-------|
 | **Definition** | AI-assisted reverse-engineering of business operations from connected systems and runtime signals (query history, agent traces, event logs, human overrides), producing Context_Candidates for human review. |
-| **Loxtep realization** | `loxtep_context_mining` MCP tool (operations: `run_mining_pass`, `list_candidates`, `act_on_candidate`). Builds on `procedure-inference.ts`, `connector-vocabulary-inference`, catalog discovery, analytics/query history, queue/event history, and decision traces. |
+| **Loxtep realization** | `loxtep_review` MCP tool (operations: `run_mining_pass`, `list_candidates`, `act_on_candidate`). Builds on `procedure-inference.ts`, `connector-vocabulary-inference`, catalog discovery, analytics/query history, queue/event history, and decision traces. |
 | **Status** | ✅ Shipped |
 
 ### 2. Context Development Lifecycle (CDLC)
@@ -69,7 +69,7 @@ durable, governed, and compounding — not ephemeral prompt fragments.
 | Field | Value |
 |-------|-------|
 | **Definition** | The managed lifecycle of a context artifact — `draft → in_review → approved → deployed → retired` — with versioning, dependency tracking, and change propagation policies. Orthogonal to medallion quality maturity and to catalog lifecycle status. |
-| **Loxtep realization** | `loxtep_cdlc` MCP facade (operations: `get_artifact_lifecycle`, `transition_lifecycle`, `propagate_change`, `list_propagation_lineage`, `list_context_dependencies`). Extends existing schema versioning, workspace versioning (`restore_version`, `compare_versions`), and lineage (`get_lineage_impact`). |
+| **Loxtep realization** | `loxtep_review` MCP tool (operations: `get_artifact_lifecycle`, `transition_lifecycle`, `propagate_change`, `list_propagation_lineage`, `list_context_dependencies`). Extends existing schema versioning, workspace versioning (`loxtep_workspace` → `restore_version`, `compare_versions`), and lineage (`loxtep_observe` → `get_lineage_impact`). |
 | **Status** | ✅ Shipped |
 
 ### 3. Compounding Learning Loops
@@ -77,7 +77,7 @@ durable, governed, and compounding — not ephemeral prompt fragments.
 | Field | Value |
 |-------|-------|
 | **Definition** | The mechanism by which episodic experience (decision traces) is promoted, after eval/review/certification, into durable semantic or procedural memory that future agents inherit. This is the engine that builds Token_Capital. |
-| **Loxtep realization** | Memory Promotion service — `list_promotion_candidates`, `promote_candidate` (on `loxtep_process_intel` facade). Extends decision traces, procedure inference, and procedure anomaly detection. Promotion routes through the CDLC. Observable via `get_compounding_metric`. |
+| **Loxtep realization** | Memory Promotion service — `list_promotion_candidates`, `promote_candidate` (on `loxtep_context`). Extends decision traces, procedure inference, and procedure anomaly detection. Promotion routes through the CDLC. Observable via `loxtep_observe` → `get_compounding_metric`. |
 | **Status** | ✅ Shipped |
 
 ### 4. Activation & Retrieval
@@ -85,7 +85,7 @@ durable, governed, and compounding — not ephemeral prompt fragments.
 | Field | Value |
 |-------|-------|
 | **Definition** | The delivery formats (Activation Dialects) through which one governed context substrate is consumed by heterogeneous systems. "One layer, many dialects." |
-| **Loxtep realization** | Already multi-dialect: MCP (hosted tool surface), REST/API (platform backend), SQL/analytics (DuckDB via `loxtep_analytics`), webhook/streaming (rstreams events, queue replay), typed SDK (`@loxtep/sdk`), graph/entity context (`loxtep_process_intel` → entity context). |
+| **Loxtep realization** | Already multi-dialect: MCP (hosted 10-tool surface), REST/API (platform backend), SQL/analytics (DuckDB via `loxtep_query`), webhook/streaming (rstreams events, `loxtep_observe` → queue replay), typed SDK (`@loxtep/sdk`), graph/entity context (`loxtep_context` → entity context). |
 | **Status** | ✅ Shipped |
 
 ### 5. Governance & Observability
@@ -93,7 +93,7 @@ durable, governed, and compounding — not ephemeral prompt fragments.
 | Field | Value |
 |-------|-------|
 | **Definition** | The controls that keep context trustworthy — access control, quality enforcement, lineage tracking, PII handling, and observable metrics that prove the layer is improving. |
-| **Loxtep realization** | RBAC and scope enforcement (fail-closed Agent-Scope Skills); quality rules (`loxtep_quality`); lineage and impact analysis (`loxtep_catalog` → `get_lineage_impact`); PII tagging (`loxtep_schemas` → `tag_pii_fields`); governance flags (`get_governance_flags`). Compounding Metric extends this. |
+| **Loxtep realization** | RBAC and scope enforcement (fail-closed Agent-Scope Skills); quality rules (`loxtep_define` → `create_quality_rule`); lineage and impact analysis (`loxtep_observe` → `get_lineage_impact`); PII tagging (`loxtep_define` → `tag_pii_fields`); governance flags (`loxtep_observe` → `get_governance_flags`). Compounding Metric extends this. |
 | **Status** | ✅ Shipped (including Compounding Metric) |
 
 ---
@@ -105,7 +105,7 @@ durable, governed, and compounding — not ephemeral prompt fragments.
 | Field | Value |
 |-------|-------|
 | **Definition** | A reusable, versionable, testable unit of procedural knowledge ("how work gets done") plus the norms that constrain it. A skill does for procedural knowledge what a function did for logic. |
-| **Loxtep realization** | The process-graph **procedure** entity (PKO namespace) — `loxtep_procedures` MCP tool. Attributes: name/identifier, version, owner, triggers, steps, decisions, dependencies. |
+| **Loxtep realization** | The process-graph **procedure** entity (PKO namespace) — `loxtep_context` MCP tool (`list_procedures`, `create_procedure`, `import_process_graph`). Attributes: name/identifier, version, owner, triggers, steps, decisions, dependencies. |
 | **Relationship** | Organizational Skills compound: the same procedure is reused by many agents rather than re-derived per agent. |
 | **Status** | ✅ Shipped |
 
@@ -127,7 +127,7 @@ durable, governed, and compounding — not ephemeral prompt fragments.
 | Field | Value |
 |-------|-------|
 | **Definition** | A proposed semantic definition, conflict resolution, procedure, or policy surfaced by Context Mining or Memory Promotion, pending human approval. Lifecycle: `candidate → approved | rejected`. |
-| **Loxtep realization** | `context_candidates` store — `(candidate_id, candidate_type, status, payload, provenance_refs[], mining_run_id?, created_at)`. Surfaced via `loxtep_context_mining` → `list_candidates` and `loxtep_process_intel` → `list_promotion_candidates`. |
+| **Loxtep realization** | `context_candidates` store — `(candidate_id, candidate_type, status, payload, provenance_refs[], mining_run_id?, created_at)`. Surfaced via `loxtep_review` → `list_candidates` and `loxtep_context` → `list_promotion_candidates`. |
 | **Status** | ✅ Shipped |
 
 ### Semantic Conflict
@@ -143,7 +143,7 @@ durable, governed, and compounding — not ephemeral prompt fragments.
 | Field | Value |
 |-------|-------|
 | **Definition** | Any governed unit of context that participates in the CDLC: data product schema, semantic/thesaurus term, ontology concept, procedure, quality rule, or canonical knowledge document. |
-| **Loxtep realization** | An abstract view over existing concrete entities. Each gains additive `lifecycle_state`, `change_propagation_policy`, and `owner` fields. Managed via `loxtep_cdlc`. |
+| **Loxtep realization** | An abstract view over existing concrete entities. Each gains additive `lifecycle_state`, `change_propagation_policy`, and `owner` fields. Managed via `loxtep_review`. |
 | **Status** | ✅ Shipped |
 
 ### Change Propagation Policy
@@ -194,7 +194,7 @@ durable, governed, and compounding — not ephemeral prompt fragments.
 |-------|-------|
 | **Definition** | A delivery format through which context is consumed. One governed substrate, many dialects. |
 | **Dialects** | MCP · REST/API · SQL/Analytics · Webhook/Streaming · Typed SDK · Graph/Entity Context |
-| **Loxtep realization** | MCP (`mcp.loxtep.io`), REST (platform API Gateway), SQL (DuckDB via `loxtep_analytics`), Webhook/Streaming (rstreams events, `replay_events`, `read_queue_events`), SDK (`@loxtep/sdk` + CLI), Graph (`loxtep_process_intel` entity context + `loxtep_ontology` relationships). |
+| **Loxtep realization** | MCP (`mcp.loxtep.io`), REST (platform API Gateway), SQL (DuckDB via `loxtep_query`), Webhook/Streaming (rstreams events, `loxtep_observe` → `replay_events`, `read_queue_events`), SDK (`@loxtep/sdk` + CLI), Graph (`loxtep_context` entity context + `loxtep_meaning` relationships). |
 | **Status** | ✅ Shipped |
 
 ### Compounding Metric
@@ -204,7 +204,7 @@ durable, governed, and compounding — not ephemeral prompt fragments.
 | **Definition** | An observable measure computed from existing platform counters that demonstrates context is improving over time. |
 | **Primary metric** | `certified_procedures_over_time` — count of procedures with `lifecycle_state = deployed` at each calendar-week boundary. |
 | **Secondary metrics** | `promoted_patterns_count` (candidates promoted to artifacts); `decision_trace_reuse_ratio` (traces resolving to an existing procedure vs. unmatched). |
-| **Loxtep realization** | Computed from `process-intelligence-usage.ts` counters (`procedures_discovered`, `decision_traces`, `procedure_executions`, `context_graph_triples`). Exposed via `loxtep_analytics` → `get_compounding_metric`; surfaced on frontend catalog/overview via CompoundingMetricCard. |
+| **Loxtep realization** | Computed from `process-intelligence-usage.ts` counters (`procedures_discovered`, `decision_traces`, `procedure_executions`, `context_graph_triples`). Exposed via `loxtep_observe` → `get_compounding_metric`; surfaced on frontend catalog/overview via CompoundingMetricCard. |
 | **Status** | ✅ Shipped |
 
 ### Compounding Learning Loop
