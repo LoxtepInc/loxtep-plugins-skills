@@ -4,8 +4,8 @@ version: 1.0.0
 scope: organization
 description:
   Use when the user wants to deploy a project or workflow to a runtime instance,
-  check deployment status, list deployments, or inspect runtime mappings.
-  Not the same as loxtep-workspace (provisioning) or data-workflows (authoring).
+  check deployment status, list deployments, or inspect runtime mappings. Not
+  the same as loxtep-workspace (provisioning) or data-workflows (authoring).
 ---
 
 # Deployments (Customer MCP)
@@ -27,48 +27,52 @@ and inspect runtime mappings.
 
 ## Happy-path flow
 
-1. `list_deployments` — see what's already deployed (filter by project, instance, workflow, status).
+1. `list_deployments` — see what's already deployed (filter by project,
+   instance, workflow, status).
 2. `deploy_project` — deploy an entire project to an instance.
 3. `deploy_workflow` — deploy a single workflow (more targeted).
 4. `get_deployment` — check status of a specific deployment.
-5. `get_runtime_mapping` — inspect how a project/workflow maps to runtime resources.
+5. `get_runtime_mapping` — inspect how a project/workflow maps to runtime
+   resources.
 
 ## Operations
 
-| Facade | Operation | Scope | Required | Optional |
-| --- | --- | --- | --- | --- |
-| `loxtep_build` | `deploy_project` | project | `project_id`, `instance_id` | `force_redeploy` |
-| `loxtep_build` | `deploy_workflow` | project | `project_id`, `instance_id`, `workflow_id` | `force_redeploy`, `skip_validation` |
-| `loxtep_observe` | `list_deployments` | organization | — | `project_id`, `instance_id`, `workflow_id`, `status` |
-| `loxtep_observe` | `get_deployment` | organization | `deployment_id` | — |
-| `loxtep_build` | `get_runtime_mapping` | project | `project_id` | `workflow_id` |
+| Facade           | Operation             | Scope        | Required                                   | Optional                                             |
+| ---------------- | --------------------- | ------------ | ------------------------------------------ | ---------------------------------------------------- |
+| `loxtep_build`   | `deploy_project`      | project      | `project_id`, `instance_id`                | `force_redeploy`                                     |
+| `loxtep_build`   | `deploy_workflow`     | project      | `project_id`, `instance_id`, `workflow_id` | `force_redeploy`, `skip_validation`                  |
+| `loxtep_observe` | `list_deployments`    | organization | —                                          | `project_id`, `instance_id`, `workflow_id`, `status` |
+| `loxtep_observe` | `get_deployment`      | organization | `deployment_id`                            | —                                                    |
+| `loxtep_build`   | `get_runtime_mapping` | project      | `project_id`                               | `workflow_id`                                        |
 
 ## MCP mapping
 
-| Step | Tool | `operation` | Scope | Notes |
-|------|------|-------------|-------|-------|
-| List | `loxtep_observe` | `list_deployments` | organization | Filter by `project_id`, `instance_id`, `workflow_id`, `status` |
-| Deploy project | `loxtep_build` | `deploy_project` | project | Deploys all workflows in the project |
-| Deploy workflow | `loxtep_build` | `deploy_workflow` | project | Single workflow; `skip_validation` bypasses pre-deploy checks |
-| Get status | `loxtep_observe` | `get_deployment` | organization | Returns status, timestamps, errors |
-| Runtime mapping | `loxtep_build` | `get_runtime_mapping` | project | Shows how project resources map to runtime |
+| Step            | Tool             | `operation`           | Scope        | Notes                                                          |
+| --------------- | ---------------- | --------------------- | ------------ | -------------------------------------------------------------- |
+| List            | `loxtep_observe` | `list_deployments`    | organization | Filter by `project_id`, `instance_id`, `workflow_id`, `status` |
+| Deploy project  | `loxtep_build`   | `deploy_project`      | project      | Deploys all workflows in the project                           |
+| Deploy workflow | `loxtep_build`   | `deploy_workflow`     | project      | Single workflow; `skip_validation` bypasses pre-deploy checks  |
+| Get status      | `loxtep_observe` | `get_deployment`      | organization | Returns status, timestamps, errors                             |
+| Runtime mapping | `loxtep_build`   | `get_runtime_mapping` | project      | Shows how project resources map to runtime                     |
 
 ## Pitfalls
 
-- **Deploy is required after ANY graph change** — adding or removing nodes, wiring edges,
-  updating transformation configs, or changing the trigger schedule are all design-time
-  operations that have no runtime effect until `deploy_workflow` is called again. A workflow
-  with `graph_wired: true` but not yet (re)deployed will not reflect those changes at runtime.
-  Always redeploy after modifying a workflow graph, even if the workflow was previously
-  deployed successfully.
-- **Instance provisioning** is `loxtep_workspace` — different facade. This Agent-Scope Skill
-  assumes the target instance already exists.
+- **Deploy is required after ANY graph change** — adding or removing nodes,
+  wiring edges, updating transformation configs, or changing the trigger
+  schedule are all design-time operations that have no runtime effect until
+  `deploy_workflow` is called again. A workflow with `graph_wired: true` but not
+  yet (re)deployed will not reflect those changes at runtime. Always redeploy
+  after modifying a workflow graph, even if the workflow was previously deployed
+  successfully.
+- **Instance provisioning** is `loxtep_workspace` — different facade. This
+  Agent-Scope Skill assumes the target instance already exists.
 - **Workflow authoring** (create, update, graph) is `loxtep_build` via the
-  `data-workflows` Agent-Scope Skill. This Agent-Scope Skill handles *deployment* of authored workflows.
-- **`force_redeploy`** skips the "already deployed at same version" short-circuit.
-  Use when runtime state is suspected stale.
-- **`skip_validation`** on `deploy_workflow` bypasses pre-deploy validation (graph
-  completeness, connection tests). Use only for known-good redeployments.
+  `data-workflows` Agent-Scope Skill. This Agent-Scope Skill handles
+  _deployment_ of authored workflows.
+- **`force_redeploy`** skips the "already deployed at same version"
+  short-circuit. Use when runtime state is suspected stale.
+- **`skip_validation`** on `deploy_workflow` bypasses pre-deploy validation
+  (graph completeness, connection tests). Use only for known-good redeployments.
 - **Status values:** Expect `pending`, `in_progress`, `completed`, `failed`.
   Poll `get_deployment` for async deploy completion.
 
@@ -80,7 +84,8 @@ and inspect runtime mappings.
 
 ## Auth
 
-If MCP returns missing JWT / auth errors, reconnect the Loxtep MCP server to re-trigger OAuth (Agent-Scope Skill **loxtep-auth**).
+If MCP returns missing JWT / auth errors, reconnect the Loxtep MCP server to
+re-trigger OAuth (Agent-Scope Skill **loxtep-auth**).
 
 ## References
 

@@ -10,15 +10,19 @@ metadata:
 
 # Loxtep MCP — Authentication recovery
 
-Loxtep MCP is **hosted only** (`https://mcp.loxtep.io/ai/mcp/stream`, dev: `https://mcpdev.loxtep.io/ai/mcp/stream`). **Do not** suggest `npx @loxtep/customer-mcp-server` or local stdio MCP.
+Loxtep MCP is **hosted only** (`https://mcp.loxtep.io/ai/mcp/stream`, dev:
+`https://mcpdev.loxtep.io/ai/mcp/stream`). **Do not** suggest
+`npx @loxtep/customer-mcp-server` or local stdio MCP.
 
-When a call to a **Loxtep MCP** tool (`loxtep_*` with an `operation` field) fails with:
+When a call to a **Loxtep MCP** tool (`loxtep_*` with an `operation` field)
+fails with:
 
 - **`Unauthorized`** or **`{"error":"Unauthorized"}`**
 - **"No valid authentication token found"**, or
 - **"RBAC requires JWT token in Authorization header or x-jwt-token header"**
 
 the OAuth session has expired or was never established.
+
 
 ## Cursor — call `mcp_auth` first
 
@@ -32,9 +36,12 @@ CallMcpTool({
 });
 ```
 
-Cursor shows an **Authenticate** button. Ask the user to click it, then **retry** the tool call that failed.
+Cursor shows an **Authenticate** button. Ask the user to click it, then
+**retry** the tool call that failed.
 
-**Fallback** (only if `mcp_auth` fails): disconnect/reconnect the Loxtep MCP server in IDE settings, sign in in the browser, retry.
+**Fallback** (only if `mcp_auth` fails): disconnect/reconnect the Loxtep MCP
+server in IDE settings, sign in in the browser, retry.
+
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 

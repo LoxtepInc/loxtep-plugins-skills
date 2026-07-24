@@ -2,11 +2,13 @@
 
 # Analytics and SQL (Customer MCP)
 
-**Story S6:** Explore curated mesh data with **SQL** — discover tables, inspect schema, run queries, fetch results.
+**Story S6:** Explore curated mesh data with **SQL** — discover tables, inspect
+schema, run queries, fetch results.
 
 ## When to use
 
-- “Run **SQL**”, “**list tables**”, “**schema** for table”, “**execute_query**”, “get **query results**”
+- “Run **SQL**”, “**list tables**”, “**schema** for table”, “**execute_query**”,
+  “get **query results**”
 
 ## Prerequisites
 
@@ -16,23 +18,25 @@
 
 1. `loxtep_query` → `list_tables`.
 2. `get_table_schema` for chosen table(s).
-3. `execute_query` with the required `query` parameter (the SQL text). The required parameter is named `query`, not `sql`.
+3. `execute_query` with the required `query` parameter (the SQL text). The
+   required parameter is named `query`, not `sql`.
 4. `get_query_results` if execution is asynchronous or paginated.
 
 ## MCP mapping
 
-| Step | Tool | `operation` | Scope |
-|------|------|-------------|-------|
-| List | `loxtep_query` | `list_tables` | organization |
-| Schema | `loxtep_query` | `get_table_schema` | organization |
-| Run | `loxtep_query` | `execute_query` | organization |
+| Step    | Tool           | `operation`         | Scope        |
+| ------- | -------------- | ------------------- | ------------ |
+| List    | `loxtep_query` | `list_tables`       | organization |
+| Schema  | `loxtep_query` | `get_table_schema`  | organization |
+| Run     | `loxtep_query` | `execute_query`     | organization |
 | Results | `loxtep_query` | `get_query_results` | organization |
 
 ## Pitfalls
 
 - Large result sets — use limits / pagination per platform.
 - Wrong **org** or missing permissions show as auth or empty results.
-- **Execution environment** — Analytics runs against governed mesh tables via `loxtep_query`, not an arbitrary external database URL.
+- **Execution environment** — Analytics runs against governed mesh tables via
+  `loxtep_query`, not an arbitrary external database URL.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 

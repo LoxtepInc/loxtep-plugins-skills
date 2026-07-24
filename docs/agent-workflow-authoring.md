@@ -8,14 +8,36 @@ implement this contract. Hosted MCP tool surface matches it.
 
 ---
 
+## Methodology (two surfaces, one model)
+
+| Surface | Happy path |
+| ------- | ---------- |
+| **CLI / code-first** | `loxtep ingest create` → `transform create` → `delivery create` → `lint` → `push` → `deploy` |
+| **MCP (primitives)** | `get_entity_schemas` → compose `files` → `save_workflow_bundle` (`dry_run: true` first) → `deploy_workflow` |
+
+### Trigger vs Target
+
+| Role | Where | Bundle entity |
+| ---- | ----- | ------------- |
+| **Trigger** | Connector at the **ingest head** | `connections/{id}.json` with `connector_id` |
+| **Target** | Connector at the **delivery tail** | `connections/{id}.json` with `connector_id` |
+
+`workflow_type` for outbound flows is **`delivery`** — never `consumption`.
+
+Do **not** teach `create_delivery` / `list_deliveries` as the happy path (legacy
+consumptions table). Prefer a Target connection in `save_workflow_bundle`.
+
+---
+
 ## Decision tree
 
 | Scenario | Path |
 | -------- | ---- |
 | **Start of any flow** | **Flow B** — `list_projects` / `create_project` → record `project_id`; optional GitHub attach via `update_project` `github_*` |
-| New ingestion / enrichment / consumption flow | Write `workflows/{workflow_id}/` JSON **locally** → build `files` from disk → `save_workflow_bundle` (`dry_run: true` first) |
+| New ingestion / enrichment / delivery flow | Write `workflows/{workflow_id}/` JSON **locally** → build `files` from disk → `save_workflow_bundle` (`dry_run: true` first) |
 | GitHub-attached project | **Repo is source of truth** — edit local files, commit, sync to Loxtep via `save_workflow_bundle` (not inline-only MCP payloads) |
-| After P1 connect (OAuth, API key, SDK org connector) | Handoff = `connector_id` + captured samples → **P2 bundle** (`connections/{id}.json` in local `files`) |
+| After P1 connect (OAuth, API key, SDK org connector) | Handoff = `connector_id` + captured samples → **P2 bundle** (Trigger `connections/{id}.json` in local `files`) |
+| Outbound / push to external system | Delivery workflow: `workflow_type: "delivery"` + Target connection at the tail |
 | User editing an **already open** flow in Studio (small change) | `patch_workflow_graph` only |
 | Apply catalog starter template | `apply_template` (writes a bundle internally) |
 
@@ -80,10 +102,11 @@ governance, and medallion — not for initial provisioning.
    attach (`update_project` `github_*`). Code-first repos: `loxtep init` →
    `loxtep attach` (see **`loxtep-sdk`**).
 1. **Write local files** under `workflows/{workflow_id}/`
-2. **`get_entity_schemas`** — `pattern`: `ingestion` | `enrichment` | `consumption`
+2. **`get_entity_schemas`** — `pattern`: `ingestion` | `enrichment` | `delivery`
 3. **Build `files` map from on-disk JSON** under `workflows/{workflow_id}/`:
-   - `workflow.json`
-   - `connections/{id}.json` (`connector_id` from P1)
+   - `workflow.json` (`workflow_type`: `ingestion` | `enrichment` | `delivery`)
+   - `connections/{id}.json` (`connector_id` from P1) — Trigger at ingest head
+     or Target at delivery tail
    - `transformations/{id}.json`, `validations/{id}.json` as needed
    - `data-products/{id}.json` with `upstream_entity_id` chain
 4. **`save_workflow_bundle`** — `dry_run: true`, fix errors, then `dry_run: false`
@@ -99,14 +122,18 @@ Pre-assign UUIDs. Wire with **`upstream_entity_id`**, not separate connect steps
 | ------ | --------- |
 | Author new flow | `save_workflow_bundle` |
 | Read schemas / patterns | `get_entity_schemas` |
+| Deploy | `deploy_workflow` / `deploy_project` |
 | Studio canvas incremental edit | `patch_workflow_graph` |
 | Inspect existing connection entity | `list_triggers`, `get_trigger`, `test_trigger`, `update_trigger` |
+
+**Not happy-path:** `create_delivery`, `list_deliveries` (legacy consumptions
+table). Prefer Target connection + `workflow_type: "delivery"`.
 
 ---
 
 ## Related skills
 
 - `connect-external-system` — P1 connect + samples
-- `data-workflows` — Flow E (bundle compose + save)
+- `data-workflows` — Flow E (bundle compose + save), Flow D (delivery Target)
 - `loxtep-journey-orchestrator` — P0–P7 journey gates
 - `docs/skills-user-stories.md` — S1, S2, S14

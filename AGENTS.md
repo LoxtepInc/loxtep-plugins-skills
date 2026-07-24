@@ -131,7 +131,7 @@ key parameters.
 { "operation": "list_versions", "project_id": "proj_…" }
 ```
 
-### `loxtep_build` — Organize — design, bundle, and deploy data flows. Workflows (save_workflow_bundle for full JSON, patch_workflow_graph for Studio-only edits), trigger bindings (list/get/update/delete/test), data products (kind source|consumer, lexicon, SDK config, delivery interfaces, contracts, promotion), and deployment writes (deploy_project, deploy_workflow, get_runtime_mapping). New trigger entities belong in save_workflow_bundle (connections/{id}.json with connector_id).
+### `loxtep_build` — Organize — design, bundle, and deploy data flows. Workflows (save_workflow_bundle for full JSON, patch_workflow_graph for Studio-only edits), trigger/target connection bindings (list/get/update/delete/test), data products (kind source|consumer, lexicon, SDK config, contracts, promotion), and deployment writes (deploy_project, deploy_workflow, get_runtime_mapping). New Trigger/Target entities belong in save_workflow_bundle (connections/{id}.json with connector_id).
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
 | `get_entity_schemas` | project | `project_id` | `pattern` |
@@ -150,6 +150,11 @@ key parameters.
 | `update_trigger` | project | — | — |
 | `delete_trigger` | project | — | — |
 | `test_trigger` | project | — | — |
+| `list_targets` | project | — | — |
+| `get_target` | project | — | — |
+| `update_target` | project | — | — |
+| `delete_target` | project | — | — |
+| `test_target` | project | — | — |
 | `create_data_product` | project | `project_id`, `name`, `kind` | `domain_id`, `description`, `schema` |
 | `update_data_product` | project | `project_id`, `data_product_id` | `name`, `description`, `schema`, `domain_id` |
 | `delete_data_product` | project | `project_id`, `data_product_id` | — |
@@ -158,8 +163,6 @@ key parameters.
 | `get_lexicon` | organization | — | — |
 | `get_sdk_config` | organization | — | — |
 | `enrich_schema_descriptions` | organization | — | — |
-| `list_deliveries` | organization | — | — |
-| `create_delivery` | organization | — | — |
 | `get_promotion_readiness` | organization | — | — |
 | `promote_data_product` | organization | — | — |
 | `create_data_contract` | organization | — | — |
