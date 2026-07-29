@@ -43,6 +43,9 @@ schema, run queries, fetch results.
 - Wrong **org** or missing permissions show as auth or empty results.
 - **Execution environment** — Analytics runs against governed mesh tables via
   `loxtep_query`, not an arbitrary external database URL.
+- **Iceberg rebuild** — On missing parquet / stub schema, call `loxtep_observe`
+  → `get_iceberg_health`, then `rebuild_iceberg_table` with `confirm: true`.
+  Always `dry_run: true` first; never rebuild without confirmation.
 
 <!-- SCOPE_BLOCK -->
 
