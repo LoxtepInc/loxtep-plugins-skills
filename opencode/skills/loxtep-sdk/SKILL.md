@@ -11,6 +11,19 @@ metadata:
 
 # Loxtep Node SDK (Agent-Scope Skill)
 
+## Methodology (CLI vs MCP)
+
+| Surface              | Happy path                                                                                   |
+| -------------------- | -------------------------------------------------------------------------------------------- |
+| **CLI / code-first** | `loxtep ingest create` → `transform create` → `delivery create` → `lint` → `push` → `deploy` |
+| **MCP (primitives)** | `get_entity_schemas` → `save_workflow_bundle` → `deploy_workflow`                            |
+
+**Trigger** = connector at the ingest head; **Target** = connector at the
+delivery tail — both are `connections/{id}.json` with `connector_id`. Delivery
+workflows use `workflow_type: "delivery"` (never `consumption`). Prefer Target
+connections in the bundle over `create_delivery` / `list_deliveries` (legacy
+consumptions table).
+
 ## Recommended: Data-product-centric writer & reader
 
 **Use `data_products.get_writer(id_or_name)` and
@@ -18,17 +31,19 @@ metadata:
 resolve all plumbing (queue names, bot IDs, stream bus config) automatically
 from the data product name or UUID — no manual runtime-mapping lookups needed.
 
-### Delivery interfaces
+### Delivery (outbound) — prefer Target connections
 
-The SDK exposes delivery interface management under `targets`:
+Do **not** teach `client.targets.create` / MCP `create_delivery` as the happy
+path for pushing data out. Author a delivery workflow with a **Target**
+connection via **`data-workflows`** Flow D (`save_workflow_bundle` +
+`deploy_workflow`), or CLI `loxtep delivery create` → `lint` → `push` →
+`deploy`.
 
-```ts
-// Primary namespace (preferred)
-const interfaces = await client.targets.list(dataProductId);
-await client.targets.create(dataProductId, {
-  endpoint_url: 'https://example.com/webhook',
-  delivery_type: 'webhook',
-});
+```bash
+loxtep delivery create …   # local package: Target at delivery tail
+loxtep lint
+loxtep push
+loxtep deploy
 ```
 
 ### Copy-paste: write events to a data product
@@ -128,8 +143,8 @@ events.
 - The `runtime_mapping` that maps entities → containers → bot_ids/queue_ids
 
 **If you skip deployment**, SDK calls to `data_products.get_writer()` or
-`workflows.get_writer()` will fail with "data product not deployed" or "queue not
-found" errors.
+`workflows.get_writer()` will fail with "data product not deployed" or "queue
+not found" errors.
 
 **How to deploy:** Use **`loxtep_build`** MCP facade:
 
@@ -257,23 +272,22 @@ automatically.
 
 ## MCP operations
 
-| Facade                 | `operation`                   | Permission | Notes                                            |
-| ---------------------- | ----------------------------- | ---------- | ------------------------------------------------ |
-| `loxtep_build` | `get_sdk_config` | read | Returns SDK connection config for a data product |
-| `loxtep_build` | `create_delivery` | write | Create a delivery interface |
-| `loxtep_build` | `list_deliveries` | read | List active delivery interfaces |
-| `loxtep_build` | `deploy_workflow` | write | Deploy a single workflow to an instance |
-| `loxtep_observe` | `list_deployments` | read | List deployment records (poll for status) |
-| `loxtep_observe` | `get_deployment` | read | Get a single deployment record by ID |
-| `loxtep_review` | `list_pending` | read | SDK: `client.approvals.list_pending()` |
-| `loxtep_review` | `resolve` | write | SDK: `client.approvals.approve()` / `.reject()` |
+| Facade           | `operation`                                                       | Permission | Notes                                                                                                            |
+| ---------------- | ----------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------- |
+| `loxtep_build`   | `get_sdk_config`                                                  | read       | Returns SDK connection config for a data product                                                                 |
+| `loxtep_build`   | `get_entity_schemas` / `save_workflow_bundle` / `deploy_workflow` | write      | Delivery via Target connection + `workflow_type: "delivery"`. **`create_delivery` / `list_deliveries` removed**. |
+| `loxtep_build`   | `deploy_workflow`                                                 | write      | Deploy a single workflow to an instance                                                                          |
+| `loxtep_observe` | `list_deployments`                                                | read       | List deployment records (poll for status)                                                                        |
+| `loxtep_observe` | `get_deployment`                                                  | read       | Get a single deployment record by ID                                                                             |
+| `loxtep_review`  | `list_pending`                                                    | read       | SDK: `client.approvals.list_pending()`                                                                           |
+| `loxtep_review`  | `resolve`                                                         | write      | SDK: `client.approvals.approve()` / `.reject()`                                                                  |
 
 ## Approving pipeline gates from code (`client.approvals`)
 
 The `define` PKO pipeline (schema → meaning → relationships → quality → promote)
-pauses at each `hitl_gate: approval` step and creates an `approval_request` — the
-same record surfaced in the web inbox and delivered over Slack/email. Resolve it
-programmatically instead of switching to the UI:
+pauses at each `hitl_gate: approval` step and creates an `approval_request` —
+the same record surfaced in the web inbox and delivered over Slack/email.
+Resolve it programmatically instead of switching to the UI:
 
 ```ts
 const pending = await client.approvals.list_pending();
@@ -282,8 +296,8 @@ for (const approval of pending.items) {
 }
 ```
 
-`organization_id` defaults from the client's constructor option; pass it per-call
-to override (`client.approvals.resolve(id, 'reject', organizationId)`).
+`organization_id` defaults from the client's constructor option; pass it
+per-call to override (`client.approvals.resolve(id, 'reject', organizationId)`).
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 
@@ -321,13 +335,14 @@ permissions:
 
 **MCP facade mapping:** deploy writes (`deploy_project`, `deploy_workflow`,
 `get_runtime_mapping`) → `loxtep_build`. Deployment status reads
-(`list_deployments`, `get_deployment`) → `loxtep_observe`. Delivery interfaces
-and SDK config → `loxtep_build` (`create_delivery`, `list_deliveries`,
-`get_sdk_config`). Approvals → `loxtep_review` (`list_pending`, `resolve`).
+(`list_deployments`, `get_deployment`) → `loxtep_observe`. Delivery → Target
+connection in `save_workflow_bundle` (`workflow_type: "delivery"`), not
+`create_delivery` / `list_deliveries`. SDK config → `get_sdk_config`. Approvals
+→ `loxtep_review` (`list_pending`, `resolve`).
 
-Use the **10 MCP job facades** above when calling hosted MCP tools; the SDK namespaces
-mirror those facades (`client.build`, `client.observe`, …). Deprecated 22-facade names
-are not accepted by the hosted server.
+Use the **10 MCP job facades** above when calling hosted MCP tools; the SDK
+namespaces mirror those facades (`client.build`, `client.observe`, …).
+Deprecated 22-facade names are not accepted by the hosted server.
 
 ## Auth (single mental model)
 
@@ -360,7 +375,8 @@ export function createRuntimeClient() {
 ## Bootstrapping from an SDK Connector
 
 If an SDK connector already exists (created via UI, API, or MCP — see the
-**`connect-external-system`** Agent-Scope Skill), export its `sdk_config` directly:
+**`connect-external-system`** Agent-Scope Skill), export its `sdk_config`
+directly:
 
 ```bash
 # Export as shell exports (source-able)
@@ -391,8 +407,8 @@ node -e "
 "
 ```
 
-> To create an SDK connector in the first place, see the **`connect-external-system`**
-> Agent-Scope Skill (Flow — SDK Connector).
+> To create an SDK connector in the first place, see the
+> **`connect-external-system`** Agent-Scope Skill (Flow — SDK Connector).
 
 ## Shell exports from an existing data product
 

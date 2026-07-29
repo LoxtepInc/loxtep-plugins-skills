@@ -2,9 +2,8 @@
 
 # Procedures & Process Graph
 
-Manage **business procedures**, their **step graphs**, and
-**inter-procedure dependencies** in the process graph. Import/export
-JSON-LD graphs.
+Manage **business procedures**, their **step graphs**, and **inter-procedure
+dependencies** in the process graph. Import/export JSON-LD graphs.
 
 ## When to use
 
@@ -58,8 +57,8 @@ JSON-LD graphs.
 
 ### Flow — Query dependency chain
 
-1. `get_procedure_dependencies` with `procedure_id`, `direction`
-   (upstream | downstream | both), optional `depth` (default 3, max 10).
+1. `get_procedure_dependencies` with `procedure_id`, `direction` (upstream |
+   downstream | both), optional `depth` (default 3, max 10).
 2. Optionally filter by `relationship_types` (feeds_into, depends_on, triggers,
    supersedes).
 3. Response includes edges with procedure metadata at each hop and a
@@ -74,36 +73,37 @@ JSON-LD graphs.
 
 ## MCP mapping
 
-| `operation` | Facade | Scope | Notes |
-|-------------|--------|-------|-------|
-| `list_procedures` | `loxtep_context` | organization | Filters: `status`, `name`, `domain_id`, … |
-| `get_procedure` | `loxtep_context` | organization | Full step graph with decisions, triggers, dependencies, metadata |
-| `create_procedure` | `loxtep_context` | organization | Required: `organization_id`, `name`; optional graph fields |
-| `update_procedure` | `loxtep_context` | organization | Partial updates; arrays use full-replacement semantics |
-| `delete_procedure` | `loxtep_context` | organization | Soft-delete (tombstone); warns about downstream dependents |
-| `import_process_graph` | `loxtep_context` | organization | Inline JSON-LD (≤ 4 MB) or S3 reference; idempotent upsert |
-| `export_process_graph` | `loxtep_context` | organization | Formats: `jsonld`, `yaml`, `summary`; `preserve_namespaces` option |
-| `get_procedure_dependencies` | `loxtep_context` | organization | Direction: upstream/downstream/both; depth 1–10; cycle detection |
+| `operation`                  | Facade           | Scope        | Notes                                                              |
+| ---------------------------- | ---------------- | ------------ | ------------------------------------------------------------------ |
+| `list_procedures`            | `loxtep_context` | organization | Filters: `status`, `name`, `domain_id`, …                          |
+| `get_procedure`              | `loxtep_context` | organization | Full step graph with decisions, triggers, dependencies, metadata   |
+| `create_procedure`           | `loxtep_context` | organization | Required: `organization_id`, `name`; optional graph fields         |
+| `update_procedure`           | `loxtep_context` | organization | Partial updates; arrays use full-replacement semantics             |
+| `delete_procedure`           | `loxtep_context` | organization | Soft-delete (tombstone); warns about downstream dependents         |
+| `import_process_graph`       | `loxtep_context` | organization | Inline JSON-LD (≤ 4 MB) or S3 reference; idempotent upsert         |
+| `export_process_graph`       | `loxtep_context` | organization | Formats: `jsonld`, `yaml`, `summary`; `preserve_namespaces` option |
+| `get_procedure_dependencies` | `loxtep_context` | organization | Direction: upstream/downstream/both; depth 1–10; cycle detection   |
 
 ## Pitfalls
 
 - **Data mesh workflows** (`create_workflow`, `patch_workflow_graph`) live under
-  **`loxtep_build`** / **`data-workflows`** Agent-Scope Skill — different product
-  object.
-- **Platform PKO procedures** — stable `@id` values like `procedure#connect-external-system`.
-  Use `get_procedure` to read step `metadata.skill_ref` / `metadata.api_ref` / HITL gates;
-  use **`loxtep-journey-orchestrator`** to walk P0–P7.
+  **`loxtep_build`** / **`data-workflows`** Agent-Scope Skill — different
+  product object.
+- **Platform PKO procedures** — stable `@id` values like
+  `procedure#connect-external-system`. Use `get_procedure` to read step
+  `metadata.skill_ref` / `metadata.api_ref` / HITL gates; use
+  **`loxtep-journey-orchestrator`** to walk P0–P7.
 - **Ontology/vocabulary management** (thesaurus terms, ontology concepts,
-  namespace mappings) is **`loxtep_meaning`** — different facade. Procedures
-  are *instances* in the graph; ontology concepts describe the *types*.
+  namespace mappings) is **`loxtep_meaning`** — different facade. Procedures are
+  _instances_ in the graph; ontology concepts describe the _types_.
 - **`delete_procedure` uses soft-delete** (tombstone pattern). The procedure and
   all children are marked with `tombstoned_at` and excluded from queries. A
   background TTL process purges tombstoned records after the retention period.
   There is no hard-delete via MCP.
-- **S3 upload path for large graphs**: For JSON-LD payloads > 4 MB (up to
-  50 MB), upload to S3 first and pass `s3_reference: {s3_bucket, s3_key}` to
-  `import_process_graph`. The inline `graph` field is limited to 4 MB (below
-  API Gateway's 6 MB limit with overhead).
+- **S3 upload path for large graphs**: For JSON-LD payloads > 4 MB (up to 50
+  MB), upload to S3 first and pass `s3_reference: {s3_bucket, s3_key}` to
+  `import_process_graph`. The inline `graph` field is limited to 4 MB (below API
+  Gateway's 6 MB limit with overhead).
 - **`update_procedure` uses full-replacement semantics** per array field —
   submit the complete desired `steps`/`decisions`/`triggers` array to replace
   all existing entries. Top-level scalars (name, description, status) are
@@ -114,9 +114,9 @@ JSON-LD graphs.
   `target_procedure_id` that doesn't exist yet — it will be marked `unresolved`
   until the target is imported/created.
 - **Namespace resolution on import**: `import_process_graph` auto-resolves W3C
-  PKO terms and any registered namespace mappings (see `loxtep-ontology` Agent-Scope Skill).
-  Unregistered namespace terms are flagged as `unmapped_terms` in the response
-  without failing the import.
+  PKO terms and any registered namespace mappings (see `loxtep-ontology`
+  Agent-Scope Skill). Unregistered namespace terms are flagged as
+  `unmapped_terms` in the response without failing the import.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 
@@ -148,12 +148,13 @@ permissions: {}
 
 ## Implementation notes
 
-All MCP operations in this skill use the **`loxtep_context`** job facade.
-Legacy name: `loxtep_procedures`.
+All MCP operations in this skill use the **`loxtep_context`** job facade. Legacy
+name: `loxtep_procedures`.
 
-**Platform PKO procedures** — stable `@id` values like `procedure#connect-external-system`.
-Use `get_procedure` to read step `metadata.skill_ref` / `metadata.api_ref` / HITL gates;
-use **`loxtep-journey-orchestrator`** to walk Connect → Organize → Use.
+**Platform PKO procedures** — stable `@id` values like
+`procedure#connect-external-system`. Use `get_procedure` to read step
+`metadata.skill_ref` / `metadata.api_ref` / HITL gates; use
+**`loxtep-journey-orchestrator`** to walk Connect → Organize → Use.
 
 ## Optional attribution
 
