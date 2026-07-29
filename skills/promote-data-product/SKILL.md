@@ -2,8 +2,8 @@
 name: promote-data-product
 description:
   Use when a data product is ready to be trusted and published for wider use.
-  Runs the readiness checklist, validates quality and definitions, and routes
-  to the domain owner for approval. This is the final step of Organize.
+  Runs the readiness checklist, validates quality and definitions, and routes to
+  the domain owner for approval. This is the final step of Organize.
 license: MIT
 metadata:
   platform: loxtep
@@ -29,17 +29,20 @@ metadata:
 
 ## Pitfalls
 
-- Definitions must be reviewed before running this — use `semantic-ontology-mapping` first
+- Definitions must be reviewed before running this — use
+  `semantic-ontology-mapping` first
 - Approval routes to the **domain owner**, not a generic admin
 
 ## References
 
-- Next step: **`data-product-modeling`** (delivery interfaces)
+- Next step: **`data-workflows`** Flow D (delivery Target connection)
 - Full journey: **`loxtep-journey-orchestrator`**
 
 ## Implementation notes
 
 - PKO: `procedure#promote-data-product-medallion` (P4)
-- Follows `procedure#define-data-product-semantics`, precedes `procedure#register-delivery-interface`
+- Follows `procedure#define-data-product-semantics`, precedes
+  `procedure#register-delivery-interface`
 - `hitl_gate: approval` — audience: `domain_owner`
-- PKO graph: `platform-backend/graph/platform-pko/promote-data-product-medallion.jsonld`
+- PKO graph:
+  `platform-backend/graph/platform-pko/promote-data-product-medallion.jsonld`

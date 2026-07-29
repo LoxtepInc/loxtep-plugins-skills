@@ -12,8 +12,8 @@ description:
 
 Search and inspect the organization's **semantic layer** - curated business
 definitions, metrics, dimensions, and completeness scores. Also manage
-**canonical knowledge** artifacts like strategy, positioning, brand voice,
-org structure, and process documentation.
+**canonical knowledge** artifacts like strategy, positioning, brand voice, org
+structure, and process documentation.
 
 ## When to use
 
@@ -49,38 +49,38 @@ org structure, and process documentation.
 
 ## Operations
 
-| Facade                  | Operation                   | Permission |
-| ----------------------- | --------------------------- | ---------- |
-| `loxtep_meaning` | `search_semantic_layer`     | search     |
-| `loxtep_meaning` | `get_semantic_artifact`     | read       |
-| `loxtep_meaning` | `get_semantic_completeness` | read       |
-| `loxtep_meaning` | `create_canonical_knowledge`| write      |
-| `loxtep_meaning` | `get_canonical_knowledge`   | read       |
-| `loxtep_meaning` | `update_canonical_knowledge`| write      |
+| Facade           | Operation                    | Permission |
+| ---------------- | ---------------------------- | ---------- |
+| `loxtep_meaning` | `search_semantic_layer`      | search     |
+| `loxtep_meaning` | `get_semantic_artifact`      | read       |
+| `loxtep_meaning` | `get_semantic_completeness`  | read       |
+| `loxtep_meaning` | `create_canonical_knowledge` | write      |
+| `loxtep_meaning` | `get_canonical_knowledge`    | read       |
+| `loxtep_meaning` | `update_canonical_knowledge` | write      |
 
 ## MCP mapping
 
-| Step                  | `operation`                 | Scope        | Notes                                                                  |
-| --------------------- | --------------------------- | ------------ | ---------------------------------------------------------------------- |
-| Search                | `search_semantic_layer`     | organization | Filters: `artifact_types`, `domain`, `domain_id`, `industry_relevance` |
-| Get artifact          | `get_semantic_artifact`     | organization | Requires `artifact_type` + `id`                                        |
-| Completeness          | `get_semantic_completeness` | organization | Optional `domain_id` filter                                            |
-| Create knowledge      | `create_canonical_knowledge`| organization | Requires `type`, `title`, `body`, `classification`                     |
-| Get knowledge         | `get_canonical_knowledge`   | organization | Requires `id`                                                          |
-| Update knowledge      | `update_canonical_knowledge`| organization | Requires `id` + fields to update                                       |
+| Step             | `operation`                  | Scope        | Notes                                                                  |
+| ---------------- | ---------------------------- | ------------ | ---------------------------------------------------------------------- |
+| Search           | `search_semantic_layer`      | organization | Filters: `artifact_types`, `domain`, `domain_id`, `industry_relevance` |
+| Get artifact     | `get_semantic_artifact`      | organization | Requires `artifact_type` + `id`                                        |
+| Completeness     | `get_semantic_completeness`  | organization | Optional `domain_id` filter                                            |
+| Create knowledge | `create_canonical_knowledge` | organization | Requires `type`, `title`, `body`, `classification`                     |
+| Get knowledge    | `get_canonical_knowledge`    | organization | Requires `id`                                                          |
+| Update knowledge | `update_canonical_knowledge` | organization | Requires `id` + fields to update                                       |
 
 ## Canonical Knowledge Types
 
 The semantic layer supports structured organizational knowledge artifacts that
 agents can query for context:
 
-| Type              | Description                                              | Example Use Case                           |
-| ----------------- | -------------------------------------------------------- | ------------------------------------------ |
-| `strategy`        | Business strategy, mission, vision, goals                | "What is our Q4 revenue target?"          |
-| `positioning`     | Market positioning, competitive differentiation           | "How do we position against competitors?" |
-| `brand_voice`     | Brand voice guidelines, tone, communication style         | "Write in our brand voice"                |
-| `org_structure`   | Organizational hierarchy, team structure, roles            | "Who owns the sales domain?"              |
-| `process_doc`     | Business processes, procedures, workflows                  | "How do we handle customer onboarding?"  |
+| Type            | Description                                       | Example Use Case                          |
+| --------------- | ------------------------------------------------- | ----------------------------------------- |
+| `strategy`      | Business strategy, mission, vision, goals         | "What is our Q4 revenue target?"          |
+| `positioning`   | Market positioning, competitive differentiation   | "How do we position against competitors?" |
+| `brand_voice`   | Brand voice guidelines, tone, communication style | "Write in our brand voice"                |
+| `org_structure` | Organizational hierarchy, team structure, roles   | "Who owns the sales domain?"              |
+| `process_doc`   | Business processes, procedures, workflows         | "How do we handle customer onboarding?"   |
 
 ### Creating Canonical Knowledge
 
@@ -121,9 +121,9 @@ agents can query for context:
   **`loxtep_meaning`** - different facade. This Agent-Scope Skill is for
   _querying_ the curated semantic layer and managing canonical knowledge, not
   managing its underlying ontology structure.
-- **Catalog search** is **`loxtep_query`** - use that for broad discovery
-  across all artifact types. This Agent-Scope Skill is for the
-  semantic-layer-specific search and completeness view.
+- **Catalog search** is **`loxtep_query`** - use that for broad discovery across
+  all artifact types. This Agent-Scope Skill is for the semantic-layer-specific
+  search and completeness view.
 - **`artifact_types`** (plural) is an array filter - pass multiple types to
   narrow results. Do not confuse with `artifact_type` (singular) used in
   `get_semantic_artifact`.

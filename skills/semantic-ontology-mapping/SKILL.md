@@ -1,16 +1,16 @@
 ---
 name: semantic-ontology-mapping
 description:
-  Use when the user wants to define what business terms mean, map concepts across
-  systems, resolve vocabulary conflicts, or build a shared language for their data.
-  This is the meaning-definition work inside the Organize step.
+  Use when the user wants to define what business terms mean, map concepts
+  across systems, resolve vocabulary conflicts, or build a shared language for
+  their data. This is the meaning-definition work inside the Organize step.
 ---
 
 # Semantic & Ontological Mapping for Business Environments
 
 Systematic discovery, formalization, and alignment of business semantics across
-organizational boundaries — making implicit knowledge explicit, machine-readable,
-and actionable.
+organizational boundaries — making implicit knowledge explicit,
+machine-readable, and actionable.
 
 ## When to use
 
@@ -18,33 +18,37 @@ and actionable.
   "**crosswalk**", "what does **[term]** mean", "**concept** alignment",
   "**taxonomy**", "**knowledge graph** schema", "**domain** modeling",
   "**vocabulary** conflict", "different teams use different **names**",
-  "**process context**",   "map our **business processes** to data"
+  "**process context**", "map our **business processes** to data"
 - "**Minimal Ontology**", "**enterprise override**", "**delta-first**",
-  "**divergence** from baseline", "**override coverage**", "when **not** to override"
+  "**divergence** from baseline", "**override coverage**", "when **not** to
+  override"
 
 ## Minimal Ontology Principle (methodology)
 
 Model **deltas**, not the entire universe:
 
-| Layer | Steward work |
-| ----- | ------------ |
-| Vocabulary pack | Baseline definitions (industry / connector pack) |
-| Non-divergent fields | **Inherit** pack — no override, no Gold friction |
-| Divergent fields | Flag in Govern + **enterprise override** with `divergence_reason` |
-| Unknowns | **Semantic gaps** (low-confidence context, decision overrides) → steward resolution |
+| Layer                | Steward work                                                                        |
+| -------------------- | ----------------------------------------------------------------------------------- |
+| Vocabulary pack      | Baseline definitions (industry / connector pack)                                    |
+| Non-divergent fields | **Inherit** pack — no override, no Gold friction                                    |
+| Divergent fields     | Flag in Govern + **enterprise override** with `divergence_reason`                   |
+| Unknowns             | **Semantic gaps** (low-confidence context, decision overrides) → steward resolution |
 
 ### When **not** to override
 
 - Pack baseline matches operational meaning — use pack term as-is.
-- Cosmetic naming preference without semantic difference — use aliases/synonyms instead.
-- One-off ETL transform detail — document in transformation, not ontology override.
+- Cosmetic naming preference without semantic difference — use aliases/synonyms
+  instead.
+- One-off ETL transform detail — document in transformation, not ontology
+  override.
 
 ### Maintainability — flag divergence before publishing as trusted
 
 Promotion to trusted tier uses **override-coverage** (% of **flagged divergent**
-fields with active overrides). **Unflagged fields do not count.** If stewards never
-mark deltas, coverage is vacuously 100% and the readiness check does not prove
-semantic documentation. **Always flag + override real divergences** before promotion.
+fields with active overrides). **Unflagged fields do not count.** If stewards
+never mark deltas, coverage is vacuously 100% and the readiness check does not
+prove semantic documentation. **Always flag + override real divergences** before
+promotion.
 
 ## Core Concepts
 
@@ -68,11 +72,15 @@ semantic documentation. **Always flag + override real divergences** before promo
 
 ### Flow — Enterprise delta (override) instead of full rebinding
 
-1. Identify fields where **your** meaning differs from pack baseline (not all fields).
+1. Identify fields where **your** meaning differs from pack baseline (not all
+   fields).
 2. Document `divergence_reason` per field (Govern step in Studio).
-3. `create_enterprise_override` via **`loxtep-ontology`** — link `linked_data_product_ids`.
-4. Track **Open Gaps** for inference/context unknowns; resolve with `resolve_semantic_gap`.
-5. Promote to Gold when **override-coverage** ≥ org threshold (default 80%) on divergent fields only.
+3. `create_enterprise_override` via **`loxtep-ontology`** — link
+   `linked_data_product_ids`.
+4. Track **Open Gaps** for inference/context unknowns; resolve with
+   `resolve_semantic_gap`.
+5. Promote to Gold when **override-coverage** ≥ org threshold (default 80%) on
+   divergent fields only.
 
 ### Flow — Domain Ontology Construction
 
@@ -135,21 +143,21 @@ semantic documentation. **Always flag + override real divergences** before promo
 
 ## MCP mapping
 
-| `operation` | Facade | Scope | Notes |
-| ----------- | ------ | ----- | ----- |
-| `create_ontology_concept` | `loxtep_meaning` | organization | Node type with properties |
-| `create_ontology_relationship` | `loxtep_meaning` | organization | Edge between entity types |
-| `get_ontology_relationships` | `loxtep_meaning` | organization | Query graph edges |
-| `update_ontology_concept` | `loxtep_meaning` | organization | Modify concept definition |
-| `delete_ontology_concept` | `loxtep_meaning` | organization | Soft-delete (tombstone) |
-| `create_term` | `loxtep_meaning` | organization | Canonical term + aliases |
-| `sync_vocabulary` | `loxtep_meaning` | organization | Bulk vocabulary sync |
-| `resolve_canonical_key` | `loxtep_meaning` | organization | Alias → canonical resolution |
-| `register_namespace_mapping` | `loxtep_meaning` | organization | Cross-system prefix mapping |
-| `list_namespace_mappings` | `loxtep_meaning` | organization | View registered namespaces |
-| `create_enterprise_override` | `loxtep_meaning` | organization | Delta when pack baseline wrong |
-| `list_enterprise_overrides` | `loxtep_meaning` | organization | Audit active/proposed overrides |
-| `resolve_semantic_gap` | `loxtep_meaning` | organization | Close gap issue + create override |
+| `operation`                    | Facade           | Scope        | Notes                             |
+| ------------------------------ | ---------------- | ------------ | --------------------------------- |
+| `create_ontology_concept`      | `loxtep_meaning` | organization | Node type with properties         |
+| `create_ontology_relationship` | `loxtep_meaning` | organization | Edge between entity types         |
+| `get_ontology_relationships`   | `loxtep_meaning` | organization | Query graph edges                 |
+| `update_ontology_concept`      | `loxtep_meaning` | organization | Modify concept definition         |
+| `delete_ontology_concept`      | `loxtep_meaning` | organization | Soft-delete (tombstone)           |
+| `create_term`                  | `loxtep_meaning` | organization | Canonical term + aliases          |
+| `sync_vocabulary`              | `loxtep_meaning` | organization | Bulk vocabulary sync              |
+| `resolve_canonical_key`        | `loxtep_meaning` | organization | Alias → canonical resolution      |
+| `register_namespace_mapping`   | `loxtep_meaning` | organization | Cross-system prefix mapping       |
+| `list_namespace_mappings`      | `loxtep_meaning` | organization | View registered namespaces        |
+| `create_enterprise_override`   | `loxtep_meaning` | organization | Delta when pack baseline wrong    |
+| `list_enterprise_overrides`    | `loxtep_meaning` | organization | Audit active/proposed overrides   |
+| `resolve_semantic_gap`         | `loxtep_meaning` | organization | Close gap issue + create override |
 
 ## Coupling with data-product-modeling
 

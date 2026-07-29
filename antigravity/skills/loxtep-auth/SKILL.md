@@ -10,9 +10,12 @@ metadata:
 
 # Loxtep MCP — Authentication recovery
 
-Loxtep MCP is **hosted only** (`https://mcp.loxtep.io/ai/mcp/stream`, dev: `https://mcpdev.loxtep.io/ai/mcp/stream`). **Do not** suggest `npx @loxtep/customer-mcp-server` or local stdio MCP.
+Loxtep MCP is **hosted only** (`https://mcp.loxtep.io/ai/mcp/stream`, dev:
+`https://mcpdev.loxtep.io/ai/mcp/stream`). **Do not** suggest
+`npx @loxtep/customer-mcp-server` or local stdio MCP.
 
-When a call to a **Loxtep MCP** tool (`loxtep_*` with an `operation` field) fails with:
+When a call to a **Loxtep MCP** tool (`loxtep_*` with an `operation` field)
+fails with:
 
 - **`Unauthorized`** or **`{"error":"Unauthorized"}`**
 - **"No valid authentication token found"**, or
@@ -20,9 +23,11 @@ When a call to a **Loxtep MCP** tool (`loxtep_*` with an `operation` field) fail
 
 the OAuth session has expired or was never established.
 
+
 **How to fix:**
 
-1. Disconnect and reconnect the Loxtep MCP server in your IDE's MCP settings (re-triggers OAuth).
+1. Disconnect and reconnect the Loxtep MCP server in your IDE's MCP settings
+   (re-triggers OAuth).
 2. Sign in and authorize in the browser when prompted.
 3. **Retry** the tool call that failed.
 

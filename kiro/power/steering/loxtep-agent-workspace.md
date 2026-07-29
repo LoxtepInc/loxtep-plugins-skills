@@ -21,18 +21,14 @@ the **agent workspace**, not **data mesh** repos (`loxtep_workspace` /
 ## MCP tool and operations
 
 - **Tool:** `loxtep_context`
-- **`operation`** values (flat names): `create_issue`,
-  `list_issues`, `get_issue`,
-  `create_goal`, `list_goals`,
-  `get_goal`, `list_workstreams`,
-  `create_workstream`, `get_workstream`,
-  `list_agents`, `get_agent`
+- **`operation`** values (flat names): `create_issue`, `list_issues`,
+  `get_issue`, `create_goal`, `list_goals`, `get_goal`, `list_workstreams`,
+  `create_workstream`, `get_workstream`, `list_agents`, `get_agent`
 
 ## Pitfalls
 
-- **`create_workstream`** ≠ **`create_project`** on
-  `loxtep_workspace`. Naming collision in English — always pick the **tool** from
-  user intent.
+- **`create_workstream`** ≠ **`create_project`** on `loxtep_workspace`. Naming
+  collision in English — always pick the **tool** from user intent.
 - Data pipeline work → **`data-workflows`** + **`connect-external-system`**.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->

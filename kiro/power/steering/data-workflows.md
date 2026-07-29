@@ -2,20 +2,43 @@
 
 # Data mesh studio (Customer MCP)
 
-> **Customer install surface:** shipped via [loxtep-plugins-skills](https://github.com/LoxtepInc/loxtep-plugins-skills) (`<client>/skills/data-workflows/`). Cross-tool authoring contract: [agent-workflow-authoring.md](https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/docs/agent-workflow-authoring.md).
+> **Customer install surface:** shipped via
+> [loxtep-plugins-skills](https://github.com/LoxtepInc/loxtep-plugins-skills)
+> (`<client>/skills/data-workflows/`). Cross-tool authoring contract:
+> [agent-workflow-authoring.md](https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/docs/agent-workflow-authoring.md).
 
-End-to-end playbooks for **projects**, **workflow graphs**, **connections**,
-**data products**, and **delivery interfaces** (webhook subscriptions, API
-endpoints, exports, database syncs, BI connections, event streams), plus
-**session** context. Pair with **`connect-external-system`** for SaaS/API ingest
-(Shopify, etc.) or **SDK connector** for programmatic ingestion, and
+End-to-end playbooks for **projects**, **workflow graphs**, **connections**
+(**Triggers** at ingest head, **Targets** at delivery tail), **data products**,
+and **delivery workflows** (`workflow_type: "delivery"`), plus **session**
+context. Pair with **`connect-external-system`** for SaaS/API ingest (Shopify,
+etc.) or **SDK connector** for programmatic ingestion, and
 **`loxtep-workspace`** for runtime provisioning.
+
+## Methodology (CRITICAL — two surfaces, one model)
+
+| Surface              | Happy path                                                                                                  |
+| -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **CLI / code-first** | `loxtep ingest create` → `transform create` → `delivery create` → `lint` → `push` → `deploy`                |
+| **MCP (primitives)** | `get_entity_schemas` → compose `files` → `save_workflow_bundle` (`dry_run: true` first) → `deploy_workflow` |
+
+Do **not** teach `create_delivery` / `list_deliveries` as the happy path — those
+hit the legacy consumptions table. Prefer a **Target** connection
+(`connections/{id}.json` + `connector_id`) on a delivery workflow bundle.
+
+### Trigger vs Target
+
+| Role        | Where                              | Bundle entity                               |
+| ----------- | ---------------------------------- | ------------------------------------------- |
+| **Trigger** | Connector at the **ingest head**   | `connections/{id}.json` with `connector_id` |
+| **Target**  | Connector at the **delivery tail** | `connections/{id}.json` with `connector_id` |
+
+`workflow_type` for outbound flows is **`delivery`** — never `consumption`.
 
 ## Agent authoring decision tree (CRITICAL — read first)
 
 ```
 New flow / ingestion setup / "connect and ingest"?
-  → get_entity_schemas (pattern: ingestion|enrichment|consumption)
+  → get_entity_schemas (pattern: ingestion|enrichment|delivery)
   → Compose full files map (workflow.json + connections/ + transformations/ + data-products/)
   → save_workflow_bundle dry_run=true → fix errors → save_workflow_bundle dry_run=false
   → NEVER: patch_workflow_graph node-by-node for new flows
@@ -25,11 +48,16 @@ User editing open flow in Studio UI (tiny incremental change)?
 
 After connect-external-system (Connect)?
   → You have connector_id + samples — start at get_entity_schemas, compose bundle
+  → Put the connector on a Trigger connection at the ingest head
 
 User asks to "create a source/consumer data product"?
   → Design schema first (data-product-modeling) — NO create_data_product MCP call
   → Embed data-products/{id}.json in save_workflow_bundle files → deploy_workflow
   → Verify get_data_product shows workflow_id + deployment_bindings after deploy
+
+User asks to deliver / push data out?
+  → Delivery workflow: workflow_type "delivery" + Target connection at the tail
+  → Prefer save_workflow_bundle (not create_delivery / list_deliveries)
 
 Starting any new flow?
   → create_project (or list_projects + reuse) FIRST — all workflow ops need project_id
@@ -38,25 +66,28 @@ Starting any new flow?
   → If GitHub-attached: local repo is source of truth; sync local → Loxtep project
 ```
 
-**Data products are created by workflow design + deploy — not by `create_data_product`.**
-Standalone MCP `create_data_product` produces orphan design-time records without
-`workflow_id`, queues, or `deployment_bindings`. Correct DPs carry
-`managed_by: "design-time"` and `deployed_by: "workflow-deployment"` after deploy.
+**Data products are created by workflow design + deploy — not by
+`create_data_product`.** Standalone MCP `create_data_product` produces orphan
+design-time records without `workflow_id`, queues, or `deployment_bindings`.
+Correct DPs carry `managed_by: "design-time"` and
+`deployed_by: "workflow-deployment"` after deploy.
 
 **Connection nodes** reference org **connectors** via `connector_id` inside the
-bundle (`connections/{connection_id}.json`).
+bundle (`connections/{connection_id}.json`) — Trigger at ingest head, Target at
+delivery tail.
 
 ## Project and local bundle files (CRITICAL — before Organize)
 
 **Every flow starts with a Loxtep project.** Workflows, connections, and data
-products are **project-scoped** — you need `project_id` on all workflow MCP calls.
+products are **project-scoped** — you need `project_id` on all workflow MCP
+calls.
 
-| Step | Action |
-| ---- | ------ |
-| 0a | `list_projects` / `get_project` — reuse an existing project when appropriate |
-| 0b | `create_project` when none exists — `{ "operation": "create_project", "name": "..." }` |
-| 0c (optional) | **Attach GitHub** — `update_project` with `github_*` fields (or `github_action` on `create_project`) so the Loxtep project links to the repo |
-| 0d (code-first repos) | CLI bootstrap: `loxtep init` → `loxtep attach` — see **`loxtep-sdk`** |
+| Step                  | Action                                                                                                                                       |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0a                    | `list_projects` / `get_project` — reuse an existing project when appropriate                                                                 |
+| 0b                    | `create_project` when none exists — `{ "operation": "create_project", "name": "..." }`                                                       |
+| 0c (optional)         | **Attach GitHub** — `update_project` with `github_*` fields (or `github_action` on `create_project`) so the Loxtep project links to the repo |
+| 0d (code-first repos) | CLI bootstrap: `loxtep init` → `loxtep attach` — see **`loxtep-sdk`**                                                                        |
 
 ### Write bundles to disk — do not author inline-only
 
@@ -64,8 +95,8 @@ products are **project-scoped** — you need `project_id` on all workflow MCP ca
 `organizations/.../workflows/{workflow_id}/`). That is **server-side state** —
 not a substitute for files in the user's repo.
 
-| Correct | Wrong |
-| ------- | ----- |
+| Correct                                                                                                               | Wrong                                                                                         |
+| --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | Write JSON under `workflows/{workflow_id}/` locally → build the `files` map from those paths → `save_workflow_bundle` | Compose the entire `files` map only inside the MCP tool-call argument with **no local files** |
 
 **Local layout** (repo root or code-first project root):
@@ -84,18 +115,18 @@ locally, commit, then sync to the Loxtep project (`save_workflow_bundle` and/or
 `loxtep` CLI — not API-only authoring). GitHub sync events use the
 `workflows-github-sync-requested` queue (see **`loxtep-queue-tracing`**).
 
-**Agent sequence:** project → write local files → dry-run save → fix → persist
-→ deploy.
+**Agent sequence:** project → write local files → dry-run save → fix → persist →
+deploy.
 
 ## When to use
 
 - **S0:** Confirm user and org (`get_current_user`, `get_current_organization`).
 - **S2:** Create an **omnichannel** or unified **data product** across multiple
   sources in a project.
-- **S3:** Register a **delivery interface** (e.g., webhook subscription) for
-  data product updates (`create_delivery`).
+- **S3:** Author a **delivery workflow** (`workflow_type: "delivery"`) with a
+  **Target** connection at the tail (Flow D) — not `create_delivery`.
 - User asks for **projects**, **flows**, **templates**, **data products**,
-  **delivery interfaces**, or composing/saving workflow bundles.
+  **Triggers** / **Targets**, or composing/saving workflow bundles.
 - **SDK / programmatic ingestion:** If the user wants to write events from their
   own code (not a SaaS connector), use the **`connect-external-system`** skill's
   **SDK Connector flow** (`connector_type: "sdk"`) to create the connector, then
@@ -109,13 +140,14 @@ locally, commit, then sync to the Loxtep project (`save_workflow_bundle` and/or
   `permissions`).
 - **Project-scoped** calls require `project_id` in the same payload as
   `operation`.
-- **Org-scoped** data products / delivery interfaces: use `data_product_id` as
-  required by each operation.
+- **Org-scoped** data products: use `data_product_id` as required by each
+  operation.
 
 ## How MCP calls work
 
-1. **Tool name** — one of `loxtep_session`, `loxtep_connect`, `loxtep_workspace`,
-   `loxtep_build` (primary for this skill), or `loxtep_observe` for deployment status.
+1. **Tool name** — one of `loxtep_session`, `loxtep_connect`,
+   `loxtep_workspace`, `loxtep_build` (primary for this skill), or
+   `loxtep_observe` for deployment status.
 2. **`operation`** — flat tool id (e.g. `list_workflows`).
 3. **Other fields** — API args at top level next to `operation`.
 
@@ -143,8 +175,8 @@ locally, commit, then sync to the Loxtep project (`save_workflow_bundle` and/or
 5. **Code-first repos:** run `loxtep init` and `loxtep attach` in the repo root
    (see **`loxtep-sdk`**) instead of hand-rolling paths when the CLI is
    available.
-6. Record `project_id` — every subsequent workflow MCP call in this session
-   uses it.
+6. Record `project_id` — every subsequent workflow MCP call in this session uses
+   it.
 
 Optional template bootstrap (after project exists):
 
@@ -169,27 +201,47 @@ expect the repo to lead** and sync pushes local → Loxtep.
 
 ### Flow C — Omnichannel data product (S2)
 
-1. Ensure **project** exists (**Flow B**); ensure **connectors** exist per channel (see
-   **`connect-external-system`**).
+1. Ensure **project** exists (**Flow B**); ensure **connectors** exist per
+   channel (see **`connect-external-system`**).
 2. **Write** workflow bundle files locally under `workflows/{workflow_id}/`.
 3. **`get_entity_schemas`** with `pattern: "ingestion"` (or enrichment/export as
    needed).
 4. Compose / validate the **`files`** map from on-disk JSON and
    **`save_workflow_bundle`** (`dry_run: true` first, then persist).
-5. `get_data_product` / `get_lexicon` to verify;
-   `update_data_product` as needed.
+5. `get_data_product` / `get_lexicon` to verify; `update_data_product` as
+   needed.
 
-### Flow D — Delivery interface for data product updates (S3)
+### Flow D — Delivery workflow with Target connection (S3)
 
-> **Note:** The `workflow_type` enum value `'consumption'` is unchanged in tool
-> calls — the user-facing name is "delivery workflow."
+Outbound flows use **`workflow_type: "delivery"`** (never `consumption`). Prefer
+a **Target** connection in `save_workflow_bundle` — do **not** call
+`create_delivery` / `list_deliveries` (legacy consumptions-table path).
 
-1. Obtain `data_product_id` (`list_data_products` / `get_data_product`).
-2. `loxtep_build` → `create_delivery` with `data_product_id`,
-   `endpoint_url`, optional `headers`, `secret_token`, `filters`,
-   `delivery_type` (e.g. `webhook`, `api_endpoint`, `export`, `database_sync`,
-   `bi_connect`, `event_stream`).
-3. Optional: `list_deliveries` to audit active delivery interfaces.
+**CLI methodology (code-first):**
+
+```bash
+loxtep ingest create …        # Trigger at ingest head
+loxtep transform create …     # optional reshape
+loxtep delivery create …      # Target at delivery tail (writes local package)
+loxtep lint
+loxtep push                   # sync local → workspace (or save_workflow_bundle)
+loxtep deploy
+```
+
+**MCP methodology (primitives):**
+
+1. Ensure source data product exists and is deployed (`get_data_product` /
+   `list_data_products`).
+2. Ensure destination **connector** exists (`connect-external-system` →
+   `connector_id`).
+3. `get_entity_schemas` with `pattern: "delivery"`.
+4. Compose delivery bundle locally under `workflows/{workflow_id}/`:
+   - `workflow.json` with `"workflow_type": "delivery"`
+   - Head: source `data-products/{id}.json` (or data-product-trigger as needed)
+   - Tail: **Target** `connections/{id}.json` with `connector_id`
+   - Optional transforms between head and Target
+5. `save_workflow_bundle` (`dry_run: true` → fix → persist).
+6. `deploy_workflow` (Flow H).
 
 ### Flow F — Enrich/stage from an existing data product (enrichment workflow)
 
@@ -248,7 +300,8 @@ for bound-queue semantics and deploy order.
 ### Flow E — Compose and save a workflow JSON bundle (CRITICAL — preferred agent path)
 
 Agents **must not** build new flows with sequential `patch_workflow_graph`
-calls. The studio is **S3-first composable JSON**: write the full flow, validate on save.
+calls. The studio is **S3-first composable JSON**: write the full flow, validate
+on save.
 
 **Step 1 — Read types:**
 
@@ -349,14 +402,14 @@ first.
 
 **Deploy via MCP (`loxtep_build` facade):**
 
-| Step | Action                           | Tool                 | `operation`           | Key args                                                     |
-| ---- | -------------------------------- | -------------------- | --------------------- | ------------------------------------------------------------ |
-| 1    | Ensure instance exists           | `loxtep_workspace`   | `list_instances`      | —                                                            |
-| 2a   | Deploy full project              | `loxtep_build` | `deploy_project`      | `project_id`, `instance_id`                                  |
-| 2b   | Deploy single workflow           | `loxtep_build` | `deploy_workflow`     | `project_id`, `workflow_id`, `instance_id`                   |
-| 3    | Poll status                      | `loxtep_observe` | `get_deployment`      | `deployment_id` (from step 2)                                |
-| 4    | Resolve queues                   | `loxtep_build` | `get_runtime_mapping` | `workflow_id`, `project_id`                                  |
-| 5    | Archive (decommission) when done | `loxtep_build`   | `archive_workflow`    | `project_id`, `workflow_id`, optional `instance_id`, `force` |
+| Step | Action                           | Tool               | `operation`           | Key args                                                     |
+| ---- | -------------------------------- | ------------------ | --------------------- | ------------------------------------------------------------ |
+| 1    | Ensure instance exists           | `loxtep_workspace` | `list_instances`      | —                                                            |
+| 2a   | Deploy full project              | `loxtep_build`     | `deploy_project`      | `project_id`, `instance_id`                                  |
+| 2b   | Deploy single workflow           | `loxtep_build`     | `deploy_workflow`     | `project_id`, `workflow_id`, `instance_id`                   |
+| 3    | Poll status                      | `loxtep_observe`   | `get_deployment`      | `deployment_id` (from step 2)                                |
+| 4    | Resolve queues                   | `loxtep_build`     | `get_runtime_mapping` | `workflow_id`, `project_id`                                  |
+| 5    | Archive (decommission) when done | `loxtep_build`     | `archive_workflow`    | `project_id`, `workflow_id`, optional `instance_id`, `force` |
 
 **Choosing `deploy_project` vs `deploy_workflow`:**
 
@@ -432,8 +485,7 @@ first.
 agent must resolve the runtime configuration so the SDK client knows which bot
 and queue to target:
 
-1. `loxtep_build` → `get_runtime_mapping` with `workflow_id` +
-   `project_id`
+1. `loxtep_build` → `get_runtime_mapping` with `workflow_id` + `project_id`
 2. From the response, identify the **connection entity's container** (match by
    `entity_id`)
 3. Extract the `bot_ids[0]` (the deployed bot) and `queue_ids` (input queue) for
@@ -447,13 +499,13 @@ and queue to target:
    product)
 2. Ensure user has an instance (`loxtep_workspace` → `list_instances`)
 3. Deploy:
-   - **Quick iteration:** `loxtep_build` → `deploy_workflow` with
-     `project_id` + `workflow_id` + `instance_id`
+   - **Quick iteration:** `loxtep_build` → `deploy_workflow` with `project_id` +
+     `workflow_id` + `instance_id`
    - **Production release:** `loxtep_build` → `deploy_project` with
      `project_id` + `instance_id`
 4. Poll `get_deployment` until status = `deployed`
-5. `loxtep_build` → `get_runtime_mapping` with `workflow_id` +
-   `project_id` — returns the deployed bot ID and queue names
+5. `loxtep_build` → `get_runtime_mapping` with `workflow_id` + `project_id` —
+   returns the deployed bot ID and queue names
 6. Use the **`loxtep-sdk`** Agent-Scope Skill to bootstrap the SDK client with
    the resolved `bot_id` and queue, then write events via the stream bus
 
@@ -467,17 +519,21 @@ When the user asks to **create**, **provision**, or **stand up** a source (or
 consumer) data product — including demand-driven / output-first design — follow
 this sequence. Do **not** call `create_data_product`.
 
-| Step | Action | Skill / tool |
-| ---- | ------ | ------------ |
-| 0 | Create or select project | **Flow B** — `create_project` / `list_projects` |
-| 0b (optional) | Attach GitHub + local layout | **Flow B2** — `update_project` `github_*`; write `workflows/{id}/` locally |
-| 1 | Connect external system (if needed) | `connect-external-system` → `connector_id` + samples |
-| 2 | Design desired output schema + provenance | `data-product-modeling` (design only — no MCP create) |
-| 3 | Read entity types | `get_entity_schemas` (`pattern`: `ingestion` \| `enrichment` \| `consumption`) |
-| 4 | Compose full `files` map **from on-disk JSON** | `workflow.json`, `connections/`, `transformations/`, `data-products/{id}.json` |
-| 5 | Validate + persist bundle | `save_workflow_bundle` (`dry_run: true` → fix → `dry_run: false`) |
-| 6 | Deploy to instance | `deploy_workflow` or `deploy_project` (Flow H) |
-| 7 | Verify runtime DP | `get_data_product` — expect `workflow_id`, `deployment_bindings`, `managed_by: "design-time"` |
+| Step          | Action                                         | Skill / tool                                                                                  |
+| ------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| 0             | Create or select project                       | **Flow B** — `create_project` / `list_projects`                                               |
+| 0b (optional) | Attach GitHub + local layout                   | **Flow B2** — `update_project` `github_*`; write `workflows/{id}/` locally                    |
+| 1             | Connect external system (if needed)            | `connect-external-system` → `connector_id` + samples                                          |
+| 2             | Design desired output schema + provenance      | `data-product-modeling` (design only — no MCP create)                                         |
+| 3             | Read entity types                              | `get_entity_schemas` (`pattern`: `ingestion` \| `enrichment` \| `delivery`)                   |
+| 4             | Compose full `files` map **from on-disk JSON** | `workflow.json`, Trigger `connections/`, `transformations/`, `data-products/{id}.json`        |
+| 5             | Validate + persist bundle                      | `save_workflow_bundle` (`dry_run: true` → fix → `dry_run: false`)                             |
+| 6             | Deploy to instance                             | `deploy_workflow` or `deploy_project` (Flow H)                                                |
+| 7             | Verify runtime DP                              | `get_data_product` — expect `workflow_id`, `deployment_bindings`, `managed_by: "design-time"` |
+
+For **outbound** consumer/delivery products, use Flow D
+(`workflow_type: "delivery"` + Target connection) instead of a separate
+delivery-interface API.
 
 Put the designed schema on the **`data-products/{id}.json`** node (governance,
 metadata, or schema fields per `get_entity_schemas`). Use `update_data_product`
@@ -523,23 +579,27 @@ Notes:
 
 ## MCP mapping (operations and scope)
 
-| Step | User intent                        | Tool                   | `operation`                                                                                                                                                                                                                                                                                | Scope                                           | Key args                                                                                 |
-| ---- | ---------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| 1    | Who am I?                          | `loxtep_session`       | `get_current_user`                                                                                                                                                                                                                                                                         | organization                                    | —                                                                                        |
-| 2    | Which org?                         | `loxtep_session`       | `get_current_organization`                                                                                                                                                                                                                                                                 | organization                                    | —                                                                                        |
-| 3    | List/create/update/delete projects | `loxtep_workspace`      | `list_projects`, `get_project`, `create_project`, `update_project`, `delete_project`                                                                                                                                                                                                       | organization                                    | `name`, ids                                                                              |
-| 4    | Templates                          | `loxtep_connect`     | `list_templates`, `get_template`, `apply_template`                                                                                                                                                                                                                                         | organization / **project** for `apply_template` | `apply_template`: `project_id`, `template_type`, `template_slug`                         |
-| 5    | Workflows                          | `loxtep_build`     | `get_entity_schemas`, `save_workflow_bundle`, `list_workflows`, `get_workflow`, `get_workflow_graph`, `preview_transform`, `create_workflow`, `update_workflow`, `delete_workflow`, `patch_workflow_graph` (Studio UI edits only) | **project**                                     | `project_id`                                                                             |
-| 6    | Existing connection entities       | `loxtep_build`   | `update_trigger`, `delete_trigger`, `list_triggers`, `get_trigger`, `test_trigger` | **project**                                     | `project_id`                                                                             |
-| 7    | Data products (inspect/update after deploy) | `loxtep_build` | `list_data_products`, `get_data_product`, `get_lexicon`, `update_data_product`, `delete_data_product`                                                                                                                                                           | **project** or org per op                       | **Do not** `create_data_product` — author via bundle `data-products/{id}.json` |
-| 8    | Delivery interfaces                | `loxtep_build` | `list_deliveries`, `create_delivery`                                                                                                                                                                                                                                    | **organization**                                | `data_product_id`, `endpoint_url`, `delivery_type`, …                                    |
-| 9    | Deploy project                     | `loxtep_build`   | `deploy_project`                                                                                                                                                                                                                                                                           | **project**                                     | `project_id`, `instance_id`, optional `force_redeploy`                                   |
-| 9b   | Deploy single workflow             | `loxtep_build`   | `deploy_workflow`                                                                                                                                                                                                                                                                          | **project**                                     | `project_id`, `workflow_id`, `instance_id`, optional `force_redeploy`, `skip_validation` |
-| 10   | List/get deployments               | `loxtep_observe`   | `list_deployments`, `get_deployment`                                                                                                                                                                                                                                                       | **organization**                                | `deployment_id`, optional filters                                                        |
-| 11   | Runtime mapping                    | `loxtep_build`   | `get_runtime_mapping`                                                                                                                                                                                                                                                                      | **project**                                     | `workflow_id`, `project_id`                                                              |
+| Step | User intent                                 | Tool               | `operation`                                                                                                                                                                                                                       | Scope                                           | Key args                                                                                                                        |
+| ---- | ------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | Who am I?                                   | `loxtep_session`   | `get_current_user`                                                                                                                                                                                                                | organization                                    | —                                                                                                                               |
+| 2    | Which org?                                  | `loxtep_session`   | `get_current_organization`                                                                                                                                                                                                        | organization                                    | —                                                                                                                               |
+| 3    | List/create/update/delete projects          | `loxtep_workspace` | `list_projects`, `get_project`, `create_project`, `update_project`, `delete_project`                                                                                                                                              | organization                                    | `name`, ids                                                                                                                     |
+| 4    | Templates                                   | `loxtep_connect`   | `list_templates`, `get_template`, `apply_template`                                                                                                                                                                                | organization / **project** for `apply_template` | `apply_template`: `project_id`, `template_type`, `template_slug`                                                                |
+| 5    | Workflows                                   | `loxtep_build`     | `get_entity_schemas`, `save_workflow_bundle`, `list_workflows`, `get_workflow`, `get_workflow_graph`, `preview_transform`, `create_workflow`, `update_workflow`, `delete_workflow`, `patch_workflow_graph` (Studio UI edits only) | **project**                                     | `project_id`                                                                                                                    |
+| 6    | Existing Trigger/Target connections         | `loxtep_build`     | `list_triggers`/`list_targets`, `get_*`, `update_*`, `delete_*`, `test_*`                                                                                                                                                         | **project**                                     | `project_id` — new tails via bundle, not create\_\* ops                                                                         |
+| 7    | Data products (inspect/update after deploy) | `loxtep_build`     | `list_data_products`, `get_data_product`, `get_lexicon`, `update_data_product`, `delete_data_product`                                                                                                                             | **project** or org per op                       | **Do not** `create_data_product` — author via bundle `data-products/{id}.json`                                                  |
+| 8    | Delivery (outbound)                         | `loxtep_build`     | `get_entity_schemas` (`pattern: "delivery"`), `save_workflow_bundle`, `deploy_workflow`                                                                                                                                           | **project**                                     | Target `connections/{id}.json` + `connector_id`; `workflow_type: "delivery"`. **`create_delivery` / `list_deliveries` removed** |
+| 9    | Deploy project                              | `loxtep_build`     | `deploy_project`                                                                                                                                                                                                                  | **project**                                     | `project_id`, `instance_id`, optional `force_redeploy`                                                                          |
+| 9b   | Deploy single workflow                      | `loxtep_build`     | `deploy_workflow`                                                                                                                                                                                                                 | **project**                                     | `project_id`, `workflow_id`, `instance_id`, optional `force_redeploy`, `skip_validation`                                        |
+| 10   | List/get deployments                        | `loxtep_observe`   | `list_deployments`, `get_deployment`                                                                                                                                                                                              | **organization**                                | `deployment_id`, optional filters                                                                                               |
+| 11   | Runtime mapping                             | `loxtep_build`     | `get_runtime_mapping`                                                                                                                                                                                                             | **project**                                     | `workflow_id`, `project_id`                                                                                                     |
 
 ## Pitfalls
 
+- **`create_delivery` / `list_deliveries`** — **Removed** (consumptions table
+  dropped). Author Target connection + `workflow_type: "delivery"` in
+  `save_workflow_bundle` (Flow D).
+- **`workflow_type: "consumption"`** — Removed. Use **`delivery`**.
 - **Inline-only bundle authoring** — Composing the `files` map solely inside a
   `save_workflow_bundle` tool call with no `workflows/{workflow_id}/` files on
   disk. Write locally first; MCP upload/sync is step two. See Flow B2.
@@ -583,7 +643,8 @@ Notes:
   list.
 - **Paid plans vs shared instance** — provisioning is **`loxtep-workspace`**,
   not this Agent-Scope Skill.
-- **Agent issues/goals** — use **`loxtep-agent-workspace`** (`loxtep_context` tool), not `loxtep_workspace`.
+- **Agent issues/goals** — use **`loxtep-agent-workspace`** (`loxtep_context`
+  tool), not `loxtep_workspace`.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 
@@ -620,10 +681,12 @@ permissions:
 ## Implementation notes
 
 **Internal flow identifiers:** Flow A–J, Flow E (compose bundle), S0–S3 user
-story refs, P1/P2 PKO handoffs — routing detail for agents; not user-facing labels.
+story refs, P1/P2 PKO handoffs — routing detail for agents; not user-facing
+labels.
 
 **PKO handoffs:** Connect (`connect-external-system`) ends with `connector_id` +
-samples → Organize bundle authoring here. P2 = design + deploy ingestion workflow.
+samples → Organize bundle authoring here (Trigger at ingest head). P2 = design +
+deploy ingestion workflow. Delivery = Flow D (Target at tail).
 
 ## Optional attribution
 
