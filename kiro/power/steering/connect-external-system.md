@@ -32,7 +32,8 @@ CLI: `ingest create` → `transform create` → `delivery create` → `lint` →
 - "Connect **Shopify** / **Salesforce** / …"
 - "**OAuth** for a connector" or "**API key** connector"
 - "**SDK connector**" or "programmatic ingestion"
-- `list_connector_types`, `create_connector`, `get_oauth_url`, `capture_samples`
+- `list_connector_types`, `create_connector`, `update_connector`, `get_oauth_url`,
+  `capture_samples`
 - Apply a **connector** catalog template (`apply_template` with connector
   template)
 
@@ -91,6 +92,7 @@ G.
 | ---------------- | ---------------- | ---------------------- | ------------ |
 | List types       | `loxtep_connect` | `list_connector_types` | global       |
 | Create connector | `loxtep_connect` | `create_connector`     | organization |
+| Update connector | `loxtep_connect` | `update_connector`     | organization |
 | OAuth URL        | `loxtep_connect` | `get_oauth_url`        | organization |
 | Capture samples  | `loxtep_connect` | `capture_samples`      | organization |
 | Apply template   | `loxtep_connect` | `apply_template`       | **project**  |

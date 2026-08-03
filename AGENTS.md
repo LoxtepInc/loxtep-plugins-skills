@@ -95,12 +95,13 @@ key parameters.
 { "operation": "get_current_user" }
 ```
 
-### `loxtep_connect` — Connect — wire external data sources. Org-level connector credentials (list/create/OAuth/samples) and starter templates (list/get/apply). A connector is the credential to an external system; binding it into a workflow graph is done in loxtep_build.
+### `loxtep_connect` — Connect — wire external data sources. Org-level connector credentials (list/create/update/OAuth/samples) and starter templates (list/get/apply). A connector is the credential to an external system; binding it into a workflow graph is done in loxtep_build.
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
 | `list_connectors` | organization | — | `domain_id` |
 | `list_connector_types` | global | — | — |
 | `create_connector` | organization | `connector_type`, `metadata` | `domain_id` |
+| `update_connector` | organization | `connector_id` | `connector_type`, `metadata` |
 | `get_oauth_url` | organization | — | — |
 | `delete_connector` | organization | — | — |
 | `capture_samples` | organization | — | — |
