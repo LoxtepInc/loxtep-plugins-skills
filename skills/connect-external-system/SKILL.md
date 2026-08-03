@@ -44,8 +44,8 @@ CLI: `ingest create` → `transform create` → `delivery create` → `lint` →
 - "Connect **Shopify** / **Salesforce** / …"
 - "**OAuth** for a connector" or "**API key** connector"
 - "**SDK connector**" or "programmatic ingestion"
-- `list_connector_types`, `create_connector`, `update_connector`, `get_oauth_url`,
-  `capture_samples`
+- `list_connector_types`, `create_connector`, `update_connector`,
+  `get_oauth_url`, `test_connector`, `capture_samples`
 - Apply a **connector** catalog template (`apply_template` with connector
   template)
 
@@ -67,18 +67,19 @@ products, or deploying — use **`data-workflows`** and **`loxtep-deployments`**
 | 1    | Discover types               | `loxtep_connect` | `list_connector_types`                   |
 | 2    | Start OAuth                  | `loxtep_connect` | `get_oauth_url`                          |
 | 3    | User completes browser OAuth | —                | —                                        |
-| 4    | Test connector               | `loxtep_connect` | (connector test via API after OAuth)     |
-| 5    | Capture samples              | `loxtep_connect` | `capture_samples`                        |
+| 4    | Connectivity probe           | `loxtep_connect` | `test_connector`                         |
+| 5    | Capture samples              | `loxtep_connect` | `capture_samples` (`entity_type` required) |
 | 6    | **Hand off to studio**       | —                | **`data-workflows`** with `connector_id` |
 
-### Flow — API key connector
+### Flow — API key / SFTP / file-transfer connector
 
-| Step | Action                                                          | Tool             | `operation`                              |
-| ---- | --------------------------------------------------------------- | ---------------- | ---------------------------------------- |
-| 1    | `list_connector_types`                                          | `loxtep_connect` | `list_connector_types`                   |
-| 2    | `create_connector` with `connector_type` + credentials/metadata | `loxtep_connect` | `create_connector`                       |
-| 3    | Capture samples                                                 | `loxtep_connect` | `capture_samples`                        |
-| 4    | **Hand off to studio**                                          | —                | **`data-workflows`** with `connector_id` |
+| Step | Action                                                          | Tool             | `operation`                                |
+| ---- | --------------------------------------------------------------- | ---------------- | ------------------------------------------ |
+| 1    | `list_connector_types`                                          | `loxtep_connect` | `list_connector_types`                     |
+| 2    | `create_connector` with `connector_type` + credentials/metadata | `loxtep_connect` | `create_connector`                         |
+| 3    | Connectivity probe                                              | `loxtep_connect` | `test_connector`                           |
+| 4    | Capture samples                                                 | `loxtep_connect` | `capture_samples` (`entity_type` required) |
+| 5    | **Hand off to studio**                                          | —                | **`data-workflows`** with `connector_id`   |
 
 ### Flow — SDK connector
 
@@ -86,7 +87,8 @@ products, or deploying — use **`data-workflows`** and **`loxtep-deployments`**
 | ---- | ------------------------ | ---------------- | ---------------------------------------------------- |
 | 1    | Confirm `"sdk"` in types | `loxtep_connect` | `list_connector_types`                               |
 | 2    | Create SDK connector     | `loxtep_connect` | `create_connector`                                   |
-| 3    | **Hand off to studio**   | —                | **`data-workflows`** — SDK connection goes in bundle |
+| 3    | Optional connectivity probe | `loxtep_connect` | `test_connector` (SDK probe is a no-op pass)      |
+| 4    | **Hand off to studio**   | —                | **`data-workflows`** — SDK connection goes in bundle |
 
 SDK bootstrap (post-deploy) uses **`loxtep-sdk`**; see **`data-workflows`** Flow
 G.
@@ -98,6 +100,34 @@ G.
    `template_slug`. (Templates write bundles internally — still prefer reviewing
    via `get_workflow_graph` before deploy.)
 
+## How to test / preview samples (use these — do not invent CLI)
+
+| Goal | MCP | CLI | Studio |
+| ---- | --- | --- | ------ |
+| Connectivity / credentials | `loxtep_connect` → `test_connector` (`connector_id`) | `loxtep connectors test <connector_id>` | Connection test in Studio |
+| Live sample rows + schema | `loxtep_connect` → `capture_samples` (`connector_id`, **`entity_type`**, optional `limit` 1–25) | `loxtep connectors capture-samples <id> --entity-type <name> [--limit N]` | Preview on connection entity |
+
+**Forbidden / do not invent:**
+
+- `loxtep connector test …` (singular `connector`) — **does not exist**
+- `loxtep connectors test … --entity … --limit …` — `test` has no sample flags; use `capture-samples`
+- `loxtep test <module>` — runs a **workflow module** locally, not a connector
+
+Example (MCP):
+
+```json
+{ "operation": "test_connector", "connector_id": "<uuid>" }
+```
+
+```json
+{
+  "operation": "capture_samples",
+  "connector_id": "<uuid>",
+  "entity_type": "products",
+  "limit": 10
+}
+```
+
 ## MCP mapping
 
 | User intent      | Tool             | `operation`            | Scope        |
@@ -106,6 +136,7 @@ G.
 | Create connector | `loxtep_connect` | `create_connector`     | organization |
 | Update connector | `loxtep_connect` | `update_connector`     | organization |
 | OAuth URL        | `loxtep_connect` | `get_oauth_url`        | organization |
+| Test connectivity | `loxtep_connect` | `test_connector`      | organization |
 | Capture samples  | `loxtep_connect` | `capture_samples`      | organization |
 | Apply template   | `loxtep_connect` | `apply_template`       | **project**  |
 
@@ -117,6 +148,9 @@ G.
   **connection entity inside the bundle**, not only on the org connector.
 - Org-level connector credentials are **not** auto-merged onto graph nodes at
   deploy; copy refs onto the bundle connection node when needed.
+- **`capture_samples` requires `entity_type`** — for file-transfer, use the
+  entity key from connector metadata / fileSpecs (not a filesystem path unless
+  that is how the provider names the entity).
 
 ## References
 
