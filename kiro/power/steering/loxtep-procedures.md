@@ -148,8 +148,8 @@ permissions: {}
 
 ## Implementation notes
 
-All MCP operations in this skill use the **`loxtep_context`** job facade. Legacy
-name: `loxtep_procedures`.
+All MCP operations in this skill use the **`loxtep_context`** job facade (the
+former procedures-only facade was folded into this surface).
 
 **Platform PKO procedures** — stable `@id` values like
 `procedure#connect-external-system`. Use `get_procedure` to read step
