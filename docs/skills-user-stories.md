@@ -64,15 +64,15 @@ Platform PKO procedures: `platform-backend/graph/platform-pko/` · architecture:
 
 ## S1 — Connect external system (PKO P1)
 
-| Field             | Detail                                                                                                                                                |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Persona**       | Data engineer, integrator                                                                                                                             |
-| **PKO**           | `procedure#connect-external-system` → `procedure#capture-connector-samples` → `procedure#design-ingestion-workflow`                                   |
-| **Preconditions** | MCP auth; optional `project_id` for templates only (not required for org connector)                                                                   |
+| Field             | Detail                                                                                                                                                  |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Persona**       | Data engineer, integrator                                                                                                                               |
+| **PKO**           | `procedure#connect-external-system` → `procedure#capture-connector-samples` → `procedure#design-ingestion-workflow`                                     |
+| **Preconditions** | MCP auth; optional `project_id` for templates only (not required for org connector)                                                                     |
 | **Happy path**    | `list_connector_types` → OAuth or `create_connector` → `test_connector` → `capture_samples` → hand off to **`data-workflows`** (`save_workflow_bundle`) |
 | **MCP**           | `loxtep_connect` (`list_connector_types`, `create_connector`, `get_oauth_url`, `test_connector`, `capture_samples`, `list_templates`, `apply_template`) |
-| **CLI**           | `loxtep connectors test <id>`; `loxtep connectors capture-samples <id> --entity-type <name> [--limit N]` (never invent `loxtep connector test`) |
-| **Primary skill** | **`connect-external-system`**                                                                                                                         |
+| **CLI**           | `loxtep connectors test <id>`; `loxtep connectors capture-samples <id> --entity-type <name> [--limit N]` (never invent `loxtep connector test`)         |
+| **Primary skill** | **`connect-external-system`**                                                                                                                           |
 
 ---
 
@@ -133,7 +133,7 @@ For the full S0–S15 narrative detail and MCP operation → skill index, see
 
 | `operation`                                                                                          | Primary skill                 |
 | ---------------------------------------------------------------------------------------------------- | ----------------------------- |
-| `list_connector_types`, `create_connector`, `get_oauth_url`, `test_connector`, `capture_samples` | **`connect-external-system`** |
+| `list_connector_types`, `create_connector`, `get_oauth_url`, `test_connector`, `capture_samples`     | **`connect-external-system`** |
 | `list_connections`, `get_connection`, `test_connection`, `update_connection`                         | **`data-workflows`**          |
 | `get_entity_schemas`, `save_workflow_bundle`, `list_workflows`, `get_workflow`, `get_workflow_graph` | **`data-workflows`**          |
 | `deploy_project`, `deploy_workflow`, `list_deployments`, `get_deployment`                            | `loxtep-deployments`          |

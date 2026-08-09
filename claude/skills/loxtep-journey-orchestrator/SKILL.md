@@ -67,13 +67,19 @@ rules, and is published as trusted.
 1. Define what the data means — hand off to `semantic-ontology-mapping` skill
 2. Surface the draft definitions for domain owner review — check `list_pending`
    and surface to the right person
-3. On approval, apply the definitions — `promote_data_product` readiness check
+3. On approval, apply definition/CDLC transitions as required — not
+   `promote_data_product` (that is medallion only)
 4. Infer and review relationships between entities
 5. Generate and review quality rules
-6. Run the promotion readiness checklist — `get_promotion_readiness`
+6. Run the **semantic medallion** readiness checklist —
+   `get_promotion_readiness` (Raw/In Progress/Ready = bronze/silver/gold;
+   orthogonal to `status`)
 7. Route to domain owner for final approval — `list_pending`, `resolve`
+8. Apply medallion promotion — `promote_data_product` with `target_tier`
+   `silver` or `gold`
 
-**Done when:** data product is approved and promoted to trusted tier.
+**Done when:** data product `medallion` is at the trusted tier (Ready/gold when
+cross-domain use is the goal). Do not confuse with lifecycle `status=active`.
 
 **Rules:**
 
@@ -121,21 +127,30 @@ for the full internal → user language mapping.
 
 **PKO procedure chain:**
 
-| Stage | PKO procedure                              | Skill                                         |
-| ----- | ------------------------------------------ | --------------------------------------------- |
-| P0    | `procedure#agent-session-bootstrap`        | `loxtep-auth`, `loxtep-mcp-session`           |
-| P1    | `procedure#connect-external-system`        | `connect-external-system`                     |
-| P1    | `procedure#capture-connector-samples`      | `connect-external-system`                     |
-| P2    | `procedure#design-ingestion-workflow`      | `data-workflows`                              |
-| P2    | `procedure#deploy-ingestion-workflow`      | `loxtep-build`, `loxtep-workspace`            |
-| P3    | `procedure#define-data-product-semantics`  | `semantic-ontology-mapping`                   |
-| P4    | `procedure#promote-data-product-medallion` | `promote-data-product`                        |
-| P5    | `procedure#register-delivery-workflow`     | `data-workflows` (Flow D — Target connection) |
-| P5    | `procedure#enable-agent-mcp-access`        | `loxtep-mcp-session`, `mcp-integration`       |
-| P6    | `procedure#govern-data-access`             | `governance-policies`                         |
-| P7    | `procedure#maintain-ai-ready-asset`        | `discover-govern-lineage`                     |
+| Stage | PKO procedure                              | Skill                                   |
+| ----- | ------------------------------------------ | --------------------------------------- |
+| P0    | `procedure#agent-session-bootstrap`        | `loxtep-auth`, `loxtep-mcp-session`     |
+| P1    | `procedure#connect-external-system`        | `connect-external-system`               |
+| P1    | `procedure#capture-connector-samples`      | `connect-external-system`               |
+| P2    | `procedure#design-ingestion-workflow`      | `data-workflows`                        |
+| P2    | `procedure#deploy-ingestion-workflow`      | `loxtep-build`, `loxtep-workspace`      |
+| P3    | `procedure#define-data-product-semantics`  | `semantic-ontology-mapping`             |
+| P3    | `procedure#establish-data-standards`       | `org-semantics-quality`                 |
+| P4    | `procedure#register-delivery-interface`    | `data-product-modeling`                 |
+| P4    | `procedure#promote-data-product-medallion` | `promote-data-product`                  |
+| P5    | `procedure#enable-agent-mcp-access`        | `loxtep-mcp-session`, `mcp-integration` |
+| P6    | `procedure#govern-data-access`             | `governance-policies`                   |
+| P7    | `procedure#maintain-ai-ready-asset`        | `discover-govern-lineage`               |
 
 **Step → journey mapping:** P0–P2 = Connect · P3–P4 = Organize · P5–P7 = Use
+
+**Promotion gates:** `procedure#establish-data-standards` and
+`procedure#register-delivery-interface` run **before** promotion because their
+outputs are Ready (Gold) gates. Steps that clear a gate declare
+`metadata.satisfies_gates`; whether a gate blocks is per-org
+(`governance_policies.blocks_promotion`, seeded from the governance tier).
+Registry: `platform-backend/_core/src/medallion/promotion-gates.json`. Blocking
+gates come first; non-blocking ones are always still offered as suggestions.
 
 **HITL gates:** `hitl_gate: approval` steps are parked as `approval_request`
 records by the PKO execution engine. Resolve via `loxtep_review`

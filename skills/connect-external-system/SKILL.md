@@ -62,14 +62,14 @@ products, or deploying — use **`data-workflows`** and **`loxtep-deployments`**
 
 ### Flow — OAuth (e.g. Shopify)
 
-| Step | Action                       | Tool             | `operation`                              |
-| ---- | ---------------------------- | ---------------- | ---------------------------------------- |
-| 1    | Discover types               | `loxtep_connect` | `list_connector_types`                   |
-| 2    | Start OAuth                  | `loxtep_connect` | `get_oauth_url`                          |
-| 3    | User completes browser OAuth | —                | —                                        |
-| 4    | Connectivity probe           | `loxtep_connect` | `test_connector`                         |
+| Step | Action                       | Tool             | `operation`                                |
+| ---- | ---------------------------- | ---------------- | ------------------------------------------ |
+| 1    | Discover types               | `loxtep_connect` | `list_connector_types`                     |
+| 2    | Start OAuth                  | `loxtep_connect` | `get_oauth_url`                            |
+| 3    | User completes browser OAuth | —                | —                                          |
+| 4    | Connectivity probe           | `loxtep_connect` | `test_connector`                           |
 | 5    | Capture samples              | `loxtep_connect` | `capture_samples` (`entity_type` required) |
-| 6    | **Hand off to studio**       | —                | **`data-workflows`** with `connector_id` |
+| 6    | **Hand off to studio**       | —                | **`data-workflows`** with `connector_id`   |
 
 ### Flow — API key / SFTP / file-transfer connector
 
@@ -83,12 +83,12 @@ products, or deploying — use **`data-workflows`** and **`loxtep-deployments`**
 
 ### Flow — SDK connector
 
-| Step | Action                   | Tool             | `operation`                                          |
-| ---- | ------------------------ | ---------------- | ---------------------------------------------------- |
-| 1    | Confirm `"sdk"` in types | `loxtep_connect` | `list_connector_types`                               |
-| 2    | Create SDK connector     | `loxtep_connect` | `create_connector`                                   |
-| 3    | Optional connectivity probe | `loxtep_connect` | `test_connector` (SDK probe is a no-op pass)      |
-| 4    | **Hand off to studio**   | —                | **`data-workflows`** — SDK connection goes in bundle |
+| Step | Action                      | Tool             | `operation`                                          |
+| ---- | --------------------------- | ---------------- | ---------------------------------------------------- |
+| 1    | Confirm `"sdk"` in types    | `loxtep_connect` | `list_connector_types`                               |
+| 2    | Create SDK connector        | `loxtep_connect` | `create_connector`                                   |
+| 3    | Optional connectivity probe | `loxtep_connect` | `test_connector` (SDK probe is a no-op pass)         |
+| 4    | **Hand off to studio**      | —                | **`data-workflows`** — SDK connection goes in bundle |
 
 SDK bootstrap (post-deploy) uses **`loxtep-sdk`**; see **`data-workflows`** Flow
 G.
@@ -102,15 +102,16 @@ G.
 
 ## How to test / preview samples (use these — do not invent CLI)
 
-| Goal | MCP | CLI | Studio |
-| ---- | --- | --- | ------ |
-| Connectivity / credentials | `loxtep_connect` → `test_connector` (`connector_id`) | `loxtep connectors test <connector_id>` | Connection test in Studio |
-| Live sample rows + schema | `loxtep_connect` → `capture_samples` (`connector_id`, **`entity_type`**, optional `limit` 1–25) | `loxtep connectors capture-samples <id> --entity-type <name> [--limit N]` | Preview on connection entity |
+| Goal                       | MCP                                                                                             | CLI                                                                       | Studio                       |
+| -------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ---------------------------- |
+| Connectivity / credentials | `loxtep_connect` → `test_connector` (`connector_id`)                                            | `loxtep connectors test <connector_id>`                                   | Connection test in Studio    |
+| Live sample rows + schema  | `loxtep_connect` → `capture_samples` (`connector_id`, **`entity_type`**, optional `limit` 1–25) | `loxtep connectors capture-samples <id> --entity-type <name> [--limit N]` | Preview on connection entity |
 
 **Forbidden / do not invent:**
 
 - `loxtep connector test …` (singular `connector`) — **does not exist**
-- `loxtep connectors test … --entity … --limit …` — `test` has no sample flags; use `capture-samples`
+- `loxtep connectors test … --entity … --limit …` — `test` has no sample flags;
+  use `capture-samples`
 - `loxtep test <module>` — runs a **workflow module** locally, not a connector
 
 Example (MCP):
@@ -130,15 +131,15 @@ Example (MCP):
 
 ## MCP mapping
 
-| User intent      | Tool             | `operation`            | Scope        |
-| ---------------- | ---------------- | ---------------------- | ------------ |
-| List types       | `loxtep_connect` | `list_connector_types` | global       |
-| Create connector | `loxtep_connect` | `create_connector`     | organization |
-| Update connector | `loxtep_connect` | `update_connector`     | organization |
-| OAuth URL        | `loxtep_connect` | `get_oauth_url`        | organization |
-| Test connectivity | `loxtep_connect` | `test_connector`      | organization |
-| Capture samples  | `loxtep_connect` | `capture_samples`      | organization |
-| Apply template   | `loxtep_connect` | `apply_template`       | **project**  |
+| User intent       | Tool             | `operation`            | Scope        |
+| ----------------- | ---------------- | ---------------------- | ------------ |
+| List types        | `loxtep_connect` | `list_connector_types` | global       |
+| Create connector  | `loxtep_connect` | `create_connector`     | organization |
+| Update connector  | `loxtep_connect` | `update_connector`     | organization |
+| OAuth URL         | `loxtep_connect` | `get_oauth_url`        | organization |
+| Test connectivity | `loxtep_connect` | `test_connector`       | organization |
+| Capture samples   | `loxtep_connect` | `capture_samples`      | organization |
+| Apply template    | `loxtep_connect` | `apply_template`       | **project**  |
 
 ## Pitfalls
 

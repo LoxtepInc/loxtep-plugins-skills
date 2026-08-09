@@ -1,0 +1,23 @@
+---
+description: Never hand-edit generated skill/plugin trees — edit skills/ then run generate-skills.mjs
+alwaysApply: true
+---
+
+# Generated skills are build output
+
+`claude/`, `cursor/`, `codex/`, `kiro/`, `opencode/`, and `antigravity/` skill
+trees (plus `kiro/power/steering/` and client `rules/*.mdc`) are **generated**.
+Do not edit them, `cp` into them, or “fix drift” by hand.
+
+**Edit only:** `skills/<slug>/SKILL.md` (and optional `rule.mdc.src.md`,
+`skills/rule-targets.json`, `.loxtep/skills/<slug>.yaml`).
+
+**Then run:**
+
+```bash
+node scripts/generate-skills.mjs
+node scripts/generate-skills.mjs --check
+```
+
+Commit canonical source **and** generated output together. See `AGENTS.md`
+(“CRITICAL — Do not hand-edit generated skills”) and `CONTRIBUTING.md`.

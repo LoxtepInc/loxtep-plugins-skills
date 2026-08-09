@@ -2,9 +2,11 @@
 ---
 name: promote-data-product
 description:
-  Use when a data product is ready to be trusted and published for wider use.
-  Runs the readiness checklist, validates quality and definitions, and routes to
-  the domain owner for approval. This is the final step of Organize.
+  Use when a data product should move along the semantic medallion axis (Raw →
+  In Progress → Ready), not when changing lifecycle status (draft/active) or
+  promoting CDLC/memory candidates. Runs the readiness checklist, remediates
+  gates, and applies promote_data_product. Final Organize step before trusted
+  cross-domain use.
 license: MIT
 metadata:
   platform: loxtep
@@ -12,39 +14,74 @@ metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/codex/skills/promote-data-product/SKILL.md
 ---
 
-# Publish data product as trusted
+# Promote data product medallion (Raw → In Progress → Ready)
+
+## Vocabulary (do not conflate)
+
+| Axis                                | Field / API                 | Values                                            | User words                   |
+| ----------------------------------- | --------------------------- | ------------------------------------------------- | ---------------------------- |
+| **Semantic medallion** (this skill) | `medallion` / `target_tier` | `bronze` → `silver` → `gold`                      | Raw → In Progress → Ready    |
+| **Lifecycle status**                | `status`                    | `draft` \| `active` \| `deprecated` \| `archived` | Live / deprecated / archived |
+| **CDLC / memory promotion**         | `list_promotion_candidates` | candidate review queue                            | Context artifact promotion   |
+
+`active` ≠ Ready. A product can be **active** and still **Raw** (bronze).
+"Promote to Ready" always means `promote_data_product` with `target_tier: gold`.
 
 ## When to use
 
-- "My data product is ready — publish it"
-- "Run the readiness check"
-- After definitions and quality rules have been reviewed and approved
-- Before setting up delivery (the Use step)
+- "Promote to Ready" / "In Progress → Ready" / "Silver → Gold"
+- "Run the readiness check" / "what's blocking promotion"
+- After definitions, data standards, and the delivery interface are in place
+- The Ready gate itself — last step before agents consume across domains
+
+## When NOT to use
+
+- Lifecycle `draft` → `active` (use data product update / Studio status)
+- Memory/CDLC candidates (`list_promotion_candidates` / `promote_candidate`)
+- CDLC artifact states (`transition_lifecycle`)
 
 ## Steps
 
-1. Run readiness checklist — `get_promotion_readiness`
-2. Remediate any failing checks with `org-semantics-quality`
-3. Route to domain owner for approval — `list_pending`, `resolve`
-4. Apply — `promote_data_product`
-5. Confirm — `get_data_product` to verify promoted status
+1. Find products — `list_data_products`; read **`medallion`**, not only `status`
+2. Run readiness checklist — `get_promotion_readiness`
+3. Remediate **required** (blocking) gates first — each unsatisfied prerequisite
+   carries `guidance` pointing at the PKO step/skill that clears it
+4. Offer **advisory** gates as suggestions — they never block promotion, but
+   they improve AI-readiness
+5. Route to domain owner for approval when HITL applies — `list_pending`,
+   `resolve`
+6. Apply — `promote_data_product` with `target_tier: silver` (→ In Progress) or
+   `gold` (→ Ready)
+7. Confirm — `get_data_product` / `get_promotion_readiness` and verify
+   **`medallion`** is `silver` or `gold` (not that `status` changed)
 
 ## Pitfalls
 
 - Definitions must be reviewed before running this — use
   `semantic-ontology-mapping` first
+- Data standards (field descriptions, PII classification, quality rules, data
+  contract) are cleared by `procedure#establish-data-standards`, not here
+- A registered delivery endpoint is a **Ready gate** — register delivery before
+  promoting to gold, not after
+- Which gates block is **per organization** (governance tier + per-policy
+  `blocks_promotion`). Never assume the full checklist is mandatory; read
+  `required` on each prerequisite
 - Approval routes to the **domain owner**, not a generic admin
+- Never call `list_promotion_candidates` for data-product Ready/In Progress —
+  that tool is memory/CDLC only
 
 ## References
 
-- Next step: **`data-workflows`** Flow D (delivery Target connection)
+- Gate registry: `platform-backend/_core/src/medallion/promotion-gates.json`
+- Concept: Semantic Medallion (Raw / In Progress / Ready)
+- Previous step: **`data-product-modeling`** (register delivery interface)
 - Full journey: **`loxtep-journey-orchestrator`**
 
 ## Implementation notes
 
 - PKO: `procedure#promote-data-product-medallion` (P4)
-- Follows `procedure#define-data-product-semantics`, precedes
-  `procedure#register-delivery-interface`
+- Follows `procedure#register-delivery-interface`, precedes
+  `procedure#enable-agent-mcp-access`
 - `hitl_gate: approval` — audience: `domain_owner`
 - PKO graph:
   `platform-backend/graph/platform-pko/promote-data-product-medallion.jsonld`

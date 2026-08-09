@@ -268,12 +268,12 @@ automatically.
 | `loxtep_build`   | `get_sdk_config`                                                  | read       | Returns SDK connection config for a data product                                                                 |
 | `loxtep_build`   | `get_entity_schemas` / `save_workflow_bundle` / `deploy_workflow` | write      | Delivery via Target connection + `workflow_type: "delivery"`. **`create_delivery` / `list_deliveries` removed**. |
 | `loxtep_build`   | `deploy_workflow`                                                 | write      | Deploy a single workflow to an instance                                                                          |
-| `loxtep_observe` | `list_deployments`                                                | read       | List deployment records (poll for status)                                                                        |
-| `loxtep_observe` | `get_deployment`                                                  | read       | Get a single deployment record by ID                                                                             |
-| `loxtep_review`  | `list_pending`                                                    | read       | SDK: `client.approvals.list_pending()`                                                                           |
-| `loxtep_review`  | `resolve`                                                         | write      | SDK: `client.approvals.approve()` / `.reject()`                                                                  |
+| `loxtep_observe` | `list_deployments`                                                | read       | List deployment records (poll for status). SDK: `client.observe.list_deployments()`. CLI: `loxtep deployments list` |
+| `loxtep_observe` | `get_deployment`                                                  | read       | Get a single deployment. SDK: `client.observe.get_deployment(id)`. CLI: `loxtep deployments get <id>`               |
+| `loxtep_review`  | `list_pending`                                                    | read       | SDK: `client.review.approvals.list_pending()`. CLI: `loxtep approvals list --status pending`                        |
+| `loxtep_review`  | `resolve`                                                         | write      | SDK: `client.review.approvals.approve()` / `.reject()`. CLI: `loxtep approvals approve\|reject <id>`                |
 
-## Approving pipeline gates from code (`client.approvals`)
+## Approving pipeline gates from code (`client.review.approvals`)
 
 The `define` PKO pipeline (schema → meaning → relationships → quality → promote)
 pauses at each `hitl_gate: approval` step and creates an `approval_request` —
@@ -281,14 +281,21 @@ the same record surfaced in the web inbox and delivered over Slack/email.
 Resolve it programmatically instead of switching to the UI:
 
 ```ts
-const pending = await client.approvals.list_pending();
+const pending = await client.review.approvals.list_pending();
 for (const approval of pending.items) {
-  await client.approvals.approve(approval.approval_request_id);
+  await client.review.approvals.approve(approval.approval_request_id);
 }
 ```
 
+Or via CLI:
+
+```bash
+loxtep approvals list --status pending
+loxtep approvals approve <approval_request_id>
+```
+
 `organization_id` defaults from the client's constructor option; pass it
-per-call to override (`client.approvals.resolve(id, 'reject', organizationId)`).
+per-call to override (`client.review.approvals.resolve(id, 'reject', organizationId)`).
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 
