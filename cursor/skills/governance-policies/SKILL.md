@@ -6,11 +6,12 @@ description:
   POLICIES — the deploy-time gate that blocks a deployment or requires approval
   before a data product or workflow goes live. Covers the policy schema, rules,
   condition syntax (freeze / quality_score / classification / pii), enforcement
-  modes (block vs audit), scope, status, and the approval gate. NOT on the MCP
-  tool surface: policies are managed via the governance REST API or the console,
-  not loxtep_* tools. To inspect governance flags on existing data instead, use
-  discover-govern-lineage (loxtep_query get_governance_flags). User story S5
-  (governance authoring). See docs/skills-user-stories.md.
+  modes (block | warn | audit), scope, status, and the approval gate. Legacy
+  `strict` normalizes to `block`. NOT on the MCP tool surface: policies are
+  managed via the governance REST API or the console, not loxtep_* tools. To
+  inspect governance flags on existing data instead, use discover-govern-lineage
+  (loxtep_query get_governance_flags). User story S5 (governance authoring). See
+  docs/skills-user-stories.md.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/governance-policies/SKILL.md
 ---
@@ -75,7 +76,7 @@ For _inspecting_ governance flags on existing data products, switch to the
     "dataProducts": ["<dp_id>"],
     "users": ["<user_id>"],
   },
-  "metadata": { "enforcement": "block" }, // block | audit
+  "metadata": { "enforcement": "block" }, // block | warn | audit (legacy strict → block)
 }
 ```
 
@@ -106,23 +107,25 @@ scope).
 
 ## Enforcement, status, approval
 
-- `metadata.enforcement`: **`block`** = violations fail the deploy; **`audit`**
-  = logged, deploy proceeds (use to trial a policy).
+- `metadata.enforcement`: **`block`** = findings fail the deploy; **`warn`** /
+  **`audit`** = non-blocking warnings (deploy proceeds). Prefer `audit` to trial.
+  Legacy **`strict`** is accepted and stored as **`block`**.
 - Only evaluated when **`status ∈ (active, approved)` AND `is_active = true`**.
   `draft`/`archived` are inert. To lift a live policy without deleting: set
   `status: draft` or `enforcement: audit`.
 - `requires_approval: true` + `enforcement: block` blocks deploys in scope until
-  the required approvals are recorded.
+  the required approvals are recorded for the policy version.
 
 ## How the gate evaluates
 
 1. Load active policies (org). 2. Match **scope** (`applies_to`): `organization`
-   always applies; `domain` matches the deploy's domain; `data_product` matches
-   a deployed DP; **empty scope ⇒ org-wide**. 3. Skip `audit`. 4. For each
-   `deny` rule: unconditional ⇒ violation; structured ⇒ load per-DP signals
+   always applies; `domain` matches the deploy's domain (including ancestors);
+   `data_product` matches a deployed DP; **empty scope ⇒ org-wide**. 3. For each
+   `deny` rule: unconditional ⇒ finding; structured ⇒ load per-DP signals
    (latest quality score, classification, pii fields) and deny only offenders.
-2. `requires_approval` + block + no approval ⇒ violation. 6. Any violation
-   blocks the deploy.
+   4. `requires_approval` + block + insufficient approvals for the policy
+   version ⇒ blocking finding. 5. Findings with `block` fail the deploy; `warn`
+   / `audit` are warnings only.
 
 **Data Council** is the org's **root governance domain** — a policy scoped there
 (or org-wide) gates everything beneath it. Moving a project into a governed

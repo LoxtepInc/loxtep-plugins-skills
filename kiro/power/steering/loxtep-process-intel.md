@@ -60,6 +60,10 @@ Entity context and decision traces.
   not here.
 - **Catalog** discovery is **`loxtep_query`** — different product surface.
 - **Agent workspace** issues are **`loxtep_context`** — not process intel.
+- **Data-product Ready / In Progress** is semantic medallion promotion — use
+  **`promote-data-product`** (`get_promotion_readiness` +
+  `promote_data_product`). `list_promotion_candidates` / `promote_candidate` are
+  **memory/CDLC only** and never move a data product's `medallion` field.
 - **Connectivity** — Process-intel tools require valid MCP authentication and
   access to your organization's process-intelligence data.
 
