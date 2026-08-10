@@ -22,11 +22,16 @@ without relying on any private repo or source tree.
    - **`user`** / **`organization`** — identity context.
 2. **`loxtep_session`** → **`get_current_organization`** — confirm org scope
    matches expectations.
-3. For **project-scoped** facades (`loxtep_build`, `loxtep_build`,
-   `loxtep_build`, …), include **`project_id`** on every call that needs it.
-4. Open your MCP client’s **ListTools** (or schema) for **`loxtep_*`** tools —
+3. **`loxtep_session`** → **`platform_health_check`** (optional but recommended
+   on cold start) — ~5s Semantica-style doctor for auth, instance `observe_api`
+   secret orientation, graph reachability, decision-traces (empty-ok), and MCP
+   facade surface / deprecated names. Structured `checks[]` with
+   `pass|fail|warn`. Optional `instance_id`.
+4. For **project-scoped** facades (`loxtep_build`, …), include **`project_id`**
+   on every call that needs it.
+5. Open your MCP client’s **ListTools** (or schema) for **`loxtep_*`** tools —
    parameter names and descriptions live there; there is no separate “capability
-   discovery” MCP operation.
+   discovery” MCP operation beyond `platform_health_check` for env sanity.
 
 ## Permission denials
 

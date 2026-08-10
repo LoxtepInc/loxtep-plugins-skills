@@ -27,16 +27,6 @@ and inspect runtime mappings.
 5. `get_runtime_mapping` — inspect how a project/workflow maps to runtime
    resources.
 
-## Surface parity (CLI / SDK / MCP)
-
-| Concern | CLI | SDK | MCP |
-| --- | --- | --- | --- |
-| Deploy project/workflow | `loxtep deploy` / `loxtep workflows deploy` | `client.build.workflows.deploy` | `loxtep_build` → `deploy_project` / `deploy_workflow` |
-| Poll status | `loxtep deployments get <id>` / `list` | `client.observe.get_deployment` / `list_deployments` | `loxtep_observe` → `get_deployment` / `list_deployments` |
-| Approve HITL gate | `loxtep approvals list` → `approve` / `reject` | `client.review.approvals.*` | `loxtep_review` → `list_pending` / `resolve` |
-
-Do **not** invent `loxtep workflows deploy --status` — that flag does not exist.
-
 ## Operations
 
 | Facade           | Operation             | Scope        | Required                                   | Optional                                             |

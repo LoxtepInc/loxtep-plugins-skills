@@ -152,7 +152,8 @@ gates come first; non-blocking ones are always still offered as suggestions.
 
 **HITL gates:** `hitl_gate: approval` steps are parked as `approval_request`
 records by the PKO execution engine. Resolve via `loxtep_review`
-(`list_pending`, `resolve`) or `client.approvals` in the SDK.
+(`list_pending`, `resolve`) or `client.review.approvals.*` in the SDK
+(`@loxtep/sdk@0.9.7+`; CLI: `loxtep approvals`).
 
 **CDLC cross-track:** P3 feeds `procedure#bridge-dp-semantics-to-cdlc` and
 `procedure#cdlc-memory-promotion-intake`. P3 `dependsOn`
