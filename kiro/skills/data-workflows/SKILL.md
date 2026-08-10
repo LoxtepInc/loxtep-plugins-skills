@@ -181,17 +181,23 @@ deploy.
 
 1. `loxtep_session` → `get_current_user` (confirm RBAC + org).
 2. `loxtep_workspace` → `list_projects` — reuse when the user names an existing
-   mesh project.
+   mesh project. Rows include `github_state` / `next_action` (hosted MCP cannot
+   see local disk — `local_present` stays false).
 3. If none exists: `create_project` with `name` (optional `description`,
    `domain_id`).
-4. **Optional — GitHub attach:** `update_project` with `project_id` and
+4. **Layer status before deep work:** `get_project_workspace_status` (or CLI
+   `loxtep projects list` + `loxtep status`). If `next_action` is `clone` /
+   `link`, run `plan_project_materialization` / plan `cli_commands` on the agent
+   FS — hosted MCP never writes local paths.
+5. **Optional — GitHub attach:** `update_project` with `project_id` and
    `github_*` fields (or pass `github_action` on `create_project`) to link the
    Loxtep project to the customer's GitHub repo. Required for repo ↔ platform
    sync workflows.
-5. **Code-first repos:** run `loxtep init` and `loxtep attach` in the repo root
+6. **Code-first repos:** run `loxtep init` and `loxtep attach` in the repo root
    (see **`loxtep-sdk`**) instead of hand-rolling paths when the CLI is
-   available.
-6. Record `project_id` — every subsequent workflow MCP call in this session uses
+   available. After attach: **`projects list` + `status`**, then clone/link
+   before ingest/deploy.
+7. Record `project_id` — every subsequent workflow MCP call in this session uses
    it.
 
 Optional template bootstrap (after project exists):
@@ -297,7 +303,35 @@ Canonical reference:
 4. **`save_workflow_bundle`** (`dry_run: true` then persist).
 5. **Deploy enrichment** (`deploy_workflow`).
 
-The **`data-product-enrichment`** workflow template scaffolds this exact shape.
+The **`data-product-enrichment`** workflow template scaffolds this exact shape:
+[`loxtep-project-template/templates/workflows/data-product-enrichment/`](../../loxtep-project-template/templates/workflows/data-product-enrichment/)
+(default transform: built-in `derived_columns`).
+
+Scenario 2 runbook (transform derivation → queryable sink):
+[`docs/runbooks/transform-enrichment-scenario-2.md`](../../docs/runbooks/transform-enrichment-scenario-2.md).
+
+#### Flow F+ — SQL derivation (`sql_materialize`, full refresh)
+
+For **on-demand / scheduled SELECT** over warehouse catalog views (not per-event
+transforms, not Store projections):
+
+1. Author an enrichment (or similar) workflow with a transformation node
+   `transform_type: "sql_materialize"` and
+   `operation_config: { sql: "SELECT ...", schedule?: "rate(1 hour)" }`.
+2. Template:
+   [`loxtep-project-template/templates/transforms/sql-materialize.json`](../../loxtep-project-template/templates/transforms/sql-materialize.json).
+3. Sink is a normal queue-backed data product (Iceberg via existing writers).
+4. **`save_workflow_bundle`** → **`deploy_workflow`** (registers a cron bot, not
+   shared `transformers-*`).
+5. **`preview_sql_materialize`** (dry SELECT sample) then
+   **`run_sql_materialize`** (full refresh) or wait for the cron schedule.
+6. Verify with **`execute_query`** on the sink data product.
+
+Glossary: **Projection** (entity Store) ≠ **SQL derivation** (`sql_materialize`)
+≠ **per-event transform** (`filter` / `map` / …).
+
+Runbook:
+[`docs/runbooks/sql-materialize-scenario-3.md`](../../docs/runbooks/sql-materialize-scenario-3.md).
 
 ### Flow I — Multi-supplier fan-in (one enrich workflow per supplier)
 
@@ -599,7 +633,7 @@ Notes:
 | ---- | ------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | 1    | Who am I?                                   | `loxtep_session`   | `get_current_user`                                                                                                                                                                                                                | organization                                    | —                                                                                                                               |
 | 2    | Which org?                                  | `loxtep_session`   | `get_current_organization`                                                                                                                                                                                                        | organization                                    | —                                                                                                                               |
-| 3    | List/create/update/delete projects          | `loxtep_workspace` | `list_projects`, `get_project`, `create_project`, `update_project`, `delete_project`                                                                                                                                              | organization                                    | `name`, ids                                                                                                                     |
+| 3    | List/create/update/delete projects + status | `loxtep_workspace` | `list_projects`, `get_project`, `create_project`, `update_project`, `delete_project`, `get_project_workspace_status`, `list_project_changes`, `plan_project_materialization`                                                      | organization                                    | `name`, ids, materialization_plan                                                                                               |
 | 4    | Templates                                   | `loxtep_connect`   | `list_templates`, `get_template`, `apply_template`                                                                                                                                                                                | organization / **project** for `apply_template` | `apply_template`: `project_id`, `template_type`, `template_slug`                                                                |
 | 5    | Workflows                                   | `loxtep_build`     | `get_entity_schemas`, `save_workflow_bundle`, `list_workflows`, `get_workflow`, `get_workflow_graph`, `preview_transform`, `create_workflow`, `update_workflow`, `delete_workflow`, `patch_workflow_graph` (Studio UI edits only) | **project**                                     | `project_id`                                                                                                                    |
 | 6    | Existing Trigger/Target connections         | `loxtep_build`     | `list_triggers`/`list_targets`, `get_*`, `update_*`, `delete_*`, `test_*`                                                                                                                                                         | **project**                                     | `project_id` — new tails via bundle, not create\_\* ops                                                                         |

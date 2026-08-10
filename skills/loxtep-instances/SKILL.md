@@ -40,11 +40,11 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
 
 ### Deployment vs billing (read this)
 
-| `instance_type`   | Meaning                                                 | `plan_id`                                                                                                                                                                             |
-| ----------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`shared`**      | Default **free-tier playground** (multi-tenant).        | Omit or **`free`** only. **Never** `starter` / `pro` / `enterprise` — API validation **rejects** shared + paid plan.                                                                  |
-| **`managed`**     | Paid **dedicated** infrastructure.                      | **`starter`**, **`pro`**, or **`enterprise`** (required). **`payment_method_id`** is **required**.                                                                                    |
-| **`self-hosted`** | Customer AWS; advanced / may be limited by environment. | **`payment_method_id`** required. **`connection_details.observe_api`** must include **`cross_account_role_arn`**, the stream **integration** secret ARN, and the **auth** secret ARN. |
+| `instance_type`   | Meaning                                                                                | Create requirements                                                                                                                                                              |
+| ----------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`shared`**      | Default **free-tier playground** (multi-tenant).                                       | Omit or **`free`** only. **Never** `starter` / `pro` / `enterprise` — API validation **rejects** shared + paid plan.                                                             |
+| **`managed`**     | Paid **dedicated** bus (remote account/region — same AWS access model as self-hosted). | **`starter`/`pro`/`enterprise`**, **`payment_method_id`**, and **`connection_details.observe_api.cross_account_role_arn`** (plus stream secret ARNs as provisioning fills them). |
+| **`self-hosted`** | Customer-operated dedicated bus.                                                       | **`payment_method_id`** + **`connection_details.observe_api`** with **`cross_account_role_arn`**, stream **integration** secret ARN, and **auth** secret ARN.                    |
 
 ### Field summary
 
@@ -53,7 +53,7 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
 | `name`, `region`, `instance_type` | Required.                                                                                                                         |
 | `plan_id`                         | Required for **managed**. Omit or non-paid for **shared**.                                                                        |
 | `payment_method_id`               | **Required** for **managed** and **self-hosted**. Omit for **shared**. Value is a UUID for a method **already** saved in the app. |
-| `connection_details`              | **Self-hosted** only; nested `observe_api` with the role + two stream integration ARNs.                                           |
+| `connection_details`              | **Required for managed and self-hosted** — nested `observe_api` with the role (+ stream ARNs). Same remote-access shape for both. |
 
 ### Correct examples
 
@@ -68,7 +68,8 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
 }
 ```
 
-**Paid Starter (managed)**
+**Paid Starter (managed)** — same observe_api remote-access shape as
+self-hosted:
 
 ```json
 {
@@ -77,7 +78,14 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
   "region": "us-east-1",
   "instance_type": "managed",
   "plan_id": "starter",
-  "payment_method_id": "550e8400-e29b-41d4-a716-446655440000"
+  "payment_method_id": "550e8400-e29b-41d4-a716-446655440000",
+  "connection_details": {
+    "observe_api": {
+      "cross_account_role_arn": "arn:aws:iam::123456789012:role/LoxtepCrossAccountDeploymentRole",
+      "rstreams_secret_arn": "arn:aws:secretsmanager:us-east-1:123456789012:secret:resources",
+      "rstreams_auth_arn": "arn:aws:secretsmanager:us-east-1:123456789012:secret:auth"
+    }
+  }
 }
 ```
 

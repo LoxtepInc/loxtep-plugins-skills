@@ -84,6 +84,41 @@ dependencies** in the process graph. Import/export JSON-LD graphs.
 | `export_process_graph`       | `loxtep_context` | organization | Formats: `jsonld`, `yaml`, `summary`; `preserve_namespaces` option |
 | `get_procedure_dependencies` | `loxtep_context` | organization | Direction: upstream/downstream/both; depth 1–10; cycle detection   |
 
+## SDK mapping (`client.context.procedures`, `@loxtep/sdk@0.9.7+`)
+
+Procedure CRUD + import/export are shipped on the Phase D context namespace (CLI
+mirrors the same verbs). Causal / similar-decision surfaces for Studio live
+under `client.context.process_intelligence` — still Connect → Organize → Use
+internally; public Steward copy stays Connect → Approve → Build (no fourth
+step).
+
+| MCP `operation`              | SDK                                                                         | Notes                              |
+| ---------------------------- | --------------------------------------------------------------------------- | ---------------------------------- |
+| `list_procedures`            | `client.context.procedures.list({ … })` / `.list_procedures({ … })`         | shipped                            |
+| `get_procedure`              | `client.context.procedures.get(id)` / `.get_procedure(id)`                  | shipped                            |
+| `create_procedure`           | `client.context.procedures.create({ name, … })`                             | shipped                            |
+| `update_procedure`           | `client.context.procedures.update(id, { … })`                               | shipped                            |
+| `delete_procedure`           | `client.context.procedures.delete(id)`                                      | soft-delete                        |
+| `import_process_graph`       | `client.context.procedures.import_process_graph({ graph \| s3_reference })` | shipped                            |
+| `export_process_graph`       | `client.context.procedures.export_process_graph({ procedure_id, … })`       | shipped                            |
+| `get_procedure_dependencies` | MCP `loxtep_context` only                                                   | still MCP-ahead — do not claim SDK |
+
+```ts
+const listed = await client.context.procedures.list({ status: 'active' });
+const created = await client.context.procedures.create({
+  name: 'Order-to-cash',
+  description: 'Business process graph for O2C',
+});
+const exported = await client.context.procedures.export_process_graph({
+  procedure_id: created.procedure_id,
+  format: 'jsonld',
+});
+```
+
+This skill is **not** an agent build/deploy runtime and does **not** ship a
+custom-connector backend — keep procedure authoring inside the existing Connect
+→ Organize → Use surfaces.
+
 ## Pitfalls
 
 - **Data mesh workflows** (`create_workflow`, `patch_workflow_graph`) live under

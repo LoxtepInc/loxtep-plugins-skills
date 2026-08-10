@@ -57,7 +57,7 @@ Do **not** suggest local stdio MCP servers or `npx @loxtep/customer-mcp-server`.
 | **Organize** | `loxtep_define`    | Schemas, quality rules, PII tagging                |
 | **Organize** | `loxtep_meaning`   | Vocabulary, ontology, semantic layer               |
 | **Organize** | `loxtep_review`    | Lifecycle transitions, approvals, context mining   |
-| **Use**      | `loxtep_query`     | Catalog search, analytics SQL                      |
+| **Use**      | `loxtep_query`     | Catalog search, analytics SQL, COA graph serve (`translate_sparql`, `graph_traversal`) |
 | **Use**      | `loxtep_observe`   | Quality scores, lineage, queues, deployment status |
 | **Use**      | `loxtep_context`   | Process intel, procedures, agent workspace         |
 
@@ -117,6 +117,18 @@ after delivery interfaces are registered.
 `loxtep_meaning`, `loxtep_review`, `loxtep_query`, `loxtep_observe`,
 `loxtep_context`. Old names such as `loxtep_connectors`, `loxtep_workflows`, or
 `loxtep_data_products` are **not** registered on the hosted server.
+
+### COA serve ops on `loxtep_query` (DynamoDB — never Neptune)
+
+| `operation` | Args (highlights) | Backend |
+| --- | --- | --- |
+| `translate_sparql` | `natural_language`, optional `execute` | `POST /ai/graph-query-translate` (+ optional `POST /graph/sparql`) |
+| `graph_traversal` | `mode=lineage\|related\|sparql_neighbors`, `node_id` / `data_product_id` | lineage / related / SPARQL neighbors |
+
+COA `list_metrics` / `describe_schema` are **not** separate tools — use
+`search_semantic_layer`, `get_compounding_metric`, `get_table_schema`,
+`get_schema`, `list_ontology_concepts`. Details:
+`platform-backend/ai/lib/tools/docs/coa-mcp-serve-parity.md`.
 
 **PKO phase → facade (P0–P7):**
 

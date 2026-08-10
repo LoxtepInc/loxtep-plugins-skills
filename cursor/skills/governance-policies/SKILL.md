@@ -108,8 +108,8 @@ scope).
 ## Enforcement, status, approval
 
 - `metadata.enforcement`: **`block`** = findings fail the deploy; **`warn`** /
-  **`audit`** = non-blocking warnings (deploy proceeds). Prefer `audit` to trial.
-  Legacy **`strict`** is accepted and stored as **`block`**.
+  **`audit`** = non-blocking warnings (deploy proceeds). Prefer `audit` to
+  trial. Legacy **`strict`** is accepted and stored as **`block`**.
 - Only evaluated when **`status ∈ (active, approved)` AND `is_active = true`**.
   `draft`/`archived` are inert. To lift a live policy without deleting: set
   `status: draft` or `enforcement: audit`.
@@ -122,10 +122,10 @@ scope).
    always applies; `domain` matches the deploy's domain (including ancestors);
    `data_product` matches a deployed DP; **empty scope ⇒ org-wide**. 3. For each
    `deny` rule: unconditional ⇒ finding; structured ⇒ load per-DP signals
-   (latest quality score, classification, pii fields) and deny only offenders.
-   4. `requires_approval` + block + insufficient approvals for the policy
-   version ⇒ blocking finding. 5. Findings with `block` fail the deploy; `warn`
-   / `audit` are warnings only.
+   (latest quality score, classification, pii fields) and deny only
+   offenders. 4. `requires_approval` + block + insufficient approvals for the
+   policy version ⇒ blocking finding. 5. Findings with `block` fail the deploy;
+   `warn` / `audit` are warnings only.
 
 **Data Council** is the org's **root governance domain** — a policy scoped there
 (or org-wide) gates everything beneath it. Moving a project into a governed
