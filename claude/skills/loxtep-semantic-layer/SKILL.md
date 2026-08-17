@@ -135,6 +135,15 @@ agents can query for context:
   unstructured organizational knowledge. Use canonical knowledge artifacts
   instead.
 
+### COA `list_metrics` / `describe_schema` gaps
+
+There are **no** hosted MCP ops named `list_metrics` or `describe_schema`. Use:
+
+| COA intent | Loxtep ops |
+| --- | --- |
+| List metrics / dimensions | `search_semantic_layer`, `get_compounding_metric`, `list_quality_rules` |
+| Describe schema / ontology tables | `get_table_schema`, `get_schema`, `list_ontology_concepts`, `get_semantic_artifact` |
+
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 
 ## Agent-Scope Skill scope (`.loxtep/skills/loxtep-semantic-layer.yaml`)
@@ -174,3 +183,4 @@ permissions: {}
 ## References
 
 - [User story catalog](../../../docs/skills-user-stories.md)
+- [COA MCP serve parity](../../../platform-backend/ai/lib/tools/docs/coa-mcp-serve-parity.md)

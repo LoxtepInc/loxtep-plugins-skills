@@ -48,8 +48,9 @@ metadata:
    carries `guidance` pointing at the PKO step/skill that clears it
 4. Offer **advisory** gates as suggestions — they never block promotion, but
    they improve AI-readiness
-5. Route to domain owner for approval when HITL applies — `list_pending`,
-   `resolve`
+5. Route to domain owner for approval when HITL applies — MCP `loxtep_review`
+   (`list_pending`, `resolve`) or SDK `client.review.approvals.*` / CLI
+   `loxtep approvals`
 6. Apply — `promote_data_product` with `target_tier: silver` (→ In Progress) or
    `gold` (→ Ready)
 7. Confirm — `get_data_product` / `get_promotion_readiness` and verify

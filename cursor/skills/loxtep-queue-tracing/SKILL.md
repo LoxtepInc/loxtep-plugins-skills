@@ -2,11 +2,12 @@
 ---
 name: loxtep-queue-tracing
 description:
-  Use when debugging deployments, workflow execution, or data flow issues by
-  reading queue events from the live runtime. Trace actions through the platform
-  event queues to see what actually happened. Combines loxtep_observe
-  (read_queue_events) with knowledge of queue naming conventions. User story S7
-  extension. See docs/skills-user-stories.md.
+  Trace rstreams bots and queues for deployment or data-flow failures. Use when
+  debugging stuck workflows, missing events, bot checkpoints, or Observe/botmon
+  empty results. reading queue events from the live runtime. Trace actions
+  through the platform event queues to see what actually happened. Combines
+  loxtep_observe (read_queue_events) with knowledge of queue naming conventions.
+  User story S7 extension. See docs/skills-user-stories.md.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/loxtep-queue-tracing/SKILL.md
 ---
@@ -29,8 +30,10 @@ happened at the system level.
 
 - MCP auth (`loxtep-auth`)
 - Access to `read_queue_events` on **`loxtep_observe`**
-- Knowledge of the instance **namespace** (from your instance record) — derive
-  from the instance record or ask the user
+- Knowledge of the instance **namespace** — ask the user, or derive from CLI
+  `loxtep instances stream-config` / REST stream-config / SDK
+  `client.workspace.instances.get_stream_config`, not from MCP
+  `list_instances`
 
 ## Queue naming conventions
 
@@ -136,8 +139,10 @@ container_id:
   (`*-err`) almost always has the real error with stack trace.
 - **Queue names from deployment:** Use `get_runtime_mapping` (loxtep_build) to
   get exact queue names for a deployed workflow.
-- **Namespace from instance:** Get it from `list_instances` → instance record →
-  `connection_details.observe_api.namespace`.
+- **Do not scrape instance infra from `list_instances`.** That operation returns
+  id/name/region/status/type/plan only. Queue prefixes come from
+  `get_runtime_mapping`. Bus physical names: `loxtep instances stream-config`,
+  not MCP.
 
 ## MCP operations used
 
@@ -146,7 +151,7 @@ container_id:
 | `read_queue_events`   | `loxtep_observe`   | Read actual event payloads from any queue |
 | `get_queue_info`      | `loxtep_observe`   | Get queue metadata for a data product     |
 | `get_runtime_mapping` | `loxtep_build`     | Resolve deployed queue/bot names          |
-| `list_instances`      | `loxtep_workspace` | Get instance namespace                    |
+| `list_instances`      | `loxtep_workspace` | Confirm instance_id / status / type       |
 
 ## Pitfalls
 

@@ -2,9 +2,10 @@
 ---
 name: loxtep-ontology
 description:
-  Use when the user wants to manage ontology concepts, vocabulary terms,
-  namespace mappings, or sync vocabularies. Part of the Organize step for
-  defining shared meaning across systems.
+  Manage Loxtep ontology concepts and vocabulary terms via MCP. Use when
+  creating/updating concepts, linking vocabulary, or exploring ontology
+  structure for an organization. namespace mappings, or sync vocabularies. Part
+  of the Organize step for defining shared meaning across systems.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/claude/skills/loxtep-ontology/SKILL.md
 ---
@@ -161,6 +162,45 @@ Requires **`semantic_gaps:resolve`** (plus override create permissions).
 | `list_enterprise_overrides`    | organization | Filters: `override_status`, `override_source`                                                                                               |
 | `resolve_semantic_gap`         | organization | `issue_id` + override fields; marks AO issue done, `override_source=agent_gap`                                                              |
 
+All rows above are MCP `loxtep_meaning` operations (Organize / Approve path).
+Steward Define meaning hub GA and `@loxtep/sdk@0.9.7+` share the same verbs.
+
+## SDK mapping (`client.meaning`, `@loxtep/sdk@0.9.7+`)
+
+Prefer the Phase D namespaces. Ontology concepts map to
+`client.meaning.ontology`; thesaurus / overrides stay on
+`client.meaning.thesaurus` (and packs on `client.meaning.packs` when activating
+vocabulary packs outside the onboarding wizard).
+
+| MCP `operation`                | SDK                                                                         |
+| ------------------------------ | --------------------------------------------------------------------------- |
+| `list_ontology_concepts`       | `client.meaning.ontology.list_concepts()`                                   |
+| `get_ontology_concept`         | `client.meaning.ontology.get_concept(concept_id)`                           |
+| `create_ontology_concept`      | `client.meaning.ontology.create_concept({ name, namespace, node_type, … })` |
+| `update_ontology_concept`      | `client.meaning.ontology.update_concept(concept_id, { … })`                 |
+| `delete_ontology_concept`      | `client.meaning.ontology.delete_concept(concept_id)`                        |
+| `create_ontology_relationship` | `client.meaning.ontology.create_relationship({ … })`                        |
+| `get_ontology_relationships`   | `client.meaning.ontology.get_relationships({ … })`                          |
+| `list_terms` / `get_term` / …  | `client.meaning.thesaurus.*` (same verb names)                              |
+| pack activate / status         | `client.meaning.packs.*`                                                    |
+
+```ts
+const concept = await client.meaning.ontology.create_concept({
+  name: 'Customer',
+  namespace: 'org.example',
+  node_type: 'Entity',
+  description: 'Paying account holder',
+});
+await client.meaning.ontology.create_relationship({
+  source_entity_type: 'org.example.Customer',
+  target_entity_type: 'org.example.Order',
+  relation_type: 'places',
+});
+```
+
+Do **not** market a governed metrics/cube layer from this skill — meaning here
+is terms, ontology concepts, namespace mappings, and packs only.
+
 ## Prerequisites
 
 - MCP auth. Operations are **organization**-scoped.
@@ -198,6 +238,13 @@ Requires **`semantic_gaps:resolve`** (plus override create permissions).
   mapping — no need to register it manually.
 - **`delete_term`** and **`delete_ontology_concept`** use soft-delete (tombstone
   pattern). They warn about dependents but do not cascade.
+
+### Graph serve (COA parity on `loxtep_query`)
+
+- `translate_sparql` — NL → SPARQL for DynamoDB graph (`execute=true` optional).
+- `graph_traversal` — lineage / related / sparql_neighbors (never Neptune).
+- Attribution: `translate_sparql` → this skill; see also
+  `platform-backend/ai/lib/tools/docs/coa-mcp-serve-parity.md`.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 
@@ -238,3 +285,4 @@ permissions: {}
 ## References
 
 - [User story catalog](../../../docs/skills-user-stories.md)
+- [COA MCP serve parity](../../../platform-backend/ai/lib/tools/docs/coa-mcp-serve-parity.md)
