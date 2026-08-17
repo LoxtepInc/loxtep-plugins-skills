@@ -37,6 +37,16 @@ metadata:
 { "operation": "list_instances" }
 ```
 
+Returns **only** `instance_id`, `name`, `region`, `status`, `instance_type`, and
+`plan`. It does **not** include ARNs, `external_id`, namespaces, API Gateway
+URLs, or rstreams physical resource names — those must not land in chat
+transcripts. Role + external id: `get_infrastructure` / `get_deployment_urls`.
+Bus table names for engineers: Node CLI
+`loxtep instances stream-config [<instance_id>]`, SDK
+`client.workspace.instances.get_stream_config` (Node or Python), or REST
+`GET /organizations/instances/{instance_id}/stream-config` (`instances:read`),
+not MCP.
+
 ## create_instance
 
 Pass **flat** fields (not nested `instance_config`) — the platform maps them.

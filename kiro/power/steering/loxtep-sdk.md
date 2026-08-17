@@ -279,7 +279,7 @@ automatically.
 
 | Facade           | `operation`                                                       | Permission | Notes                                                                                                            |
 | ---------------- | ----------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------- |
-| `loxtep_build`   | `get_sdk_config`                                                  | read       | Returns SDK connection config for a data product                                                                 |
+| `loxtep_build`   | `get_sdk_config`                                                  | read       | Writer identity + snippet. Bus physical names: REST stream-config, not this op                                   |
 | `loxtep_build`   | `get_entity_schemas` / `save_workflow_bundle` / `deploy_workflow` | write      | Delivery via Target connection + `workflow_type: "delivery"`. **`create_delivery` / `list_deliveries` removed**. |
 | `loxtep_build`   | `deploy_workflow`                                                 | write      | Deploy a single workflow to an instance                                                                          |
 | `loxtep_observe` | `list_deployments`                                                | read       | List deployment records (poll for status)                                                                        |
@@ -305,6 +305,13 @@ for (const approval of pending.items) {
 `organization_id` defaults from the client's constructor option; pass it
 per-call to override
 (`client.review.approvals.resolve(id, 'reject', organizationId)`).
+
+`get_sdk_config` returns writer identity (`bot_id`, `queue_name`) and
+`bus_config_path`. It does **not** return Leo/S3/Kinesis/Firehose names.
+Engineers who need those run `loxtep instances stream-config [<instance_id>]`
+(Node CLI), `client.workspace.instances.get_stream_config(id)` (Node or Python
+SDK), or REST `GET /organizations/instances/{instance_id}/stream-config`
+(permission `instances:read`). Do not fetch them over MCP.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 
