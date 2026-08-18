@@ -16,6 +16,10 @@ metadata:
 **Story S0+:** How to orient before (and after) other Customer MCP work —
 without relying on any private repo or source tree.
 
+**First connect:** if hosted MCP is not configured in this tool yet, fetch and
+follow [https://docs.loxtep.io/docs/setup.md](https://docs.loxtep.io/docs/setup.md)
+before other Loxtep operations. Do not install a local stdio MCP server.
+
 ## When to use
 
 - “**What can I do** with MCP?”, “**Permission denied**”, “**403**”, “do I have
