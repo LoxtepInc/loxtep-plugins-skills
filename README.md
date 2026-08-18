@@ -2,6 +2,18 @@
 
 Plugins and skills for connecting your AI coding tool to [Loxtep](https://loxtep.io).
 
+Paste this into your AI coding tool and let it configure hosted MCP + skills:
+
+```text
+Set up Loxtep for this AI tool by following instructions:
+https://docs.loxtep.io/docs/setup.md
+```
+
+The agent fetches that playbook, adds the hosted MCP server, opens browser
+OAuth, installs this repo's plugin/skills for the detected client, and verifies
+with `get_current_user`. Prefer that over copying JSON by hand. Per-client
+installers below remain for humans who want to click through it themselves.
+
 **Loxtep is the AI-first, governed data layer for your business.** You build
 agents in the tools you already use — Claude Code, Cursor, Codex, OpenCode, Kiro,
 Antigravity — and Loxtep handles the hard part: **ingesting your data, giving
