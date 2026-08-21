@@ -2,9 +2,10 @@
 ---
 name: loxtep-ontology
 description:
-  Use when the user wants to manage ontology concepts, vocabulary terms,
-  namespace mappings, or sync vocabularies. Part of the Organize step for
-  defining shared meaning across systems.
+  Manage Loxtep ontology concepts and vocabulary terms via MCP. Use when
+  creating/updating concepts, linking vocabulary, or exploring ontology
+  structure for an organization. namespace mappings, or sync vocabularies. Part
+  of the Organize step for defining shared meaning across systems.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/loxtep-ontology/SKILL.md
 ---

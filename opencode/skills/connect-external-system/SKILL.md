@@ -147,10 +147,12 @@ Example (MCP):
 
 - **Workflow graph writes during connect** — Connect ends at samples; use
   **`data-workflows`** + **`save_workflow_bundle`** for Organize.
-- **`file-transfer` / SFTP:** set `credential_parameter_store_refs` on the
-  **connection entity inside the bundle**, not only on the org connector.
-- Org-level connector credentials are **not** auto-merged onto graph nodes at
-  deploy; copy refs onto the bundle connection node when needed.
+- **`file-transfer` / SFTP:** prefer setting credentials on the **org
+  connector** (`update_connector`). Deploy hydrates transport / authentication /
+  fileSpecs / `credential_parameter_store_refs` onto the connection
+  `entity_config` by `connector_id` (connection fields still win). Studio Create
+  Connection / Create Flow also copies those fields onto the connection entity
+  at create time.
 - **`capture_samples` requires `entity_type`** — for file-transfer, use the
   entity key from connector metadata / fileSpecs (not a filesystem path unless
   that is how the provider names the entity).

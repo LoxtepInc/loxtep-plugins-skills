@@ -50,8 +50,16 @@ organization level.
 
 ## Pitfalls
 
+- **Shape → product and shape → concept — never product → concept.**
+  `create_schema` authors a **shape**. `apply_schema` / Apply definition applies
+  that shape to a product. Align the shape to a pack/org **concept** in Meaning.
+  Do **not** bind Schema.org Product (or another concept) onto the data product —
+  that is the wrong edge. See
+  [docs/concepts/type-vs-pack-alignment.md](../../../docs/concepts/type-vs-pack-alignment.md).
+- **`create_schema` creates a shape** — Meaning/Bind still list pack concepts
+  today; the shape already exists under Define → Schemas / `list_schemas`.
 - **Ontology relationships / thesaurus** for entity intelligence live under
-  **`loxtep_context`**, not `loxtep_define`.
+  **`loxtep_meaning`** / graph APIs, not as a second schema store.
 - **Catalog discovery** is **`loxtep_query`** (`discover-govern-lineage`
   Agent-Scope Skill).
 - **403 / permission denied** — Schema and quality tools enforce RBAC

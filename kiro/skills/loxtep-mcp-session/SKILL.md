@@ -16,10 +16,6 @@ metadata:
 **Story S0+:** How to orient before (and after) other Customer MCP work —
 without relying on any private repo or source tree.
 
-**First connect:** if hosted MCP is not configured in this tool yet, fetch and
-follow [https://docs.loxtep.io/docs/setup.md](https://docs.loxtep.io/docs/setup.md)
-before other Loxtep operations. Do not install a local stdio MCP server.
-
 ## When to use
 
 - “**What can I do** with MCP?”, “**Permission denied**”, “**403**”, “do I have
@@ -65,6 +61,16 @@ before other Loxtep operations. Do not install a local stdio MCP server.
   deployment wiring — not fixed by repeating `login` on the client alone.
 - **ListTools** shows facades and parameters; it does not replace
   **`get_current_user`** for “what am I allowed?” — use both.
+- **Agents idle vs inbox HITL:** if `list_agents` shows never-heartbeated
+  seeded agents but `loxtep_review.list_pending` shows `pko-engine` approvals,
+  that is expected for PKO-driven mapping gates — not a dead dispatcher. See
+  [pko-engine-vs-seeded-agents.md](../../../docs/agent-orchestration/pko-engine-vs-seeded-agents.md).
+- **PKO procedure runs:** to verify enqueue / HITL provenance for a data
+  product, use **`loxtep_context` → `list_runs`** with `data_product_id` (not
+  approval-row scraping). `start_run` is not an MCP operation — runs are started
+  by the PKO engine. Pre-deploy / operators:
+  `GET /agent-orchestration/procedure-runs/{data_product_id}` or table
+  `procedure_runs`.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 

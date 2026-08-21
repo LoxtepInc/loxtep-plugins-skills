@@ -36,6 +36,17 @@ Model **deltas**, not the entire universe:
 - One-off ETL transform detail — document in transformation, not ontology
   override.
 
+### Shape → product and shape → concept (never product → concept)
+
+- **Apply the org shape** (e.g. S&S Product via `apply_schema`) to the raw data
+  product. That is shape → product.
+- **Align that shape** to a pack/org concept (schema.org/Product) on the **shape**
+  in Meaning — inherit non-divergent properties, override the rest.
+- **Do not** bind Schema.org Product (or another concept) onto the same data
+  product. That is product → concept — the wrong edge. Map to another shape on a
+  **derived** product instead.
+- Reference: [docs/concepts/type-vs-pack-alignment.md](../../../docs/concepts/type-vs-pack-alignment.md).
+
 ### Maintainability — flag divergence before publishing as trusted
 
 Promotion to trusted tier uses **override-coverage** (% of **flagged divergent**
@@ -168,6 +179,9 @@ promotion.
 
 ## Anti-Patterns
 
+- **Product→concept bind:** Applying a shape (S&S Product) and then confirming a
+  concept (Schema.org Product) on the same data product. Align the **shape** to
+  the concept instead.
 - **Semantic drift:** Same term means different things over time → version
   definitions
 - **Phantom concepts:** Terms in docs that don't exist in data model → formalize

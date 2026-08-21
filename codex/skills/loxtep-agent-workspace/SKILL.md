@@ -43,6 +43,13 @@ the **agent workspace**, not **data mesh** repos (`loxtep_workspace` /
 - **`create_workstream`** ≠ **`create_project`** on `loxtep_workspace`. Naming
   collision in English — always pick the **tool** from user intent.
 - Data pipeline work → **`data-workflows`** + **`connect-external-system`**.
+- **`list_agents` idle / `last_heartbeat_at` null** does **not** mean inference
+  HITL is broken. Steward inbox items with `requesting_actor: pko-engine` come
+  from the **PKO engine** (procedure runs + approval backbone), not from seeded
+  ConnectAgent / SemanticsAgent / Ontology Pipeline executor rows. Use
+  `loxtep_review.list_pending` for HITL health; use `list_agents` only for
+  executor wake/budget. See
+  [pko-engine-vs-seeded-agents.md](../../../docs/agent-orchestration/pko-engine-vs-seeded-agents.md).
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 
