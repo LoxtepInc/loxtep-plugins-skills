@@ -64,6 +64,9 @@ rules, and is published as trusted.
 
 1. Define what the data means — hand off to `semantic-ontology-mapping` skill
 2. Surface the draft definitions for domain owner review — check `list_pending`
+   (expect `requesting_actor: pko-engine` for PKO mapping gates; do not require
+   `list_agents` heartbeats — see
+   [pko-engine-vs-seeded-agents.md](../../../docs/agent-orchestration/pko-engine-vs-seeded-agents.md))
    and surface to the right person
 3. On approval, apply definition/CDLC transitions as required — not
    `promote_data_product` (that is medallion only)
@@ -156,8 +159,10 @@ records by the PKO execution engine. Resolve via `loxtep_review`
 (`@loxtep/sdk@0.9.7+`; CLI: `loxtep approvals`).
 
 **CDLC cross-track:** P3 feeds `procedure#bridge-dp-semantics-to-cdlc` and
-`procedure#cdlc-memory-promotion-intake`. P3 `dependsOn`
-`procedure#cdlc-approve-and-deploy-artifact` for deployed glossary.
+`procedure#cdlc-memory-promotion-inbox`. New-source semantics must **not**
+`dependsOn` `procedure#cdlc-approve-and-deploy-artifact` (that gate deadlocks
+first-source Inbox HITL — LOX-1808). Deployed glossary for promote is a P4
+readiness/policy concern after the bridge, not a P3 start gate.
 
 **Bundle authoring (P2):** use `save_workflow_bundle` only. Do not use
 `patch_workflow_graph` for new flows. Handoff from P1 = `connector_id` + samples

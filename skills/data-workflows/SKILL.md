@@ -671,8 +671,10 @@ Notes:
 - **`deploy_project` is async** — returns `{ "status": "requested" }` with no
   single deployment row; poll `list_deployments` filtered by each `workflow_id`.
 - **Credentials on workflow graph nodes** — runtime reads
-  `credential_parameter_store_refs` on the **connection node** in the graph;
-  org-level connector credentials are not auto-merged at deploy.
+  `credential_parameter_store_refs` (and file-transfer transport/fileSpecs) from
+  connection `entity_config`. For **file-transfer / sftp / ftp / ftps**, deploy
+  hydrates those fields from the org connector by `connector_id` (connection
+  overrides still win). Prefer storing secrets on the org connector.
 - **`deploy_workflow` vs `deploy_project`** — Use `deploy_workflow` for fast
   iteration on a single workflow during development. Use `deploy_project` for
   production releases or when multiple workflows changed (it creates a full

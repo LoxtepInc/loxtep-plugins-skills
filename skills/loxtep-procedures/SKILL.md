@@ -77,12 +77,25 @@ dependencies** in the process graph. Import/export JSON-LD graphs.
 2. Response includes warnings listing downstream dependents.
 3. Tombstoned procedures are excluded from `list_procedures` results.
 
+### Flow — List PKO procedure runs for a data product
+
+1. `list_runs` with required `data_product_id` (MCP session org applies).
+2. Response includes `runs[]` with `procedure_run_id`, `status`,
+   `approval_request_id`, `procedure_id`, `current_step_order`, `context`.
+3. Use this to answer “did enqueue happen?” — do **not** scrape HITL rows for
+   run ids.
+4. **`start_run` is not on customer MCP.** Enqueue is event-driven (`pko-engine`
+   / `process-pko-run-start-requested`). Operators can still read the same rows
+   via REST `GET /agent-orchestration/procedure-runs/{data_product_id}` or SQL
+   table `procedure_runs` (org-scoped).
+
 ## MCP mapping
 
 | `operation`                  | Facade           | Scope        | Notes                                                              |
 | ---------------------------- | ---------------- | ------------ | ------------------------------------------------------------------ |
 | `list_procedures`            | `loxtep_context` | organization | Filters: `status`, `name`, `domain_id`, …                          |
 | `get_procedure`              | `loxtep_context` | organization | Full step graph with decisions, triggers, dependencies, metadata   |
+| `list_runs`                  | `loxtep_context` | organization | PKO pipeline runs for a `data_product_id` (status, HITL link)      |
 | `create_procedure`           | `loxtep_context` | organization | Required: `organization_id`, `name`; optional graph fields         |
 | `update_procedure`           | `loxtep_context` | organization | Partial updates; arrays use full-replacement semantics             |
 | `delete_procedure`           | `loxtep_context` | organization | Soft-delete (tombstone); warns about downstream dependents         |

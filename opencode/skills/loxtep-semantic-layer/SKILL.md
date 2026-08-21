@@ -122,6 +122,14 @@ agents can query for context:
   **`loxtep_meaning`** - different facade. This Agent-Scope Skill is for
   _querying_ the curated semantic layer and managing canonical knowledge, not
   managing its underlying ontology structure.
+- **`search_semantic_layer` with `artifact_types: schema` is not domain
+  schemas.** It searches `schema_registry_cache` / curated artifacts — not
+  `domain_schemas` from `create_schema`. Org **shapes** live under `loxtep_define`
+  `list_schemas`. Pack hits for “Product” are **concepts**, not the S&S Product
+  shape you applied to a raw data product.
+- **Do not bind a concept onto a DP that already has an applied shape.** Apply
+  the shape to the product; align the shape to the concept in Meaning. See
+  [docs/concepts/type-vs-pack-alignment.md](../../../docs/concepts/type-vs-pack-alignment.md).
 - **Catalog search** is **`loxtep_query`** - use that for broad discovery across
   all artifact types. This Agent-Scope Skill is for the semantic-layer-specific
   search and completeness view.
