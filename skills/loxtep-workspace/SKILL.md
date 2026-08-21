@@ -3,7 +3,7 @@ name: loxtep-workspace
 description:
   Workspace versions, snapshots, restore, and compare for Loxtep projects. Use
   when the user wants snapshot history, restore a version, or diff workspace
-  state. versions, reindex workspace, or project layer status / materialization
+  state, reindex workspace, or project layer status / materialization
   plans (get_project_workspace_status, list_project_changes,
   plan_project_materialization). Customer MCP loxtep_workspace. For queue
   inspection use loxtep_observe (loxtep-queue-tracing). User story S7. See
