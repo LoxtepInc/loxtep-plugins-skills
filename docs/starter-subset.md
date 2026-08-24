@@ -1,6 +1,6 @@
 # Starter set — your first 15 minutes
 
-Loxtep ships **23 skills**. You do not need all of them on day one. The
+Loxtep ships **24 skills**. You do not need all of them on day one. The
 **Starter set** is the minimal path from install to a governed query over your
 own data: authenticate, connect one source, and query it. Everything else stays
 installed and available — it just isn't what you reach for first.

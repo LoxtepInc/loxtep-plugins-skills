@@ -101,7 +101,7 @@ Hosted at `https://mcp.loxtep.io/ai/mcp/stream` — **10 MCP job facades** (`lox
 
 `rules/loxtep-mcp-auth.mdc` — guides the agent to reconnect the hosted MCP server when auth fails (OAuth 2.1 recovery).
 
-### Skills (23 bundles)
+### Skills (24 bundles)
 
 Scoped skill bundles under `claude/skills/<slug>/SKILL.md`. See [docs/skills-user-stories.md](../docs/skills-user-stories.md) for the full user-story catalog.
 

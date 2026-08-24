@@ -99,7 +99,7 @@ The agent sees `loxtep_*` tools; each call sets **`operation`** plus arguments.
 
 **10 MCP job facades** (`loxtep_session`, `loxtep_connect`, `loxtep_workspace`, `loxtep_build`, …) — projects, workflows, connectors, data products, schemas, quality, catalog, semantic layer, ontology, analytics, deployments, workspace/queue ops, process intelligence, agent orchestration.
 
-### Skills (23 bundles)
+### Skills (24 bundles)
 
 Under `antigravity/skills/<slug>/SKILL.md`. See [docs/skills-user-stories.md](../docs/skills-user-stories.md).
 
