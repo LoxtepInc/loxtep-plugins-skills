@@ -99,7 +99,7 @@ Or install from a local clone:
 claude plugin install /path/to/loxtep-plugins-skills/claude
 ```
 
-This gives you hosted MCP, 23 skills, and auth recovery. OAuth runs on first tool call.
+This gives you hosted MCP, 24 skills, and auth recovery. OAuth runs on first tool call.
 
 See [`claude/README.md`](claude/README.md) for details.
 
@@ -221,11 +221,11 @@ For clients without OAuth support, wrap with `mcp-remote` (see Antigravity above
 
 | Plugin | Platform | Path | Description |
 |--------|----------|------|-------------|
-| **Cursor** | Cursor IDE | [cursor/](cursor/) | Marketplace plugin **`loxtep`**. Hosted MCP, 23 skills, auth rule. |
-| **Claude** | Claude Code & Cowork | [claude/](claude/) | Marketplace plugin **`loxtep-claude@loxtep`**. Hosted MCP, 23 skills, auth rule. |
-| **OpenCode** | OpenCode | [opencode/](opencode/) | `opencode.json` (`type: remote`) + 23 skills. Native OAuth. |
-| **Kiro** | Kiro IDE | [kiro/](kiro/) | Kiro Power (`kiro/power/`) or MCP config. 23 skills + 13 steering guides. |
-| **Antigravity** | Google Antigravity | [antigravity/](antigravity/) | `~/.gemini/config/mcp_config.json` via `mcp-remote`. 23 skills in `~/.gemini/skills/`. |
+| **Cursor** | Cursor IDE | [cursor/](cursor/) | Marketplace plugin **`loxtep`**. Hosted MCP, 24 skills, auth rule. |
+| **Claude** | Claude Code & Cowork | [claude/](claude/) | Marketplace plugin **`loxtep-claude@loxtep`**. Hosted MCP, 24 skills, auth rule. |
+| **OpenCode** | OpenCode | [opencode/](opencode/) | `opencode.json` (`type: remote`) + 24 skills. Native OAuth. |
+| **Kiro** | Kiro IDE | [kiro/](kiro/) | Kiro Power (`kiro/power/`) or MCP config. 24 skills + 13 steering guides. |
+| **Antigravity** | Google Antigravity | [antigravity/](antigravity/) | `~/.gemini/config/mcp_config.json` via `mcp-remote`. 24 skills in `~/.gemini/skills/`. |
 | **Codex** | OpenAI Codex | [codex/](codex/) | `~/.codex/config.toml` + skills in `~/.agents/skills/`. Native OAuth. |
 
 ## Repository layout

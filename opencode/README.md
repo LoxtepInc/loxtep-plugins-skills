@@ -103,7 +103,7 @@ OpenCode discovers `loxtep_*` tools and skills automatically. Skills load on-dem
 
 Hosted at `https://mcp.loxtep.io/ai/mcp/stream` — **10 MCP job facades** (`loxtep_session`, `loxtep_connect`, `loxtep_workspace`, `loxtep_build`, …) covering projects, workflows, connectors, **data products**, schemas, quality, catalog, **semantic layer**, ontology, analytics, deployments, workspace/queue ops, process intelligence, and agent orchestration.
 
-### Skills (23 bundles)
+### Skills (24 bundles)
 
 See [docs/skills-user-stories.md](../docs/skills-user-stories.md). Skills live under `opencode/skills/<slug>/SKILL.md`.
 

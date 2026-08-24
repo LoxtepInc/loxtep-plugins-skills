@@ -40,9 +40,69 @@ function grepFiles(pattern, files) {
 }
 
 // Skill file content/count parity across clients is covered by
-// `node scripts/generate-skills.mjs --check` (see check-skills-sync.yml) --
-// this audit focuses on customer-facing install docs and shipped configs.
+// `node scripts/generate-skills.mjs --check` (see check-skills-sync.yml).
+// This audit also asserts install docs claim the live canonical skill count.
 const clients = ['cursor', 'claude', 'opencode', 'kiro', 'antigravity', 'codex'];
+
+function listCanonicalSkillCount() {
+  const skillsDir = path.join(ROOT, 'skills');
+  if (!fs.existsSync(skillsDir)) return 0;
+  return fs
+    .readdirSync(skillsDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && fs.existsSync(path.join(skillsDir, d.name, 'SKILL.md')))
+    .length;
+}
+
+const canonicalSkillCount = listCanonicalSkillCount();
+if (canonicalSkillCount < 1) {
+  add('error', 'skills/', 'no canonical SKILL.md directories found');
+}
+
+for (const client of clients) {
+  const clientSkills = path.join(ROOT, client, 'skills');
+  if (!fs.existsSync(clientSkills)) {
+    add('error', `${client}/skills`, 'missing client skills directory');
+    continue;
+  }
+  const clientCount = fs
+    .readdirSync(clientSkills, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && fs.existsSync(path.join(clientSkills, d.name, 'SKILL.md')))
+    .length;
+  if (clientCount !== canonicalSkillCount) {
+    add(
+      'error',
+      `${client}/skills`,
+      `skill count ${clientCount} != canonical ${canonicalSkillCount}`
+    );
+  }
+}
+
+const countClaimFiles = [
+  'README.md',
+  'docs/starter-subset.md',
+  ...clients.map((c) => `${c}/README.md`),
+];
+const countClaimRe = new RegExp(
+  String.raw`\b(\d{1,3})\s+(?:scoped\s+)?skills?\b|\bSkills\s*\((\d{1,3})\s+bundles?\)`,
+  'gi'
+);
+for (const file of countClaimFiles) {
+  if (!exists(file)) continue;
+  const text = read(file);
+  let m;
+  countClaimRe.lastIndex = 0;
+  while ((m = countClaimRe.exec(text)) !== null) {
+    const n = Number(m[1] ?? m[2]);
+    if (n < 10 || n > 200) continue;
+    if (n !== canonicalSkillCount) {
+      add(
+        'error',
+        file,
+        `claims ${n} skills/bundles but canonical count is ${canonicalSkillCount}`
+      );
+    }
+  }
+}
 
 for (const client of clients) {
   if (exists(`${client}/skills/create-connector/SKILL.md`)) {

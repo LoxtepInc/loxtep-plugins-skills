@@ -93,7 +93,7 @@ Hosted at `https://mcp.loxtep.io/ai/mcp/stream` — **10 MCP job facades** (`lox
 
 `assets/logo.svg` — Loxtep logo for Cursor Marketplace display.
 
-### Skills (23 bundles)
+### Skills (24 bundles)
 
 Scoped skill bundles under `cursor/skills/<slug>/SKILL.md` teach the agent platform concepts and safe operation order. See [docs/skills-user-stories.md](../docs/skills-user-stories.md) for the full user-story catalog.
 
