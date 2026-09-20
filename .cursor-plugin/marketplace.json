@@ -10,7 +10,7 @@
     {
       "name": "loxtep",
       "source": "./cursor",
-      "description": "Loxtep for Cursor — the AI-first governed data layer. Hosted MCP at mcp.loxtep.io, 21 grouped loxtep_* tools, OAuth login, skills, auth recovery rule. Install this entry for Cursor IDE.",
+      "description": "Loxtep for Cursor — the AI-first governed data layer. Hosted MCP at mcp.loxtep.io, 10 grouped loxtep_* tools, OAuth login, skills, auth recovery rule. Install this entry for Cursor IDE.",
       "version": "1.1.7",
       "author": {
         "name": "Loxtep"
