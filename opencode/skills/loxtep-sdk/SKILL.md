@@ -28,8 +28,8 @@ consumptions table).
 ## Connectors (org credentials — not ingest)
 
 SDK namespace: `client.connect.connectors` (Node and Python). REST base
-`/connectors/connectors`. Methods that exist: `list`, `get`, `create`,
-`update`, `delete`, `test`, `capture_samples`, `get_oauth_url`. There is no
+`/connectors/connectors`. Methods that exist: `list`, `get`, `create`, `update`,
+`delete`, `test`, `capture_samples`, `get_oauth_url`. There is no
 `list_connector_types` on the SDK — use MCP `loxtep_connect` /
 `list_connector_types`.
 
@@ -44,9 +44,10 @@ const probe = await client.connect.connectors.test(created.connector_id);
 `test(connector_id)` POSTs an empty body. It does **not** accept `instance_id`.
 For a customer-VPC probe when the org has multiple instances, use MCP
 `test_connector` with `instance_id` or REST
-`POST /connectors/connectors/{id}/test`. CLI: `loxtep connectors list|test|capture-samples`
-only — there is no `loxtep connectors create` / `get`. Full connect/test
-procedure: **`connect-external-system`**. `test` does not start ingestion;
+`POST /connectors/connectors/{id}/test`. CLI:
+`loxtep connectors list|test|capture-samples` only — there is no
+`loxtep connectors create` / `get`. Full connect/test procedure:
+**`connect-external-system`**. `test` does not start ingestion;
 `capture_samples` retrieves source rows and needs user authorization.
 
 ## CLI workspace commands (plural + status)
