@@ -1,6 +1,6 @@
 # Starter set — your first 15 minutes
 
-Loxtep ships **24 skills**. You do not need all of them on day one. The
+Loxtep ships **25 skills**. You do not need all of them on day one. The
 **Starter set** is the minimal path from install to a governed query over your
 own data: authenticate, connect one source, and query it. Everything else stays
 installed and available — it just isn't what you reach for first.
@@ -11,7 +11,7 @@ installed and available — it just isn't what you reach for first.
 | --- | --- | --- |
 | 1 | **`loxtep-mcp-session`** | Establishes your session, org context, and what you're allowed to do (`get_current_user`, `get_current_organization`). Start here. |
 | 2 | **`loxtep-auth`** | Recovers cleanly if the hosted MCP returns an auth error (re-run OAuth, retry). |
-| 3 | **`connect-external-system`** | Connects one **Golden Path connector** — Postgres, S3, webhook, Shopify, Stripe, or HubSpot — and captures samples. |
+| 3 | **`connect-external-system`** | Connects one **Golden Path connector** — Postgres, S3, webhook, Shopify, Stripe, or HubSpot — tests connectivity, then captures samples only when authorized. Private-network sources use the same skill. |
 | 4 | **`data-workflows`** | Turns that connected source into a governed data product you (and your agent) can query. |
 
 Golden Path connectors are the ones marketed as no-code for SMBs: **Postgres,

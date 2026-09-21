@@ -3,8 +3,9 @@
 name: loxtep-sdk
 description:
   Bootstrap @loxtep/sdk in Node (auth, env, REST vs Loxtep streams), map MCP
-  tools to SDK methods, and avoid mixing JWT with IAM. Use when adding Loxtep
-  SDK usage, queue readers/writers, or pairing MCP with runtime code.
+  tools to SDK methods, including client.connect.connectors, and avoid mixing
+  JWT with IAM. Use when adding Loxtep SDK usage, queue readers/writers, or
+  pairing MCP with runtime code.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/opencode/skills/loxtep-sdk/SKILL.md
 ---
@@ -23,6 +24,30 @@ delivery tail — both are `connections/{id}.json` with `connector_id`. Delivery
 workflows use `workflow_type: "delivery"` (never `consumption`). Prefer Target
 connections in the bundle over `create_delivery` / `list_deliveries` (legacy
 consumptions table).
+
+## Connectors (org credentials — not ingest)
+
+SDK namespace: `client.connect.connectors` (Node and Python). REST base
+`/connectors/connectors`. Methods that exist: `list`, `get`, `create`,
+`update`, `delete`, `test`, `capture_samples`, `get_oauth_url`. There is no
+`list_connector_types` on the SDK — use MCP `loxtep_connect` /
+`list_connector_types`.
+
+```ts
+const created = await client.connect.connectors.create({
+  connector_type: '<slug>',
+  metadata: { name: '<display name>' },
+});
+const probe = await client.connect.connectors.test(created.connector_id);
+```
+
+`test(connector_id)` POSTs an empty body. It does **not** accept `instance_id`.
+For a customer-VPC probe when the org has multiple instances, use MCP
+`test_connector` with `instance_id` or REST
+`POST /connectors/connectors/{id}/test`. CLI: `loxtep connectors list|test|capture-samples`
+only — there is no `loxtep connectors create` / `get`. Full connect/test
+procedure: **`connect-external-system`**. `test` does not start ingestion;
+`capture_samples` retrieves source rows and needs user authorization.
 
 ## CLI workspace commands (plural + status)
 
