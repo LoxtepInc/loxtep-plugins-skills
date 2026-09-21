@@ -29,18 +29,26 @@ product.
    `get_current_organization`
 2. Create or reuse a project — `create_project` or `list_projects`, record
    `project_id`
-3. List available connector types — `list_connector_types`
-4. Create the connector and authenticate — `create_connector` + `get_oauth_url`
-5. Capture sample records — `capture_samples`
+3. Follow **`connect-external-system`**: `list_connector_types`, decide public
+   vs private, inspect instance runtime (`list_instances`, `list_observe_bots`)
+   before creating a private connector
+4. Create the connector and authenticate — `create_connector` or
+   `get_oauth_url`
+5. **Test connectivity** — `test_connector` (does not start ingestion). Ask
+   before `capture_samples`
 6. Design and save the ingestion workflow — hand off to `data-workflows` skill
+   only with user authorization to ingest
 7. Deploy — `deploy_project` or `deploy_workflow`, confirm status is `deployed`
 
-**Done when:** data is flowing, samples confirmed, deployment status `deployed`.
+**Done when:** credentials tested (`test_connector` passed), and — if the user
+authorized ingest — samples confirmed and deployment status `deployed`.
 
 **Rules:**
 
-- Capture samples before designing the workflow; never deploy just to get
-  samples
+- Connection test and ingestion activation are separate; do not deploy just to
+  get samples
+- Private sources need `network_binding: customer_vpc` and
+  `connectors-private-512` on the instance (**`loxtep-instances`**)
 - Create the project before any workflow or bundle calls
 - Embed data product definitions inside the workflow bundle — do not call
   `create_data_product` directly; deployment provisions it

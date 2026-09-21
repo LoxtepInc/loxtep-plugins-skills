@@ -6,7 +6,8 @@ description:
   starter plan, plan_id, payment_method_id, billing UI (add payment methods in
   app, not MCP), regions, or "create a Loxtep instance". Self-hosted install
   flow: get_deployment_urls -> register_infrastructure -> get_infrastructure ->
-  create_instance.
+  create_instance. Also inspect whether an instance's connector runtime is
+  ready for public or customer-VPC (private-network) sources.
 ---
 
 # Loxtep instances (Customer MCP)
@@ -225,6 +226,42 @@ account via `@aws-cdk/toolkit-lib`, and writes stack outputs back into the
 instance's `connection_details.observe_api`. Monitoring is via the Observe proxy
 — no CloudWatch cross-account sharing is configured by the provisioner.
 
+## Connector runtime on an instance (read-only first)
+
+Public SaaS connectors run on shared `connectors-{256,512,1024,2048}` Lambdas
+(`vpc.enabled: false` on the runtimes microservice). Sources that are not
+internet-reachable need the dedicated `connectors-private-512` bot, which
+attaches only to customer private subnets and a connector security group.
+
+**Inspect (do not mutate):**
+
+1. `list_instances` — confirm `status: active` and record `instance_id`. The
+   payload has no VPC IDs, subnet IDs, or ARNs.
+2. `get_infrastructure` — role ARN / external ID for managed and self-hosted.
+3. `loxtep_observe` → `list_observe_bots` with `instance_id` (permission
+   `instances:read`). Look for `connectors-private-512` when the source is
+   private.
+
+```json
+{ "operation": "list_observe_bots", "instance_id": "<uuid>" }
+```
+
+**Ownership:** the customer owns the VPC, two private subnet IDs, the connector
+security group, routing, and source firewall rules. Loxtep owns packaging of
+`connectors-private-512` and deploys the per-instance **runtimes** stack
+(`org-{org8}-{inst8}-runtimes`, or `connection_details.runtimes_stack_identifier`).
+`create_instance` and `register_infrastructure` do **not** take subnet or
+security-group IDs. Ask the customer for `CustomerPrivateSubnet1`,
+`CustomerPrivateSubnet2`, and `CustomerConnectorSecurityGroup`, then use the
+supported runtimes deploy (`process-runtimes-deployment-requested` or operator
+`moon run :deploy-ms -- runtimes …`). Do not attach shared connector workers to
+the customer VPC or change ENIs in the AWS console.
+
+Runtimes upgrades must keep those subnet and security-group values so private
+connectors keep their network path. Connector create/test is
+**`connect-external-system`**. Workflow deploy onto the private Lambda is
+**`loxtep-deployments`**.
+
 <!-- SCOPE_BLOCK -->
 
 ## Optional attribution
@@ -239,3 +276,5 @@ re-trigger OAuth (Agent-Scope Skill **loxtep-auth**).
 ## References
 
 - [User story catalog](../../../docs/skills-user-stories.md) (story **S11**)
+- Private connector path: **`connect-external-system`**
+- Workflow deploy onto `connectors-private-512`: **`loxtep-deployments`**

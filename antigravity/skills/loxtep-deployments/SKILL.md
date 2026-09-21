@@ -3,8 +3,9 @@
 name: loxtep-deployments
 description:
   Use when the user wants to deploy a project or workflow to a runtime instance,
-  check deployment status, list deployments, or inspect runtime mappings. Not
-  the same as loxtep-workspace (provisioning) or data-workflows (authoring).
+  check deployment status, list deployments, or inspect runtime mappings,
+  including customer-VPC connector connections. Not the same as loxtep-workspace
+  (provisioning) or data-workflows (authoring).
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/antigravity/skills/loxtep-deployments/SKILL.md
 ---
@@ -20,6 +21,7 @@ and inspect runtime mappings.
 - "What's the **deployment status**?", "list deployments"
 - "Show **runtime mapping**" for a project/workflow
 - "**Redeploy**", "force redeploy"
+- Private-network connections registering on `connectors-private-512`
 
 ## Prerequisites
 
@@ -76,6 +78,18 @@ and inspect runtime mappings.
   (graph completeness, connection tests). Use only for known-good redeployments.
 - **Status values:** Expect `pending`, `in_progress`, `completed`, `failed`.
   Poll `get_deployment` for async deploy completion.
+- **Customer-VPC connections** (`network_binding: customer_vpc` / `private`,
+  `require_private_network: true`, or `mongodb-source` / `mongodb`) register on
+  `connectors-private-512` only. Shared `connectors-*` workers stay off the
+  customer VPC. If deploy cannot resolve that Lambda, inspect the instance
+  runtimes stack first (**`loxtep-instances`**) — do not attach shared workers
+  to the VPC.
+- **Preserve networking on upgrade:** `force_redeploy` re-reads org connector
+  metadata (`network_binding`, `credential_parameter_store_refs`). It does not
+  change subnet or security-group attachment. Runtimes stack updates must keep
+  `CustomerPrivateSubnet1/2` and `CustomerConnectorSecurityGroup`. Connector
+  test vs ingest remains **`connect-external-system`** — deploy is not a
+  connectivity probe.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 
@@ -117,3 +131,5 @@ re-trigger OAuth (Agent-Scope Skill **loxtep-auth**).
 ## References
 
 - [User story catalog](../../../docs/skills-user-stories.md) (story **S14**)
+- Connect + private test: **`connect-external-system`**
+- Instance runtimes / VPC: **`loxtep-instances`**

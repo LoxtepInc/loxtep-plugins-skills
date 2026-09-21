@@ -431,7 +431,7 @@ rejected, and a check that cannot complete blocks the operation.
 | --- | --- |
 | `loxtep-mcp-session` | Orient: capabilities, RBAC grants, recommended session order |
 | `loxtep-instances` | Provision/manage runtime instances |
-| `connect-external-system` | Connect external systems (P1) |
+| `connect-external-system` | Connect sources (P1), including private-network test without ingest |
 | `data-workflows` | Author and deploy data workflows |
 | `data-product-modeling` | Model source/consumer data products |
 | `discover-govern-lineage` | Discovery, governance, lineage |

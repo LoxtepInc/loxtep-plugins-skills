@@ -63,8 +63,16 @@ User editing open flow in Studio UI (tiny incremental change)?
   → patch_workflow_graph only
 
 After connect-external-system (Connect)?
-  → You have connector_id + samples — start at get_entity_schemas, compose bundle
+  → Require a passing `test_connector` and **user authorization** before ingest.
+    `test_connector` is not ingest. `capture_samples` retrieves source rows.
+  → rest-api / file-transfer after Test: list_connector_entities →
+    apply_template (workflow / connector-ingestion) → set entities + schedule + how →
+    save_workflow_bundle → deploy_workflow. Or `confirm_connector_entity_selection` (PKO fan-out per entity).
+    Assessor fires the trigger. Do not add a scheduler. Do not pull without a workflow.
+  → Other types: connector_id + samples — start at get_entity_schemas, compose bundle
   → Put the connector on a Trigger connection at the ingest head
+  → Private-network connections keep `network_binding` on the org connector;
+    deploy registers them on `connectors-private-512` (**`loxtep-deployments`**)
 
 User asks to "create a source/consumer data product"?
   → Design schema first (data-product-modeling) — NO create_data_product MCP call
@@ -204,7 +212,10 @@ Optional template bootstrap (after project exists):
 
 1. `loxtep_connect` → `list_templates` / `get_template`.
 2. `apply_template` with `project_id`, `template_type`, `template_slug` — writes
-   a starter bundle (still materialize/sync locally when GitHub-attached).
+   a starter bundle (still materialize/sync locally when GitHub-attached). After
+   rest-api or file-transfer Test, use `template_type: workflow` and
+   `template_slug: connector-ingestion`, then set entities / schedule / how,
+   `save_workflow_bundle`, and `deploy_workflow`. Assessor decides fire time.
 
 ### Flow B2 — GitHub-attached repo (local → Loxtep sync)
 
@@ -304,8 +315,9 @@ Canonical reference:
 5. **Deploy enrichment** (`deploy_workflow`).
 
 The **`data-product-enrichment`** workflow template scaffolds this exact shape:
-[`loxtep-project-template/templates/workflows/data-product-enrichment/`](../../loxtep-project-template/templates/workflows/data-product-enrichment/)
-(default transform: built-in `derived_columns`).
+https://github.com/LoxtepInc/loxtep-project-template
+(`templates/workflows/data-product-enrichment/`) (default transform: built-in
+`derived_columns`).
 
 Scenario 2 runbook (transform derivation → queryable sink):
 [`docs/runbooks/transform-enrichment-scenario-2.md`](../../docs/runbooks/transform-enrichment-scenario-2.md).
@@ -318,8 +330,8 @@ transforms, not Store projections):
 1. Author an enrichment (or similar) workflow with a transformation node
    `transform_type: "sql_materialize"` and
    `operation_config: { sql: "SELECT ...", schedule?: "rate(1 hour)" }`.
-2. Template:
-   [`loxtep-project-template/templates/transforms/sql-materialize.json`](../../loxtep-project-template/templates/transforms/sql-materialize.json).
+2. Template: https://github.com/LoxtepInc/loxtep-project-template
+   (`templates/transforms/sql-materialize.json`).
 3. Sink is a normal queue-backed data product (Iceberg via existing writers).
 4. **`save_workflow_bundle`** → **`deploy_workflow`** (registers a cron bot, not
    shared `transformers-*`).
