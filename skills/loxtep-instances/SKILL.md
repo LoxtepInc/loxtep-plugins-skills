@@ -16,7 +16,7 @@ description:
 
 - **MCP tool:** `loxtep_workspace`
 - **Arguments:**
-  `{ "operation": "list_instances" | "create_instance" | "get_deployment_urls" | "register_infrastructure" | "get_infrastructure", ...fields }`
+  `{ "operation": "list_instances" | "create_instance" | "update_instance" | "get_deployment_urls" | "register_infrastructure" | "get_infrastructure", ...fields }`
 
 ### Payment methods — app UI only (read this)
 
@@ -273,7 +273,8 @@ At create:
 }
 ```
 
-On an existing instance (MCP `update_instance` or the instance settings UI):
+On an existing instance (MCP `update_instance`, SDK, CLI, or the instance
+settings UI):
 
 ```json
 {
@@ -288,9 +289,44 @@ On an existing instance (MCP `update_instance` or the instance settings UI):
 }
 ```
 
-Permission: `instances:update`. The platform reapplies the per-instance runtimes
-stack (`force_redeploy`). The customer does not run a Loxtep microservice
-deploy. Shared `connectors-*` workers stay off the customer VPC.
+Reapply the runtimes stack without changing VPC (retry a failed attach, pick up
+a new runtimes package):
+
+```json
+{
+  "operation": "update_instance",
+  "instance_id": "<uuid>",
+  "force_runtimes_redeploy": true
+}
+```
+
+Same fields on other surfaces (permission `instances:update` /
+`instances:create`):
+
+```ts
+await client.workspace.instances.create({
+  name, region, instance_type: 'self-hosted', payment_method_id,
+  connection_details: { observe_api: { ... }, connector_vpc: { subnet_ids: [...], security_group_id } },
+});
+await client.workspace.instances.update(instanceId, {
+  connection_details: { connector_vpc: { subnet_ids: [...], security_group_id } },
+});
+await client.workspace.instances.redeploy_runtimes(instanceId);
+```
+
+```bash
+loxtep instances create --name <n> --region <region> --type self-hosted \
+  --payment-method-id <uuid> --cross-account-role-arn <arn> \
+  --rstreams-secret-arn <arn> --rstreams-auth-arn <arn> \
+  --subnet-id subnet-<az1> --subnet-id-2 subnet-<az2> --security-group-id sg-<id>
+loxtep instances update <instance_id> \
+  --subnet-id subnet-<az1> --subnet-id-2 subnet-<az2> --security-group-id sg-<id>
+loxtep instances redeploy-runtimes <instance_id>
+```
+
+The platform reapplies the per-instance runtimes stack (`force_redeploy`). The
+customer does not run a Loxtep microservice deploy. Shared `connectors-*`
+workers stay off the customer VPC.
 
 Runtimes upgrades keep `connector_vpc` on the instance record. Connector
 create/test is **`connect-external-system`**. Workflow deploy onto the private

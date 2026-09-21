@@ -211,10 +211,12 @@ subnet IDs** (different AZs) and **one connector security group ID** that can
 reach the source and allow Lambda ENIs. Ask for these values. Do not guess.
 
 1. Put them on the instance as `connection_details.connector_vpc` via
-   `create_instance` (new) or `update_instance` / the instance settings UI
-   (existing). See **`loxtep-instances`**.
+   `create_instance` (new) or `update_instance` / SDK / CLI / the instance
+   settings UI (existing). See **`loxtep-instances`**.
 2. Instance create already provisions the runtimes stack. `update_instance` with
-   a `connector_vpc` change reapplies that stack (`force_redeploy`).
+   a `connector_vpc` change, or `force_runtimes_redeploy: true` (SDK
+   `redeploy_runtimes` / CLI `loxtep instances redeploy-runtimes`), reapplies
+   that stack (`force_redeploy`).
 3. Confirm with `list_observe_bots` (`instance_id`) that
    `connectors-private-512` exists. Shared `botconnectors` stay off the customer
    VPC.
