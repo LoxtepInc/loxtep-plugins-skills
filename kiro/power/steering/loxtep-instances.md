@@ -318,16 +318,6 @@ The platform reapplies the per-instance runtimes stack (`force_redeploy`). The
 customer does not run a Loxtep microservice deploy. Shared `connectors-*`
 workers stay off the customer VPC.
 
-CloudFormation `UPDATE_COMPLETE` is not proof that VPC attached. Confirm the
-private connector Lambda (`botconnectorsprivate512…`) `VpcConfig` SubnetIds and
-SecurityGroupIds match `connection_details.connector_vpc`. If a stack completed
-without `VpcConfig`, retry after the organizations runtimes provisioner includes
-the logical-ID template patch:
-
-```bash
-loxtep instances redeploy-runtimes <instance_id>
-```
-
 Runtimes upgrades keep `connector_vpc` on the instance record. Connector
 create/test is **`connect-external-system`**. Workflow deploy onto the private
 Lambda is **`loxtep-deployments`**.
