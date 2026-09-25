@@ -5,8 +5,9 @@ description:
   Use when the user asks what they can do with Loxtep MCP, hits permission
   denied / 403, wants to know their RBAC grants, or needs the recommended
   session order before other tools. Covers get_current_user (permissions),
-  get_current_organization, project_id, and ListTools. Complements loxtep-auth
-  for JWT recovery. See docs/skills-user-stories.md S0.
+  get_platform_model (Loxtep nouns), get_current_organization, project_id, and
+  ListTools. Complements loxtep-auth for JWT recovery. See
+  docs/skills-user-stories.md S0.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/opencode/skills/loxtep-mcp-session/SKILL.md
 ---
@@ -31,16 +32,22 @@ without relying on any private repo or source tree.
      `source`, …). Use this to reason about RBAC.
    - **`roles`** — role assignments.
    - **`user`** / **`organization`** — identity context.
-2. **`loxtep_session`** → **`get_current_organization`** — confirm org scope
+2. **`loxtep_session`** → **`get_platform_model`** (no arguments). Returns the
+   Loxtep platform model: concepts, relationships, and the confusions to avoid
+   (connector vs connection, shape vs concept vs data product, Organize vs
+   Define). Load this before any tool that creates or changes Loxtep resources.
+   The model describes Loxtep. It is not a vocabulary pack and not the
+   customer's business ontology (`loxtep_meaning`).
+3. **`loxtep_session`** → **`get_current_organization`** — confirm org scope
    matches expectations.
-3. **`loxtep_session`** → **`platform_health_check`** (optional but recommended
+4. **`loxtep_session`** → **`platform_health_check`** (optional but recommended
    on cold start) — ~5s Semantica-style doctor for auth, instance `observe_api`
    secret orientation, graph reachability, decision-traces (empty-ok), and MCP
    facade surface / deprecated names. Structured `checks[]` with
    `pass|fail|warn`. Optional `instance_id`.
-4. For **project-scoped** facades (`loxtep_build`, …), include **`project_id`**
+5. For **project-scoped** facades (`loxtep_build`, …), include **`project_id`**
    on every call that needs it.
-5. Open your MCP client’s **ListTools** (or schema) for **`loxtep_*`** tools —
+6. Open your MCP client’s **ListTools** (or schema) for **`loxtep_*`** tools —
    parameter names and descriptions live there; there is no separate “capability
    discovery” MCP operation beyond `platform_health_check` for env sanity.
 
@@ -61,9 +68,9 @@ without relying on any private repo or source tree.
   deployment wiring — not fixed by repeating `login` on the client alone.
 - **ListTools** shows facades and parameters; it does not replace
   **`get_current_user`** for “what am I allowed?” — use both.
-- **Agents idle vs inbox HITL:** if `list_agents` shows never-heartbeated
-  seeded agents but `loxtep_review.list_pending` shows `pko-engine` approvals,
-  that is expected for PKO-driven mapping gates — not a dead dispatcher. See
+- **Agents idle vs inbox HITL:** if `list_agents` shows never-heartbeated seeded
+  agents but `loxtep_review.list_pending` shows `pko-engine` approvals, that is
+  expected for PKO-driven mapping gates — not a dead dispatcher. See
   [pko-engine-vs-seeded-agents.md](../../../docs/agent-orchestration/pko-engine-vs-seeded-agents.md).
 - **PKO procedure runs:** to verify enqueue / HITL provenance for a data
   product, use **`loxtep_context` → `list_runs`** with `data_product_id` (not

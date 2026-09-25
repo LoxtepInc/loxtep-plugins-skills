@@ -49,12 +49,13 @@ Model **deltas**, not the entire universe:
 
 - **Apply the org shape** (e.g. S&S Product via `apply_schema`) to the raw data
   product. That is shape → product.
-- **Align that shape** to a pack/org concept (schema.org/Product) on the **shape**
-  in Meaning — inherit non-divergent properties, override the rest.
+- **Align that shape** to a pack/org concept (schema.org/Product) on the
+  **shape** in Meaning — inherit non-divergent properties, override the rest.
 - **Do not** bind Schema.org Product (or another concept) onto the same data
   product. That is product → concept — the wrong edge. Map to another shape on a
   **derived** product instead.
-- Reference: [docs/concepts/type-vs-pack-alignment.md](../../../docs/concepts/type-vs-pack-alignment.md).
+- Reference:
+  [docs/concepts/type-vs-pack-alignment.md](../../../docs/concepts/type-vs-pack-alignment.md).
 
 ### Maintainability — flag divergence before publishing as trusted
 

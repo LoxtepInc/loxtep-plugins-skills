@@ -48,18 +48,18 @@ Do **not** suggest local stdio MCP servers or `npx @loxtep/customer-mcp-server`.
 
 ## Connect → Organize → Use (job facades)
 
-| Step         | Tool               | Purpose                                            |
-| ------------ | ------------------ | -------------------------------------------------- |
-| **Connect**  | `loxtep_session`   | Who am I, which org, logout                        |
-| **Connect**  | `loxtep_connect`   | Connectors, OAuth, samples, starter templates      |
-| **Connect**  | `loxtep_workspace` | Projects, instances, snapshots, version history    |
-| **Organize** | `loxtep_build`     | Workflows, triggers, data products, deploy writes  |
-| **Organize** | `loxtep_define`    | Schemas, quality rules, PII tagging                |
-| **Organize** | `loxtep_meaning`   | Vocabulary, ontology, semantic layer               |
-| **Organize** | `loxtep_review`    | Lifecycle transitions, approvals, context mining   |
+| Step         | Tool               | Purpose                                                                                |
+| ------------ | ------------------ | -------------------------------------------------------------------------------------- |
+| **Connect**  | `loxtep_session`   | Who am I, which org, logout                                                            |
+| **Connect**  | `loxtep_connect`   | Connectors, OAuth, samples, starter templates                                          |
+| **Connect**  | `loxtep_workspace` | Projects, instances, snapshots, version history                                        |
+| **Organize** | `loxtep_build`     | Workflows, triggers, data products, deploy writes                                      |
+| **Organize** | `loxtep_define`    | Schemas, quality rules, PII tagging                                                    |
+| **Organize** | `loxtep_meaning`   | Vocabulary, ontology, semantic layer                                                   |
+| **Organize** | `loxtep_review`    | Lifecycle transitions, approvals, context mining                                       |
 | **Use**      | `loxtep_query`     | Catalog search, analytics SQL, COA graph serve (`translate_sparql`, `graph_traversal`) |
-| **Use**      | `loxtep_observe`   | Quality scores, lineage, queues, deployment status |
-| **Use**      | `loxtep_context`   | Process intel, procedures, agent workspace         |
+| **Use**      | `loxtep_observe`   | Quality scores, lineage, queues, deployment status                                     |
+| **Use**      | `loxtep_context`   | Process intel, procedures, agent workspace                                             |
 
 Each call sets **`operation`** to the flat action name plus that action's
 arguments. Example:
@@ -74,7 +74,8 @@ arguments. Example:
 
 **Scope:** `project`-scoped operations require `project_id` in the same payload;
 `organization`-scoped operations may accept optional `domain_id`. Orient first
-with `loxtep_session` → `get_current_user` before passing a `project_id`.
+with `loxtep_session` → `get_current_user`, then `get_platform_model`, before
+passing a `project_id`.
 
 ## Happy path
 
@@ -120,10 +121,10 @@ after delivery interfaces are registered.
 
 ### COA serve ops on `loxtep_query` (DynamoDB — never Neptune)
 
-| `operation` | Args (highlights) | Backend |
-| --- | --- | --- |
-| `translate_sparql` | `natural_language`, optional `execute` | `POST /ai/graph-query-translate` (+ optional `POST /graph/sparql`) |
-| `graph_traversal` | `mode=lineage\|related\|sparql_neighbors`, `node_id` / `data_product_id` | lineage / related / SPARQL neighbors |
+| `operation`        | Args (highlights)                                                        | Backend                                                            |
+| ------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `translate_sparql` | `natural_language`, optional `execute`                                   | `POST /ai/graph-query-translate` (+ optional `POST /graph/sparql`) |
+| `graph_traversal`  | `mode=lineage\|related\|sparql_neighbors`, `node_id` / `data_product_id` | lineage / related / SPARQL neighbors                               |
 
 COA `list_metrics` / `describe_schema` are **not** separate tools — use
 `search_semantic_layer`, `get_compounding_metric`, `get_table_schema`,
