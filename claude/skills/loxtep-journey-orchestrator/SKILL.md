@@ -44,8 +44,7 @@ product.
 3. Follow **`connect-external-system`**: `list_connector_types`, decide public
    vs private, inspect instance runtime (`list_instances`, `list_observe_bots`)
    before creating a private connector
-4. Create the connector and authenticate — `create_connector` or
-   `get_oauth_url`
+4. Create the connector and authenticate — `create_connector` or `get_oauth_url`
 5. **Test connectivity** — `test_connector` (does not start ingestion). Ask
    before `capture_samples`
 6. Design and save the ingestion workflow — hand off to `data-workflows` skill

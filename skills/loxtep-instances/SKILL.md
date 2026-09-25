@@ -16,7 +16,7 @@ description:
 
 - **MCP tool:** `loxtep_workspace`
 - **Arguments:**
-  `{ "operation": "list_instances" | "create_instance" | "get_deployment_urls" | "register_infrastructure" | "get_infrastructure", ...fields }`
+  `{ "operation": "list_instances" | "create_instance" | "update_instance" | "get_deployment_urls" | "register_infrastructure" | "get_infrastructure", ...fields }`
 
 ### Payment methods — app UI only (read this)
 
@@ -247,20 +247,90 @@ attaches only to customer private subnets and a connector security group.
 ```
 
 **Ownership:** the customer owns the VPC, two private subnet IDs, the connector
-security group, routing, and source firewall rules. Loxtep owns packaging of
-`connectors-private-512` and deploys the per-instance **runtimes** stack
-(`org-{org8}-{inst8}-runtimes`, or `connection_details.runtimes_stack_identifier`).
-`create_instance` and `register_infrastructure` do **not** take subnet or
-security-group IDs. Ask the customer for `CustomerPrivateSubnet1`,
-`CustomerPrivateSubnet2`, and `CustomerConnectorSecurityGroup`, then use the
-supported runtimes deploy (`process-runtimes-deployment-requested` or operator
-`moon run :deploy-ms -- runtimes …`). Do not attach shared connector workers to
-the customer VPC or change ENIs in the AWS console.
+security group, routing, and source firewall rules. Loxtep packages
+`connectors-private-512` and the instance provisioner attaches it when
+`connection_details.connector_vpc` is set.
 
-Runtimes upgrades must keep those subnet and security-group values so private
-connectors keep their network path. Connector create/test is
-**`connect-external-system`**. Workflow deploy onto the private Lambda is
-**`loxtep-deployments`**.
+Set networking on the **instance** (ask the customer for two private subnet IDs
+in different AZs and one security group ID):
+
+At create:
+
+```json
+{
+  "operation": "create_instance",
+  "name": "<name>",
+  "region": "<region>",
+  "instance_type": "self-hosted",
+  "payment_method_id": "<uuid>",
+  "connection_details": {
+    "observe_api": { "cross_account_role_arn": "<role-arn>" },
+    "connector_vpc": {
+      "subnet_ids": ["subnet-<az1>", "subnet-<az2>"],
+      "security_group_id": "sg-<id>"
+    }
+  }
+}
+```
+
+On an existing instance (MCP `update_instance`, SDK, CLI, or the instance
+settings UI):
+
+```json
+{
+  "operation": "update_instance",
+  "instance_id": "<uuid>",
+  "connection_details": {
+    "connector_vpc": {
+      "subnet_ids": ["subnet-<az1>", "subnet-<az2>"],
+      "security_group_id": "sg-<id>"
+    }
+  }
+}
+```
+
+Reapply the runtimes stack without changing VPC (retry a failed attach, pick up
+a new runtimes package):
+
+```json
+{
+  "operation": "update_instance",
+  "instance_id": "<uuid>",
+  "force_runtimes_redeploy": true
+}
+```
+
+Same fields on other surfaces (permission `instances:update` /
+`instances:create`):
+
+```ts
+await client.workspace.instances.create({
+  name, region, instance_type: 'self-hosted', payment_method_id,
+  connection_details: { observe_api: { ... }, connector_vpc: { subnet_ids: [...], security_group_id } },
+});
+await client.workspace.instances.update(instanceId, {
+  connection_details: { connector_vpc: { subnet_ids: [...], security_group_id } },
+});
+await client.workspace.instances.redeploy_runtimes(instanceId);
+```
+
+```bash
+loxtep instances create --name <n> --region <region> --type self-hosted \
+  --payment-method-id <uuid> --cross-account-role-arn <arn> \
+  --rstreams-secret-arn <arn> --rstreams-auth-arn <arn> \
+  --subnet-id subnet-<az1> --subnet-id-2 subnet-<az2> --security-group-id sg-<id>
+loxtep instances update <instance_id> \
+  --subnet-id subnet-<az1> --subnet-id-2 subnet-<az2> --security-group-id sg-<id>
+loxtep instances redeploy-runtimes <instance_id>
+```
+
+The platform reapplies the per-instance runtimes stack (`force_redeploy`). The
+customer does not run a Loxtep microservice deploy. Shared `connectors-*`
+workers stay off the customer VPC.
+
+Runtimes upgrades keep `connector_vpc` on the instance record. Connector
+create/test is **`connect-external-system`**. Workflow deploy onto the private
+Lambda is **`loxtep-deployments`**.
 
 <!-- SCOPE_BLOCK -->
 

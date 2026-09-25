@@ -74,12 +74,13 @@ and inspect runtime mappings.
   customer VPC. If deploy cannot resolve that Lambda, inspect the instance
   runtimes stack first (**`loxtep-instances`**) — do not attach shared workers
   to the VPC.
-- **Preserve networking on upgrade:** `force_redeploy` re-reads org connector
-  metadata (`network_binding`, `credential_parameter_store_refs`). It does not
-  change subnet or security-group attachment. Runtimes stack updates must keep
-  `CustomerPrivateSubnet1/2` and `CustomerConnectorSecurityGroup`. Connector
-  test vs ingest remains **`connect-external-system`** — deploy is not a
-  connectivity probe.
+- **Preserve networking on upgrade:** workflow `force_redeploy` re-reads org
+  connector metadata (`network_binding`, `credential_parameter_store_refs`) and
+  does not change subnet or security-group attachment. Instance runtimes
+  upgrades re-read `connection_details.connector_vpc` and patch
+  `connectors-private-512` VpcConfig. Change subnets/SG with `update_instance`
+  or the instance settings UI. Connector test vs ingest remains
+  **`connect-external-system`** — deploy is not a connectivity probe.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 

@@ -45,8 +45,10 @@ structure, and process documentation.
 
 1. `create_canonical_knowledge` to store organizational knowledge (strategy,
    positioning, brand voice, org structure, process docs).
-2. `get_canonical_knowledge` to retrieve specific knowledge artifacts.
-3. `update_canonical_knowledge` to modify existing knowledge bases.
+2. `list_canonical_knowledge` to find drafts (e.g. wiki-materialized pages).
+3. `get_canonical_knowledge` to retrieve a specific artifact by UUID `id` or
+   `content_ref`.
+4. `update_canonical_knowledge` to modify existing knowledge bases.
 
 ## Operations
 
@@ -57,6 +59,7 @@ structure, and process documentation.
 | `loxtep_meaning` | `get_semantic_completeness`  | read       |
 | `loxtep_meaning` | `create_canonical_knowledge` | write      |
 | `loxtep_meaning` | `get_canonical_knowledge`    | read       |
+| `loxtep_meaning` | `list_canonical_knowledge`   | read       |
 | `loxtep_meaning` | `update_canonical_knowledge` | write      |
 
 ## MCP mapping
@@ -67,7 +70,8 @@ structure, and process documentation.
 | Get artifact     | `get_semantic_artifact`      | organization | Requires `artifact_type` + `id`                                        |
 | Completeness     | `get_semantic_completeness`  | organization | Optional `domain_id` filter                                            |
 | Create knowledge | `create_canonical_knowledge` | organization | Requires `type`, `title`, `body`, `classification`                     |
-| Get knowledge    | `get_canonical_knowledge`    | organization | Requires `id`                                                          |
+| Get knowledge    | `get_canonical_knowledge`    | organization | Exactly one of `id` (UUID) or `content_ref` (e.g. `wiki:{dp}:{page}`)  |
+| List knowledge   | `list_canonical_knowledge`   | organization | Optional: `organization_id`, `lifecycle_state`, `content_ref_prefix`   |
 | Update knowledge | `update_canonical_knowledge` | organization | Requires `id` + fields to update                                       |
 
 ## Canonical Knowledge Types
@@ -98,12 +102,35 @@ agents can query for context:
 
 ### Retrieving Knowledge
 
+Get by UUID (unchanged):
+
 ```json
 {
   "operation": "get_canonical_knowledge",
-  "id": "<knowledge-id>"
+  "id": "<knowledge-uuid>"
 }
 ```
+
+Get by wiki `content_ref` (Steward / dogfood):
+
+```json
+{
+  "operation": "get_canonical_knowledge",
+  "content_ref": "wiki:{data_product_id}:{source_page_id}"
+}
+```
+
+List draft wiki pages for a data product (Steward / dogfood):
+
+```json
+{
+  "operation": "list_canonical_knowledge",
+  "lifecycle_state": "draft",
+  "content_ref_prefix": "wiki:{data_product_id}:"
+}
+```
+
+Do not pass both `id` and `content_ref` on get.
 
 ### Updating Knowledge
 
@@ -124,9 +151,9 @@ agents can query for context:
   managing its underlying ontology structure.
 - **`search_semantic_layer` with `artifact_types: schema` is not domain
   schemas.** It searches `schema_registry_cache` / curated artifacts — not
-  `domain_schemas` from `create_schema`. Org **shapes** live under `loxtep_define`
-  `list_schemas`. Pack hits for “Product” are **concepts**, not the S&S Product
-  shape you applied to a raw data product.
+  `domain_schemas` from `create_schema`. Org **shapes** live under
+  `loxtep_define` `list_schemas`. Pack hits for “Product” are **concepts**, not
+  the S&S Product shape you applied to a raw data product.
 - **Do not bind a concept onto a DP that already has an applied shape.** Apply
   the shape to the product; align the shape to the concept in Meaning. See
   [docs/concepts/type-vs-pack-alignment.md](../../../docs/concepts/type-vs-pack-alignment.md).
@@ -147,9 +174,9 @@ agents can query for context:
 
 There are **no** hosted MCP ops named `list_metrics` or `describe_schema`. Use:
 
-| COA intent | Loxtep ops |
-| --- | --- |
-| List metrics / dimensions | `search_semantic_layer`, `get_compounding_metric`, `list_quality_rules` |
+| COA intent                        | Loxtep ops                                                                          |
+| --------------------------------- | ----------------------------------------------------------------------------------- |
+| List metrics / dimensions         | `search_semantic_layer`, `get_compounding_metric`, `list_quality_rules`             |
 | Describe schema / ontology tables | `get_table_schema`, `get_schema`, `list_ontology_concepts`, `get_semantic_artifact` |
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->

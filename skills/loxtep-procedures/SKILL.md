@@ -107,9 +107,9 @@ dependencies** in the process graph. Import/export JSON-LD graphs.
 
 Procedure CRUD + import/export are shipped on the Phase D context namespace (CLI
 mirrors the same verbs). Causal / similar-decision surfaces for Studio live
-under `client.context.process_intelligence` — still Connect → Organize → Use
-internally; public Steward copy stays Connect → Approve → Build (no fourth
-step).
+under `client.context.process_intelligence` — MCP/SDK job grouping may still say
+Organize internally; public Steward copy is Connect → Define → Use (Inbox and
+Observe are cross-cutting, not a fourth step).
 
 | MCP `operation`              | SDK                                                                         | Notes                              |
 | ---------------------------- | --------------------------------------------------------------------------- | ---------------------------------- |

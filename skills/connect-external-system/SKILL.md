@@ -3,10 +3,10 @@ name: connect-external-system
 description:
   Use when the user wants to connect a data source into Loxtep — SaaS/API,
   databases, files, SDK, or a system on a private network. Covers type
-  discovery, public vs private connectivity, runtime inspection, secret
-  storage, TLS/auth matching, and connection testing without starting
-  ingestion. After Test on rest-api or file-transfer, continue to a templated
-  ingest workflow (do not pull without a workflow and user authorization).
+  discovery, public vs private connectivity, runtime inspection, secret storage,
+  TLS/auth matching, and connection testing without starting ingestion. After
+  Test on rest-api or file-transfer, continue to a templated ingest workflow (do
+  not pull without a workflow and user authorization).
 license: MIT
 compatibility: opencode
 metadata:
@@ -18,10 +18,10 @@ metadata:
 
 ## Step boundary (CRITICAL)
 
-| Step                     | Ends with                                            | Do NOT do in this step                |
-| ------------------------ | ---------------------------------------------------- | ------------------------------------- |
-| **Connect**              | `connector_id`, tested credentials                   | Piecemeal graph patches; ingestion    |
-| **Organize** (next step) | Full workflow saved and deployed                     | Piecemeal graph patches for new flows |
+| Step                     | Ends with                          | Do NOT do in this step                |
+| ------------------------ | ---------------------------------- | ------------------------------------- |
+| **Connect**              | `connector_id`, tested credentials | Piecemeal graph patches; ingestion    |
+| **Organize** (next step) | Full workflow saved and deployed   | Piecemeal graph patches for new flows |
 
 **Prerequisite:** A Loxtep **project** must exist before building the workflow
 (`create_project` or reuse — see **`data-workflows`**). Org connector create and
@@ -44,24 +44,24 @@ that step.
 
 Ask before any mutating step. Do not treat inspection as permission to write.
 
-| Action | Mutates | Permission | Surface |
-| ------ | ------- | ---------- | ------- |
-| `list_connector_types` | no | `connectors:read` | MCP `loxtep_connect` |
-| `list_connectors` | no | `connectors:read` | MCP `loxtep_connect` |
-| `list_templates` / `get_template` | no | `catalog:read` | MCP `loxtep_connect` |
-| `GET /dataproducts/connector-packages/{slug}` | no | `catalog:read` | REST only |
-| `list_instances` / `get_infrastructure` | no | `instances:read` | MCP `loxtep_workspace` |
-| `list_observe_bots` | no | `instances:read` | MCP `loxtep_observe` |
-| `get_runtime_mapping` | no | project read | MCP `loxtep_build` |
-| `test_connector` | no ingest; public path may persist `last_tested_at` when the caller also has `connectors:write` | `connectors:read` | MCP / CLI / SDK / REST |
-| `create_connector` / `update_connector` | yes (credentials, metadata) | `connectors:write` | MCP / SDK / REST |
-| `get_oauth_url` without `connector_id` | yes (creates connector) | `connectors:read` | MCP |
-| `capture_samples` | yes (bounded source rows into metadata) | `connectors:read` | MCP / CLI / SDK / REST |
-| `confirm_connector_entity_selection` | yes (starts PKO ingest design/deploy) | `connectors:write` | MCP |
-| `delete_connector` | yes (soft-delete; owner only; blocked if in use) | `connectors:write` + approval | MCP |
-| `run_connector_action` | yes (third-party side effect) | `connectors:write` + approval | MCP |
-| `deploy_project` / `deploy_workflow` | yes (runtime bots/queues) | project write | MCP `loxtep_build` — **`loxtep-deployments`** |
-| `register_infrastructure` / `create_instance` | yes (org infra / instance) | instances write | MCP `loxtep_workspace` — **`loxtep-instances`** |
+| Action                                        | Mutates                                                                                         | Permission                    | Surface                                         |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------- | ----------------------------------------------- |
+| `list_connector_types`                        | no                                                                                              | `connectors:read`             | MCP `loxtep_connect`                            |
+| `list_connectors`                             | no                                                                                              | `connectors:read`             | MCP `loxtep_connect`                            |
+| `list_templates` / `get_template`             | no                                                                                              | `catalog:read`                | MCP `loxtep_connect`                            |
+| `GET /dataproducts/connector-packages/{slug}` | no                                                                                              | `catalog:read`                | REST only                                       |
+| `list_instances` / `get_infrastructure`       | no                                                                                              | `instances:read`              | MCP `loxtep_workspace`                          |
+| `list_observe_bots`                           | no                                                                                              | `instances:read`              | MCP `loxtep_observe`                            |
+| `get_runtime_mapping`                         | no                                                                                              | project read                  | MCP `loxtep_build`                              |
+| `test_connector`                              | no ingest; public path may persist `last_tested_at` when the caller also has `connectors:write` | `connectors:read`             | MCP / CLI / SDK / REST                          |
+| `create_connector` / `update_connector`       | yes (credentials, metadata)                                                                     | `connectors:write`            | MCP / SDK / REST                                |
+| `get_oauth_url` without `connector_id`        | yes (creates connector)                                                                         | `connectors:read`             | MCP                                             |
+| `capture_samples`                             | yes (bounded source rows into metadata)                                                         | `connectors:read`             | MCP / CLI / SDK / REST                          |
+| `confirm_connector_entity_selection`          | yes (starts PKO ingest design/deploy)                                                           | `connectors:write`            | MCP                                             |
+| `delete_connector`                            | yes (soft-delete; owner only; blocked if in use)                                                | `connectors:write` + approval | MCP                                             |
+| `run_connector_action`                        | yes (third-party side effect)                                                                   | `connectors:write` + approval | MCP                                             |
+| `deploy_project` / `deploy_workflow`          | yes (runtime bots/queues)                                                                       | project write                 | MCP `loxtep_build` — **`loxtep-deployments`**   |
+| `register_infrastructure` / `create_instance` | yes (org infra / instance)                                                                      | instances write               | MCP `loxtep_workspace` — **`loxtep-instances`** |
 
 ## When to use
 
@@ -93,13 +93,13 @@ examples, logs, or replies. Reads return `[REDACTED]` for externalized fields.
 
 Treat these as independent. A pass at one layer is not a pass at the next.
 
-| Layer | Meaning | How to inspect |
-| ----- | ------- | -------------- |
-| **Connector availability** | Type exists in the catalog | `list_connector_types`; optional `get_template` / connector package |
-| **Runtime deployment** | Instance is `active` and runtimes bots exist | `list_instances`; `list_observe_bots` (`instance_id`) |
-| **Network readiness** | Path from the connector runtime to the source | `network_binding` on the connector; customer VPC/subnets/SG on the instance **runtimes** stack (see **`loxtep-instances`**) |
-| **Authentication success** | Credentials + TLS accepted | `test_connector` (`passed: true`) |
-| **Ingestion readiness** | Workflow deployed; trigger/schedule authorized | **`data-workflows`** + **`loxtep-deployments`** after explicit user authorization |
+| Layer                      | Meaning                                        | How to inspect                                                                                                              |
+| -------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **Connector availability** | Type exists in the catalog                     | `list_connector_types`; optional `get_template` / connector package                                                         |
+| **Runtime deployment**     | Instance is `active` and runtimes bots exist   | `list_instances`; `list_observe_bots` (`instance_id`)                                                                       |
+| **Network readiness**      | Path from the connector runtime to the source  | `network_binding` on the connector; customer VPC/subnets/SG on the instance **runtimes** stack (see **`loxtep-instances`**) |
+| **Authentication success** | Credentials + TLS accepted                     | `test_connector` (`passed: true`)                                                                                           |
+| **Ingestion readiness**    | Workflow deployed; trigger/schedule authorized | **`data-workflows`** + **`loxtep-deployments`** after explicit user authorization                                           |
 
 ## 1. Discover types, schemas, auth, runtime
 
@@ -110,12 +110,12 @@ Treat these as independent. A pass at one layer is not a pass at the next.
 Permission: `connectors:read`. Scope: global. Expected result:
 `connector_types[]` with `connector_type`, `name`, `description`, and either
 `auth_type` (`oauth2` | `api_key` | `basic` | `bearer` | `custom` | `jwt` |
-`none`) or, for `rest-api` / `api` / `api_poll`, `primary_auth_schemes`
-(`none` | `api_key` | `bearer` | `basic` | `oauth2`). OAuth types may include
+`none`) or, for `rest-api` / `api` / `api_poll`, `primary_auth_schemes` (`none`
+| `api_key` | `bearer` | `basic` | `oauth2`). OAuth types may include
 `oauth_connection_config_key` (for example Shopify `shop`).
 
-This list does **not** include JSON configuration schemas, `network_binding`,
-or VPC/runtime requirements.
+This list does **not** include JSON configuration schemas, `network_binding`, or
+VPC/runtime requirements.
 
 For template copy and entity metadata:
 
@@ -136,8 +136,8 @@ Full package (actions, `input_schema`, `connector_template`) is REST only:
 GET /dataproducts/connector-packages/{slug}
 ```
 
-Permission: `catalog:read`. There is no MCP operation for this. There is no
-SDK `list_connector_types`.
+Permission: `catalog:read`. There is no MCP operation for this. There is no SDK
+`list_connector_types`.
 
 Route type-specific fields (hosts, TLS, collections, OAuth shop keys) to that
 type's template/package. Do not invent property names.
@@ -146,19 +146,19 @@ type's template/package. Do not invent property names.
 
 Ask whether the source is reachable from the public internet.
 
-| Signal | Connectivity |
-| ------ | ------------ |
-| User says the source is on a customer VPC / private subnet / not internet-reachable | Private |
-| Connector metadata `network_binding` is `customer_vpc` or `private` | Private |
-| Connector metadata `require_private_network: true` | Private |
-| Otherwise, and the catalog type is a public SaaS/API | Public |
+| Signal                                                                              | Connectivity |
+| ----------------------------------------------------------------------------------- | ------------ |
+| User says the source is on a customer VPC / private subnet / not internet-reachable | Private      |
+| Connector metadata `network_binding` is `customer_vpc` or `private`                 | Private      |
+| Connector metadata `require_private_network: true`                                  | Private      |
+| Otherwise, and the catalog type is a public SaaS/API                                | Public       |
 
 `mongodb-source` / `mongodb` **workflow deploy** routes to the customer-VPC
 runtime (`connectors-private-512`) even without `network_binding`. The
-**org-connector test probe** uses the private worker only when
-`network_binding` is `customer_vpc`/`private` or `require_private_network` is
-true. Set `network_binding: "customer_vpc"` when the source is private so test
-and ingest use the same path.
+**org-connector test probe** uses the private worker only when `network_binding`
+is `customer_vpc`/`private` or `require_private_network` is true. Set
+`network_binding: "customer_vpc"` when the source is private so test and ingest
+use the same path.
 
 Shared `connectors-{256,512,1024,2048}` Lambdas stay off-VPC. Private sources
 must not be tested in the connectors API Lambda.
@@ -166,8 +166,8 @@ must not be tested in the connectors API Lambda.
 ## 3. Inspect instance connector runtime (read-only)
 
 1. `loxtep_workspace` → `list_instances` — `instance_id`, `name`, `region`,
-   `status`, `instance_type`, `plan`. Status must be `active`. This payload
-   does not include ARNs or VPC IDs.
+   `status`, `instance_type`, `plan`. Status must be `active`. This payload does
+   not include ARNs or VPC IDs.
 2. `loxtep_workspace` → `get_infrastructure` — registered cross-account role
    (self-hosted/managed). Null fields mean the org has not registered
    infrastructure.
@@ -181,13 +181,13 @@ must not be tested in the connectors API Lambda.
 
 Missing networking / permissions / deploy prerequisites:
 
-| Finding | Likely gap | Owner |
-| ------- | ---------- | ----- |
-| Instance not `active` | Finish instance provisioning | Loxtep + customer billing/role |
-| No `connectors-private-512` bot | Runtimes stack missing customer subnet/SG inputs, or not deployed | Loxtep deploy of **runtimes**; customer supplies subnet/SG IDs |
-| `get_infrastructure` empty on self-hosted | Cross-account role not registered | Customer (role) then `register_infrastructure` |
-| Connector has no `network_binding` but source is private | Metadata incomplete | Customer + `update_connector` |
-| `PRIVATE_PROBE_FAILED` / cannot resolve private Lambda | Runtimes stack name `org-{org8}-{inst8}-runtimes` (or `runtimes_stack_identifier`) missing the private function | Loxtep |
+| Finding                                                  | Likely gap                                                                                                      | Owner                                                          |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Instance not `active`                                    | Finish instance provisioning                                                                                    | Loxtep + customer billing/role                                 |
+| No `connectors-private-512` bot                          | Runtimes stack missing customer subnet/SG inputs, or not deployed                                               | Loxtep deploy of **runtimes**; customer supplies subnet/SG IDs |
+| `get_infrastructure` empty on self-hosted                | Cross-account role not registered                                                                               | Customer (role) then `register_infrastructure`                 |
+| Connector has no `network_binding` but source is private | Metadata incomplete                                                                                             | Customer + `update_connector`                                  |
+| `PRIVATE_PROBE_FAILED` / cannot resolve private Lambda   | Runtimes stack name `org-{org8}-{inst8}-runtimes` (or `runtimes_stack_identifier`) missing the private function | Loxtep                                                         |
 
 Do not change ENIs, security groups, or routes in the AWS console.
 
@@ -195,42 +195,35 @@ Do not change ENIs, security groups, or routes in the AWS console.
 
 **Ownership**
 
-| Resource | Owner |
-| -------- | ----- |
-| Source system, credentials, TLS CA, allowlists | Customer |
-| VPC, private subnets, security groups, routing, NACLs, source firewall | Customer |
-| Cross-account deploy role (`get_deployment_urls` → CloudFormation/CLI/Terraform) | Customer deploys; Loxtep registers |
-| Instance bus (rstreams) and per-instance **runtimes** stack | Loxtep via instance provisioner / `moon run :deploy-ms -- runtimes …` |
-| `connectors-private-512` bot (512 MB, customer subnets/SG only) | Loxtep packaging |
-| Shared `connectors-*` workers | Loxtep (stay off customer VPC) |
+| Resource                                                                         | Owner                                                               |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Source system, credentials, TLS CA, allowlists                                   | Customer                                                            |
+| VPC, private subnets, security groups, routing, NACLs, source firewall           | Customer                                                            |
+| Cross-account deploy role (`get_deployment_urls` → CloudFormation/CLI/Terraform) | Customer deploys; Loxtep registers                                  |
+| Instance bus (rstreams) and per-instance **runtimes** stack                      | Loxtep instance provisioner (`create_instance` / `update_instance`) |
+| `connectors-private-512` bot (512 MB, customer subnets/SG only)                  | Loxtep packaging                                                    |
+| Shared `connectors-*` workers                                                    | Loxtep (stay off customer VPC)                                      |
 
-Supported deploy path (mutating; requires operator authorization):
+Instance configuration (mutating; ask first). Customer provides **two private
+subnet IDs** (different AZs) and **one connector security group ID** that can
+reach the source and allow Lambda ENIs. Ask for these values. Do not guess.
 
-1. Customer provides **two private subnet IDs** and **one connector security
-   group ID** that can reach the source (and that allow Lambda ENIs). Ask for
-   these values. Do not guess.
-2. Those IDs are the bot package tokens `CustomerPrivateSubnet1`,
-   `CustomerPrivateSubnet2`, and `CustomerConnectorSecurityGroup` on
-   `runtimes/bots/connectors-private-512`.
-3. Deploy the instance **runtimes** stack through the platform path
-   (`process-runtimes-deployment-requested` after instance create, or operator
-   `moon run :deploy-ms -- runtimes <microserviceidentifier> <stackname> <region> <profile> --skip-approval`).
-   Also deploy **workflows** so connection registration can resolve the private
-   Lambda. Do not attach shared `botconnectors` to the customer VPC.
-4. Confirm with `list_observe_bots` that `connectors-private-512` exists.
-
-`create_instance` / `register_infrastructure` do **not** accept subnet or
-security-group IDs. There is no MCP operation to set
-`CustomerPrivateSubnet*` / `CustomerConnectorSecurityGroup`. Canonical
-microservice template substitution only expands
-`${microserviceIdentifier}`, `${serviceName}`, `${stackPrefix}`, `${env}`,
-`${coreStackName}`.
+1. Put them on the instance as `connection_details.connector_vpc` via
+   `create_instance` (new) or `update_instance` / SDK / CLI / the instance
+   settings UI (existing). See **`loxtep-instances`**.
+2. Instance create already provisions the runtimes stack. `update_instance` with
+   a `connector_vpc` change, or `force_runtimes_redeploy: true` (SDK
+   `redeploy_runtimes` / CLI `loxtep instances redeploy-runtimes`), reapplies
+   that stack (`force_redeploy`).
+3. Confirm with `list_observe_bots` (`instance_id`) that
+   `connectors-private-512` exists. Shared `botconnectors` stay off the customer
+   VPC.
 
 Security group / routing the customer must allow (ask them to confirm):
 
 - Ingress from the connector SG to the source port (for example MongoDB 27017)
-- Egress from the connector SG to the source and to AWS SSM (credential
-  replica) and the instance bus
+- Egress from the connector SG to the source and to AWS SSM (credential replica)
+  and the instance bus
 - Route tables so the chosen subnets reach the source (peering, TGW, or local
   VPC)
 
@@ -239,8 +232,8 @@ Security group / routing the customer must allow (ask them to confirm):
 Permission: `connectors:write`.
 
 OAuth catalog types: `get_oauth_url` (not `create_connector`). Non-OAuth:
-`create_connector` with `connector_type` + `metadata`. Secrets may be omitted
-at create and completed later with `update_connector`.
+`create_connector` with `connector_type` + `metadata`. Secrets may be omitted at
+create and completed later with `update_connector`.
 
 ```json
 {
@@ -257,10 +250,9 @@ Put type-specific non-secret fields in `metadata` / `metadata.custom_settings`
 as required by that type's template or package. Put credentials in the same
 write; the API **externalizes** sensitive keys to SSM Parameter Store
 (`/loxtep/{organization_id}/connectors/{connector_id}/metadata/…`) as
-`SecureString`. The write response may include
-`externalized_parameter_refs` (paths only). Later `list_connectors` / GET
-returns `[REDACTED]` and does **not** return the secret or, on GET, the SSM
-path.
+`SecureString`. The write response may include `externalized_parameter_refs`
+(paths only). Later `list_connectors` / GET returns `[REDACTED]` and does
+**not** return the secret or, on GET, the SSM path.
 
 SDK (Node and Python):
 
@@ -269,11 +261,15 @@ await client.connect.connectors.create({
   connector_type: '<slug>',
   metadata: { name: '<display name>' },
 });
-await client.connect.connectors.update('<connector_id>', { metadata: { /* … */ } });
+await client.connect.connectors.update('<connector_id>', {
+  metadata: {
+    /* … */
+  },
+});
 ```
 
-REST: `POST /connectors/connectors`, `PUT /connectors/connectors/{connector_id}`.
-Metadata is shallow-merged on PUT.
+REST: `POST /connectors/connectors`,
+`PUT /connectors/connectors/{connector_id}`. Metadata is shallow-merged on PUT.
 
 There is **no** `loxtep connectors create` or `loxtep connectors get` CLI
 command. CLI list: `loxtep connectors list [--type sdk]`.
@@ -285,11 +281,11 @@ For SDK connectors (`connector_type: "sdk"`): `metadata.name` is required;
 
 Use `auth_type` / `primary_auth_schemes` from `list_connector_types`.
 
-| Catalog `auth_type` | Create path |
-| ------------------- | ----------- |
-| `oauth2` | `get_oauth_url` with `connector_type` or `connector_id`; user completes browser OAuth |
-| `api_key` / `basic` / `bearer` / `jwt` / `custom` / `none` | `create_connector` / `update_connector` |
-| rest-api family | one primary in `metadata.custom_settings.auth_type`; when `oauth2` set `oauth_grant_type` to `authorization_code` or `client_credentials` |
+| Catalog `auth_type`                                        | Create path                                                                                                                               |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `oauth2`                                                   | `get_oauth_url` with `connector_type` or `connector_id`; user completes browser OAuth                                                     |
+| `api_key` / `basic` / `bearer` / `jwt` / `custom` / `none` | `create_connector` / `update_connector`                                                                                                   |
+| rest-api family                                            | one primary in `metadata.custom_settings.auth_type`; when `oauth2` set `oauth_grant_type` to `authorization_code` or `client_credentials` |
 
 Do not stack Basic+Bearer+OAuth2. Add only that scheme's credential fields.
 
@@ -340,8 +336,8 @@ For a multi-instance private probe use MCP or REST.
 Expected success: `{ "passed": true, "tested_at": "<iso>", "details": { … } }`.
 Private MongoDB probe `details.account_info` includes topology, collection
 names, TLS/permission flags, `runtime_function`, `runtime_version`,
-`contract_version`, `network_binding` — never URI, password, CA PEM, or
-document payloads.
+`contract_version`, `network_binding` — never URI, password, CA PEM, or document
+payloads.
 
 Public `test_connector` runs in-process `testConnection()`. A successful public
 test may persist `last_tested_at` / `last_test_sample` when the caller has
@@ -373,9 +369,9 @@ CLI: `loxtep connectors capture-samples <id> --entity-type <name> [--limit N]`
 
 ## 8. Distinguish the layers in the reply
 
-After each step, state which layer passed. Example: "Type is available;
-instance is active; private runtime is missing; authentication not tested;
-ingestion not started."
+After each step, state which layer passed. Example: "Type is available; instance
+is active; private runtime is missing; authentication not tested; ingestion not
+started."
 
 Ingestion starts only after the user authorizes **`data-workflows`**
 (`save_workflow_bundle` + `deploy_workflow`) or
@@ -384,19 +380,19 @@ only when save and deploy both succeed.
 
 ## 9. Diagnose failures (customer vs Loxtep)
 
-| Code / symptom | Layer | Typical owner |
-| -------------- | ----- | ------------- |
-| Unknown `connector_type` | availability | Agent: `list_connector_types`; Loxtep if catalog/template sync stale |
-| Missing credentials message | authentication | Customer (supply on manage / `update_connector`) |
-| OAuth used with `create_connector` | authentication | Agent: use `get_oauth_url` |
-| `TLS_POLICY_VIOLATION` / `TLS_FAILURE` | authentication / TLS | Customer cert/hostname/CA |
-| `MISSING_DISCOVERY_PERMISSION` / `MISSING_FIND_PERMISSION` / `MISSING_COLLECTION_ACCESS` / `MISSING_CHANGE_STREAM_PERMISSION` | authentication | Customer source grants |
-| `UNSUPPORTED_STANDALONE` | source topology | Customer (replica set / mongos for CDC types) |
-| `PRIVATE_PROBE_FAILED` / cannot resolve `connectors-private-512` | runtime / network | Loxtep runtimes deploy; customer if subnet/SG IDs never supplied |
-| Timeout / ENI / routing to private IP | network | Customer VPC routing, SG, DNS |
-| `403` / permission denied on MCP | RBAC | Customer org admin (`get_current_user`) |
-| Probe `passed: true` but no data product | ingestion | Expected until authorized deploy |
-| Shared connector Lambda testing a private host | network | Agent: set `network_binding: customer_vpc` and use private runtime |
+| Code / symptom                                                                                                                | Layer                | Typical owner                                                        |
+| ----------------------------------------------------------------------------------------------------------------------------- | -------------------- | -------------------------------------------------------------------- |
+| Unknown `connector_type`                                                                                                      | availability         | Agent: `list_connector_types`; Loxtep if catalog/template sync stale |
+| Missing credentials message                                                                                                   | authentication       | Customer (supply on manage / `update_connector`)                     |
+| OAuth used with `create_connector`                                                                                            | authentication       | Agent: use `get_oauth_url`                                           |
+| `TLS_POLICY_VIOLATION` / `TLS_FAILURE`                                                                                        | authentication / TLS | Customer cert/hostname/CA                                            |
+| `MISSING_DISCOVERY_PERMISSION` / `MISSING_FIND_PERMISSION` / `MISSING_COLLECTION_ACCESS` / `MISSING_CHANGE_STREAM_PERMISSION` | authentication       | Customer source grants                                               |
+| `UNSUPPORTED_STANDALONE`                                                                                                      | source topology      | Customer (replica set / mongos for CDC types)                        |
+| `PRIVATE_PROBE_FAILED` / cannot resolve `connectors-private-512`                                                              | runtime / network    | Loxtep runtimes deploy; customer if subnet/SG IDs never supplied     |
+| Timeout / ENI / routing to private IP                                                                                         | network              | Customer VPC routing, SG, DNS                                        |
+| `403` / permission denied on MCP                                                                                              | RBAC                 | Customer org admin (`get_current_user`)                              |
+| Probe `passed: true` but no data product                                                                                      | ingestion            | Expected until authorized deploy                                     |
+| Shared connector Lambda testing a private host                                                                                | network              | Agent: set `network_binding: customer_vpc` and use private runtime   |
 
 Sanitize every error string before showing it (redact URI userinfo and PEMs).
 
@@ -408,23 +404,22 @@ Sanitize every error string before showing it (redact URI userinfo and PEMs).
 - Do not clear `credential_parameter_store_refs`. Resubmitting `[REDACTED]`
   keeps the existing SSM parameter.
 - `deploy_workflow` / `force_redeploy` does not change VPC attachment. Private
-  connections re-register on `connectors-private-512` when
-  `network_binding` / mongodb-source routing still applies.
-- Runtimes stack updates must keep the same `CustomerPrivateSubnet*` and
-  `CustomerConnectorSecurityGroup` values. Dropping them detaches the private
-  Lambda from the customer VPC.
+  connections re-register on `connectors-private-512` when `network_binding` /
+  mongodb-source routing still applies.
+- Keep `connection_details.connector_vpc` on the instance. Clearing it and
+  saving detaches `connectors-private-512` from the customer VPC.
 - Shared `connectors-*` workers must remain `vpc.enabled: false`.
 
 ## Generic example (discovery → successful test)
 
-Placeholders only. Stop after test unless the user authorizes samples or
-ingest.
+Placeholders only. Stop after test unless the user authorizes samples or ingest.
 
 1. Session: `loxtep_session` → `get_current_user` (need `connectors:read`;
    `connectors:write` to create).
 2. Discover: `loxtep_connect` → `list_connector_types`. Pick the slug the user
-   named. If schema fields are unclear, `GET /dataproducts/connector-packages/{slug}`
-   (`catalog:read`) or `list_templates` / `get_template`.
+   named. If schema fields are unclear,
+   `GET /dataproducts/connector-packages/{slug}` (`catalog:read`) or
+   `list_templates` / `get_template`.
 3. Ask: public or private? credentials? TLS CA? If multiple instances,
    `instance_id`?
 4. Inspect instance: `list_instances`. For private: `list_observe_bots` with
@@ -496,16 +491,16 @@ only):
 
 Do not ingest without a workflow and user authorization.
 
-| Step | Action | Tool | `operation` |
-| ---- | ------ | ---- | ----------- |
-| 1    | Discover types | `loxtep_connect` | `list_connector_types` |
-| 2    | Create connector | `loxtep_connect` | `create_connector` |
-| 3    | Test | `loxtep_connect` | `test_connector` |
-| 4    | List entities | `loxtep_connect` | `list_connector_entities` |
-| 5    | Compose from template | `loxtep_connect` | `apply_template` (`template_type`: `workflow`, `template_slug`: `connector-ingestion`) |
-| 6    | Set **Entities**, **Schedule**, **How** | — | `resource` / `sync_mode` / `schedule` / optional `last_updated_field` |
-| 7    | Save | `loxtep_build` | `save_workflow_bundle` |
-| 8    | Deploy | `loxtep_build` | `deploy_workflow` |
+| Step | Action                                  | Tool             | `operation`                                                                            |
+| ---- | --------------------------------------- | ---------------- | -------------------------------------------------------------------------------------- |
+| 1    | Discover types                          | `loxtep_connect` | `list_connector_types`                                                                 |
+| 2    | Create connector                        | `loxtep_connect` | `create_connector`                                                                     |
+| 3    | Test                                    | `loxtep_connect` | `test_connector`                                                                       |
+| 4    | List entities                           | `loxtep_connect` | `list_connector_entities`                                                              |
+| 5    | Compose from template                   | `loxtep_connect` | `apply_template` (`template_type`: `workflow`, `template_slug`: `connector-ingestion`) |
+| 6    | Set **Entities**, **Schedule**, **How** | —                | `resource` / `sync_mode` / `schedule` / optional `last_updated_field`                  |
+| 7    | Save                                    | `loxtep_build`   | `save_workflow_bundle`                                                                 |
+| 8    | Deploy                                  | `loxtep_build`   | `deploy_workflow`                                                                      |
 
 Convenience: `confirm_connector_entity_selection` persists the pick and runs
 that compose → save → deploy path. Do not add a scheduler.
@@ -517,36 +512,36 @@ that compose → save → deploy path. Do not add a scheduler.
 
 ### Flow — SDK connector
 
-Confirm `"sdk"` in types → `create_connector` → optional `test_connector`
-(SDK probe is a no-op pass) → **`data-workflows`**. Post-deploy bootstrap:
+Confirm `"sdk"` in types → `create_connector` → optional `test_connector` (SDK
+probe is a no-op pass) → **`data-workflows`**. Post-deploy bootstrap:
 **`loxtep-sdk`**.
 
 ### Flow — Connector template from catalog
 
 `list_templates` / `get_template` → `apply_template` with `project_id`,
-`template_type`, `template_slug`. Review via `get_workflow_graph` before
-deploy.
+`template_type`, `template_slug`. Review via `get_workflow_graph` before deploy.
 
 ## MCP mapping
 
-| User intent | Tool | `operation` | Scope |
-| ----------- | ---- | ----------- | ----- |
-| List types | `loxtep_connect` | `list_connector_types` | global |
-| List org connectors | `loxtep_connect` | `list_connectors` | organization |
-| Create connector | `loxtep_connect` | `create_connector` | organization |
-| Update connector | `loxtep_connect` | `update_connector` | organization |
-| OAuth URL | `loxtep_connect` | `get_oauth_url` | organization |
-| Test connectivity | `loxtep_connect` | `test_connector` | organization |
-| Capture samples | `loxtep_connect` | `capture_samples` | organization |
-| List entities | `loxtep_connect` | `list_connector_entities` | organization |
+| User intent                            | Tool             | `operation`                          | Scope        |
+| -------------------------------------- | ---------------- | ------------------------------------ | ------------ |
+| List types                             | `loxtep_connect` | `list_connector_types`               | global       |
+| List org connectors                    | `loxtep_connect` | `list_connectors`                    | organization |
+| Create connector                       | `loxtep_connect` | `create_connector`                   | organization |
+| Update connector                       | `loxtep_connect` | `update_connector`                   | organization |
+| OAuth URL                              | `loxtep_connect` | `get_oauth_url`                      | organization |
+| Test connectivity                      | `loxtep_connect` | `test_connector`                     | organization |
+| Capture samples                        | `loxtep_connect` | `capture_samples`                    | organization |
+| List entities                          | `loxtep_connect` | `list_connector_entities`            | organization |
 | Confirm entity selection (PKO fan-out) | `loxtep_connect` | `confirm_connector_entity_selection` | organization |
-| Apply template | `loxtep_connect` | `apply_template` | **project** |
+| Apply template                         | `loxtep_connect` | `apply_template`                     | **project**  |
 
 ## SDK and CLI (actual methods)
 
-Node: `client.connect.connectors.list/get/create/update/delete/test/capture_samples/get_oauth_url`.
-Python: the same names on `client.connect.connectors`.
-`test(connector_id)` does not take `instance_id`.
+Node:
+`client.connect.connectors.list/get/create/update/delete/test/capture_samples/get_oauth_url`.
+Python: the same names on `client.connect.connectors`. `test(connector_id)` does
+not take `instance_id`.
 
 CLI (`@loxtep/sdk`):
 
@@ -575,13 +570,15 @@ loxtep connectors capture-samples <connector_id> --entity-type <name> [--limit N
 ## Known gaps (do not invent APIs)
 
 - No MCP `get_connector`; use `list_connectors` or SDK/REST GET.
-- No MCP for connector packages; REST `GET /dataproducts/connector-packages/{slug}`.
+- No MCP for connector packages; REST
+  `GET /dataproducts/connector-packages/{slug}`.
 - `list_connector_types` has no config schema, TLS, or `network_binding`.
 - CLI cannot create/get/update connectors or pass `instance_id` to test.
 - SDK `test` cannot pass `instance_id`.
-- No MCP/SDK to set runtimes VPC subnet/SG parameters.
-- Customer-VPC **test** worker is implemented for `mongodb-source` private
-  probe (`mongodb-source-private-probe/1`). Other private types still need
+- Shared `connectors-*` workers stay off-VPC; only `connectors-private-512`
+  receives `connector_vpc`.
+- Customer-VPC **test** worker is implemented for `mongodb-source` private probe
+  (`mongodb-source-private-probe/1`). Other private types still need
   `network_binding` for deploy routing; ask before assuming a private probe.
 
 ## References
