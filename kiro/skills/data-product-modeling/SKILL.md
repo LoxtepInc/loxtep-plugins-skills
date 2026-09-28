@@ -105,9 +105,13 @@ author bundle → deploy → verify with `get_data_product`.**
 
 ### Flow — Review and publish as validated (draft → trusted)
 
-1. `get_promotion_readiness` with `data_product_id` to see prerequisite
+1. `get_data_product` and confirm `schema.fields` is a non-empty list. If it is
+   empty, stop. `create_schema` / `apply_schema` first. A `metadata.schema_version`
+   string is not a schema. Do not mark a primary key, bind glossary terms, create
+   quality rules, or call `promote_data_product` until fields exist.
+2. `get_promotion_readiness` with `data_product_id` to see prerequisite
    checklist.
-2. Remediate each unsatisfied prerequisite:
+3. Remediate each unsatisfied prerequisite:
    - Schema version: `update_data_product` with schema `version: "1.0"`.
    - Field descriptions: `update_data_product` with all fields described.
    - PII classified: `tag_pii_fields` via `loxtep_define`.
@@ -116,8 +120,8 @@ author bundle → deploy → verify with `get_data_product`.**
    - Glossary terms: `append_synonym` via `loxtep_meaning` for each field.
    - Primary entity: `update_data_product` with
      `entities[].is_primary + natural_key`.
-3. `get_promotion_readiness` again to verify all prerequisites satisfied.
-4. `promote_data_product` to advance trust tier (see
+4. `get_promotion_readiness` again to verify all prerequisites satisfied.
+5. `promote_data_product` to advance trust tier (see
    **`promote-data-product`**).
 
 ### Flow — Review and publish for delivery (validated → delivery-ready)
