@@ -44,6 +44,7 @@
 
 ## Pitfalls
 
+- An empty `schema.fields` list fails Schema Version, Field Descriptions, and PII Classification. `metadata.schema_version` and product-level `pii_fields` are not a schema. Do not recommend a primary key, glossary binding, quality rules, or `promote_data_product` until `get_data_product` shows a non-empty `schema.fields`. The next step is `create_schema` / `apply_schema`, then re-read the product.
 - Definitions must be reviewed before running this — use
   `semantic-ontology-mapping` first
 - Data standards (field descriptions, PII classification, quality rules, data
