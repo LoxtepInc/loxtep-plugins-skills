@@ -60,6 +60,23 @@ All MCP clients share one contract: **[docs/agent-workflow-authoring.md](docs/ag
 - **AI context** — Structured org knowledge (entities, decisions, processes) the platform stores and the MCP exposes.
 - **Governance** — Permissions, PII, quality, and lineage are enforced when you build and access data, not buried in a wiki.
 
+## Keeping plugins & skills updated
+
+The **hosted MCP server** always serves the current tool surface after we deploy.
+**Plugins and skills are a local snapshot** — refresh them when a new
+[GitHub release](https://github.com/LoxtepInc/loxtep-plugins-skills/releases/latest)
+ships (e.g. new workflow guides or retired transform types).
+
+| Client | How to pick up the latest skills |
+| --- | --- |
+| **Cursor (team marketplace)** | Admin **Refresh** (or enable **Auto Refresh** + Cursor GitHub App), then refocus/restart Cursor |
+| **Cursor (Import / local)** | Re-import the repo or reinstall the `cursor/` plugin |
+| **Claude Code** | `claude plugin marketplace update` then `claude plugin install loxtep-claude@loxtep` |
+| **Kiro / OpenCode / Antigravity** | Re-import or re-copy from this repo / the release artifact |
+
+Your agent may nudge you when skills look stale relative to live MCP ops. MCP-only
+JSON configs do not need a skills refresh — only the plugin/skills install does.
+
 ## Quick Start
 
 Each AI tool has a native way to install Loxtep — marketplace plugins, powers, or config files — that gives you MCP connectivity **plus** scoped skills and workflow guides out of the box. Pick your client below.
