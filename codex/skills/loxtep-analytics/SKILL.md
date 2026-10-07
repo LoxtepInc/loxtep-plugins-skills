@@ -46,13 +46,18 @@ schema, run queries, fetch results.
 - Wrong **org** or missing permissions show as auth or empty results.
 - **Execution environment** — Analytics runs against governed mesh tables via
   `loxtep_query`, not an arbitrary external database URL.
-- **Iceberg rebuild** — Iceberg stores are Amazon S3 Tables (compaction and
-  snapshot cleanup are AWS-managed; there is no compact tool). If queries fail
-  with missing data / stub schema, use `loxtep_observe` → `get_iceberg_health`
-  (`managed_s3_tables` status), then `rebuild_iceberg_table` with
-  `confirm: true` and `backfill_from`. Rebuild **permanently deletes** the table
-  and recreates it from the queue. Always `dry_run: true` first. Never rebuild
-  without explicit confirmation.
+- **Iceberg is deliberate opt-in** — workflow deploy does **not** enable
+  Iceberg. Enable via UI or `POST /dataproducts/{id}/iceberg` only after a
+  non-empty product schema exists (partition field must be on that schema).
+  Empty / “unknown table” warehouse errors usually mean Iceberg was never
+  deliberately enabled — not a silent auto-heal case.
+- **Iceberg rebuild** — requires deliberate enablement + real schema. Iceberg
+  stores are Amazon S3 Tables (compaction and snapshot cleanup are AWS-managed;
+  there is no compact tool). If queries fail with missing data / stub schema,
+  use `loxtep_observe` → `get_iceberg_health` (`managed_s3_tables` status), then
+  `rebuild_iceberg_table` with `confirm: true` and `backfill_from`. Rebuild
+  **permanently deletes** the table and recreates it from the queue. Always
+  `dry_run: true` first. Never rebuild without explicit confirmation.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 
