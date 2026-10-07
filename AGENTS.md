@@ -123,72 +123,88 @@ Regenerate: `node scripts/generate-agents-mcp-section.mjs` (after `node platform
 
 ## MCP tools
 
-### `loxtep_session` (3 operations)
+### `loxtep_session` (5 operations)
 
 Session and organization context (Connect prerequisite): who am I, which org am
-I in, and logout. Call get_current_user first to learn RBAC grants before
-project-scoped work. Pass operation plus the same arguments the flat tool
-expects.
+I in, the Loxtep platform model, logout, and platform_health_check (~5s
+auth/instance/observe/graph/decision-traces/MCP-surface doctor). Call
+get_current_user for RBAC, then get_platform_model before other tools so
+Connector, Connection, Shape, and Define are not confused. Pass operation plus
+the same arguments the flat tool expects.
 
 | #   | operation                  |
 | --- | -------------------------- |
 | 1   | `get_current_user`         |
 | 2   | `get_current_organization` |
-| 3   | `logout`                   |
+| 3   | `get_platform_model`       |
+| 4   | `logout`                   |
+| 5   | `platform_health_check`    |
 
-### `loxtep_connect` (11 operations)
+### `loxtep_connect` (14 operations)
 
 Connect — wire external data sources. Org-level connector credentials
 (list/create/OAuth/samples) and starter templates (list/get/apply). A connector
 is the credential to an external system; binding it into a workflow graph is
-done in loxtep_build.
+done in loxtep_build. run_connector_action invokes one action ad hoc (not a
+scheduled sync) — requires approval.
 
-| #   | operation              |
-| --- | ---------------------- |
-| 1   | `list_connectors`      |
-| 2   | `list_connector_types` |
-| 3   | `create_connector`     |
-| 4   | `update_connector`     |
-| 5   | `get_oauth_url`        |
-| 6   | `delete_connector`     |
-| 7   | `test_connector`       |
-| 8   | `capture_samples`      |
-| 9   | `list_templates`       |
-| 10  | `get_template`         |
-| 11  | `apply_template`       |
+| #   | operation                            |
+| --- | ------------------------------------ |
+| 1   | `list_connectors`                    |
+| 2   | `list_connector_types`               |
+| 3   | `create_connector`                   |
+| 4   | `update_connector`                   |
+| 5   | `get_oauth_url`                      |
+| 6   | `delete_connector`                   |
+| 7   | `test_connector`                     |
+| 8   | `capture_samples`                    |
+| 9   | `list_connector_entities`            |
+| 10  | `confirm_connector_entity_selection` |
+| 11  | `run_connector_action`               |
+| 12  | `list_templates`                     |
+| 13  | `get_template`                       |
+| 14  | `apply_template`                     |
 
-### `loxtep_workspace` (15 operations)
+### `loxtep_workspace` (19 operations)
 
 Connect — manage projects, runtime instances, and workspace versions. Projects
-(list/get/create/update/delete); instances including self-hosted onboarding
-(get_deployment_urls → register_infrastructure → create_instance); snapshots and
-version history (list_versions, create_snapshot, restore_version,
-compare_versions, reindex_workspace).
+(list/get/create/update/delete); layer status / unpublished changes /
+materialization plans (get_project_workspace_status, list_project_changes,
+plan_project_materialization — hosted MCP never writes local paths); instances
+including self-hosted onboarding (get_deployment_urls → register_infrastructure
+→ create_instance; update_instance for connector_vpc); snapshots and version
+history (list_versions, create_snapshot, restore_version, compare_versions,
+reindex_workspace).
 
-| #   | operation                 |
-| --- | ------------------------- |
-| 1   | `list_projects`           |
-| 2   | `get_project`             |
-| 3   | `create_project`          |
-| 4   | `update_project`          |
-| 5   | `delete_project`          |
-| 6   | `list_instances`          |
-| 7   | `create_instance`         |
-| 8   | `get_deployment_urls`     |
-| 9   | `register_infrastructure` |
-| 10  | `get_infrastructure`      |
-| 11  | `list_versions`           |
-| 12  | `create_snapshot`         |
-| 13  | `restore_version`         |
-| 14  | `compare_versions`        |
-| 15  | `reindex_workspace`       |
+| #   | operation                      |
+| --- | ------------------------------ |
+| 1   | `list_projects`                |
+| 2   | `get_project`                  |
+| 3   | `create_project`               |
+| 4   | `update_project`               |
+| 5   | `delete_project`               |
+| 6   | `get_project_workspace_status` |
+| 7   | `list_project_changes`         |
+| 8   | `plan_project_materialization` |
+| 9   | `list_instances`               |
+| 10  | `create_instance`              |
+| 11  | `update_instance`              |
+| 12  | `get_deployment_urls`          |
+| 13  | `register_infrastructure`      |
+| 14  | `get_infrastructure`           |
+| 15  | `list_versions`                |
+| 16  | `create_snapshot`              |
+| 17  | `restore_version`              |
+| 18  | `compare_versions`             |
+| 19  | `reindex_workspace`            |
 
-### `loxtep_build` (36 operations)
+### `loxtep_build` (43 operations)
 
 Organize — design, bundle, and deploy data flows. Workflows
 (save_workflow_bundle for full JSON, patch_workflow_graph for Studio-only
-edits), trigger/target connection bindings (list/get/update/delete/test), data
-products (kind source|consumer, lexicon, SDK config, contracts, promotion), and
+edits), trigger/target connection bindings (list/get/update/delete/test/run),
+data products (kind source|consumer, lexicon, SDK config, contracts, promotion),
+external warehouse bind (list_warehouse_objects, bind_warehouse_table), and
 deployment writes (deploy_project, deploy_workflow, get_runtime_mapping). New
 Trigger/Target entities belong in save_workflow_bundle (connections/{id}.json
 with connector_id).
@@ -205,112 +221,161 @@ with connector_id).
 | 8   | `delete_workflow`            |
 | 9   | `archive_workflow`           |
 | 10  | `preview_transform`          |
-| 11  | `patch_workflow_graph`       |
-| 12  | `list_triggers`              |
-| 13  | `get_trigger`                |
-| 14  | `update_trigger`             |
-| 15  | `delete_trigger`             |
-| 16  | `test_trigger`               |
-| 17  | `list_targets`               |
-| 18  | `get_target`                 |
-| 19  | `update_target`              |
-| 20  | `delete_target`              |
-| 21  | `test_target`                |
-| 22  | `create_data_product`        |
-| 23  | `update_data_product`        |
-| 24  | `delete_data_product`        |
-| 25  | `list_data_products`         |
-| 26  | `get_data_product`           |
-| 27  | `get_lexicon`                |
-| 28  | `get_sdk_config`             |
-| 29  | `enrich_schema_descriptions` |
-| 30  | `get_promotion_readiness`    |
-| 31  | `promote_data_product`       |
-| 32  | `create_data_contract`       |
-| 33  | `list_data_contracts`        |
-| 34  | `deploy_project`             |
-| 35  | `deploy_workflow`            |
-| 36  | `get_runtime_mapping`        |
+| 11  | `preview_query_trigger`      |
+| 12  | `run_query_trigger`          |
+| 13  | `patch_workflow_graph`       |
+| 14  | `list_triggers`              |
+| 15  | `get_trigger`                |
+| 16  | `update_trigger`             |
+| 17  | `delete_trigger`             |
+| 18  | `test_trigger`               |
+| 19  | `run_trigger`                |
+| 20  | `list_targets`               |
+| 21  | `get_target`                 |
+| 22  | `update_target`              |
+| 23  | `delete_target`              |
+| 24  | `test_target`                |
+| 25  | `create_data_product`        |
+| 26  | `update_data_product`        |
+| 27  | `delete_data_product`        |
+| 28  | `list_data_products`         |
+| 29  | `get_data_product`           |
+| 30  | `get_lexicon`                |
+| 31  | `get_sdk_config`             |
+| 32  | `enrich_schema_descriptions` |
+| 33  | `get_promotion_readiness`    |
+| 34  | `promote_data_product`       |
+| 35  | `create_data_contract`       |
+| 36  | `list_data_contracts`        |
+| 37  | `update_data_contract`       |
+| 38  | `list_warehouse_objects`     |
+| 39  | `bind_warehouse_table`       |
+| 40  | `configure_warehouse_sink`   |
+| 41  | `deploy_project`             |
+| 42  | `deploy_workflow`            |
+| 43  | `get_runtime_mapping`        |
 
-### `loxtep_define` (20 operations)
+### `loxtep_define` (35 operations)
 
 Organize — shape and trust your data. Domain canonical schemas (CRUD, versions,
-apply/unapply to data products, PII tagging, impact analysis, schema packs) and
-quality rules (CRUD, test). Governance classification happens here; aggregate
-quality scores are read in loxtep_observe.
+apply/unapply to data products, PII tagging, impact analysis, schema packs),
+agent-authored product definition (evidence, shape and semantic proposals,
+approval, apply, status, batch, skill), and quality rules (CRUD, test).
+Governance classification happens here; aggregate quality scores are read in
+loxtep_observe. Hosted inference is not required.
 
-| #   | operation                  |
-| --- | -------------------------- |
-| 1   | `create_schema`            |
-| 2   | `update_schema`            |
-| 3   | `delete_schema`            |
-| 4   | `get_schema`               |
-| 5   | `list_schemas`             |
-| 6   | `list_schema_versions`     |
-| 7   | `apply_schema`             |
-| 8   | `unapply_schema`           |
-| 9   | `list_schema_applications` |
-| 10  | `tag_pii_fields`           |
-| 11  | `patch_schema`             |
-| 12  | `add_schema_version`       |
-| 13  | `get_schema_impact`        |
-| 14  | `install_schema_pack`      |
-| 15  | `create_quality_rule`      |
-| 16  | `update_quality_rule`      |
-| 17  | `delete_quality_rule`      |
-| 18  | `list_quality_rules`       |
-| 19  | `get_quality_rule`         |
-| 20  | `test_quality_rule`        |
+| #   | operation                           |
+| --- | ----------------------------------- |
+| 1   | `create_schema`                     |
+| 2   | `update_schema`                     |
+| 3   | `delete_schema`                     |
+| 4   | `get_schema`                        |
+| 5   | `list_schemas`                      |
+| 6   | `list_schema_versions`              |
+| 7   | `apply_schema`                      |
+| 8   | `unapply_schema`                    |
+| 9   | `list_schema_applications`          |
+| 10  | `tag_pii_fields`                    |
+| 11  | `patch_schema`                      |
+| 12  | `add_schema_version`                |
+| 13  | `get_schema_impact`                 |
+| 14  | `install_schema_pack`               |
+| 15  | `validate_shape_records`            |
+| 16  | `get_definition_evidence`           |
+| 17  | `submit_shape_proposal`             |
+| 18  | `revise_shape_proposal`             |
+| 19  | `revise_semantic_bindings_proposal` |
+| 20  | `get_definition_proposal`           |
+| 21  | `list_definition_proposals`         |
+| 22  | `withdraw_definition_proposal`      |
+| 23  | `submit_semantic_bindings_proposal` |
+| 24  | `approve_definition_proposal`       |
+| 25  | `apply_definition_proposal`         |
+| 26  | `get_definition_status`             |
+| 27  | `run_definition_batch`              |
+| 28  | `get_definition_skill`              |
+| 29  | `start_definition_procedure_run`    |
+| 30  | `create_quality_rule`               |
+| 31  | `update_quality_rule`               |
+| 32  | `delete_quality_rule`               |
+| 33  | `list_quality_rules`                |
+| 34  | `get_quality_rule`                  |
+| 35  | `test_quality_rule`                 |
 
-### `loxtep_meaning` (33 operations)
+### `loxtep_meaning` (43 operations)
 
 Organize — define what terms mean. Vocabulary/thesaurus (terms, synonyms,
 enterprise overrides, semantic gaps), ontology concepts and relationships,
 namespace mappings, and the org semantic layer (search artifacts, completeness,
 vocabulary packs, canonical knowledge bundles).
 
-| #   | operation                      |
-| --- | ------------------------------ |
-| 1   | `list_terms`                   |
-| 2   | `get_term`                     |
-| 3   | `create_term`                  |
-| 4   | `create_enterprise_override`   |
-| 5   | `list_enterprise_overrides`    |
-| 6   | `resolve_semantic_gap`         |
-| 7   | `update_term`                  |
-| 8   | `delete_term`                  |
-| 9   | `append_synonym`               |
-| 10  | `sync_vocabulary`              |
-| 11  | `resolve_canonical_key`        |
-| 12  | `get_ontology_relationships`   |
-| 13  | `list_ontology_concepts`       |
-| 14  | `get_ontology_concept`         |
-| 15  | `create_ontology_concept`      |
-| 16  | `create_ontology_relationship` |
-| 17  | `update_ontology_concept`      |
-| 18  | `delete_ontology_concept`      |
-| 19  | `bind_field_to_ontology`       |
-| 20  | `register_namespace_mapping`   |
-| 21  | `list_namespace_mappings`      |
-| 22  | `get_namespace_mapping`        |
-| 23  | `search_semantic_layer`        |
-| 24  | `get_semantic_artifact`        |
-| 25  | `get_semantic_completeness`    |
-| 26  | `get_pack_activation_status`   |
-| 27  | `activate_vocabulary_pack`     |
-| 28  | `list_available_packs`         |
-| 29  | `create_canonical_knowledge`   |
-| 30  | `get_canonical_knowledge`      |
-| 31  | `update_canonical_knowledge`   |
-| 32  | `import_semantic_bundle`       |
-| 33  | `export_semantic_bundle`       |
+| #   | operation                          |
+| --- | ---------------------------------- |
+| 1   | `list_terms`                       |
+| 2   | `get_term`                         |
+| 3   | `create_term`                      |
+| 4   | `create_enterprise_override`       |
+| 5   | `list_enterprise_overrides`        |
+| 6   | `resolve_semantic_gap`             |
+| 7   | `update_term`                      |
+| 8   | `delete_term`                      |
+| 9   | `append_synonym`                   |
+| 10  | `sync_vocabulary`                  |
+| 11  | `import_skos_glossary`             |
+| 12  | `resolve_canonical_key`            |
+| 13  | `get_ontology_relationships`       |
+| 14  | `list_ontology_concepts`           |
+| 15  | `get_ontology_concept`             |
+| 16  | `create_ontology_concept`          |
+| 17  | `create_ontology_relationship`     |
+| 18  | `update_ontology_concept`          |
+| 19  | `delete_ontology_concept`          |
+| 20  | `bind_field_to_ontology`           |
+| 21  | `register_namespace_mapping`       |
+| 22  | `list_namespace_mappings`          |
+| 23  | `get_namespace_mapping`            |
+| 24  | `search_semantic_layer`            |
+| 25  | `get_semantic_artifact`            |
+| 26  | `get_semantic_completeness`        |
+| 27  | `get_pack_activation_status`       |
+| 28  | `activate_vocabulary_pack`         |
+| 29  | `list_available_packs`             |
+| 30  | `create_canonical_knowledge`       |
+| 31  | `get_canonical_knowledge`          |
+| 32  | `list_canonical_knowledge`         |
+| 33  | `update_canonical_knowledge`       |
+| 34  | `import_semantic_bundle`           |
+| 35  | `export_semantic_bundle`           |
+| 36  | `save_semantic_package`            |
+| 37  | `plan_semantic_package`            |
+| 38  | `approve_semantic_package`         |
+| 39  | `reject_semantic_package`          |
+| 40  | `deploy_semantic_package`          |
+| 41  | `verify_semantic_package`          |
+| 42  | `get_semantic_package_status`      |
+| 43  | `import_external_semantic_package` |
+
+### `loxtep_package_review` (1 operation)
+
+Organize — in-chat review card for a staged semantic package. Loads plan,
+fields, relationships, loss report, org/environment, approval and deployment
+status. Always returns a plain-language summary and authenticated review_url.
+Hosts that support MCP Apps render ui://loxtep/semantic-package-review.
+Approve/reject via loxtep_meaning; deploy is a separate step. Call after
+import_semantic_bundle / save_semantic_package /
+import_external_semantic_package when status is pending_approval.
+
+| #   | operation                 |
+| --- | ------------------------- |
+| 1   | `review_semantic_package` |
 
 ### `loxtep_review` (10 operations)
 
 Organize — approve, transition, and mine for gaps. CDLC lifecycle
 (get/transition/propagate, lineage and dependency edges), human-in-the-loop
 approvals (list_pending, resolve), and context mining (run_mining_pass,
-list_candidates, act_on_candidate). No candidate is auto-committed.
+list_candidates, act_on_candidate). No candidate is auto-committed. For semantic
+package plan review cards, use loxtep_package_review (not generic resolve).
 
 | #   | operation                   |
 | --- | --------------------------- |
@@ -325,12 +390,15 @@ list_candidates, act_on_candidate). No candidate is auto-committed.
 | 9   | `list_candidates`           |
 | 10  | `act_on_candidate`          |
 
-### `loxtep_query` (8 operations)
+### `loxtep_query` (10 operations)
 
 Use — find and query trusted data. Catalog discovery (search, entry detail,
-domains, tags) and analytics SQL over data products (execute_query, list_tables,
-get_table_schema, get_query_results). For trust signals (lineage, evidence,
-quality score), use loxtep_observe.
+domains, tags), analytics SQL over data products (execute_query, list_tables,
+get_table_schema, get_query_results), and COA-shaped graph serve ops backed by
+DynamoDB SPARQL (translate_sparql, graph_traversal — never Neptune). For trust
+signals (lineage evidence scores), use loxtep_observe. COA
+list_metrics/describe_schema are not separate tools — use search_semantic_layer
+/ get_table_schema / list_ontology_concepts.
 
 | #   | operation           |
 | --- | ------------------- |
@@ -342,37 +410,46 @@ quality score), use loxtep_observe.
 | 6   | `list_tables`       |
 | 7   | `get_table_schema`  |
 | 8   | `get_query_results` |
+| 9   | `translate_sparql`  |
+| 10  | `graph_traversal`   |
 
-### `loxtep_observe` (13 operations)
+### `loxtep_observe` (17 operations)
 
 Use — monitor trust, health, lineage, and runtime. Quality scores, catalog
 evidence/lineage/governance flags, compounding metrics, live queue inspection
-(get_queue_info, read_queue_events, replay_events, trigger_bot), Iceberg table
+(get_queue_info, read_queue_events, replay_events, trigger_bot,
+list_runtime_queues, list_observe_bots, get_stream_config), runtime-queue
+catalog reconcile (reconcile_runtime_queues — dry_run first), Iceberg table
 health/rebuild (get_iceberg_health, rebuild_iceberg_table — confirm required;
 dry_run first), and deployment status (list_deployments, get_deployment).
 
-| #   | operation                |
-| --- | ------------------------ |
-| 1   | `get_quality_score`      |
-| 2   | `get_evidence`           |
-| 3   | `get_lineage_impact`     |
-| 4   | `get_governance_flags`   |
-| 5   | `get_compounding_metric` |
-| 6   | `get_queue_info`         |
-| 7   | `read_queue_events`      |
-| 8   | `replay_events`          |
-| 9   | `trigger_bot`            |
-| 10  | `get_iceberg_health`     |
-| 11  | `rebuild_iceberg_table`  |
-| 12  | `list_deployments`       |
-| 13  | `get_deployment`         |
+| #   | operation                  |
+| --- | -------------------------- |
+| 1   | `get_quality_score`        |
+| 2   | `get_evidence`             |
+| 3   | `get_lineage_impact`       |
+| 4   | `get_governance_flags`     |
+| 5   | `get_compounding_metric`   |
+| 6   | `get_queue_info`           |
+| 7   | `read_queue_events`        |
+| 8   | `replay_events`            |
+| 9   | `trigger_bot`              |
+| 10  | `list_runtime_queues`      |
+| 11  | `list_observe_bots`        |
+| 12  | `get_stream_config`        |
+| 13  | `reconcile_runtime_queues` |
+| 14  | `get_iceberg_health`       |
+| 15  | `rebuild_iceberg_table`    |
+| 16  | `list_deployments`         |
+| 17  | `get_deployment`           |
 
-### `loxtep_context` (30 operations)
+### `loxtep_context` (31 operations)
 
 Use — intelligence, process graphs, and agent orchestration. Process intel
 (entity context, decision traces, promotion candidates, unified query_context),
-procedures (CRUD, import/export process graphs, dependencies), and agent
-workspace tasks (issues, goals, workstreams, agents).
+procedures (CRUD, import/export process graphs, dependencies), PKO procedure
+runs (list_runs by data_product_id), and agent workspace tasks (issues, goals,
+workstreams, agents).
 
 | #   | operation                    |
 | --- | ---------------------------- |
@@ -392,24 +469,25 @@ workspace tasks (issues, goals, workstreams, agents).
 | 14  | `import_process_graph`       |
 | 15  | `export_process_graph`       |
 | 16  | `get_procedure_dependencies` |
-| 17  | `create_issue`               |
-| 18  | `list_issues`                |
-| 19  | `get_issue`                  |
-| 20  | `update_issue`               |
-| 21  | `add_issue_comment`          |
-| 22  | `create_goal`                |
-| 23  | `list_goals`                 |
-| 24  | `get_goal`                   |
-| 25  | `list_workstreams`           |
-| 26  | `create_workstream`          |
-| 27  | `get_workstream`             |
-| 28  | `update_workstream`          |
-| 29  | `list_agents`                |
-| 30  | `get_agent`                  |
+| 17  | `list_runs`                  |
+| 18  | `create_issue`               |
+| 19  | `list_issues`                |
+| 20  | `get_issue`                  |
+| 21  | `update_issue`               |
+| 22  | `add_issue_comment`          |
+| 23  | `create_goal`                |
+| 24  | `list_goals`                 |
+| 25  | `get_goal`                   |
+| 26  | `list_workstreams`           |
+| 27  | `create_workstream`          |
+| 28  | `get_workstream`             |
+| 29  | `update_workstream`          |
+| 30  | `list_agents`                |
+| 31  | `get_agent`                  |
 
 ---
 
-**Totals:** 10 MCP tools · 179 operations.
+**Totals:** 11 MCP tools · 228 operations.
 
 
 ---

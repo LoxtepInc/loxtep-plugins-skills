@@ -23,14 +23,17 @@ organization level.
 
 ## Happy-path flows
 
-### Flow — Schema lifecycle
+### Flow — Schema lifecycle (domain shapes)
 
-1. `create_schema` with `data_product_id`, `name`, `version`, `format`,
-   `fields[]`, `definition` → returns `schema_id` + `schema_version_id`.
-2. `update_schema` as model evolves.
-3. `tag_pii_fields` with `schema_version_id` and `field_names[]` before exposure
+1. `create_schema` with `name`, `version`, `format`, `fields[]`, `definition`
+   (optional `domain_id`) → returns shape ids. This authors a **domain shape**,
+   not a data-product schema blob.
+2. `apply_schema` to bind the shape to a data product.
+3. Align the shape to a concept URI via `patch_schema` /
+   `client.define.shapes.align({ aligned_to_concept_uri })`.
+4. `tag_pii_fields` with `schema_version_id` and `field_names[]` before exposure
    rules.
-4. `delete_schema` only when policy allows destruction.
+5. `delete_schema` only when policy allows destruction.
 
 ### Flow — Quality on definitions
 
@@ -42,8 +45,21 @@ organization level.
 
 | Area    | Tool            | `operation`                                                                                                                        | Scope        |
 | ------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| Schemas | `loxtep_define` | `create_schema`, `update_schema`, `delete_schema`, `get_schema`, `list_schema_versions`, `tag_pii_fields`                          | organization |
+| Shapes  | `loxtep_define` | `create_schema`, `list_schemas`, `get_schema`, `apply_schema`, `patch_schema`, `list_schema_versions`, `tag_pii_fields`, …       | organization |
 | Quality | `loxtep_define` | `create_quality_rule`, `update_quality_rule`, `delete_quality_rule`, `list_quality_rules`, `get_quality_rule`, `test_quality_rule` | organization |
+
+## SDK mapping
+
+| Concern | SDK |
+| --- | --- |
+| Domain shapes | `client.define.shapes.create` / `.list` / `.get` / `.apply` / `.align` |
+| Data-product schemas / PII | `client.define.schemas.get` / `.list` / `.tag_pii_fields` |
+| Quality | `client.define.quality.*` |
+| Terms (define meaning) | `client.meaning.thesaurus.*` |
+| Ontology graph types | `client.meaning.ontology.*` (`node_type` lowercase) |
+
+**Define meaning** = terms + shapes. Ontology concepts are for graph types and
+relationships — not the primary path for field vocabulary.
 
 ## Pitfalls
 
@@ -55,9 +71,12 @@ organization level.
   [docs/concepts/type-vs-pack-alignment.md](../../../docs/concepts/type-vs-pack-alignment.md).
 - **`create_schema` creates a shape** — Meaning/Bind lists those authored
   Define schemas (`list_schemas` / `domain_schemas`) and applies them with
-  `apply_schema`. Pack concepts stay on Align (shape → concept).
+  `apply_schema`. Pack concepts stay on Align (shape → concept). SDK:
+  `client.define.shapes.*` (not `client.define.schemas`, which is data-product
+  schema versions).
 - **Ontology relationships / thesaurus** for entity intelligence live under
-  **`loxtep_meaning`** / graph APIs, not as a second schema store.
+  **`loxtep_meaning`** / graph APIs, not as a second schema store. SDK:
+  `client.meaning.thesaurus` + `client.meaning.ontology` (`node_type: 'entity'`).
 - **Catalog discovery** is **`loxtep_query`** (`discover-govern-lineage`
   Agent-Scope Skill).
 - **403 / permission denied** — Schema and quality tools enforce RBAC

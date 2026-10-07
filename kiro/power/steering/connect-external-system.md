@@ -563,9 +563,15 @@ loxtep connectors capture-samples <connector_id> --entity-type <name> [--limit N
 - SDK `test` cannot pass `instance_id`.
 - Shared `connectors-*` workers stay off-VPC; only `connectors-private-512`
   receives `connector_vpc`.
-- Customer-VPC **test** worker is implemented for `mongodb-source` private probe
-  (`mongodb-source-private-probe/1`). Other private types still need
-  `network_binding` for deploy routing; ask before assuming a private probe.
+- Customer-VPC **test** workers are implemented for:
+  - `mongodb-source` (`mongodb-source-private-probe/1`)
+  - `postgres` / `postgresql` / `postgres-source` (`postgres-private-probe/1`)
+    Private probes report discovery + capability (for Postgres: `wal_level`,
+    `logical_replication_ready`, supported ingest modes). Managed ingest uses
+    `list_connector_entities` → `confirm_connector_entity_selection` (not the
+    `database-cdc` workflow template). Postgres **incremental** works without
+    logical replication; **CDC** requires `wal_level=logical` (Aurora:
+    `rds.logical_replication=1`).
 
 ## References
 
