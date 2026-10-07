@@ -318,6 +318,13 @@ automatically.
 | `loxtep_observe` | `get_deployment`                                                  | read       | Get a single deployment record by ID                                                                             |
 | `loxtep_review`  | `list_pending`                                                    | read       | SDK: `client.review.approvals.list_pending()`                                                                    |
 | `loxtep_review`  | `resolve`                                                         | write      | SDK: `client.review.approvals.approve()` / `.reject()`                                                           |
+| `loxtep_meaning` | `create_term` / `get_term` / … / `sync_vocabulary`                | write/read | SDK: `client.meaning.thesaurus.*`                                                                                |
+| `loxtep_meaning` | ontology concept CRUD + relationships                             | write/read | SDK: `client.meaning.ontology.*` (`node_type` lowercase: `entity`, …)                                            |
+| `loxtep_define`  | `create_schema` / `list_schemas` / `apply_schema` / `patch_schema` | write/read | Domain shapes: `client.define.shapes.*` (not data-product `client.define.schemas`)                               |
+
+**Define meaning** = terms + shapes. Ontology concepts are graph types /
+relationships. See `docs/sdk-mcp-mapping.md` in `@loxtep/sdk` for full parity
+tables (and explicit MCP-only gaps).
 
 ## Approving pipeline gates from code (`client.review.approvals`)
 

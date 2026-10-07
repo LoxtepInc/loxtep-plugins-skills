@@ -97,9 +97,10 @@ author bundle → deploy → verify with `get_data_product`.**
 ### Flow — Review and publish as validated (draft → trusted)
 
 1. `get_data_product` and confirm `schema.fields` is a non-empty list. If it is
-   empty, stop. `create_schema` / `apply_schema` first. A `metadata.schema_version`
-   string is not a schema. Do not mark a primary key, bind glossary terms, create
-   quality rules, or call `promote_data_product` until fields exist.
+   empty, stop. `create_schema` / `apply_schema` first. A
+   `metadata.schema_version` string is not a schema. Do not mark a primary key,
+   bind glossary terms, create quality rules, or call `promote_data_product`
+   until fields exist.
 2. `get_promotion_readiness` with `data_product_id` to see prerequisite
    checklist.
 3. Remediate each unsatisfied prerequisite:

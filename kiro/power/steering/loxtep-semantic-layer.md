@@ -41,17 +41,35 @@ structure, and process documentation.
    `content_ref`.
 4. `update_canonical_knowledge` to modify existing knowledge bases.
 
+### Semantic package stage → review → approve (not deploy)
+
+1. Stage with `import_semantic_bundle` / `save_semantic_package` /
+   `import_external_semantic_package` (default is stage, not deploy).
+2. Show the plain-language `summary` and `review_url` from the stage result to
+   the user (works in every MCP host).
+3. Call **`loxtep_package_review`** with `operation: review_semantic_package`
+   (`package_id` + `revision`, or `approval_request_id`) so MCP Apps hosts can
+   render the in-chat card. Never skip this when status is `pending_approval`.
+4. Wait for human Approve/Reject (card buttons, `approve_semantic_package` /
+   `reject_semantic_package`, or the authenticated inbox `review_url`).
+5. **Do not deploy** until the user explicitly asks after approval. Deploy is
+   `deploy_semantic_package` — a separate step.
+
 ## Operations
 
-| Facade           | Operation                    | Permission |
-| ---------------- | ---------------------------- | ---------- |
-| `loxtep_meaning` | `search_semantic_layer`      | search     |
-| `loxtep_meaning` | `get_semantic_artifact`      | read       |
-| `loxtep_meaning` | `get_semantic_completeness`  | read       |
-| `loxtep_meaning` | `create_canonical_knowledge` | write      |
-| `loxtep_meaning` | `get_canonical_knowledge`    | read       |
-| `loxtep_meaning` | `list_canonical_knowledge`   | read       |
-| `loxtep_meaning` | `update_canonical_knowledge` | write      |
+| Facade                  | Operation                    | Permission |
+| ----------------------- | ---------------------------- | ---------- |
+| `loxtep_meaning`        | `search_semantic_layer`      | search     |
+| `loxtep_meaning`        | `get_semantic_artifact`      | read       |
+| `loxtep_meaning`        | `get_semantic_completeness`  | read       |
+| `loxtep_meaning`        | `create_canonical_knowledge` | write      |
+| `loxtep_meaning`        | `get_canonical_knowledge`    | read       |
+| `loxtep_meaning`        | `list_canonical_knowledge`   | read       |
+| `loxtep_meaning`        | `update_canonical_knowledge` | write      |
+| `loxtep_meaning`        | `import_semantic_bundle`     | write      |
+| `loxtep_meaning`        | `approve_semantic_package`   | write      |
+| `loxtep_meaning`        | `reject_semantic_package`    | write      |
+| `loxtep_package_review` | `review_semantic_package`    | read       |
 
 ## MCP mapping
 
@@ -143,11 +161,16 @@ Do not pass both `id` and `content_ref` on get.
 - **`search_semantic_layer` with `artifact_types: schema` is not domain
   schemas.** It searches `schema_registry_cache` / curated artifacts — not
   `domain_schemas` from `create_schema`. Org **shapes** live under
-  `loxtep_define` `list_schemas`. Pack hits for “Product” are **concepts**, not
-  the S&S Product shape you applied to a raw data product.
+  `loxtep_define` `list_schemas` / SDK `client.define.shapes.list`. Pack hits
+  for “Product” are **concepts**, not the S&S Product shape you applied to a raw
+  data product.
 - **Do not bind a concept onto a DP that already has an applied shape.** Apply
-  the shape to the product; align the shape to the concept in Meaning. See
+  the shape to the product; align the shape to the concept in Meaning
+  (`client.define.shapes.align`). See
   [docs/concepts/type-vs-pack-alignment.md](../../../docs/concepts/type-vs-pack-alignment.md).
+- **Define meaning** = terms (`client.meaning.thesaurus`) + shapes
+  (`client.define.shapes`). Ontology concepts are graph types/relationships
+  (`client.meaning.ontology`, `node_type` lowercase).
 - **Catalog search** is **`loxtep_query`** - use that for broad discovery across
   all artifact types. This Agent-Scope Skill is for the semantic-layer-specific
   search and completeness view.

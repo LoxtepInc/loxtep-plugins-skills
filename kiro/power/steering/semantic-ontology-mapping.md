@@ -151,19 +151,36 @@ promotion.
 
 | `operation`                    | Facade           | Scope        | Notes                             |
 | ------------------------------ | ---------------- | ------------ | --------------------------------- |
-| `create_ontology_concept`      | `loxtep_meaning` | organization | Node type with properties         |
+| `create_term`                  | `loxtep_meaning` | organization | Canonical term + aliases          |
+| `sync_vocabulary`              | `loxtep_meaning` | organization | Bulk vocabulary sync              |
+| `resolve_canonical_key`        | `loxtep_meaning` | organization | Alias → canonical resolution      |
+| `create_schema` / `apply_schema` / `patch_schema` | `loxtep_define` | organization | Domain **shapes** (not DP schemas) |
+| `create_ontology_concept`      | `loxtep_meaning` | organization | Graph type node (`node_type` lowercase enum) |
 | `create_ontology_relationship` | `loxtep_meaning` | organization | Edge between entity types         |
 | `get_ontology_relationships`   | `loxtep_meaning` | organization | Query graph edges                 |
 | `update_ontology_concept`      | `loxtep_meaning` | organization | Modify concept definition         |
 | `delete_ontology_concept`      | `loxtep_meaning` | organization | Soft-delete (tombstone)           |
-| `create_term`                  | `loxtep_meaning` | organization | Canonical term + aliases          |
-| `sync_vocabulary`              | `loxtep_meaning` | organization | Bulk vocabulary sync              |
-| `resolve_canonical_key`        | `loxtep_meaning` | organization | Alias → canonical resolution      |
 | `register_namespace_mapping`   | `loxtep_meaning` | organization | Cross-system prefix mapping       |
 | `list_namespace_mappings`      | `loxtep_meaning` | organization | View registered namespaces        |
 | `create_enterprise_override`   | `loxtep_meaning` | organization | Delta when pack baseline wrong    |
 | `list_enterprise_overrides`    | `loxtep_meaning` | organization | Audit active/proposed overrides   |
 | `resolve_semantic_gap`         | `loxtep_meaning` | organization | Close gap issue + create override |
+
+**Define meaning** = terms + shapes. Ontology concepts are graph types /
+relationships — use them after terms/shapes exist when you need typed edges.
+
+## SDK mapping
+
+| Concern | SDK |
+| --- | --- |
+| Terms / sync / overrides | `client.meaning.thesaurus.*` |
+| Domain shapes | `client.define.shapes.*` (`create` / `list` / `get` / `apply` / `align`) |
+| Ontology concepts / relationships | `client.meaning.ontology.*` (`node_type: 'entity'`, not `'Entity'`) |
+| Proposal review | `client.meaning.proposals.*` |
+| Bundle import | `client.meaning.bundles.import` |
+
+Do not claim full MCP↔SDK parity for namespace mappings or `resolve_semantic_gap`
+(still MCP-only).
 
 ## Coupling with data-product-modeling
 

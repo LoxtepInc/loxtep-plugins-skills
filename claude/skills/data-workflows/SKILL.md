@@ -322,25 +322,51 @@ https://github.com/LoxtepInc/loxtep-project-template
 Scenario 2 runbook (transform derivation → queryable sink):
 [`docs/runbooks/transform-enrichment-scenario-2.md`](../../docs/runbooks/transform-enrichment-scenario-2.md).
 
-#### Flow F+ — SQL derivation (`sql_materialize`, full refresh)
+#### Flow F+ — SQL derivation (`query_trigger`, D14)
 
 For **on-demand / scheduled SELECT** over warehouse catalog views (not per-event
 transforms, not Store projections):
 
-1. Author an enrichment (or similar) workflow with a transformation node
-   `transform_type: "sql_materialize"` and
-   `operation_config: { sql: "SELECT ...", schedule?: "rate(1 hour)" }`.
+**Shape:** enrichment workflow with `trigger.query_trigger` (no
+`data-product-trigger`, no `sql_materialize` transform — that type was removed).
+Deploy registers the instance producer; rows land on the first-hop / sink queue
+and follow the normal rstreams → transform-to-iceberg path.
+
+**Unique identifier (refuse the call):** Always derive **`lx__id`** by
+concatenating already-viable identifier values (e.g. city + obs_date →
+`Austin|2024-06-15`). Do **not** call this key `id` — `lx__id` is chosen so it
+is unlikely to already exist on a payload. `preview_query_trigger` and
+`run_query_trigger` read the **source values** that would go into `lx__id` on
+each row. They refuse when any of those values is missing, empty, `null`, or an
+object. Do **not** concatenate blanks into a fake `lx__id` (`Austin|`).
+`primary_key` on the trigger is only the field-name list of those source values
+— it is **not** the identifier. A saved `primary_key` of `["city","obs_date"]`
+still refuses when every `obs_date` is empty, `null`, or `{}`. Uniqueness is
+**not** an Iceberg table setting — if the key is missing, Iceberg stores one row
+per queue event. Do **not** invent a uniqueness column, fill in a missing value,
+or coerce an empty date to `1970-01-01` / unix 0.
+
+1. Author an enrichment workflow with
+   `trigger.query_trigger: { data_product_id, query: "SELECT city, obs_date, temp_max FROM ...", primary_key: ["city","obs_date"], schedule?: "rate(1 hour)" }`.
+   `primary_key` names source values concatenated into `lx__id`. Do not SELECT
+   an `id` column as the key. `_eid` is only the queue event id — never the
+   business key.
 2. Template: https://github.com/LoxtepInc/loxtep-project-template
-   (`templates/transforms/sql-materialize.json`).
-3. Sink is a normal queue-backed data product (Iceberg via existing writers).
-4. **`save_workflow_bundle`** → **`deploy_workflow`** (registers a cron bot, not
-   shared `transformers-*`).
-5. **`preview_sql_materialize`** (dry SELECT sample) then
-   **`run_sql_materialize`** (full refresh) or wait for the cron schedule.
+   (`templates/workflows/sql-query-enrichment/`).
+3. Sink is a normal queue-backed data product. Deploy binds the queue only —
+   **Iceberg is deliberate opt-in** (`POST …/iceberg` or UI) after a real schema
+   exists; writers skip until config sync succeeds.
+4. **`save_workflow_bundle`** → **`deploy_workflow`** (registers query_trigger
+   producer, not shared `transformers-*`). Enable Iceberg on each source you
+   will scan before running the query.
+5. **`preview_query_trigger`** (dry SELECT sample) then **`run_query_trigger`**
+   (emit rows to the sink queue) or wait for the cron schedule. Both refuse
+   unless every source value that would go into `lx__id` is already a non-empty
+   scalar on each row.
 6. Verify with **`execute_query`** on the sink data product.
 
-Glossary: **Projection** (entity Store) ≠ **SQL derivation** (`sql_materialize`)
-≠ **per-event transform** (`filter` / `map` / …).
+Glossary: **Projection** (entity Store) ≠ **SQL derivation** (`query_trigger`) ≠
+**per-event transform** (`filter` / `map` / …).
 
 Runbook:
 [`docs/runbooks/sql-materialize-scenario-3.md`](../../docs/runbooks/sql-materialize-scenario-3.md).

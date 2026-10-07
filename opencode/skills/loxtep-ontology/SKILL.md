@@ -163,17 +163,25 @@ Requires **`semantic_gaps:resolve`** (plus override create permissions).
 | `resolve_semantic_gap`         | organization | `issue_id` + override fields; marks AO issue done, `override_source=agent_gap`                                                              |
 
 All rows above are MCP `loxtep_meaning` operations (Organize / Approve path).
-Steward Define meaning hub GA and `@loxtep/sdk@0.9.7+` share the same verbs.
 
-## SDK mapping (`client.meaning`, `@loxtep/sdk@0.9.7+`)
+**Define meaning** = vocabulary **terms** + domain **shapes**. Ontology concepts
+are for **graph types and relationships** between them — not a substitute for
+terms/shapes.
 
-Prefer the Phase D namespaces. Ontology concepts map to
-`client.meaning.ontology`; thesaurus / overrides stay on
-`client.meaning.thesaurus` (and packs on `client.meaning.packs` when activating
-vocabulary packs outside the onboarding wizard).
+## SDK mapping (`client.meaning` / `client.define.shapes`)
+
+Prefer Phase D namespaces. Thesaurus CRUD + sync + enterprise overrides are on
+`client.meaning.thesaurus`. Ontology concepts/relationships are on
+`client.meaning.ontology`. Domain shapes (canonical schemas) are on
+`client.define.shapes` (distinct from `client.define.schemas` data-product
+schemas). Proposal review: `client.meaning.proposals`. Bundle import:
+`client.meaning.bundles.import`.
 
 | MCP `operation`                | SDK                                                                         |
 | ------------------------------ | --------------------------------------------------------------------------- |
+| `list_terms` / `get_term` / `create_term` / `update_term` / `delete_term` | `client.meaning.thesaurus.*` (same verb names) |
+| `sync_vocabulary`              | `client.meaning.thesaurus.sync_vocabulary({ … })`                           |
+| `create_enterprise_override`   | `client.meaning.thesaurus.create_enterprise_override({ … })`                |
 | `list_ontology_concepts`       | `client.meaning.ontology.list_concepts()`                                   |
 | `get_ontology_concept`         | `client.meaning.ontology.get_concept(concept_id)`                           |
 | `create_ontology_concept`      | `client.meaning.ontology.create_concept({ name, namespace, node_type, … })` |
@@ -181,14 +189,31 @@ vocabulary packs outside the onboarding wizard).
 | `delete_ontology_concept`      | `client.meaning.ontology.delete_concept(concept_id)`                        |
 | `create_ontology_relationship` | `client.meaning.ontology.create_relationship({ … })`                        |
 | `get_ontology_relationships`   | `client.meaning.ontology.get_relationships({ … })`                          |
-| `list_terms` / `get_term` / …  | `client.meaning.thesaurus.*` (same verb names)                              |
+| `create_schema` / `list_schemas` / `apply_schema` / align via `patch_schema` | `client.define.shapes.create` / `.list` / `.apply` / `.align` |
 | pack activate / status         | `client.meaning.packs.*`                                                    |
 
+MCP-only (no SDK method yet): `list_enterprise_overrides`, `resolve_semantic_gap`,
+namespace-mapping CRUD.
+
 ```ts
+const term = await client.meaning.thesaurus.create_term({
+  canonical_key: 'customer_id',
+  scheme: 'field',
+  aliases: [{ path: 'customer.id' }],
+});
+const shape = await client.define.shapes.create({
+  name: 'PersonIdentity',
+  format: 'json-schema',
+  fields: [{ name: 'email', type: 'string' }],
+});
+await client.define.shapes.align({
+  schema_id: shape.schema_id,
+  aligned_to_concept_uri: 'https://example.org/Person',
+});
 const concept = await client.meaning.ontology.create_concept({
   name: 'Customer',
   namespace: 'org.example',
-  node_type: 'Entity',
+  node_type: 'entity',
   description: 'Paying account holder',
 });
 await client.meaning.ontology.create_relationship({
@@ -199,7 +224,7 @@ await client.meaning.ontology.create_relationship({
 ```
 
 Do **not** market a governed metrics/cube layer from this skill — meaning here
-is terms, ontology concepts, namespace mappings, and packs only.
+is terms, shapes, ontology graph types, namespace mappings, and packs.
 
 ## Prerequisites
 
