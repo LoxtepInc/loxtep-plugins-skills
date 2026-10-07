@@ -61,6 +61,37 @@ without relying on any private repo or source tree.
 - **401 / missing token:** use **`loxtep-auth`** (`login`), not this Agent-Scope
   Skill.
 
+## Plugins & skills updates (nudge)
+
+**Hosted MCP tools are always current** after platform deploy. **Plugins and
+skills are a local snapshot** — they do not auto-update for every install path.
+
+**When to nudge** (one short message; do not block the session):
+
+- `ListTools` / docs mention an op the client never heard of (e.g.
+  `preview_query_trigger`) or the agent still proposes retired paths (e.g.
+  `sql_materialize` transform).
+- User asks “what’s new”, reports stale skills, or skills contradict MCP.
+
+**What to tell them:**
+
+1. Latest skills release:
+   https://github.com/LoxtepInc/loxtep-plugins-skills/releases/latest
+2. Refresh by client:
+   - **Cursor (team marketplace):** admin **Refresh** (or **Auto Refresh** +
+     GitHub App), then refocus or restart Cursor.
+   - **Cursor (Import / local clone):** re-import the repo or reinstall the
+     plugin from `https://github.com/LoxtepInc/loxtep-plugins-skills` (`cursor/`).
+   - **Claude Code:** update the marketplace and reinstall —
+     `claude plugin marketplace update` then
+     `claude plugin install loxtep-claude@loxtep` (or `/plugin` UI).
+   - **Kiro / OpenCode / Antigravity:** re-import or re-copy from the repo /
+     release artifact.
+3. After refresh, reconnect MCP if tool schemas look cached, then retry.
+
+Do **not** invent a local `npx` MCP or rewrite `~/.loxtep` configs as the fix —
+skills lag is almost always “refresh the plugin,” not auth.
+
 ## Pitfalls
 
 - **`get_current_user`** needs the platform Organizations API reachable from the
