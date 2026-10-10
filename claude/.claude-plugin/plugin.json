@@ -1,13 +1,26 @@
 {
   "name": "loxtep",
   "displayName": "Loxtep",
-  "version": "1.1.7",
+  "version": "1.1.11",
   "description": "The AI-first, governed data layer for your business, in Claude Code. Connect your data (Postgres, Shopify, Stripe, webhooks) and query it from your agent over hosted MCP, with audit and field masking on by default.",
-  "author": { "name": "Loxtep" },
+  "author": {
+    "name": "Loxtep"
+  },
   "homepage": "https://loxtep.io",
   "repository": "https://github.com/LoxtepInc/loxtep-plugins-skills",
   "license": "MIT",
-  "keywords": ["data-products", "event-streaming", "data-governance", "semantic-layer", "ai-context", "lineage", "mcp", "real-time", "catalog", "sql-analytics"],
+  "keywords": [
+    "data-products",
+    "event-streaming",
+    "data-governance",
+    "semantic-layer",
+    "ai-context",
+    "lineage",
+    "mcp",
+    "real-time",
+    "catalog",
+    "sql-analytics"
+  ],
   "skills": "./skills/",
   "rules": "./rules/",
   "mcpServers": "./.mcp.json"
