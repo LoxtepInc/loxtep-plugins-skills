@@ -1,9 +1,11 @@
 {
   "name": "loxtep",
   "displayName": "Loxtep",
-  "version": "1.1.7",
+  "version": "1.1.11",
   "description": "The AI-first, governed data layer for your business, in Cursor. Connect your data (Postgres, Shopify, Stripe, webhooks) and query it from your agent over hosted MCP, with audit and field masking on by default.",
-  "author": { "name": "Loxtep" },
+  "author": {
+    "name": "Loxtep"
+  },
   "homepage": "https://github.com/LoxtepInc/loxtep-plugins-skills/tree/main/cursor",
   "keywords": [
     "data-products",

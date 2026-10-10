@@ -3,11 +3,16 @@ name: Publish release
 # On every push to main:
 #   1. Gate on URL safety — fail if any shipped MCP config points at a non-prod
 #      host (Requirements 1.5, 3.4 / Property 2).
-#   2. Run the install-doc audit.
-#   3. If the marketplace version changed vs. the previous commit, cut a git tag
+#   2. Require marketplace / plugin.json / server.json versions to match.
+#   3. Run the install-doc audit.
+#   4. If the marketplace version changed vs. the previous commit, cut a git tag
 #      (v<version>) and publish a GitHub release with the bundled configs/skills
 #      as an artifact, so installs resolve to a pinned version, not `main`
 #      (Requirement 1.2).
+#   5. Fail loudly if a bump did not produce a release (duplicate tag, etc.).
+#   6. Fail loudly with catalog-refresh instructions — GitHub releases do NOT
+#      update Cursor/Grok user-marketplace pins; those stay on the first SHA
+#      unless remove+add is run.
 
 on:
   push:
@@ -15,6 +20,9 @@ on:
     paths:
       - '.claude-plugin/marketplace.json'
       - '.cursor-plugin/marketplace.json'
+      - 'claude/.claude-plugin/plugin.json'
+      - 'cursor/.cursor-plugin/plugin.json'
+      - 'server.json'
       - 'skills/**'
       - '.loxtep/skills/**'
       - 'claude/**'
@@ -47,6 +55,9 @@ jobs:
       - name: URL-safety lint (fail on non-prod host)
         run: node scripts/lint-config-urls.mjs
 
+      - name: Require marketplace / plugin / server versions to match
+        run: node scripts/check-version-sync.mjs
+
       - name: Verify generated skill output matches canonical source
         run: node scripts/generate-skills.mjs --check
 
@@ -78,13 +89,14 @@ jobs:
         run: |
           TAG="${{ steps.ver.outputs.tag }}"
           if git ls-remote --tags origin "refs/tags/$TAG" | grep -q "$TAG"; then
+            echo "::error::Tag $TAG already exists on origin, but marketplace version was bumped to ${{ steps.ver.outputs.version }}. Refusing to leave a silent no-op release. Bump to a new version or delete the stale tag deliberately."
             echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
+            exit 1
           fi
+          echo "exists=false" >> "$GITHUB_OUTPUT"
 
       - name: Package release artifact
-        if: steps.changed.outputs.bumped == 'true' && steps.tagcheck.outputs.exists == 'false'
+        if: steps.changed.outputs.bumped == 'true'
         run: |
           zip -r "loxtep-plugins-skills-${{ steps.ver.outputs.tag }}.zip" \
             claude cursor opencode kiro antigravity codex \
@@ -92,7 +104,8 @@ jobs:
             -x '*/node_modules/*'
 
       - name: Create tag and release
-        if: steps.changed.outputs.bumped == 'true' && steps.tagcheck.outputs.exists == 'false'
+        if: steps.changed.outputs.bumped == 'true'
+        id: release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -102,4 +115,44 @@ jobs:
           gh release create "$TAG" \
             "loxtep-plugins-skills-$TAG.zip" \
             --title "$TAG" \
-            --notes "Automated release for marketplace version ${{ steps.ver.outputs.version }}. Install pinned to this tag rather than main."
+            --notes "Automated release for marketplace version ${{ steps.ver.outputs.version }}. Install pinned to this tag rather than main.
+
+          ## Catalog refresh (required — not automatic)
+
+          Cursor/Grok user marketplaces pin the first commit SHA they see.
+          \`agent plugin marketplace update loxtep\` reports success but does
+          **not** move the pin (known Cursor bug). After this release, an
+          operator with Cursor auth MUST run:
+
+          \`\`\`bash
+          agent plugin marketplace remove loxtep
+          rm -rf ~/.cursor/plugins/cache/loxtep \\
+                 ~/.cursor/plugins/marketplaces/github.com/loxtepinc/loxtep-plugins-skills
+          agent plugin marketplace add https://github.com/LoxtepInc/loxtep-plugins-skills
+          \`\`\`
+
+          Then confirm the mirror SHA is this release commit (or \`$TAG\`) and
+          \`plugin.json\` reports version ${{ steps.ver.outputs.version }}.
+
+          Official Cursor Marketplace listings (if any) still need a manual
+          resubmit/review at https://cursor.com/marketplace/publish.
+          Grok Build official catalog updates go through a PR to
+          https://github.com/xai-org/plugin-marketplace pinning this SHA."
+          echo "created=true" >> "$GITHUB_OUTPUT"
+
+      - name: Fail if version bump did not publish
+        if: steps.changed.outputs.bumped == 'true' && steps.release.outcome != 'success'
+        run: |
+          echo "::error::Marketplace version bumped to ${{ steps.ver.outputs.version }} but the GitHub release step did not succeed."
+          exit 1
+
+      - name: Catalog refresh reminder (always on bump)
+        if: steps.changed.outputs.bumped == 'true' && steps.release.outcome == 'success'
+        run: |
+          SHA=$(git rev-parse HEAD)
+          echo "::warning::GitHub release ${{ steps.ver.outputs.tag }} published at $SHA. Cursor/Grok catalog pins are NOT updated by this workflow — run the remove+add commands in the release notes or the listing will stay stale."
+          # Soft gate: write a machine-readable marker so release tooling can
+          # assert catalog refresh happened out-of-band.
+          mkdir -p dist
+          printf '%s\n' "$SHA" "${{ steps.ver.outputs.version }}" > dist/catalog-refresh-required.txt
+          cat dist/catalog-refresh-required.txt

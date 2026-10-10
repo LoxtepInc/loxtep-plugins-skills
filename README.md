@@ -69,6 +69,7 @@ ships (e.g. new workflow guides or retired transform types).
 
 | Client | How to pick up the latest skills |
 | --- | --- |
+| **Cursor / Grok (user marketplace `loxtep`)** | `EXPECTED_VERSION=<semver> ./scripts/refresh-cursor-marketplace.sh` — **required** after every release. `agent plugin marketplace update` does **not** move the pin. |
 | **Cursor (team marketplace)** | Admin **Refresh** (or enable **Auto Refresh** + Cursor GitHub App), then refocus/restart Cursor |
 | **Cursor (Import / local)** | Re-import the repo or reinstall the `cursor/` plugin |
 | **Claude Code** | `claude plugin marketplace update` then `claude plugin install loxtep-claude@loxtep` |
