@@ -34,11 +34,20 @@ rm -rf "${HOME}/.cursor/plugins/marketplaces/github.com/LoxtepInc/loxtep-plugins
 echo "Re-adding ${REPO_URL}..."
 agent plugin marketplace add "${REPO_URL}"
 
-MIRROR_SHA_DIR="$(
+MIRROR_SHA_DIR=""
+while IFS= read -r -d '' dir; do
+  base="$(basename "${dir}")"
+  if [[ "${base}" =~ ^[0-9a-f]{40}$ ]]; then
+    MIRROR_SHA_DIR="${dir}"
+    break
+  fi
+done < <(
   find "${HOME}/.cursor/plugins/marketplaces/github.com" \
-    -maxdepth 3 -type d -regex '.*/loxtep-plugins-skills/[0-9a-f]\{40\}$' \
-    2>/dev/null | head -1 || true
-)"
+    -type d -name 'loxtep-plugins-skills' -print0 2>/dev/null \
+    | while IFS= read -r -d '' repo; do
+        find "${repo}" -mindepth 1 -maxdepth 1 -type d -print0
+      done
+)
 if [[ -z "${MIRROR_SHA_DIR}" ]]; then
   echo "error: could not locate sha-pinned marketplace checkout" >&2
   find "${HOME}/.cursor/plugins/marketplaces" -maxdepth 5 -type d -name 'loxtep*' -print 2>/dev/null || true
