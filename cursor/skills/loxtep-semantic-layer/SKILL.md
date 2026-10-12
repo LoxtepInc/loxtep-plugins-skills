@@ -4,8 +4,9 @@ name: loxtep-semantic-layer
 description:
   Use when the user wants to search the semantic layer, retrieve semantic
   artifacts, check semantic completeness, manage canonical knowledge (strategy,
-  positioning, brand voice, org structure, process docs), or
-  stage/review/approve semantic packages (HITL before deploy).
+  positioning, brand voice, org structure, process docs), stage/review/approve
+  semantic packages (HITL before deploy), or review vocabulary_term agent
+  proposals (list, infer definitions, accept/reject).
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/cursor/skills/loxtep-semantic-layer/SKILL.md
 ---
@@ -28,6 +29,8 @@ structure, and process documentation.
   "**process documentation**"
 - "Store **business strategy** for agents", "Define our **brand positioning**",
   "Document **organizational structure**"
+- "**Review vocabulary proposals**", "**infer definitions** for pending terms",
+  "**accept/reject agent proposals**" from connect detection
 
 ## Prerequisites
 
@@ -65,21 +68,44 @@ structure, and process documentation.
 5. **Do not deploy** until the user explicitly asks after approval. Deploy is
    `deploy_semantic_package` — a separate step.
 
+### Vocabulary agent proposals (connect → review → assert)
+
+Connect heuristics queue pending `vocabulary_term` proposals. Nothing is asserted
+until Accept. **Business-field confidence** (e.g. Medium ≈ 55%) is not definition
+quality. Detection metadata (`canonical_key`, `data_type`, `proposal_source`) is
+not a glossary definition and not a sample event.
+
+1. `list_semantic_proposals` with `disposition: pending` (optional
+   `proposal_type: vocabulary_term`, `data_product_id`).
+2. For each item, check `proposal_payload.definition`. If missing, call
+   `infer_proposal_definitions` with up to 20 `semantic_proposal_ids`.
+3. Review drafts. `undefined_ids` means the model omitted that key (often thin
+   name/type context) — do not treat as a hard API failure.
+4. Accept with `accept_semantic_proposal` only when a definition exists, or pass
+   `definition` on accept. Reject noise with `reject_semantic_proposal`.
+5. **Never accept** a `vocabulary_term` without a definition.
+
+SDK/CLI: `client.meaning.proposals` / `loxtep proposals list|infer-definitions|accept|reject`.
+
 ## Operations
 
-| Facade                  | Operation                    | Permission |
-| ----------------------- | ---------------------------- | ---------- |
-| `loxtep_meaning`        | `search_semantic_layer`      | search     |
-| `loxtep_meaning`        | `get_semantic_artifact`      | read       |
-| `loxtep_meaning`        | `get_semantic_completeness`  | read       |
-| `loxtep_meaning`        | `create_canonical_knowledge` | write      |
-| `loxtep_meaning`        | `get_canonical_knowledge`    | read       |
-| `loxtep_meaning`        | `list_canonical_knowledge`   | read       |
-| `loxtep_meaning`        | `update_canonical_knowledge` | write      |
-| `loxtep_meaning`        | `import_semantic_bundle`     | write      |
-| `loxtep_meaning`        | `approve_semantic_package`   | write      |
-| `loxtep_meaning`        | `reject_semantic_package`    | write      |
-| `loxtep_package_review` | `review_semantic_package`    | read       |
+| Facade                  | Operation                     | Permission |
+| ----------------------- | ----------------------------- | ---------- |
+| `loxtep_meaning`        | `search_semantic_layer`       | search     |
+| `loxtep_meaning`        | `get_semantic_artifact`       | read       |
+| `loxtep_meaning`        | `get_semantic_completeness`   | read       |
+| `loxtep_meaning`        | `create_canonical_knowledge`  | write      |
+| `loxtep_meaning`        | `get_canonical_knowledge`     | read       |
+| `loxtep_meaning`        | `list_canonical_knowledge`    | read       |
+| `loxtep_meaning`        | `update_canonical_knowledge`  | write      |
+| `loxtep_meaning`        | `import_semantic_bundle`      | write      |
+| `loxtep_meaning`        | `approve_semantic_package`    | write      |
+| `loxtep_meaning`        | `reject_semantic_package`     | write      |
+| `loxtep_meaning`        | `list_semantic_proposals`     | read       |
+| `loxtep_meaning`        | `infer_proposal_definitions`  | write      |
+| `loxtep_meaning`        | `accept_semantic_proposal`    | write      |
+| `loxtep_meaning`        | `reject_semantic_proposal`    | write      |
+| `loxtep_package_review` | `review_semantic_package`     | read       |
 
 ## MCP mapping
 
@@ -164,10 +190,14 @@ Do not pass both `id` and `content_ref` on get.
 
 ## Pitfalls
 
+- **Pending connect proposals** — Medium/High confidence is business-field
+  score only. Do not accept without `proposal_payload.definition` (or supply
+  `definition` on accept). Prefer Infer, then review, then Accept; Reject if
+  the field is not a real business term.
 - **Ontology/vocabulary management** (thesaurus terms, namespace mappings) is
-  **`loxtep_meaning`** - different facade. This Agent-Scope Skill is for
-  _querying_ the curated semantic layer and managing canonical knowledge, not
-  managing its underlying ontology structure.
+  **`loxtep_meaning`** - same facade as proposal review. This skill covers
+  query/completeness, canonical knowledge, packages, and vocabulary proposal
+  review — not graph ontology structure editing.
 - **`search_semantic_layer` with `artifact_types: schema` is not domain
   schemas.** It searches `schema_registry_cache` / curated artifacts — not
   `domain_schemas` from `create_schema`. Org **shapes** live under
