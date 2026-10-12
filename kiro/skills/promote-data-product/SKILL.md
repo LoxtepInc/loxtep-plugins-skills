@@ -64,6 +64,11 @@ metadata:
   rules, or `promote_data_product` until `get_data_product` shows a non-empty
   `schema.fields`. The next step is `create_schema` / `apply_schema`, then
   re-read the product.
+- `get_definition_status` `identifier_present` means the applied shape marked
+  `is_primary_key`. Iceberg reads `schema.key` on the catalog snapshot
+  (`data_products.schema`). When `catalog_refresh` is set, re-apply that shape.
+  A semantic binding, a contract `schema_ref`, or `query_trigger.primary_key`
+  does not write the storage key.
 - Definitions must be reviewed before running this — use
   `semantic-ontology-mapping` first
 - Data standards (field descriptions, PII classification, quality rules, data
