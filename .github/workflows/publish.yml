@@ -99,7 +99,7 @@ jobs:
         if: steps.changed.outputs.bumped == 'true'
         run: |
           zip -r "loxtep-plugins-skills-${{ steps.ver.outputs.tag }}.zip" \
-            claude cursor opencode kiro antigravity codex \
+            claude cursor opencode kiro antigravity codex grok \
             .claude-plugin .cursor-plugin README.md AGENTS.md LICENSE \
             -x '*/node_modules/*'
 
