@@ -1,0 +1,522 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
+---
+name: loxtep-sdk
+description:
+  Bootstrap @loxtep/sdk in Node (auth, env, REST vs Loxtep streams), map MCP
+  tools to SDK methods, including client.connect.connectors, and avoid mixing
+  JWT with IAM. Use when adding Loxtep SDK usage, queue readers/writers, or
+  pairing MCP with runtime code.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/grok/skills/loxtep-sdk/SKILL.md
+---
+
+# Loxtep Node SDK (Agent-Scope Skill)
+
+## Methodology (CLI vs MCP)
+
+| Surface              | Happy path                                                                                   |
+| -------------------- | -------------------------------------------------------------------------------------------- |
+| **CLI / code-first** | `loxtep ingest create` → `transform create` → `delivery create` → `lint` → `push` → `deploy` |
+| **MCP (primitives)** | `get_entity_schemas` → `save_workflow_bundle` → `deploy_workflow`                            |
+
+**Trigger** = connector at the ingest head; **Target** = connector at the
+delivery tail — both are `connections/{id}.json` with `connector_id`. Delivery
+workflows use `workflow_type: "delivery"` (never `consumption`). Prefer Target
+connections in the bundle over `create_delivery` / `list_deliveries` (legacy
+consumptions table).
+
+## Connectors (org credentials — not ingest)
+
+SDK namespace: `client.connect.connectors` (Node and Python). REST base
+`/connectors/connectors`. Methods that exist: `list`, `get`, `create`, `update`,
+`delete`, `test`, `capture_samples`, `get_oauth_url`. There is no
+`list_connector_types` on the SDK — use MCP `loxtep_connect` /
+`list_connector_types`.
+
+```ts
+const created = await client.connect.connectors.create({
+  connector_type: '<slug>',
+  metadata: { name: '<display name>' },
+});
+const probe = await client.connect.connectors.test(created.connector_id);
+```
+
+`test(connector_id)` POSTs an empty body. It does **not** accept `instance_id`.
+For a customer-VPC probe when the org has multiple instances, use MCP
+`test_connector` with `instance_id` or REST
+`POST /connectors/connectors/{id}/test`. CLI:
+`loxtep connectors list|test|capture-samples` only — there is no
+`loxtep connectors create` / `get`. Full connect/test procedure:
+**`connect-external-system`**. `test` does not start ingestion;
+`capture_samples` retrieves source rows and needs user authorization.
+
+## CLI workspace commands (plural + status)
+
+- Prefer **`loxtep projects list`** / **`loxtep projects get <id>`** (plural).
+  Do not teach the obsolete singular `loxtep project list`.
+- **`loxtep status`** is cwd-first project workspace status
+  (local/cloud/deployed). It is **not** `loxtep observe status` (runtime
+  bots/queues).
+- **After attach / before deep ingest or deploy:** run
+  **`loxtep projects list`**
+  - **`loxtep status`** (or MCP `list_projects` +
+    `get_project_workspace_status`), then **`loxtep projects clone|link`** using
+    any `materialization_plan.cli_commands`. Hosted MCP never writes local
+    paths.
+
+## Recommended: Data-product-centric writer & reader
+
+**Use `data_products.get_writer(id_or_name)` and
+`data_products.get_reader(id_or_name)` as the primary pattern.** These methods
+resolve all plumbing (queue names, bot IDs, stream bus config) automatically
+from the data product name or UUID — no manual runtime-mapping lookups needed.
+
+### Delivery (outbound) — prefer Target connections
+
+Do **not** teach `client.targets.create` / MCP `create_delivery` as the happy
+path for pushing data out. Author a delivery workflow with a **Target**
+connection via **`data-workflows`** Flow D (`save_workflow_bundle` +
+`deploy_workflow`), or CLI `loxtep delivery create` → `lint` → `push` →
+`deploy`.
+
+```bash
+loxtep delivery create …   # local package: Target at delivery tail
+loxtep lint
+loxtep push
+loxtep deploy
+```
+
+### Copy-paste: write events to a data product
+
+```ts
+import { LoxtepClient } from '@loxtep/sdk';
+
+const client = new LoxtepClient({
+  api_url: process.env.LOXTEP_API_URL!,
+  auth: { type: 'jwt', token: process.env.LOXTEP_AUTH_TOKEN! },
+});
+
+// Resolve by name — SDK handles queue, bot_id, and stream bus config
+const writer = await client.data_products.get_writer('my-data-product');
+
+writer.write({ id: '123', name: 'Example', timestamp: Date.now() });
+writer.write({ id: '456', name: 'Another', timestamp: Date.now() });
+
+await writer.close();
+```
+
+### Copy-paste: read events from a data product
+
+```ts
+import { LoxtepClient } from '@loxtep/sdk';
+
+const client = new LoxtepClient({
+  api_url: process.env.LOXTEP_API_URL!,
+  auth: { type: 'jwt', token: process.env.LOXTEP_AUTH_TOKEN! },
+});
+
+const reader = await client.data_products.get_reader('my-data-product');
+
+for await (const event of reader) {
+  console.log(event.payload);
+}
+```
+
+### Options
+
+```ts
+// Writer options
+const writer = await client.data_products.get_writer('my-data-product', {
+  bot_id: 'custom-bot-id', // override resolved bot (advanced)
+  batch_size: 100, // events per batch (default: 100)
+  max_retries: 3, // retry attempts (default: 3)
+});
+
+// Reader options
+const reader = await client.data_products.get_reader('my-data-product', {
+  bot_id: 'my-reader-bot', // custom reader identity for checkpointing
+  from: 'z/2024/01/01', // start position
+  batch_size: 100, // events per batch (default: 100)
+});
+```
+
+### Cache invalidation
+
+The SDK caches resolved data product config in memory. To force re-resolution:
+
+```ts
+client.data_products.invalidate_cache('my-data-product'); // specific
+client.data_products.invalidate_cache(); // all
+```
+
+### Lower-level escape hatch: `workflows.get_writer`
+
+For cases where you need explicit control over bot_id and queue name (e.g.,
+writing to a queue that isn't a data product, or using a non-standard bot
+identity), use the lower-level `workflows.get_writer()`:
+
+```ts
+const writer = await client.workflows.get_writer({
+  bot_id: 'custom-bot-id',
+  queue: 'explicit-queue-name',
+});
+writer.write({ ... });
+await writer.close();
+```
+
+> **Prefer `data_products.get_writer`** unless you have a specific reason to
+> manage queue/bot resolution yourself.
+
+## CRITICAL — Deployment prerequisite
+
+**Queues and bots do NOT exist until a workflow is deployed to an instance.**
+Design-time configuration (creating workflows, connections, data products via
+MCP or UI) only defines the graph — it does not provision runtime
+infrastructure. You **must** deploy the project before the SDK can write or read
+events.
+
+**Deployment creates:**
+
+- The microservice identifier (namespace for all bots/queues)
+- Bot registrations on the stream bus
+- Queue registrations on the stream bus
+- The `runtime_mapping` that maps entities → containers → bot_ids/queue_ids
+
+**If you skip deployment**, SDK calls to `data_products.get_writer()` or
+`workflows.get_writer()` will fail with "data product not deployed" or "queue
+not found" errors.
+
+**How to deploy:** Use **`loxtep_build`** MCP facade:
+
+1. `deploy_project` — triggers async deployment (requires `project_id` +
+   `instance_id`)
+2. `list_deployments` or `get_deployment` — poll until status is `deployed`
+3. After deployment, `data_products.get_writer('name')` resolves automatically
+
+See the **`data-workflows`** Agent-Scope Skill (Flow F — Deploy before SDK
+ingestion) for the full sequence.
+
+## Runtime naming convention (how queues and bots are named)
+
+After deployment, all runtime resources follow a hierarchical naming scheme:
+
+### 1. Microservice identifier (workflow namespace)
+
+```
+{instance_id_8}-{project_id_8}-{workflow_id_8}
+```
+
+UUIDs are stripped of hyphens and truncated to the first 8 characters. Example:
+`a1b2c3d4-e5f6g7h8-i9j0k1l2`
+
+### 2. Container ID (entity-level identifier)
+
+```
+{entity_prefix}-{first_8_chars_of_entity_uuid}
+```
+
+| Entity type    | Prefix |
+| -------------- | ------ |
+| connection     | `conn` |
+| transformation | `xfm`  |
+| validation     | `val`  |
+| data_product   | `dp`   |
+| export         | `exp`  |
+| workflow       | `pipe` |
+
+Example: `xfm-a1b2c3d4`, `conn-e5f6g7h8`
+
+### 3. Bot names
+
+```
+{microservice_id}-bot-{container_id}-{role}
+```
+
+Example: `a1b2c3d4-e5f6g7h8-i9j0k1l2-bot-conn-e5f6g7h8-handler`
+
+### 4. Queue names
+
+```
+{microservice_id}-queue-{container_id}-{direction}
+```
+
+Where `direction` is `in`, `out`, or `err`.
+
+Example: `a1b2c3d4-e5f6g7h8-i9j0k1l2-queue-conn-e5f6g7h8-in`
+
+### 5. Resolving names at runtime (don't hardcode)
+
+**Never hardcode queue or bot names.** Use the runtime-mapping API:
+
+```
+GET /workflows/{workflow_id}/runtime-mapping?project_id={project_id}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "workflow_id": "...",
+    "deployment_id": "...",
+    "mapping_source": "deployment",
+    "runtime_mapping": {
+      "microservice_id": "a1b2c3d4-e5f6g7h8-i9j0k1l2",
+      "containers": [
+        {
+          "container_id": "conn-e5f6g7h8",
+          "entity_id": "full-uuid-of-connection",
+          "entity_type": "connections",
+          "bot_ids": ["a1b2c3d4-e5f6g7h8-i9j0k1l2-bot-conn-e5f6g7h8-handler"],
+          "queue_ids": [
+            "a1b2c3d4-e5f6g7h8-i9j0k1l2-queue-conn-e5f6g7h8-in",
+            "a1b2c3d4-e5f6g7h8-i9j0k1l2-queue-conn-e5f6g7h8-out",
+            "a1b2c3d4-e5f6g7h8-i9j0k1l2-queue-conn-e5f6g7h8-err"
+          ]
+        }
+      ],
+      "all_bot_ids": ["..."],
+      "all_queue_ids": ["..."]
+    }
+  }
+}
+```
+
+Use `entity_id` to find the container for your connection/transform/data
+product, then read its `queue_ids[0]` (input queue) for writing events.
+
+### 6. SDK event writing (via stream bus)
+
+The SDK writes events through the **stream bus** — not via HTTP.
+
+**Recommended:** Use `data_products.get_writer('name')` — it resolves the
+runtime mapping, bot_id, queue, and stream bus config automatically. See the top
+of this document.
+
+**Lower-level path (explicit control):**
+
+1. Resolve the runtime mapping (via MCP `get_runtime_mapping` or CLI
+   `loxtep config export`)
+2. Configure the SDK client with the deployed `bot_id` and target queue
+3. Use `workflows.get_writer()` which writes directly to the stream bus queue
+
+**Quick path — export config from a deployed connector:**
+
+```bash
+# Resolves the deployed bot_id and queue from the runtime mapping
+loxtep config export --from-connector "<connector_id>" --format env
+```
+
+Then the SDK client picks up `LOXTEP_BOT_ID` and queue configuration
+automatically.
+
+## MCP operations
+
+| Facade           | `operation`                                                       | Permission | Notes                                                                                                            |
+| ---------------- | ----------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------- |
+| `loxtep_build`   | `get_sdk_config`                                                  | read       | Writer identity + snippet. Bus physical names: REST stream-config, not this op                                   |
+| `loxtep_build`   | `get_entity_schemas` / `save_workflow_bundle` / `deploy_workflow` | write      | Delivery via Target connection + `workflow_type: "delivery"`. **`create_delivery` / `list_deliveries` removed**. |
+| `loxtep_build`   | `deploy_workflow`                                                 | write      | Deploy a single workflow to an instance                                                                          |
+| `loxtep_observe` | `list_deployments`                                                | read       | List deployment records (poll for status)                                                                        |
+| `loxtep_observe` | `get_deployment`                                                  | read       | Get a single deployment record by ID                                                                             |
+| `loxtep_review`  | `list_pending`                                                    | read       | SDK: `client.review.approvals.list_pending()`                                                                    |
+| `loxtep_review`  | `resolve`                                                         | write      | SDK: `client.review.approvals.approve()` / `.reject()`                                                           |
+| `loxtep_meaning` | `create_term` / `get_term` / … / `sync_vocabulary`                | write/read | SDK: `client.meaning.thesaurus.*`                                                                                |
+| `loxtep_meaning` | ontology concept CRUD + relationships                             | write/read | SDK: `client.meaning.ontology.*` (`node_type` lowercase: `entity`, …)                                            |
+| `loxtep_meaning` | `list_semantic_proposals` / `infer_proposal_definitions` / `accept_semantic_proposal` / `reject_semantic_proposal` | read/write | SDK: `client.meaning.proposals.*`; CLI: `loxtep proposals list\|accept\|reject\|infer-definitions` |
+| `loxtep_define`  | `create_schema` / `list_schemas` / `apply_schema` / `patch_schema` | write/read | Domain shapes: `client.define.shapes.*` (not data-product `client.define.schemas`)                               |
+
+**Define meaning** = terms + shapes. Ontology concepts are graph types /
+relationships. See `docs/sdk-mcp-mapping.md` in `@loxtep/sdk` for full parity
+tables (and explicit MCP-only gaps).
+
+### Vocabulary proposals (SDK + CLI)
+
+```ts
+const pending = await client.meaning.proposals.list({ disposition: 'pending' });
+await client.meaning.proposals.infer_definitions(ids);
+await client.meaning.proposals.accept(id, { definition: '…' }); // optional draft
+await client.meaning.proposals.reject(id);
+```
+
+```bash
+loxtep proposals list --disposition pending --proposal-type vocabulary_term
+loxtep proposals infer-definitions <id> [<id>…]
+loxtep proposals accept <id> --definition "Business meaning…"
+loxtep proposals reject <id>
+```
+
+Do not accept a `vocabulary_term` without a definition. Confidence on the proposal
+is business-field detection score, not glossary quality. Details:
+**`loxtep-semantic-layer`** (Vocabulary agent proposals).
+
+## Approving pipeline gates from code (`client.review.approvals`)
+
+The `define` PKO pipeline (schema → meaning → relationships → quality → promote)
+pauses at each `hitl_gate: approval` step and creates an `approval_request` —
+the same record surfaced in the Steward Inbox/Define surfaces and delivered over
+Slack/email. Resolve it programmatically with the Phase D review namespace
+(`@loxtep/sdk@0.9.7+`); do not use a top-level `client.approvals` path:
+
+```ts
+const pending = await client.review.approvals.list_pending();
+for (const approval of pending.items) {
+  await client.review.approvals.approve(approval.approval_request_id);
+}
+```
+
+`organization_id` defaults from the client's constructor option; pass it
+per-call to override
+(`client.review.approvals.resolve(id, 'reject', organizationId)`).
+
+`get_sdk_config` returns writer identity (`bot_id`, `queue_name`) and
+`bus_config_path`. It does **not** return Leo/S3/Kinesis/Firehose names.
+Engineers who need those run `loxtep instances stream-config [<instance_id>]`
+(Node CLI), `client.workspace.instances.get_stream_config(id)` (Node or Python
+SDK), or REST `GET /organizations/instances/{instance_id}/stream-config`
+(permission `instances:read`). Do not fetch them over MCP.
+
+<!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+
+## Agent-Scope Skill scope (`.loxtep/skills/loxtep-sdk.yaml`)
+
+Resource scope and operation permissions for this Agent-Scope Skill, conformant
+with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json)
+schema. Any resource type or operation not listed is **denied (fail-closed)**.
+Identifier lists are empty placeholders — fill them with the specific resources
+in your workspace. This declaration does not change the hosted MCP config
+(`mcp.loxtep.io`).
+
+```yaml
+# .loxtep/skills/loxtep-sdk.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Scoped to ONLY the identifiers listed; least-privilege per operation. Fail-closed.
+name: loxtep-sdk
+description: SDK runtime read/write to data products and their queues.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  deployments: []
+  domains: []
+  queues: []
+permissions:
+  data_products: [read, write]
+  deployments: [read, write]
+  queues: [read, write]
+```
+
+<!-- END loxtep skill-scope (skill-package-v1) -->
+
+## Implementation notes
+
+**MCP facade mapping:** deploy writes (`deploy_project`, `deploy_workflow`,
+`get_runtime_mapping`) → `loxtep_build`. Deployment status reads
+(`list_deployments`, `get_deployment`) → `loxtep_observe`. Delivery → Target
+connection in `save_workflow_bundle` (`workflow_type: "delivery"`), not
+`create_delivery` / `list_deliveries`. SDK config → `get_sdk_config`. Approvals
+→ `loxtep_review` (`list_pending`, `resolve`) / `client.review.approvals.*`
+(CLI: `loxtep approvals`).
+
+Use the **10 MCP job facades** above when calling hosted MCP tools; the SDK
+namespaces mirror those facades (`client.build`, `client.observe`,
+`client.review`, …). Deprecated 22-facade names are not accepted by the hosted
+server.
+
+## Auth (single mental model)
+
+1. `LOXTEP_AUTH_TOKEN` env var (CI/ephemeral), else
+2. `~/.loxtep/credentials.json` (`loxtep login`).
+
+CLI/SDK do **not** auto-merge until one of these exists plus `api_url`.
+
+## Copy-paste: client bootstrap
+
+```ts
+import { LoxtepClient } from '@loxtep/sdk';
+
+export function createRuntimeClient() {
+  return new LoxtepClient({
+    api_url: process.env.LOXTEP_API_URL!.replace(/\/$/, ''),
+    auth: { type: 'jwt', token: process.env.LOXTEP_AUTH_TOKEN! },
+    organization_id: process.env.LOXTEP_ORGANIZATION_ID,
+    project_id: process.env.LOXTEP_PROJECT_ID,
+    instance_id: process.env.LOXTEP_INSTANCE_ID,
+    default_bot_id: process.env.LOXTEP_BOT_ID,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID ?? 'cli',
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? 'cli',
+    },
+  });
+}
+```
+
+## Bootstrapping from an SDK Connector
+
+If an SDK connector already exists (created via UI, API, or MCP — see the
+**`connect-external-system`** Agent-Scope Skill), export its `sdk_config`
+directly:
+
+```bash
+# Export as shell exports (source-able)
+loxtep config export --from-connector "<connector_id>" --format sh
+
+# Export as JSON (for programmatic use)
+loxtep config export --from-connector "<connector_id>" --format json
+
+# Export as .env file
+loxtep config export --from-connector "<connector_id>" --format env
+```
+
+The `--from-connector` flag fetches the connector's `sdk_config` (containing
+`api_url`, `organization_id`, `project_id`, `instance_id`, `region`) and outputs
+it in the requested format.
+
+**Quick start from a connector:**
+
+```bash
+# 1. Source the connector config into your shell
+eval "$(loxtep config export --from-connector "<connector_id>" --format sh)"
+
+# 2. SDK client picks up env vars automatically
+node -e "
+  const { LoxtepClient } = require('@loxtep/sdk');
+  const client = new LoxtepClient();
+  // client is configured from LOXTEP_* env vars
+"
+```
+
+> To create an SDK connector in the first place, see the
+> **`connect-external-system`** Agent-Scope Skill (Flow — SDK Connector).
+
+## Shell exports from an existing data product
+
+```bash
+loxtep config export --from-data-product "<name_or_uuid>" --format sh
+# or JSON for apps:
+loxtep config export --from-data-product "<name_or_uuid>" --format json
+```
+
+> **Note:** For most use cases, `data_products.get_writer('name')` resolves
+> everything automatically — you only need CLI config export for debugging or
+> non-SDK environments.
+
+## MCP vs SDK
+
+- **MCP:** provisioning, catalog, agent tool calls over HTTP.
+- **SDK:** typed REST + **Loxtep streams** (live queues / bus).
+- See shipped docs in `@loxtep/sdk`: `docs/sdk-pairing.md`,
+  `docs/sdk-mcp-mapping.md`.
+
+## Stream vs replay
+
+- **`data_products.stream`:** live bus via the stream data plane when `bot_id` +
+  bus config exists.
+- **`data_products.replay`:** historical path via platform HTTP (observe/trace
+  semantics).
+
+## Bus credentials
+
+JWT is **not** bus IAM. Use your instance's stream resource env + AWS principal;
+future `loxtep bus login` will wrap RBAC issuance — until then see
+`docs/sdk-bus-rbac-threat-model.md`.

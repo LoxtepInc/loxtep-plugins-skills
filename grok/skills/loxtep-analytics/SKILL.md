@@ -1,0 +1,106 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
+---
+name: loxtep-analytics
+description:
+  Use when the user wants SQL analytics over the mesh, SQL queries, list tables,
+  table schema, execute query, or poll query results. Customer MCP loxtep_query.
+  User story S6. See docs/skills-user-stories.md.
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/grok/skills/loxtep-analytics/SKILL.md
+---
+
+# Analytics and SQL (Customer MCP)
+
+**Story S6:** Explore curated mesh data with **SQL** — discover tables, inspect
+schema, run queries, fetch results.
+
+## When to use
+
+- “Run **SQL**”, “**list tables**”, “**schema** for table”, “**execute_query**”,
+  “get **query results**”
+
+## Prerequisites
+
+- MCP auth. Operations are **organization**-scoped in MCP map.
+
+## Happy-path flow
+
+1. `loxtep_query` → `list_tables`.
+2. `get_table_schema` for chosen table(s).
+3. `execute_query` with the required `query` parameter (the SQL text). The
+   required parameter is named `query`, not `sql`.
+4. `get_query_results` if execution is asynchronous or paginated.
+
+## MCP mapping
+
+| Step    | Tool           | `operation`         | Scope        |
+| ------- | -------------- | ------------------- | ------------ |
+| List    | `loxtep_query` | `list_tables`       | organization |
+| Schema  | `loxtep_query` | `get_table_schema`  | organization |
+| Run     | `loxtep_query` | `execute_query`     | organization |
+| Results | `loxtep_query` | `get_query_results` | organization |
+
+## Pitfalls
+
+- Large result sets — use limits / pagination per platform.
+- Wrong **org** or missing permissions show as auth or empty results.
+- **Execution environment** — Analytics runs against governed mesh tables via
+  `loxtep_query`, not an arbitrary external database URL.
+- **Iceberg is deliberate opt-in** — workflow deploy does not enable Iceberg.
+  Enable with `loxtep_observe` → `enable_iceberg_table` after the product has a
+  storage identity: `schema.key`, or the same fields marked `is_primary_key`.
+  The journey step is `procedure#materialize-iceberg-table`. The engine does
+  not call enable. Omit `backfill_from` and do not send `identifier_fields`.
+  Applying a shape writes `schema.key`. A semantic binding does not. The writer
+  concatenates those source values with `|` into `lx__id`. Do not pick `lx__id`
+  as a key field, and do not default the key to it. Omit `backfill_from` to skip
+  history replay. The partition field must be on the schema. Empty or “unknown
+  table” warehouse errors usually mean Iceberg was never enabled.
+- **Iceberg rebuild** — requires that enablement and the same storage identity.
+  Iceberg stores are Amazon S3 Tables (compaction and snapshot cleanup are
+  AWS-managed; there is no compact tool). If queries fail with missing data or
+  a stub schema, use `loxtep_observe` → `get_iceberg_health` (`managed_s3_tables`
+  status), then `rebuild_iceberg_table` with `confirm: true` and `backfill_from`.
+  Rebuild permanently deletes the table and recreates it from the queue. Always
+  `dry_run: true` first. Never rebuild without explicit confirmation.
+
+<!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+
+## Agent-Scope Skill scope (`.loxtep/skills/loxtep-analytics.yaml`)
+
+Resource scope and operation permissions for this Agent-Scope Skill, conformant
+with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json)
+schema. Any resource type or operation not listed is **denied (fail-closed)**.
+Identifier lists are empty placeholders — fill them with the specific resources
+in your workspace. This declaration does not change the hosted MCP config
+(`mcp.loxtep.io`).
+
+```yaml
+# .loxtep/skills/loxtep-analytics.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Scoped to ONLY the identifiers listed; least-privilege per operation. Fail-closed.
+name: loxtep-analytics
+description: Read-only SQL analytics over data products.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions:
+  data_products: [read]
+```
+
+<!-- END loxtep skill-scope (skill-package-v1) -->
+
+## Optional attribution
+
+`_metadata: { "skill_name": "loxtep-analytics" }`
+
+## Auth
+
+`loxtep-auth` / login.
+
+## References
+
+- [User story catalog](../../../docs/skills-user-stories.md)

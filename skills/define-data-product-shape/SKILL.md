@@ -14,6 +14,14 @@ Version `1.1.0`. Procedure: `procedure#define-data-product-via-agent`.
 Loxtep supplies evidence, tools, persistence, approvals, and application. You
 perform the inference. Do not call `infer-source` or semantic-inference.
 
+Hosted inference is a separate path and only when the user explicitly asks for
+it. Then use `loxtep_meaning`: `request_semantic_inference`,
+`get_semantic_inference`, and `promote_semantic_inference` (`accept` or
+`dismiss`). Those calls do not write `schema.key`. Glossary apply is
+`apply_glossary_bindings`. Discovered edges are
+`discover_ontology_relationships` then `accept_ontology_relationships`. None of
+those replace this proposal, approval, and apply workflow.
+
 ## Workflow
 
 1. `list_data_products` — read `processing_role` or `kind`. Medallion `bronze` /
@@ -44,16 +52,16 @@ perform the inference. Do not call `infer-source` or semantic-inference.
 
 Iceberg reads the catalog snapshot. The other records are not a second schema.
 
-| Record | Store | What it decides |
-| --- | --- | --- |
-| Proposal | `semantic_proposals` | Draft shape, or a separate semantic-bindings draft |
-| Shape | `domain_schemas`, `domain_schema_versions` | Versioned fields. `is_primary_key` is the identity |
-| Application | `data_product_schema_applications` | The one shape version pinned to this product |
-| Catalog snapshot | `data_products.schema` | `schema.fields`, `schema.entities`, `schema.key`. Iceberg reads this |
-| Contract | `data_contracts.schema_ref` | Names a shape version. Creating a contract does not apply it |
-| Source observation | `source_schema_versions` | Evidence from a source. Not the product shape |
-| Workflow copy | validation node `rules.schema` | Copy taken at deploy. A later shape change reaches it on the next deploy |
-| Iceberg table | instance storage | Built from the catalog snapshot. `schema.key` is sent as `identifier_fields` |
+| Record             | Store                                      | What it decides                                                              |
+| ------------------ | ------------------------------------------ | ---------------------------------------------------------------------------- |
+| Proposal           | `semantic_proposals`                       | Draft shape, or a separate semantic-bindings draft                           |
+| Shape              | `domain_schemas`, `domain_schema_versions` | Versioned fields. `is_primary_key` is the identity                           |
+| Application        | `data_product_schema_applications`         | The one shape version pinned to this product                                 |
+| Catalog snapshot   | `data_products.schema`                     | `schema.fields`, `schema.entities`, `schema.key`. Iceberg reads this         |
+| Contract           | `data_contracts.schema_ref`                | Names a shape version. Creating a contract does not apply it                 |
+| Source observation | `source_schema_versions`                   | Evidence from a source. Not the product shape                                |
+| Workflow copy      | validation node `rules.schema`             | Copy taken at deploy. A later shape change reaches it on the next deploy     |
+| Iceberg table      | instance storage                           | Built from the catalog snapshot. `schema.key` is sent as `identifier_fields` |
 
 `query_trigger.primary_key` is the field list a SQL trigger concatenates into
 `lx__id`. It does not set the product storage key.

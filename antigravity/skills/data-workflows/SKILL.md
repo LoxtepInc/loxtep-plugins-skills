@@ -341,18 +341,22 @@ transforms, not Store projections):
 Deploy registers the instance producer; rows land on the first-hop / sink queue
 and follow the normal rstreams → transform-to-iceberg path.
 
-**Unique identifier (refuse the call):** Always derive **`lx__id`** by
-concatenating already-viable identifier values (e.g. city + obs_date →
-`Austin|2024-06-15`). Do **not** call this key `id` — `lx__id` is chosen so it
-is unlikely to already exist on a payload. `preview_query_trigger` and
-`run_query_trigger` read the **source values** that would go into `lx__id` on
-each row. They refuse when any of those values is missing, empty, `null`, or an
-object. Do **not** concatenate blanks into a fake `lx__id` (`Austin|`).
-`primary_key` on the trigger is only the field-name list of those source values
-— it is **not** the identifier. A saved `primary_key` of `["city","obs_date"]`
-still refuses when every `obs_date` is empty, `null`, or `{}`. Uniqueness is
-**not** an Iceberg table setting — if the key is missing, Iceberg stores one row
-per queue event. Do **not** invent a uniqueness column, fill in a missing value,
+**Unique identifier (refuse the call):** `preview_query_trigger` and
+`run_query_trigger` concatenate the source values named by `primary_key` with
+`|` into `lx__id` (city + obs_date → `Austin|2024-06-15`). They refuse when any
+of those values is missing, empty, `null`, or an object. Do not concatenate
+blanks into a fake `lx__id` (`Austin|`). `query_trigger.primary_key` is that
+source-field list for the SQL trigger. It does not set the product storage key.
+
+The product storage key is one identity. Fields marked `is_primary_key`,
+`schema.key` (that same list, in field order), and the primary entity
+`natural_key` (those names joined with commas) name the same fields. Applying a
+shape writes `schema.key`. A semantic binding or a contract does not. The
+Iceberg writer joins those source values with `|` and stores the row under
+`lx__id`. `lx__id` is not a field to pick. When `schema.key` is absent, the
+`is_primary_key` flags are the key. A fielded schema with neither fails PUT,
+Iceberg enable, sync, and rebuild. A `schema.key` that disagrees with those
+flags is rejected. Do not invent a uniqueness column, fill in a missing value,
 or coerce an empty date to `1970-01-01` / unix 0.
 
 1. Author an enrichment workflow with
@@ -362,9 +366,11 @@ or coerce an empty date to `1970-01-01` / unix 0.
    business key.
 2. Template: https://github.com/LoxtepInc/loxtep-project-template
    (`templates/workflows/sql-query-enrichment/`).
-3. Sink is a normal queue-backed data product. Deploy binds the queue only —
-   **Iceberg is deliberate opt-in** (`POST …/iceberg` or UI) after a real schema
-   exists; writers skip until config sync succeeds.
+3. Sink is a normal queue-backed data product. Deploy binds the queue only.
+   Iceberg is a separate enable: `loxtep_observe` → `enable_iceberg_table` after
+   the storage identity is set (`schema.key` / `is_primary_key`). Omit
+   `backfill_from` to skip history replay. Do not `POST …/iceberg`. Writers skip
+   until config sync succeeds.
 4. **`save_workflow_bundle`** → **`deploy_workflow`** (registers query_trigger
    producer, not shared `transformers-*`). Enable Iceberg on each source you
    will scan before running the query.
@@ -703,11 +709,16 @@ Notes:
 - **Skipping project setup** — Calling `get_entity_schemas` or
   `save_workflow_bundle` without `project_id` from **Flow B**. Create or select
   the project before any Organize (bundle/deploy) work.
-- **Product storage key** — Iceberg uses `schema.key` on `data_products.schema`.
-  Applying a shape writes that list from fields marked `is_primary_key`.
-  `query_trigger.primary_key` only names values concatenated into `lx__id` for
-  a SQL trigger. A contract or semantic binding does not set `schema.key`.
-  Read `get_definition_status` `stores` before enabling Iceberg.
+- **Product storage key** — one identity. `is_primary_key`, `schema.key` (same
+  fields, field order), and the primary entity `natural_key` (those names joined
+  with commas). Applying a shape writes `schema.key`. The Iceberg writer
+  concatenates those source values with `|` into `lx__id`. `lx__id` is not a
+  field to pick. When `schema.key` is absent, the primary-key flags are the key.
+  A fielded schema with neither fails PUT, enable, sync, and rebuild. A stored
+  `schema.key` that disagrees with the flags is rejected. `query_trigger.primary_key`
+  only names values a SQL trigger concatenates into `lx__id`. A contract or
+  semantic binding does not set `schema.key`. Enable with `loxtep_observe` →
+  `enable_iceberg_table`. Read `get_definition_status` `stores` first.
 - **`create_data_product` for new ingest flows** — Wrong path. Standalone create
   bypasses the workflow graph, queues, bots, and deployment bindings. Always
   embed `data-products/{id}.json` in `save_workflow_bundle`, then deploy. See

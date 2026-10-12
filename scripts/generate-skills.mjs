@@ -12,7 +12,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const TOOLS = ['claude', 'cursor', 'codex', 'kiro', 'opencode', 'antigravity'];
+const TOOLS = ['claude', 'cursor', 'codex', 'kiro', 'opencode', 'antigravity', 'grok'];
 const REPO_URL_BASE =
   'https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main';
 const GENERATED_HEADER =
