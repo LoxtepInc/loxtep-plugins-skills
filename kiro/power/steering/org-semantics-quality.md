@@ -22,7 +22,11 @@ organization level.
 1. `create_schema` with `name`, `version`, `format`, `fields[]`, `definition`
    (optional `domain_id`) → returns shape ids. This authors a **domain shape**,
    not a data-product schema blob.
-2. `apply_schema` to bind the shape to a data product.
+2. `apply_schema` to pin the shape on a data product. Apply writes
+   `data_product_schema_applications` and refreshes the catalog snapshot
+   `data_products.schema`, including `schema.key` from `fields[].is_primary_key`.
+   Iceberg reads that snapshot. See
+   [shape, application, and catalog snapshot](../../../docs/concepts/shape-application-catalog-snapshot.md).
 3. Align the shape to a concept URI via `patch_schema` /
    `client.define.shapes.align({ aligned_to_concept_uri })`.
 4. `tag_pii_fields` with `schema_version_id` and `field_names[]` before exposure
@@ -64,10 +68,11 @@ relationships — not the primary path for field vocabulary.
   — that is the wrong edge. See
   [docs/concepts/type-vs-pack-alignment.md](../../../docs/concepts/type-vs-pack-alignment.md).
 - **`create_schema` creates a shape** — Meaning/Bind lists those authored
-  Define schemas (`list_schemas` / `domain_schemas`) and applies them with
-  `apply_schema`. Pack concepts stay on Align (shape → concept). SDK:
-  `client.define.shapes.*` (not `client.define.schemas`, which is data-product
-  schema versions).
+  Define schemas (`list_schemas` / `domain_schemas`) and pins them with
+  `apply_schema`. The product row `data_products.schema` is the catalog
+  snapshot Iceberg reads, including `schema.key`. It is not a second shape
+  registry. `data_product_schemas` is gone. Pack concepts stay on Align
+  (shape → concept). SDK: `client.define.shapes.*`.
 - **Ontology relationships / thesaurus** for entity intelligence live under
   **`loxtep_meaning`** / graph APIs, not as a second schema store. SDK:
   `client.meaning.thesaurus` + `client.meaning.ontology` (`node_type: 'entity'`).

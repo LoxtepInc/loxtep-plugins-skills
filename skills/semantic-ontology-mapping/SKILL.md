@@ -216,6 +216,11 @@ Do not claim full MCP↔SDK parity for namespace mappings or `resolve_semantic_g
 
 ## Pitfalls
 
+- **Semantic bindings are not the storage key.** A concept alignment or field
+  mapping does not write `schema.key`. The product storage key is the applied
+  shape's `is_primary_key` fields, projected onto `data_products.schema` by
+  apply. Iceberg reads that snapshot. Use `define-data-product-shape` for the
+  shape, pin, and snapshot.
 - **Confusing with loxtep-ontology:** That Agent-Scope Skill is for MCP CRUD
   operations on ontology entities. This Agent-Scope Skill is the _methodology_
   for deciding what to create.

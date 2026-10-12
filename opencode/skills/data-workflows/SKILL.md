@@ -319,6 +319,15 @@ https://github.com/LoxtepInc/loxtep-project-template
 (`templates/workflows/data-product-enrichment/`) (default transform: built-in
 `derived_columns`).
 
+**`zip_arrays`** — use when a source (e.g. Open-Meteo) returns parallel arrays
+under one object (`daily.time`, `daily.temperature_2m_max`, …) and the product
+needs one event per index. Config: `source_path`, `index_field`, optional
+`index_as`, `include_fields`, `carry_fields`. It refuses mismatched lengths,
+missing/non-array fields, an empty index, and null or duplicate index values
+(error queue — no silent drop). `explode_array` cannot do this: it splits one
+array and copies the others whole. See `get_entity_schemas` → transformation
+`transform_type` enum and GET `/workflows/transforms/types`.
+
 Scenario 2 runbook (transform derivation → queryable sink):
 [`docs/runbooks/transform-enrichment-scenario-2.md`](../../docs/runbooks/transform-enrichment-scenario-2.md).
 
@@ -694,6 +703,11 @@ Notes:
 - **Skipping project setup** — Calling `get_entity_schemas` or
   `save_workflow_bundle` without `project_id` from **Flow B**. Create or select
   the project before any Organize (bundle/deploy) work.
+- **Product storage key** — Iceberg uses `schema.key` on `data_products.schema`.
+  Applying a shape writes that list from fields marked `is_primary_key`.
+  `query_trigger.primary_key` only names values concatenated into `lx__id` for
+  a SQL trigger. A contract or semantic binding does not set `schema.key`.
+  Read `get_definition_status` `stores` before enabling Iceberg.
 - **`create_data_product` for new ingest flows** — Wrong path. Standalone create
   bypasses the workflow graph, queues, bots, and deployment bindings. Always
   embed `data-products/{id}.json` in `save_workflow_bundle`, then deploy. See
