@@ -33,14 +33,21 @@ organization level.
    not a data-product schema blob.
 2. `apply_schema` to pin the shape on a data product. Apply writes
    `data_product_schema_applications` and refreshes the catalog snapshot
-   `data_products.schema`, including `schema.key` from `fields[].is_primary_key`.
-   Iceberg reads that snapshot. See
+   `data_products.schema`, including `schema.key` from
+   `fields[].is_primary_key`. Iceberg reads that snapshot. See
    [shape, application, and catalog snapshot](../../../docs/concepts/shape-application-catalog-snapshot.md).
 3. Align the shape to a concept URI via `patch_schema` /
    `client.define.shapes.align({ aligned_to_concept_uri })`.
 4. `tag_pii_fields` with `schema_version_id` and `field_names[]` before exposure
    rules.
 5. `delete_schema` only when policy allows destruction.
+
+### Flow — Data contract
+
+1. `create_data_contract` on `loxtep_build` with `data_product_id`, `name`, and
+   `schema_version_id` from the applied shape version.
+2. `schema_version_id` is stored as `schema_ref`. It names the shape version.
+   It does not write `schema.key`.
 
 ### Flow — Quality on definitions
 
@@ -52,18 +59,18 @@ organization level.
 
 | Area    | Tool            | `operation`                                                                                                                        | Scope        |
 | ------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| Shapes  | `loxtep_define` | `create_schema`, `list_schemas`, `get_schema`, `apply_schema`, `patch_schema`, `list_schema_versions`, `tag_pii_fields`, …       | organization |
+| Shapes  | `loxtep_define` | `create_schema`, `list_schemas`, `get_schema`, `apply_schema`, `patch_schema`, `list_schema_versions`, `tag_pii_fields`, …         | organization |
 | Quality | `loxtep_define` | `create_quality_rule`, `update_quality_rule`, `delete_quality_rule`, `list_quality_rules`, `get_quality_rule`, `test_quality_rule` | organization |
 
 ## SDK mapping
 
-| Concern | SDK |
-| --- | --- |
-| Domain shapes | `client.define.shapes.create` / `.list` / `.get` / `.apply` / `.align` |
-| Data-product schemas / PII | `client.define.schemas.get` / `.list` / `.tag_pii_fields` |
-| Quality | `client.define.quality.*` |
-| Terms (define meaning) | `client.meaning.thesaurus.*` |
-| Ontology graph types | `client.meaning.ontology.*` (`node_type` lowercase) |
+| Concern                    | SDK                                                                    |
+| -------------------------- | ---------------------------------------------------------------------- |
+| Domain shapes              | `client.define.shapes.create` / `.list` / `.get` / `.apply` / `.align` |
+| Data-product schemas / PII | `client.define.schemas.get` / `.list` / `.tag_pii_fields`              |
+| Quality                    | `client.define.quality.*`                                              |
+| Terms (define meaning)     | `client.meaning.thesaurus.*`                                           |
+| Ontology graph types       | `client.meaning.ontology.*` (`node_type` lowercase)                    |
 
 **Define meaning** = terms + shapes. Ontology concepts are for graph types and
 relationships — not the primary path for field vocabulary.
@@ -76,15 +83,16 @@ relationships — not the primary path for field vocabulary.
   Do **not** bind Schema.org Product (or another concept) onto the data product
   — that is the wrong edge. See
   [docs/concepts/type-vs-pack-alignment.md](../../../docs/concepts/type-vs-pack-alignment.md).
-- **`create_schema` creates a shape** — Meaning/Bind lists those authored
-  Define schemas (`list_schemas` / `domain_schemas`) and pins them with
-  `apply_schema`. The product row `data_products.schema` is the catalog
-  snapshot Iceberg reads, including `schema.key`. It is not a second shape
-  registry. `data_product_schemas` is gone. Pack concepts stay on Align
-  (shape → concept). SDK: `client.define.shapes.*`.
+- **`create_schema` creates a shape** — Meaning/Bind lists those authored Define
+  schemas (`list_schemas` / `domain_schemas`) and pins them with `apply_schema`.
+  The product row `data_products.schema` is the catalog snapshot Iceberg reads,
+  including `schema.key`. It is not a second shape registry.
+  `data_product_schemas` is gone. Pack concepts stay on Align (shape → concept).
+  SDK: `client.define.shapes.*`.
 - **Ontology relationships / thesaurus** for entity intelligence live under
   **`loxtep_meaning`** / graph APIs, not as a second schema store. SDK:
-  `client.meaning.thesaurus` + `client.meaning.ontology` (`node_type: 'entity'`).
+  `client.meaning.thesaurus` + `client.meaning.ontology`
+  (`node_type: 'entity'`).
 - **Catalog discovery** is **`loxtep_query`** (`discover-govern-lineage`
   Agent-Scope Skill).
 - **403 / permission denied** — Schema and quality tools enforce RBAC

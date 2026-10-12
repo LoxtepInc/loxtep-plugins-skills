@@ -43,17 +43,22 @@ schema, run queries, fetch results.
 - Wrong **org** or missing permissions show as auth or empty results.
 - **Execution environment** — Analytics runs against governed mesh tables via
   `loxtep_query`, not an arbitrary external database URL.
-- **Iceberg is deliberate opt-in** — workflow deploy does **not** enable
-  Iceberg. Enable via UI or `POST /dataproducts/{id}/iceberg` only after a
-  non-empty product schema exists (partition field must be on that schema).
-  Empty / “unknown table” warehouse errors usually mean Iceberg was never
-  deliberately enabled — not a silent auto-heal case.
-- **Iceberg rebuild** — requires deliberate enablement + real schema. Iceberg
-  stores are Amazon S3 Tables (compaction and snapshot cleanup are AWS-managed;
-  there is no compact tool). If queries fail with missing data / stub schema,
-  use `loxtep_observe` → `get_iceberg_health` (`managed_s3_tables` status), then
-  `rebuild_iceberg_table` with `confirm: true` and `backfill_from`. Rebuild
-  **permanently deletes** the table and recreates it from the queue. Always
+- **Iceberg is deliberate opt-in** — workflow deploy does not enable Iceberg.
+  Enable with `loxtep_observe` → `enable_iceberg_table` after the product has a
+  storage identity: `schema.key`, or the same fields marked `is_primary_key`.
+  The journey step is `procedure#materialize-iceberg-table`. The engine does
+  not call enable. Omit `backfill_from` and do not send `identifier_fields`.
+  Applying a shape writes `schema.key`. A semantic binding does not. The writer
+  concatenates those source values with `|` into `lx__id`. Do not pick `lx__id`
+  as a key field, and do not default the key to it. Omit `backfill_from` to skip
+  history replay. The partition field must be on the schema. Empty or “unknown
+  table” warehouse errors usually mean Iceberg was never enabled.
+- **Iceberg rebuild** — requires that enablement and the same storage identity.
+  Iceberg stores are Amazon S3 Tables (compaction and snapshot cleanup are
+  AWS-managed; there is no compact tool). If queries fail with missing data or
+  a stub schema, use `loxtep_observe` → `get_iceberg_health` (`managed_s3_tables`
+  status), then `rebuild_iceberg_table` with `confirm: true` and `backfill_from`.
+  Rebuild permanently deletes the table and recreates it from the queue. Always
   `dry_run: true` first. Never rebuild without explicit confirmation.
 
 <!-- SCOPE_BLOCK -->

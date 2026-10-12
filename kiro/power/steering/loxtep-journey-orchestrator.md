@@ -100,7 +100,8 @@ through the channel the user chooses.
    `create_delivery` / `list_deliveries`.
 2. Verify agent MCP access — confirm the data product appears in
    `list_data_products` and is reachable via the SDK
-3. Set access rules — `govern-data-access` skill
+3. Set access rules — `governance-policies` (`list_governance_policies`,
+   `create_governance_policy`, `create_access_request`, `decide_access_request`)
 4. Confirm quality and lineage — `get_quality_score`, `get_lineage_impact`
 
 **Done when:** the data product is reachable through the chosen channel and
@@ -133,6 +134,7 @@ for the full internal → user language mapping.
 | P2    | `procedure#design-ingestion-workflow`      | `data-workflows`                        |
 | P2    | `procedure#deploy-ingestion-workflow`      | `loxtep-build`, `loxtep-workspace`      |
 | P3    | `procedure#define-data-product-semantics`  | `semantic-ontology-mapping`             |
+| P3    | `procedure#materialize-iceberg-table`      | `loxtep-analytics`                      |
 | P3    | `procedure#establish-data-standards`       | `org-semantics-quality`                 |
 | P4    | `procedure#register-delivery-interface`    | `data-product-modeling`                 |
 | P4    | `procedure#promote-data-product-medallion` | `promote-data-product`                  |

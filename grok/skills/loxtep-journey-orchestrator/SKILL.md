@@ -1,0 +1,191 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
+---
+name: loxtep-journey-orchestrator
+description:
+  Orchestrate the full Connect → Organize → Use journey. Use when an agent needs
+  to take a data source from first connection through to live delivery, handling
+  approvals and transitions at each step.
+license: MIT
+metadata:
+  platform: loxtep
+  category: orchestration
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/grok/skills/loxtep-journey-orchestrator/SKILL.md
+---
+
+# Loxtep journey orchestrator
+
+Guides an agent through the complete journey from connecting a data source to
+delivering trusted, AI-ready data — across three steps with human approval where
+it matters.
+
+> **Scope:** human-supervised execution. Every approval gate requires a human
+> decision. Do not attempt to auto-resolve approvals or skip gates.
+
+## When to use
+
+- "Take me through the whole setup" — end-to-end from source to delivery
+- "What's next?" — picking up mid-journey and finding the right step
+- "Walk me through connecting Shopify and making it ready for my agent"
+- Any flow that spans more than one step (Connect → Organize, or Organize → Use)
+
+For single-step work, use the focused skill for that step directly.
+
+## Connect
+
+**Goal:** A data source is authenticated, sampled, and flowing into a data
+product.
+
+**Agent actions:**
+
+1. Confirm MCP session and org context — `get_current_user`,
+   `get_current_organization`
+2. Create or reuse a project — `create_project` or `list_projects`, record
+   `project_id`
+3. Follow **`connect-external-system`**: `list_connector_types`, decide public
+   vs private, inspect instance runtime (`list_instances`, `list_observe_bots`)
+   before creating a private connector
+4. Create the connector and authenticate — `create_connector` or `get_oauth_url`
+5. **Test connectivity** — `test_connector` (does not start ingestion). Ask
+   before `capture_samples`
+6. Design and save the ingestion workflow — hand off to `data-workflows` skill
+   only with user authorization to ingest
+7. Deploy — `deploy_project` or `deploy_workflow`, confirm status is `deployed`
+
+**Done when:** credentials tested (`test_connector` passed), and — if the user
+authorized ingest — samples confirmed and deployment status `deployed`.
+
+**Rules:**
+
+- Connection test and ingestion activation are separate; do not deploy just to
+  get samples
+- Private sources need `network_binding: customer_vpc` and
+  `connectors-private-512` on the instance (**`loxtep-instances`**)
+- Create the project before any workflow or bundle calls
+- Embed data product definitions inside the workflow bundle — do not call
+  `create_data_product` directly; deployment provisions it
+
+## Organize
+
+**Goal:** The data product has approved definitions, relationships, and quality
+rules, and is published as trusted.
+
+**Agent actions:**
+
+1. Define what the data means — hand off to `semantic-ontology-mapping` skill
+2. Surface the draft definitions for domain owner review — check `list_pending`
+   (expect `requesting_actor: pko-engine` for PKO mapping gates; do not require
+   `list_agents` heartbeats — see
+   [pko-engine-vs-seeded-agents.md](../../../docs/agent-orchestration/pko-engine-vs-seeded-agents.md))
+   and surface to the right person
+3. On approval, apply definition/CDLC transitions as required — not
+   `promote_data_product` (that is medallion only)
+4. Infer and review relationships between entities
+5. Generate and review quality rules
+6. Run the **semantic medallion** readiness checklist —
+   `get_promotion_readiness` (Raw/In Progress/Ready = bronze/silver/gold;
+   orthogonal to `status`)
+7. Route to domain owner for final approval — `list_pending`, `resolve`
+8. Apply medallion promotion — `promote_data_product` with `target_tier`
+   `silver` or `gold`
+
+**Done when:** data product `medallion` is at the trusted tier (Ready/gold when
+cross-domain use is the goal). Do not confuse with lifecycle `status=active`.
+
+**Rules:**
+
+- Approvals surface automatically in the inbox, Slack, and email — do not
+  re-implement gate logic; use `list_pending` + `resolve`
+- After each approval, call `record_decision_trace`
+- Run `query_context` before each approval gate for current state
+
+## Use
+
+**Goal:** The trusted data product is reachable by agents, apps, and queries
+through the channel the user chooses.
+
+**Agent actions:**
+
+1. Author a **delivery workflow** (`workflow_type: "delivery"`) with a
+   **Target** connection at the tail — hand off to `data-workflows` Flow D
+   (`get_entity_schemas` → `save_workflow_bundle` → `deploy_workflow`). Prefer
+   Target `connections/{id}.json` + `connector_id`; do **not** happy-path
+   `create_delivery` / `list_deliveries`.
+2. Verify agent MCP access — confirm the data product appears in
+   `list_data_products` and is reachable via the SDK
+3. Set access rules — `governance-policies` (`list_governance_policies`,
+   `create_governance_policy`, `create_access_request`, `decide_access_request`)
+4. Confirm quality and lineage — `get_quality_score`, `get_lineage_impact`
+
+**Done when:** the data product is reachable through the chosen channel and
+access rules are enforced.
+
+## Handing off between steps
+
+Each step ends with a clear handoff artifact:
+
+| From     | Handoff                                           | To       |
+| -------- | ------------------------------------------------- | -------- |
+| Connect  | `connector_id` + confirmed samples + `project_id` | Organize |
+| Organize | Approved data product, promotion confirmed        | Use      |
+
+If picking up mid-journey, call `query_context` with the data product name to
+find current state before deciding which step applies.
+
+## Implementation notes
+
+Internal routing detail for agents that need it. See `loxtep/docs/vocabulary.md`
+for the full internal → user language mapping.
+
+**PKO procedure chain:**
+
+| Stage | PKO procedure                              | Skill                                   |
+| ----- | ------------------------------------------ | --------------------------------------- |
+| P0    | `procedure#agent-session-bootstrap`        | `loxtep-auth`, `loxtep-mcp-session`     |
+| P1    | `procedure#connect-external-system`        | `connect-external-system`               |
+| P1    | `procedure#capture-connector-samples`      | `connect-external-system`               |
+| P2    | `procedure#design-ingestion-workflow`      | `data-workflows`                        |
+| P2    | `procedure#deploy-ingestion-workflow`      | `loxtep-build`, `loxtep-workspace`      |
+| P3    | `procedure#define-data-product-semantics`  | `semantic-ontology-mapping`             |
+| P3    | `procedure#materialize-iceberg-table`      | `loxtep-analytics`                      |
+| P3    | `procedure#establish-data-standards`       | `org-semantics-quality`                 |
+| P4    | `procedure#register-delivery-interface`    | `data-product-modeling`                 |
+| P4    | `procedure#promote-data-product-medallion` | `promote-data-product`                  |
+| P5    | `procedure#enable-agent-mcp-access`        | `loxtep-mcp-session`, `mcp-integration` |
+| P6    | `procedure#govern-data-access`             | `governance-policies`                   |
+| P7    | `procedure#maintain-ai-ready-asset`        | `discover-govern-lineage`               |
+
+**Step → journey mapping:** P0–P2 = Connect · P3–P4 = Organize · P5–P7 = Use
+
+**Promotion gates:** `procedure#establish-data-standards` and
+`procedure#register-delivery-interface` run **before** promotion because their
+outputs are Ready (Gold) gates. Steps that clear a gate declare
+`metadata.satisfies_gates`; whether a gate blocks is per-org
+(`governance_policies.blocks_promotion`, seeded from the governance tier).
+Registry: `platform-backend/_core/src/medallion/promotion-gates.json`. Blocking
+gates come first; non-blocking ones are always still offered as suggestions.
+
+**HITL gates:** `hitl_gate: approval` steps are parked as `approval_request`
+records by the PKO execution engine. Resolve via `loxtep_review`
+(`list_pending`, `resolve`) or `client.review.approvals.*` in the SDK
+(`@loxtep/sdk@0.9.7+`; CLI: `loxtep approvals`).
+
+**CDLC cross-track:** P3 feeds `procedure#bridge-dp-semantics-to-cdlc` and
+`procedure#cdlc-memory-promotion-inbox`. New-source semantics must **not**
+`dependsOn` `procedure#cdlc-approve-and-deploy-artifact` (that gate deadlocks
+first-source Inbox HITL — LOX-1808). Deployed glossary for promote is a P4
+readiness/policy concern after the bridge, not a P3 start gate.
+
+**Bundle authoring (P2):** use `save_workflow_bundle` only. Do not use
+`patch_workflow_graph` for new flows. Handoff from P1 = `connector_id` + samples
+→ `data-workflows` Flow E (Trigger at ingest head). Delivery (P5) = Flow D
+(Target at tail, `workflow_type: "delivery"`).
+
+**CLI methodology (code-first):** `ingest create` → `transform create` →
+`delivery create` → `lint` → `push` → `deploy`. MCP stays primitives:
+`get_entity_schemas` → `save_workflow_bundle` → `deploy_workflow`.
+
+**Platform graph:** loaded via `graph-seed-platform-pko` bot for system org;
+tenants read via `query_context` / federated `get_procedure`.
+
+**Master graph:**
+`platform-backend/graph/platform-pko/loxtep-data-to-ai-ready.jsonld`

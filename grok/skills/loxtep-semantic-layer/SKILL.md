@@ -1,0 +1,275 @@
+<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
+---
+name: loxtep-semantic-layer
+description:
+  Use when the user wants to search the semantic layer, retrieve semantic
+  artifacts, check semantic completeness, manage canonical knowledge (strategy,
+  positioning, brand voice, org structure, process docs), stage/review/approve
+  semantic packages (HITL before deploy), or review vocabulary_term agent
+  proposals (list, infer definitions, accept/reject).
+metadata:
+  documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/grok/skills/loxtep-semantic-layer/SKILL.md
+---
+
+# Semantic Layer (Customer MCP)
+
+Search and inspect the organization's **semantic layer** - curated business
+definitions, metrics, dimensions, and completeness scores. Also manage
+**canonical knowledge** artifacts like strategy, positioning, brand voice, org
+structure, and process documentation.
+
+## When to use
+
+- "**Search semantic layer**", "find **semantic artifact**", "**completeness**
+  score"
+- "What **metrics** / **dimensions** / **definitions** exist for X?"
+- "How complete is the semantic layer?"
+- "**Upload unstructured context knowledge**", "**add canonical knowledge**",
+  "**create/update strategy**", "**brand voice**", "**org structure**",
+  "**process documentation**"
+- "Store **business strategy** for agents", "Define our **brand positioning**",
+  "Document **organizational structure**"
+- "**Review vocabulary proposals**", "**infer definitions** for pending terms",
+  "**accept/reject agent proposals**" from connect detection
+
+## Prerequisites
+
+- MCP auth. Operations are **organization**-scoped.
+
+## Happy-path flow
+
+### Search and retrieval
+
+1. `search_semantic_layer` with a query term to discover relevant artifacts.
+2. `get_semantic_artifact` by `artifact_type` + `id` to inspect a specific
+   artifact.
+3. `get_semantic_completeness` to assess overall semantic coverage.
+
+### Canonical knowledge management
+
+1. `create_canonical_knowledge` to store organizational knowledge (strategy,
+   positioning, brand voice, org structure, process docs).
+2. `list_canonical_knowledge` to find drafts (e.g. wiki-materialized pages).
+3. `get_canonical_knowledge` to retrieve a specific artifact by UUID `id` or
+   `content_ref`.
+4. `update_canonical_knowledge` to modify existing knowledge bases.
+
+### Semantic package stage → review → approve (not deploy)
+
+1. Stage with `import_semantic_bundle` / `save_semantic_package` /
+   `import_external_semantic_package` (default is stage, not deploy).
+2. Show the plain-language `summary` and `review_url` from the stage result to
+   the user (works in every MCP host).
+3. Call **`loxtep_package_review`** with `operation: review_semantic_package`
+   (`package_id` + `revision`, or `approval_request_id`) so MCP Apps hosts can
+   render the in-chat card. Never skip this when status is `pending_approval`.
+4. Wait for human Approve/Reject (card buttons, `approve_semantic_package` /
+   `reject_semantic_package`, or the authenticated inbox `review_url`).
+5. **Do not deploy** until the user explicitly asks after approval. Deploy is
+   `deploy_semantic_package` — a separate step.
+
+### Vocabulary agent proposals (connect → review → assert)
+
+Connect heuristics queue pending `vocabulary_term` proposals. Nothing is asserted
+until Accept. **Business-field confidence** (e.g. Medium ≈ 55%) is not definition
+quality. Detection metadata (`canonical_key`, `data_type`, `proposal_source`) is
+not a glossary definition and not a sample event.
+
+1. `list_semantic_proposals` with `disposition: pending` (optional
+   `proposal_type: vocabulary_term`, `data_product_id`).
+2. For each item, check `proposal_payload.definition`. If missing, call
+   `infer_proposal_definitions` with up to 20 `semantic_proposal_ids`.
+3. Review drafts. `undefined_ids` means the model omitted that key (often thin
+   name/type context) — do not treat as a hard API failure.
+4. Accept with `accept_semantic_proposal` only when a definition exists, or pass
+   `definition` on accept. Reject noise with `reject_semantic_proposal`.
+5. **Never accept** a `vocabulary_term` without a definition.
+
+SDK/CLI: `client.meaning.proposals` / `loxtep proposals list|infer-definitions|accept|reject`.
+
+## Operations
+
+| Facade                  | Operation                     | Permission |
+| ----------------------- | ----------------------------- | ---------- |
+| `loxtep_meaning`        | `search_semantic_layer`       | search     |
+| `loxtep_meaning`        | `get_semantic_artifact`       | read       |
+| `loxtep_meaning`        | `get_semantic_completeness`   | read       |
+| `loxtep_meaning`        | `create_canonical_knowledge`  | write      |
+| `loxtep_meaning`        | `get_canonical_knowledge`     | read       |
+| `loxtep_meaning`        | `list_canonical_knowledge`    | read       |
+| `loxtep_meaning`        | `update_canonical_knowledge`  | write      |
+| `loxtep_meaning`        | `import_semantic_bundle`      | write      |
+| `loxtep_meaning`        | `approve_semantic_package`    | write      |
+| `loxtep_meaning`        | `reject_semantic_package`     | write      |
+| `loxtep_meaning`        | `list_semantic_proposals`     | read       |
+| `loxtep_meaning`        | `infer_proposal_definitions`  | write      |
+| `loxtep_meaning`        | `accept_semantic_proposal`    | write      |
+| `loxtep_meaning`        | `reject_semantic_proposal`    | write      |
+| `loxtep_package_review` | `review_semantic_package`     | read       |
+
+## MCP mapping
+
+| Step             | `operation`                  | Scope        | Notes                                                                  |
+| ---------------- | ---------------------------- | ------------ | ---------------------------------------------------------------------- |
+| Search           | `search_semantic_layer`      | organization | Filters: `artifact_types`, `domain`, `domain_id`, `industry_relevance` |
+| Get artifact     | `get_semantic_artifact`      | organization | Requires `artifact_type` + `id`                                        |
+| Completeness     | `get_semantic_completeness`  | organization | Optional `domain_id` filter                                            |
+| Create knowledge | `create_canonical_knowledge` | organization | Requires `type`, `title`, `body`, `classification`                     |
+| Get knowledge    | `get_canonical_knowledge`    | organization | Exactly one of `id` (UUID) or `content_ref` (e.g. `wiki:{dp}:{page}`)  |
+| List knowledge   | `list_canonical_knowledge`   | organization | Optional: `organization_id`, `lifecycle_state`, `content_ref_prefix`   |
+| Update knowledge | `update_canonical_knowledge` | organization | Requires `id` + fields to update                                       |
+
+## Canonical Knowledge Types
+
+The semantic layer supports structured organizational knowledge artifacts that
+agents can query for context:
+
+| Type            | Description                                       | Example Use Case                          |
+| --------------- | ------------------------------------------------- | ----------------------------------------- |
+| `strategy`      | Business strategy, mission, vision, goals         | "What is our Q4 revenue target?"          |
+| `positioning`   | Market positioning, competitive differentiation   | "How do we position against competitors?" |
+| `brand_voice`   | Brand voice guidelines, tone, communication style | "Write in our brand voice"                |
+| `org_structure` | Organizational hierarchy, team structure, roles   | "Who owns the sales domain?"              |
+| `process_doc`   | Business processes, procedures, workflows         | "How do we handle customer onboarding?"   |
+
+### Creating Canonical Knowledge
+
+```json
+{
+  "operation": "create_canonical_knowledge",
+  "type": "strategy",
+  "title": "Q4 2024 Revenue Strategy",
+  "body": "Our strategy is to increase ARR by 40% through expansion of enterprise accounts...",
+  "classification": "internal",
+  "owner": "strategy-team@company.com"
+}
+```
+
+### Retrieving Knowledge
+
+Get by UUID (unchanged):
+
+```json
+{
+  "operation": "get_canonical_knowledge",
+  "id": "<knowledge-uuid>"
+}
+```
+
+Get by wiki `content_ref` (Steward / dogfood):
+
+```json
+{
+  "operation": "get_canonical_knowledge",
+  "content_ref": "wiki:{data_product_id}:{source_page_id}"
+}
+```
+
+List draft wiki pages for a data product (Steward / dogfood):
+
+```json
+{
+  "operation": "list_canonical_knowledge",
+  "lifecycle_state": "draft",
+  "content_ref_prefix": "wiki:{data_product_id}:"
+}
+```
+
+Do not pass both `id` and `content_ref` on get.
+
+### Updating Knowledge
+
+```json
+{
+  "operation": "update_canonical_knowledge",
+  "id": "<knowledge-id>",
+  "title": "Updated Q4 2024 Revenue Strategy",
+  "body": "We've adjusted our targets to 45% ARR growth..."
+}
+```
+
+## Pitfalls
+
+- **Pending connect proposals** — Medium/High confidence is business-field
+  score only. Do not accept without `proposal_payload.definition` (or supply
+  `definition` on accept). Prefer Infer, then review, then Accept; Reject if
+  the field is not a real business term.
+- **Ontology/vocabulary management** (thesaurus terms, namespace mappings) is
+  **`loxtep_meaning`** - same facade as proposal review. This skill covers
+  query/completeness, canonical knowledge, packages, and vocabulary proposal
+  review — not graph ontology structure editing.
+- **`search_semantic_layer` with `artifact_types: schema` is not domain
+  schemas.** It searches `schema_registry_cache` / curated artifacts — not
+  `domain_schemas` from `create_schema`. Org **shapes** live under
+  `loxtep_define` `list_schemas` / SDK `client.define.shapes.list`. Pack hits
+  for “Product” are **concepts**, not the S&S Product shape you applied to a raw
+  data product.
+- **Do not bind a concept onto a DP that already has an applied shape.** Apply
+  the shape to the product; align the shape to the concept in Meaning
+  (`client.define.shapes.align`). See
+  [docs/concepts/type-vs-pack-alignment.md](../../../docs/concepts/type-vs-pack-alignment.md).
+- **Define meaning** = terms (`client.meaning.thesaurus`) + shapes
+  (`client.define.shapes`). Ontology concepts are graph types/relationships
+  (`client.meaning.ontology`, `node_type` lowercase).
+- **Catalog search** is **`loxtep_query`** - use that for broad discovery across
+  all artifact types. This Agent-Scope Skill is for the semantic-layer-specific
+  search and completeness view.
+- **`artifact_types`** (plural) is an array filter - pass multiple types to
+  narrow results. Do not confuse with `artifact_type` (singular) used in
+  `get_semantic_artifact`.
+- **Canonical knowledge** is for organizational knowledge, not data product
+  schemas or quality rules. Use `loxtep_define` for schema management and
+  `loxtep_define` for quality rules.
+- **Do NOT use** workflows, data products, or connectors for storing
+  unstructured organizational knowledge. Use canonical knowledge artifacts
+  instead.
+
+### COA `list_metrics` / `describe_schema` gaps
+
+There are **no** hosted MCP ops named `list_metrics` or `describe_schema`. Use:
+
+| COA intent                        | Loxtep ops                                                                          |
+| --------------------------------- | ----------------------------------------------------------------------------------- |
+| List metrics / dimensions         | `search_semantic_layer`, `get_compounding_metric`, `list_quality_rules`             |
+| Describe schema / ontology tables | `get_table_schema`, `get_schema`, `list_ontology_concepts`, `get_semantic_artifact` |
+
+<!-- BEGIN loxtep skill-scope (skill-package-v1) -->
+
+## Agent-Scope Skill scope (`.loxtep/skills/loxtep-semantic-layer.yaml`)
+
+Resource scope and operation permissions for this Agent-Scope Skill, conformant
+with the [`skill-package-v1`](https://loxtep.io/schemas/skill-package-v1.json)
+schema. Any resource type or operation not listed is **denied (fail-closed)**.
+Identifier lists are empty placeholders — fill them with the specific resources
+in your workspace. This declaration does not change the hosted MCP config
+(`mcp.loxtep.io`).
+
+```yaml
+# .loxtep/skills/loxtep-semantic-layer.yaml
+# Conforms to https://loxtep.io/schemas/skill-package-v1.json
+# Fail-closed: this Agent-Scope Skill's facades are RBAC-governed and carry no data-mesh resource scope.
+name: loxtep-semantic-layer
+description: Semantic layer search, artifact retrieval, and completeness — RBAC-governed; no data-mesh resource scope.
+scope:
+  data_products: []
+  connectors: []
+  workflows: []
+  domains: []
+  queues: []
+permissions: {}
+```
+
+<!-- END loxtep skill-scope (skill-package-v1) -->
+
+## Optional attribution
+
+`_metadata: { "skill_name": "loxtep-semantic-layer" }`
+
+## Auth
+
+`loxtep-auth` / login.
+
+## References
+
+- [User story catalog](../../../docs/skills-user-stories.md)
+- [COA MCP serve parity](../../../platform-backend/ai/lib/tools/docs/coa-mcp-serve-parity.md)

@@ -123,7 +123,9 @@ author bundle → deploy → verify with `get_data_product`.**
 2. Remediate each unsatisfied prerequisite:
    - Ontology bindings: `bind_field_to_ontology` for each unbound field via
      `loxtep_meaning`.
-   - Data contract: `create_data_contract` with SLA terms via `loxtep_build`.
+   - Data contract: `create_data_contract` with SLA terms and `schema_version_id`
+     via `loxtep_build`. That id is stored as `schema_ref` and does not write
+     `schema.key`.
    - Delivery Target: **`data-workflows`** Flow D — Target connection in a
      `workflow_type: "delivery"` bundle (not `create_delivery`).
    - Graph sync: auto-handled by prior promotion.
@@ -175,7 +177,7 @@ Transform Logic:  [expression]
 | `get_entity_schemas` / `save_workflow_bundle` / `deploy_workflow` | `loxtep_build` | project      | Delivery: Target connection + `workflow_type: "delivery"`. **`create_delivery` / `list_deliveries` removed**. |
 | `get_promotion_readiness`                                         | `loxtep_build` | organization | Check prerequisites, progress, promotability for a data product.                                              |
 | `promote_data_product`                                            | `loxtep_build` | organization | Execute tier transition (Silver/Gold). Validates prerequisites server-side.                                   |
-| `create_data_contract`                                            | `loxtep_build` | organization | Create contract with SLA/quality terms. Required for Gold.                                                    |
+| `create_data_contract`                                            | `loxtep_build` | organization | Create contract with SLA terms. Pass `schema_version_id` as `schema_ref`. It does not write `schema.key`.     |
 | `list_data_contracts`                                             | `loxtep_build` | organization | List contracts, optionally filtered by `data_product_id`.                                                     |
 
 ## Decision tree

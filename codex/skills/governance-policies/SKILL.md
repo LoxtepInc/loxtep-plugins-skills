@@ -7,11 +7,13 @@ description:
   before a data product or workflow goes live. Covers the policy schema, rules,
   condition syntax (freeze / quality_score / classification / pii), enforcement
   modes (block | warn | audit), scope, status, and the approval gate. Legacy
-  `strict` normalizes to `block`. NOT on the MCP tool surface: policies are
-  managed via the governance REST API or the console, not loxtep_* tools. To
-  inspect governance flags on existing data instead, use discover-govern-lineage
-  (loxtep_query get_governance_flags). User story S5 (governance authoring). See
-  docs/skills-user-stories.md.
+  `strict` normalizes to `block`. Author policies with loxtep_define:
+  list_governance_policies, get_governance_policy, create_governance_policy,
+  update_governance_policy, and delete_governance_policy. Access requests use
+  create_access_request, list_access_requests, and decide_access_request. To
+  inspect governance flags on existing data, use discover-govern-lineage
+  (loxtep_observe get_governance_flags). User story S5 (governance authoring).
+  See docs/skills-user-stories.md.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/codex/skills/governance-policies/SKILL.md
 ---
@@ -36,19 +38,34 @@ If the user asks to "block low-quality data," that is **runtime** — use qualit
 rules + data contracts, not a policy. Blocking a deploy on low quality is
 backwards (the deploy is the fix).
 
-## Where policies live (NOT MCP)
+## Where policies live
 
-Policies are **not** exposed through the Loxtep MCP. Manage them via the console
-**Governance** area or the governance REST API (IAM/SigV4-signed; a plain JWT
-bearer is rejected):
+Use **`loxtep_define`**. Do not call the governance REST API.
 
-| Op     | Route                                     |
-| ------ | ----------------------------------------- |
-| List   | `GET /governance/policies`                |
-| Get    | `GET /governance/policies/{policy_id}`    |
-| Create | `POST /governance/policies`               |
-| Update | `PUT /governance/policies/{policy_id}`    |
-| Delete | `DELETE /governance/policies/{policy_id}` |
+| Op     | `operation`                  |
+| ------ | ---------------------------- |
+| List   | `list_governance_policies`   |
+| Get    | `get_governance_policy`      |
+| Create | `create_governance_policy`   |
+| Update | `update_governance_policy`   |
+| Delete | `delete_governance_policy`   |
+
+Delete asks for approval. A deny rule whose `condition` is empty freezes every
+data product in scope.
+
+Access to a domain, data product, or connector is a separate pair of operations
+on the same facade:
+
+| Op      | `operation`             |
+| ------- | ----------------------- |
+| Request | `create_access_request` |
+| List    | `list_access_requests`  |
+| Decide  | `decide_access_request` |
+
+`create_access_request` needs `resource_type` (`domain`, `data_product`, or
+`connector`), `resource_id`, and `access_type` (`owner`, `steward`, `engineer`,
+`member`, `viewer`, `consume`, or `use`). `decide_access_request` takes
+`action` `approve` or `reject`.
 
 For _inspecting_ governance flags on existing data products, switch to the
 `discover-govern-lineage` skill (`loxtep_observe` → `get_governance_flags`).
@@ -143,11 +160,11 @@ domain subjects it to those policies.
 
 ## Lifecycle cheatsheet
 
-- **Dormant**: POST `status: draft`. **Trial**: `status: active` +
-  `enforcement: audit`.
-- **Enforce**: `status: active` + `enforcement: block`. **Pause**: PUT
-  `status: draft`.
-- **Remove**: `DELETE /governance/policies/{id}`.
+- **Dormant**: `create_governance_policy` with `status: draft`. **Trial**:
+  `status: active` and `enforcement: audit`.
+- **Enforce**: `status: active` and `enforcement: block`. **Pause**:
+  `update_governance_policy` with `status: draft`.
+- **Remove**: `delete_governance_policy` with `policy_id`.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 
