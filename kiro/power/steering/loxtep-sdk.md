@@ -313,11 +313,32 @@ automatically.
 | `loxtep_review`  | `resolve`                                                         | write      | SDK: `client.review.approvals.approve()` / `.reject()`                                                           |
 | `loxtep_meaning` | `create_term` / `get_term` / … / `sync_vocabulary`                | write/read | SDK: `client.meaning.thesaurus.*`                                                                                |
 | `loxtep_meaning` | ontology concept CRUD + relationships                             | write/read | SDK: `client.meaning.ontology.*` (`node_type` lowercase: `entity`, …)                                            |
+| `loxtep_meaning` | `list_semantic_proposals` / `infer_proposal_definitions` / `accept_semantic_proposal` / `reject_semantic_proposal` | read/write | SDK: `client.meaning.proposals.*`; CLI: `loxtep proposals list\|accept\|reject\|infer-definitions` |
 | `loxtep_define`  | `create_schema` / `list_schemas` / `apply_schema` / `patch_schema` | write/read | Domain shapes: `client.define.shapes.*` (not data-product `client.define.schemas`)                               |
 
 **Define meaning** = terms + shapes. Ontology concepts are graph types /
 relationships. See `docs/sdk-mcp-mapping.md` in `@loxtep/sdk` for full parity
 tables (and explicit MCP-only gaps).
+
+### Vocabulary proposals (SDK + CLI)
+
+```ts
+const pending = await client.meaning.proposals.list({ disposition: 'pending' });
+await client.meaning.proposals.infer_definitions(ids);
+await client.meaning.proposals.accept(id, { definition: '…' }); // optional draft
+await client.meaning.proposals.reject(id);
+```
+
+```bash
+loxtep proposals list --disposition pending --proposal-type vocabulary_term
+loxtep proposals infer-definitions <id> [<id>…]
+loxtep proposals accept <id> --definition "Business meaning…"
+loxtep proposals reject <id>
+```
+
+Do not accept a `vocabulary_term` without a definition. Confidence on the proposal
+is business-field detection score, not glossary quality. Details:
+**`loxtep-semantic-layer`** (Vocabulary agent proposals).
 
 ## Approving pipeline gates from code (`client.review.approvals`)
 
