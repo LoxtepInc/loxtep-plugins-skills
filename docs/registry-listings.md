@@ -16,6 +16,7 @@ Requirement 1.4).
 | **Smithery** | `smithery.yaml` | `loxtep` | ☐ submitted | HTTP (hosted) server type. |
 | **PulseMCP** | `server.json` / repo README | `loxtep` | ☐ submitted | Community directory; submit via pulsemcp.com. |
 | **Glama** | repo README + `server.json` | `loxtep` | ☐ submitted | Community directory; auto-indexes public MCP repos. |
+| **skills.sh / vercel-labs skills CLI** (`npm` `skills`) | GitHub repo `LoxtepInc/loxtep-plugins-skills` (`skills/` tree) | `LoxtepInc/loxtep-plugins-skills` | ☑ live (install via CLI) | Skills-only path: `npx skills add LoxtepInc/loxtep-plugins-skills`. Does **not** configure MCP. See README **Skills-only install (npx skills)**. |
 
 Provider clients **without** a `plugin.json` (skills-only today): `codex/`,
 `kiro/`, `antigravity/`, `opencode/`. Version sync only covers Claude + Cursor

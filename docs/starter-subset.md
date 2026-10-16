@@ -22,6 +22,22 @@ Because governance is **on by default** at instance creation (audit logging +
 field masking), your very first query is already recorded in the audit log and
 respects masked fields — no policy authoring required.
 
+### Skills-only install (`npx skills`)
+
+If you use the [skills CLI](https://www.npmjs.com/package/skills) instead of a
+Cursor/Claude plugin, install just these four starter skills (MCP is separate —
+see README **Skills-only install (npx skills)**):
+
+```bash
+DISABLE_TELEMETRY=1 npx -y skills@latest add LoxtepInc/loxtep-plugins-skills \
+  -a claude-code -a cursor -a codex -a opencode \
+  --skill loxtep-mcp-session \
+  --skill loxtep-auth \
+  --skill connect-external-system \
+  --skill data-workflows \
+  -y
+```
+
 ## Everything else (opt-in)
 
 The full skill set remains installed and is there when you need it — nothing is

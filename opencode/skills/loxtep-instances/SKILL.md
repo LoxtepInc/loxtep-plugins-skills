@@ -1,14 +1,14 @@
 <!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: loxtep-instances
-description:
-  Use when the user works with Loxtep runtime instances via Customer MCP -
+description: >
+  Use when the user works with Loxtep runtime instances via Customer MCP —
   list_instances, create_instance, instance provisioning, shared vs managed,
   starter plan, plan_id, payment_method_id, billing UI (add payment methods in
   app, not MCP), regions, or "create a Loxtep instance". Self-hosted install
-  flow: get_deployment_urls -> register_infrastructure -> get_infrastructure ->
-  create_instance. Also inspect whether an instance's connector runtime is ready
-  for public or customer-VPC (private-network) sources.
+  flow get_deployment_urls -> register_infrastructure -> get_infrastructure ->
+  create_instance. Also inspect whether an instance's connector runtime is
+  ready for public or customer-VPC (private-network) sources.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/opencode/skills/loxtep-instances/SKILL.md
 ---

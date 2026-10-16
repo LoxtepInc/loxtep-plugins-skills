@@ -229,6 +229,58 @@ For any MCP client with native OAuth support, add this to its MCP config:
 
 For clients without OAuth support, wrap with `mcp-remote` (see Antigravity above).
 
+### Skills-only install (npx skills)
+
+Plugins remain the **recommended full install** for Cursor and Claude — they
+include hosted MCP, rules, and skills together. The
+[`skills`](https://www.npmjs.com/package/skills) CLI
+([vercel-labs/skills](https://github.com/vercel-labs/skills), also listed on
+[skills.sh](https://skills.sh/)) installs **skills only**. It does **not**
+configure the Loxtep MCP server.
+
+Requires **Node.js >= 22.20**. Opt out of CLI telemetry with
+`DISABLE_TELEMETRY=1` or `DO_NOT_TRACK=1`.
+
+**Starter set** (4 core skills — see [docs/starter-subset.md](docs/starter-subset.md)):
+
+```bash
+DISABLE_TELEMETRY=1 npx -y skills@latest add LoxtepInc/loxtep-plugins-skills \
+  -a claude-code -a cursor -a codex -a opencode \
+  --skill loxtep-mcp-session \
+  --skill loxtep-auth \
+  --skill connect-external-system \
+  --skill data-workflows \
+  -y
+```
+
+Verified layout: skills land under `.agents/skills/<name>/SKILL.md` for Cursor,
+Codex, and OpenCode, with Claude Code getting matching entries under
+`.claude/skills/` (symlinked). List without installing:
+
+```bash
+DISABLE_TELEMETRY=1 npx -y skills@latest add LoxtepInc/loxtep-plugins-skills --list
+```
+
+**Full set** (all 26 skills — only if you want everything):
+
+```bash
+DISABLE_TELEMETRY=1 npx -y skills@latest add LoxtepInc/loxtep-plugins-skills \
+  -a claude-code -a cursor -a codex -a opencode \
+  --skill '*' \
+  -y
+```
+
+**Next: connect the Loxtep MCP server.** Skills alone cannot call Loxtep. Add
+the hosted MCP config for your client using the Cursor / Claude / OpenCode /
+Codex / Kiro / Antigravity / Manual sections above (same
+`https://mcp.loxtep.io/ai/mcp/stream` URL and OAuth flow). Or paste the
+one-liner at the top of this README and let the agent follow
+[docs.loxtep.io/docs/setup.md](https://docs.loxtep.io/docs/setup.md).
+
+**Updates:** `npx skills update` pulls the latest from git (no semver pin,
+unlike marketplace plugin versions). Pick **one** install path per machine —
+plugin **or** `npx skills` — to avoid duplicate skill copies.
+
 ### Common notes
 
 - **Authentication:** OAuth 2.1 + PKCE. Browser opens on first connect; tokens refresh automatically. No API keys, no token files.

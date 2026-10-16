@@ -1,19 +1,18 @@
 <!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: governance-policies
-description:
-  Use when the user wants to author, edit, lift, or reason about GOVERNANCE
-  POLICIES — the deploy-time gate that blocks a deployment or requires approval
-  before a data product or workflow goes live. Covers the policy schema, rules,
-  condition syntax (freeze / quality_score / classification / pii), enforcement
-  modes (block | warn | audit), scope, status, and the approval gate. Legacy
-  `strict` normalizes to `block`. Author policies with loxtep_define:
+description: >
+  Use when the user wants to author, edit, lift, or reason about GOVERNANCE POLICIES — the
+  deploy-time gate that blocks a deployment or requires approval before a data product or workflow
+  goes live. Covers the policy schema, rules, condition syntax (freeze / quality_score /
+  classification / pii), enforcement modes (block | warn | audit), scope, status, and the approval
+  gate. Legacy `strict` normalizes to `block`. Author policies with loxtep_define
   list_governance_policies, get_governance_policy, create_governance_policy,
   update_governance_policy, and delete_governance_policy. Access requests use
-  create_access_request, list_access_requests, and decide_access_request. To
-  inspect governance flags on existing data, use discover-govern-lineage
-  (loxtep_observe get_governance_flags). User story S5 (governance authoring).
-  See docs/skills-user-stories.md.
+  create_access_request, list_access_requests, and decide_access_request. To inspect
+  governance flags on existing data, use discover-govern-lineage
+  (loxtep_observe get_governance_flags). User story S5 (governance authoring). See
+  docs/skills-user-stories.md.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/opencode/skills/governance-policies/SKILL.md
 ---
