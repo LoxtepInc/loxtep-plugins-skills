@@ -31,8 +31,66 @@ schema, run queries, fetch results.
 | Run     | `loxtep_query` | `execute_query`     | organization |
 | Results | `loxtep_query` | `get_query_results` | organization |
 
+## Reading `execute_query` results
+
+A successful `loxtep_query` → `execute_query` call (`success: true`) is not
+always a complete answer. The tool returns the full warehouse result in `data`
+(`WarehouseQueryResult`). Check `data.status` before trusting rows.
+
+- `completed` — rows are the query result. Still honor `sampled` and
+  `applied_caps` when present; a bounded sample is not a full scan even when
+  `status` is `completed`.
+- `partial` — incomplete. Tell the user the result is truncated or sampled. Cite
+  `files_read` of `files_expected` when those fields are present, and whether
+  `sampled` is true. Never present counts or aggregates as complete. `error` may
+  carry the warehouse reason (for example an Iceberg parquet fallback truncation
+  message). `engine` and `applied_caps` may also be set.
+- `failed` — failed tool response (`error`: `Query execution failed`). The
+  warehouse `error` string is passed through as `message` as-is (no
+  `'Unknown error'` default).
+- any other status — failed tool response
+  `Unhandled warehouse query status: <status>`.
+
+If `recovery.action` is `rebuild_iceberg`, or `iceberg_health_status` /
+`iceberg_health_reason` are set, follow the Iceberg rebuild guidance in Pitfalls
+(`get_iceberg_health`, then `rebuild_iceberg_table` with `dry_run: true` first;
+never rebuild without explicit confirmation).
+
+`get_query_results` is the async/paginated poll. Today it does **not** surface
+`status: "partial"` the way `execute_query` does: any status other than
+`completed` or `failed` is returned as success with message
+`Query is still pending`. On `failed`, the tool message falls back to
+`'Unknown error'` when `result.error` is missing. Prefer `execute_query`'s
+`data.status` when you already have it.
+
+Fields that may appear on the result (only these exist on
+`WarehouseQueryResult`): `query_id`, `status`, `results`, `columns`,
+`row_count`, `total_count`, `execution_time_ms`, `error`, `policy_info`,
+`tables_referenced`, `recovery`
+(`{ action: 'rebuild_iceberg', data_product_id }`), `iceberg_health_status`,
+`iceberg_health_reason`, `files_read`, `files_expected`, `engine` (`duckdb` |
+`snowflake` | `databricks`), `sampled`, `applied_caps` (`row_limit`,
+`byte_limit`).
+
+### Maintainer notes
+
+- `get_query_results` reports a warehouse `partial` as pending and uses
+  `'Unknown error'` when `failed` has no `error`. A fix is planned to report
+  `partial` the same way `execute_query` does. Update this when the fix lands.
+- Partial Iceberg reads use two shapes today: context `iceberg_partial_read`
+  (`data_product_id`, `files_read`, `files_expected`, `reason`) and thrown
+  `IcebergPartialReadError` (`files_read`, `files_expected`, `data_product_id`,
+  message/reason). One shared shape is planned. Update this when the fix lands.
+- Whether `sampled: true` with `status: "completed"` is intended is still
+  undecided. Honor `sampled` today. Update this when the fix lands.
+
 ## Pitfalls
 
+- **Partial `execute_query` results** — `success: true` can still mean
+  `data.status: "partial"`. Honor `sampled` even when `status` is `completed`.
+  See **Reading `execute_query` results**.
+- **`get_query_results` vs `partial`** — today a `partial` poll looks pending.
+  Trust `execute_query`'s `data.status` until they match.
 - Large result sets — use limits / pagination per platform.
 - Wrong **org** or missing permissions show as auth or empty results.
 - **Execution environment** — Analytics runs against governed mesh tables via
@@ -40,8 +98,8 @@ schema, run queries, fetch results.
 - **Iceberg is deliberate opt-in** — workflow deploy does not enable Iceberg.
   Enable with `loxtep_observe` → `enable_iceberg_table` after the product has a
   storage identity: `schema.key`, or the same fields marked `is_primary_key`.
-  The journey step is `procedure#materialize-iceberg-table`. The engine does
-  not call enable. Omit `backfill_from` and do not send `identifier_fields`.
+  The journey step is `procedure#materialize-iceberg-table`. The engine does not
+  call enable. Omit `backfill_from` and do not send `identifier_fields`.
   Applying a shape writes `schema.key`. A semantic binding does not. The writer
   concatenates those source values with `|` into `lx__id`. Do not pick `lx__id`
   as a key field, and do not default the key to it. Omit `backfill_from` to skip
@@ -49,11 +107,12 @@ schema, run queries, fetch results.
   table” warehouse errors usually mean Iceberg was never enabled.
 - **Iceberg rebuild** — requires that enablement and the same storage identity.
   Iceberg stores are Amazon S3 Tables (compaction and snapshot cleanup are
-  AWS-managed; there is no compact tool). If queries fail with missing data or
-  a stub schema, use `loxtep_observe` → `get_iceberg_health` (`managed_s3_tables`
-  status), then `rebuild_iceberg_table` with `confirm: true` and `backfill_from`.
-  Rebuild permanently deletes the table and recreates it from the queue. Always
-  `dry_run: true` first. Never rebuild without explicit confirmation.
+  AWS-managed; there is no compact tool). If queries fail with missing data or a
+  stub schema, use `loxtep_observe` → `get_iceberg_health` (`managed_s3_tables`
+  status), then `rebuild_iceberg_table` with `confirm: true` and
+  `backfill_from`. Rebuild permanently deletes the table and recreates it from
+  the queue. Always `dry_run: true` first. Never rebuild without explicit
+  confirmation.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 
@@ -84,9 +143,12 @@ permissions:
 
 <!-- END loxtep skill-scope (skill-package-v1) -->
 
-## Optional attribution
+## Skill attribution (required)
 
-`_metadata: { "skill_name": "loxtep-analytics" }`
+MCP tool calls need a resolvable skill name. Prefer
+`_metadata: { "skill_name": "loxtep-analytics" }`; otherwise the server infers
+from the operation map or `X-Skill-Name`. Unresolvable calls are denied
+(`MISSING_SKILL_ATTRIBUTION`). The skill name also drives scope checks.
 
 ## Auth
 
