@@ -397,6 +397,9 @@ If every collection fails, `captureConnectorSamples` throws before returning
 status is 422 unless the thrown message contains `not found` (404) or
 `entity_type` / `not authenticated` (400).
 
+<!-- Maintainer: All-fail runs should carry entities too; a fix is planned.
+Update this when it lands. -->
+
 MCP `capture_samples` does not return the success payload on those errors. The
 tool sets `success: false` and `message: "capture_samples failed"`. Through MCP,
 `error` is not a string: it can be an object `{ message, details }` (the API
@@ -405,9 +408,8 @@ per-collection rows. On an all-fail 422/404/400, `error.details` is `{}` (no
 `entities`). The tool does not copy `details.entities` onto a dedicated MCP
 field.
 
-<!-- Maintainer: mixed-run 422 `error.details.entities`, all-fail `details: {}`,
-and always-present success `entities` describe current product behavior pending
-a CTO-filed fix. Update these docs if that fix changes either shape. -->
+<!-- Maintainer: All-fail runs should carry entities too; a fix is planned.
+Update this when it lands. -->
 
 Illustrative shape (from unit tests, not a live capture):
 
@@ -672,6 +674,8 @@ That clears only the backfill checkpoint. CDC and lookup checkpoints stay.
   with `error.details: {}` and no `entities`. MCP reports
   `capture_samples failed` and the API error object (`error` may be
   `{ message, details }`), not a 200 payload.
+  <!-- Maintainer: All-fail runs should carry entities too; a fix is planned.
+  Update this when it lands. -->
 - **Private test on the API Lambda** — set `network_binding: customer_vpc` and
   use an instance whose runtimes stack has `connectors-private-512`.
 - **Warehouse bind** (Snowflake / Databricks table in place) is
