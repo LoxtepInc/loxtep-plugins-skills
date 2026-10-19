@@ -80,9 +80,12 @@ In lineage views:
 
 <!-- SCOPE_BLOCK -->
 
-## Optional attribution
+## Skill attribution (required)
 
-`_metadata: { "skill_name": "discover-govern-lineage" }`
+MCP tool calls need a resolvable skill name. Prefer
+`_metadata: { "skill_name": "discover-govern-lineage" }`; otherwise the server
+infers from the operation map or `X-Skill-Name`. Unresolvable calls are denied
+(`MISSING_SKILL_ATTRIBUTION`). The skill name also drives scope checks.
 
 ## Auth
 

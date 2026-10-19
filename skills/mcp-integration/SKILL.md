@@ -96,7 +96,12 @@ grants.
    `permissions`.
 3. **429 session limit** — close another org session in the Loxtep UI.
 
-## Optional attribution
+## Skill attribution (required)
+
+MCP tool calls need a resolvable skill name. Prefer `_metadata.skill_name`;
+otherwise the server infers from the operation map or `X-Skill-Name`.
+Unresolvable calls are denied (`MISSING_SKILL_ATTRIBUTION`). The skill name also
+drives scope checks.
 
 ```json
 {

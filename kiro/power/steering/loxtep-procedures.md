@@ -204,9 +204,12 @@ former procedures-only facade was folded into this surface).
 `metadata.skill_ref` / `metadata.api_ref` / HITL gates; use
 **`loxtep-journey-orchestrator`** to walk Connect → Organize → Use.
 
-## Optional attribution
+## Skill attribution (required)
 
-`_metadata: { "skill_name": "loxtep-procedures" }`
+MCP tool calls need a resolvable skill name. Prefer
+`_metadata: { "skill_name": "loxtep-procedures" }`; otherwise the server infers
+from the operation map or `X-Skill-Name`. Unresolvable calls are denied
+(`MISSING_SKILL_ATTRIBUTION`). The skill name also drives scope checks.
 
 ## Auth
 

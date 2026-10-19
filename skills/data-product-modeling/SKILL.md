@@ -129,9 +129,9 @@ author bundle → deploy → verify with `get_data_product`.**
 2. Remediate each unsatisfied prerequisite:
    - Ontology bindings: `bind_field_to_ontology` for each unbound field via
      `loxtep_meaning`.
-   - Data contract: `create_data_contract` with SLA terms and `schema_version_id`
-     via `loxtep_build`. That id is stored as `schema_ref` and does not write
-     `schema.key`.
+   - Data contract: `create_data_contract` with SLA terms and
+     `schema_version_id` via `loxtep_build`. That id is stored as `schema_ref`
+     and does not write `schema.key`.
    - Delivery Target: **`data-workflows`** Flow D — Target connection in a
      `workflow_type: "delivery"` bundle (not `create_delivery`).
    - Graph sync: auto-handled by prior promotion.
@@ -252,9 +252,12 @@ Promotion MCP calls use `target_tier: "silver"` / `"gold"` — map to validated 
 delivery-ready in user language. See **`promote-data-product`** for the full
 checklist.
 
-## Optional attribution
+## Skill attribution (required)
 
-`_metadata: { "skill_name": "data-product-modeling" }`
+MCP tool calls need a resolvable skill name. Prefer
+`_metadata: { "skill_name": "data-product-modeling" }`; otherwise the server
+infers from the operation map or `X-Skill-Name`. Unresolvable calls are denied
+(`MISSING_SKILL_ATTRIBUTION`). The skill name also drives scope checks.
 
 ## Auth
 

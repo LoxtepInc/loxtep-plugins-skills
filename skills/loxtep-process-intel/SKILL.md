@@ -74,9 +74,12 @@ Entity context and decision traces.
 
 <!-- SCOPE_BLOCK -->
 
-## Optional attribution
+## Skill attribution (required)
 
-`_metadata: { "skill_name": "loxtep-process-intel" }`
+MCP tool calls need a resolvable skill name. Prefer
+`_metadata: { "skill_name": "loxtep-process-intel" }`; otherwise the server
+infers from the operation map or `X-Skill-Name`. Unresolvable calls are denied
+(`MISSING_SKILL_ATTRIBUTION`). The skill name also drives scope checks.
 
 ## Auth
 

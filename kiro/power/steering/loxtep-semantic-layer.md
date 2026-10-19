@@ -59,10 +59,10 @@ structure, and process documentation.
 
 ### Vocabulary agent proposals (connect → review → assert)
 
-Connect heuristics queue pending `vocabulary_term` proposals. Nothing is asserted
-until Accept. **Business-field confidence** (e.g. Medium ≈ 55%) is not definition
-quality. Detection metadata (`canonical_key`, `data_type`, `proposal_source`) is
-not a glossary definition and not a sample event.
+Connect heuristics queue pending `vocabulary_term` proposals. Nothing is
+asserted until Accept. **Business-field confidence** (e.g. Medium ≈ 55%) is not
+definition quality. Detection metadata (`canonical_key`, `data_type`,
+`proposal_source`) is not a glossary definition and not a sample event.
 
 1. `list_semantic_proposals` with `disposition: pending` (optional
    `proposal_type: vocabulary_term`, `data_product_id`).
@@ -74,27 +74,28 @@ not a glossary definition and not a sample event.
    `definition` on accept. Reject noise with `reject_semantic_proposal`.
 5. **Never accept** a `vocabulary_term` without a definition.
 
-SDK/CLI: `client.meaning.proposals` / `loxtep proposals list|infer-definitions|accept|reject`.
+SDK/CLI: `client.meaning.proposals` /
+`loxtep proposals list|infer-definitions|accept|reject`.
 
 ## Operations
 
-| Facade                  | Operation                     | Permission |
-| ----------------------- | ----------------------------- | ---------- |
-| `loxtep_meaning`        | `search_semantic_layer`       | search     |
-| `loxtep_meaning`        | `get_semantic_artifact`       | read       |
-| `loxtep_meaning`        | `get_semantic_completeness`   | read       |
-| `loxtep_meaning`        | `create_canonical_knowledge`  | write      |
-| `loxtep_meaning`        | `get_canonical_knowledge`     | read       |
-| `loxtep_meaning`        | `list_canonical_knowledge`    | read       |
-| `loxtep_meaning`        | `update_canonical_knowledge`  | write      |
-| `loxtep_meaning`        | `import_semantic_bundle`      | write      |
-| `loxtep_meaning`        | `approve_semantic_package`    | write      |
-| `loxtep_meaning`        | `reject_semantic_package`     | write      |
-| `loxtep_meaning`        | `list_semantic_proposals`     | read       |
-| `loxtep_meaning`        | `infer_proposal_definitions`  | write      |
-| `loxtep_meaning`        | `accept_semantic_proposal`    | write      |
-| `loxtep_meaning`        | `reject_semantic_proposal`    | write      |
-| `loxtep_package_review` | `review_semantic_package`     | read       |
+| Facade                  | Operation                    | Permission |
+| ----------------------- | ---------------------------- | ---------- |
+| `loxtep_meaning`        | `search_semantic_layer`      | search     |
+| `loxtep_meaning`        | `get_semantic_artifact`      | read       |
+| `loxtep_meaning`        | `get_semantic_completeness`  | read       |
+| `loxtep_meaning`        | `create_canonical_knowledge` | write      |
+| `loxtep_meaning`        | `get_canonical_knowledge`    | read       |
+| `loxtep_meaning`        | `list_canonical_knowledge`   | read       |
+| `loxtep_meaning`        | `update_canonical_knowledge` | write      |
+| `loxtep_meaning`        | `import_semantic_bundle`     | write      |
+| `loxtep_meaning`        | `approve_semantic_package`   | write      |
+| `loxtep_meaning`        | `reject_semantic_package`    | write      |
+| `loxtep_meaning`        | `list_semantic_proposals`    | read       |
+| `loxtep_meaning`        | `infer_proposal_definitions` | write      |
+| `loxtep_meaning`        | `accept_semantic_proposal`   | write      |
+| `loxtep_meaning`        | `reject_semantic_proposal`   | write      |
+| `loxtep_package_review` | `review_semantic_package`    | read       |
 
 ## MCP mapping
 
@@ -179,10 +180,10 @@ Do not pass both `id` and `content_ref` on get.
 
 ## Pitfalls
 
-- **Pending connect proposals** — Medium/High confidence is business-field
-  score only. Do not accept without `proposal_payload.definition` (or supply
-  `definition` on accept). Prefer Infer, then review, then Accept; Reject if
-  the field is not a real business term.
+- **Pending connect proposals** — Medium/High confidence is business-field score
+  only. Do not accept without `proposal_payload.definition` (or supply
+  `definition` on accept). Prefer Infer, then review, then Accept; Reject if the
+  field is not a real business term.
 - **Ontology/vocabulary management** (thesaurus terms, namespace mappings) is
   **`loxtep_meaning`** - same facade as proposal review. This skill covers
   query/completeness, canonical knowledge, packages, and vocabulary proposal
@@ -250,9 +251,12 @@ permissions: {}
 
 <!-- END loxtep skill-scope (skill-package-v1) -->
 
-## Optional attribution
+## Skill attribution (required)
 
-`_metadata: { "skill_name": "loxtep-semantic-layer" }`
+MCP tool calls need a resolvable skill name. Prefer
+`_metadata: { "skill_name": "loxtep-semantic-layer" }`; otherwise the server
+infers from the operation map or `X-Skill-Name`. Unresolvable calls are denied
+(`MISSING_SKILL_ATTRIBUTION`). The skill name also drives scope checks.
 
 ## Auth
 
