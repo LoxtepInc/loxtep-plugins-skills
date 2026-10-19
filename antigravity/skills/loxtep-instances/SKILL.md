@@ -381,7 +381,10 @@ those flags so it runs as the CLI exists today. Provisioning writes the secret
 ARNs; prefer MCP or HTTP create without them. Managed CLI create does not
 require the secret flags. The TypeScript/CLI snippets above use placeholders
 (`name`, `<n>`, `<uuid>`) and were **not** run through the schemas; the JSON
-create bodies in this skill were.
+create bodies in this skill were. Tracked at
+https://github.com/LoxtepInc/loxtep-sdk/issues/71 (CLI still requires both
+secret ARNs; `parseCreateInstanceArgs` L286–287 still names
+`starter|pro|enterprise`).
 
 The platform reapplies the per-instance runtimes stack (`force_redeploy`). The
 customer does not run a Loxtep microservice deploy. Shared `connectors-*`
