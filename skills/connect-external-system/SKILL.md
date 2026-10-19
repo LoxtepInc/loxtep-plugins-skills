@@ -381,24 +381,31 @@ was attempted (`entity_type`, `status: captured|error`, `record_count`,
 otherwise it is the request token (`all` / `*`), never a comma list. Top-level
 `record_count` is the sum of captured collections.
 
-If **any** collection fails, REST returns **422** (not 200). The body is
+If **any** collection fails, REST returns **422** (not 200) on a mixed run (some
+collections succeed, some fail). That body is
 `{ "success": false, "error": { "message": "Capture samples failed for collections: <name>: <msg>; …", "details": { "entities": [ … ] } } }`.
-Successful collections are still written to `metadata.sample_payloads` and still
-emit semantic bootstrap. If every collection fails, REST is 422 unless the
-thrown message contains `not found` (404) or `entity_type` / `not authenticated`
-(400).
+`error.details.entities` applies only to that mixed run. Successful collections
+are still written to `metadata.sample_payloads` and still emit semantic
+bootstrap.
 
-MCP `capture_samples` does not return the success payload on that 422. The tool
-sets `success: false` and `message: "capture_samples failed"`. Through MCP,
+If every collection fails, `captureConnectorSamples` throws before returning
+`entities`. The POST catch re-throws `WebError(msg, {}, …)`, so the body is
+`{ "success": false, "error": { "message": "<name>: <msg>; …", "details": {} } }`
+— no `entities`, and no `Capture samples failed for collections:` prefix. That
+status is 422 unless the thrown message contains `not found` (404) or
+`entity_type` / `not authenticated` (400).
+
+MCP `capture_samples` does not return the success payload on those errors. The
+tool sets `success: false` and `message: "capture_samples failed"`. Through MCP,
 `error` is not a string: it can be an object `{ message, details }` (the API
-body’s nested `error`), and `details.entities` holds the per-collection rows.
-Read `error.details.entities` for those results. The tool does not copy
-`details.entities` onto a dedicated MCP field.
+body’s nested `error`). On a mixed-run 422, read `error.details.entities` for
+per-collection rows. On an all-fail 422/404/400, `error.details` is `{}` (no
+`entities`). The tool does not copy `details.entities` onto a dedicated MCP
+field.
 
-<!-- Maintainer: MCP 422 `error` as `{ message, details }` (read
-`error.details.entities`) and always-present success `entities` describe
-current product behavior pending a CTO-filed fix. Update these docs if that
-fix changes either shape. -->
+<!-- Maintainer: mixed-run 422 `error.details.entities`, all-fail `details: {}`,
+and always-present success `entities` describe current product behavior pending
+a CTO-filed fix. Update these docs if that fix changes either shape. -->
 
 Illustrative shape (from unit tests, not a live capture):
 
@@ -658,9 +665,11 @@ That clears only the backfill checkpoint. CDC and lookup checkpoints stay.
   `all` / `*` for every allowlisted collection
   (`metadata.custom_settings.collections`, else `tables`). For file-transfer,
   use the entity key from connector metadata / fileSpecs. A mixed run is a loud
-  **422**; successful collections stay on `metadata.sample_payloads`. MCP
-  reports `capture_samples failed` and the API error object (`error` may be
-  `{ message, details }` — read `error.details.entities`), not a 200 payload.
+  **422** with `error.details.entities`; successful collections stay on
+  `metadata.sample_payloads`. If every collection fails, REST is 422/404/400
+  with `error.details: {}` and no `entities`. MCP reports
+  `capture_samples failed` and the API error object (`error` may be
+  `{ message, details }`), not a 200 payload.
 - **Private test on the API Lambda** — set `network_binding: customer_vpc` and
   use an instance whose runtimes stack has `connectors-private-512`.
 - **Warehouse bind** (Snowflake / Databricks table in place) is
