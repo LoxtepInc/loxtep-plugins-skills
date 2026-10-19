@@ -117,9 +117,12 @@ Queue operations (`get_queue_info`, `read_queue_events`, `replay_events`,
 Materialization plan shape:
 `platform-backend/ai/lib/tools/docs/project-materialization-plan.md`.
 
-## Optional attribution
+## Skill attribution (required)
 
-`_metadata: { "skill_name": "loxtep-workspace" }`
+MCP tool calls need a resolvable skill name. Prefer
+`_metadata: { "skill_name": "loxtep-workspace" }`; otherwise the server infers
+from the operation map or `X-Skill-Name`. Unresolvable calls are denied
+(`MISSING_SKILL_ATTRIBUTION`). The skill name also drives scope checks.
 
 ## Auth
 

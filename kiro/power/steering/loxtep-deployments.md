@@ -48,6 +48,17 @@ and inspect runtime mappings.
 | Get status      | `loxtep_observe` | `get_deployment`      | organization | Returns status, timestamps, errors                             |
 | Runtime mapping | `loxtep_build`   | `get_runtime_mapping` | project      | Shows how project resources map to runtime                     |
 
+## Deployment status polling rules
+
+- After `deploy_workflow`, check status once (`get_deployment` or a filtered
+  `list_deployments`).
+- If status is still `pending` or `in_progress`, back off **30s**, then **60s**,
+  then **120s**, and repeat at the **120s** cap until terminal status.
+- Never call `deploy_workflow` again for a workflow while a deployment for it is
+  `pending` or `in_progress`.
+- Always pass full UUIDs to `get_deployment` and other ops — never truncated
+  prefixes like `0a9e627d`.
+
 ## Pitfalls
 
 - **Deploy is required after ANY graph change** — adding or removing nodes,
@@ -110,9 +121,12 @@ permissions: {}
 
 <!-- END loxtep skill-scope (skill-package-v1) -->
 
-## Optional attribution
+## Skill attribution (required)
 
-`_metadata: { "skill_name": "loxtep-deployments" }`
+MCP tool calls need a resolvable skill name. Prefer
+`_metadata: { "skill_name": "loxtep-deployments" }`; otherwise the server infers
+from the operation map or `X-Skill-Name`. Unresolvable calls are denied
+(`MISSING_SKILL_ATTRIBUTION`). The skill name also drives scope checks.
 
 ## Auth
 
