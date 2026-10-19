@@ -364,21 +364,24 @@ await client.workspace.instances.redeploy_runtimes(instanceId);
 ```bash
 loxtep instances create --name <n> --region <region> --type self-hosted \
   --payment-method-id <uuid> --cross-account-role-arn <arn> \
+  --rstreams-secret-arn <arn> --rstreams-auth-arn <arn> \
   --subnet-id subnet-<az1> --subnet-id-2 subnet-<az2> --security-group-id sg-<id>
 loxtep instances update <instance_id> \
   --subnet-id subnet-<az1> --subnet-id-2 subnet-<az2> --security-group-id sg-<id>
 loxtep instances redeploy-runtimes <instance_id>
 ```
 
-The HTTP/MCP create body only needs `cross_account_role_arn`. On loxtep-sdk
-`main` (`de6bc7c0e7380f3d1afee9556d5a5b6bd2b0dd4b`), `parseCreateInstanceArgs`
-still requires **all three ARNs** on the client for **self-hosted**:
-`--cross-account-role-arn`, `--rstreams-secret-arn`, and `--rstreams-auth-arn`
-(`self-hosted requires --cross-account-role-arn, --rstreams-secret-arn, and --rstreams-auth-arn`).
-The API does not; the secret ARNs are written by provisioning. Prefer MCP or
-HTTP create without them. Managed CLI create does not require the secret flags.
-The TypeScript/CLI snippets above use placeholders (`name`, `<n>`, `<uuid>`) and
-were **not** run through the schemas; the JSON create bodies in this skill were.
+The HTTP API only requires `cross_account_role_arn` at create. The current CLI
+also requires the two secret ARNs. On loxtep-sdk `main`
+(`de6bc7c0e7380f3d1afee9556d5a5b6bd2b0dd4b`), `parseCreateInstanceArgs` L297–302
+throws
+`self-hosted requires --cross-account-role-arn, --rstreams-secret-arn, and --rstreams-auth-arn`
+without `--rstreams-secret-arn` and `--rstreams-auth-arn`. The example includes
+those flags so it runs as the CLI exists today. Provisioning writes the secret
+ARNs; prefer MCP or HTTP create without them. Managed CLI create does not
+require the secret flags. The TypeScript/CLI snippets above use placeholders
+(`name`, `<n>`, `<uuid>`) and were **not** run through the schemas; the JSON
+create bodies in this skill were.
 
 The platform reapplies the per-instance runtimes stack (`force_redeploy`). The
 customer does not run a Loxtep microservice deploy. Shared `connectors-*`
