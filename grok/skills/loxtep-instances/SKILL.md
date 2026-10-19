@@ -1,14 +1,16 @@
 <!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: loxtep-instances
-description: >
-  Use when the user works with Loxtep runtime instances via Customer MCP —
+description:
+  'Use when the user works with Loxtep runtime instances via Customer MCP -
   list_instances, create_instance, instance provisioning, shared vs managed,
   starter plan, plan_id, payment_method_id, billing UI (add payment methods in
   app, not MCP), regions, or "create a Loxtep instance". Self-hosted install
-  flow get_deployment_urls -> register_infrastructure -> get_infrastructure ->
-  create_instance. Also inspect whether an instance's connector runtime is
-  ready for public or customer-VPC (private-network) sources.
+  flow: get_deployment_urls -> register_infrastructure -> get_infrastructure ->
+  create_instance. BYOL custom Lambda registration: register_custom_bot /
+  list_custom_bots / deregister_custom_bot / reconcile_custom_bots (dedicated
+  instances only). Also inspect whether an instance''s connector runtime is
+  ready for public or customer-VPC (private-network) sources.'
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/grok/skills/loxtep-instances/SKILL.md
 ---
@@ -19,7 +21,7 @@ metadata:
 
 - **MCP tool:** `loxtep_workspace`
 - **Arguments:**
-  `{ "operation": "list_instances" | "create_instance" | "update_instance" | "get_deployment_urls" | "register_infrastructure" | "get_infrastructure", ...fields }`
+  `{ "operation": "list_instances" | "create_instance" | "update_instance" | "get_deployment_urls" | "register_infrastructure" | "get_infrastructure" | "register_custom_bot" | "list_custom_bots" | "get_custom_bot" | "update_custom_bot" | "deregister_custom_bot" | "reconcile_custom_bots", ...fields }`
 
 ### Payment methods — app UI only (read this)
 
@@ -54,20 +56,20 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
 
 ### Deployment vs billing (read this)
 
-| `instance_type`   | Meaning                                                                                | Create requirements                                                                                                                                                              |
-| ----------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`shared`**      | Default **free-tier playground** (multi-tenant).                                       | Omit or **`free`** only. **Never** `starter` / `pro` / `enterprise` — API validation **rejects** shared + paid plan.                                                             |
-| **`managed`**     | Paid **dedicated** bus (remote account/region — same AWS access model as self-hosted). | **`starter`/`pro`/`enterprise`**, **`payment_method_id`**, and **`connection_details.observe_api.cross_account_role_arn`** (plus stream secret ARNs as provisioning fills them). |
-| **`self-hosted`** | Customer-operated dedicated bus.                                                       | **`payment_method_id`** + **`connection_details.observe_api`** with **`cross_account_role_arn`**, stream **integration** secret ARN, and **auth** secret ARN.                    |
+| `instance_type`   | Meaning                                                                                | Create requirements                                                                                                                                                                                                                                                            |
+| ----------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **`shared`**      | Default **free-tier playground** (multi-tenant).                                       | Omit `plan_id` or send **`free`**. Paid **`starter`** is also shared and needs **`payment_method_id`**. Never `growth` / `scale` / `enterprise`. Do **not** send `observe_api` role or secret coordinates.                                                                     |
+| **`managed`**     | Paid **dedicated** bus (remote account/region — same AWS access model as self-hosted). | **`growth`/`scale`**, **`payment_method_id`**, and **`connection_details.observe_api.cross_account_role_arn`** (IAM role ARN). `rstreams_secret_arn` and `rstreams_auth_arn` are written by provisioning; callers do not send them. Sending `observe_proxy_role_arn` is a 400. |
+| **`self-hosted`** | Customer-operated dedicated bus.                                                       | **`payment_method_id`** + **`connection_details.observe_api.cross_account_role_arn`** (IAM role ARN). `rstreams_secret_arn` and `rstreams_auth_arn` are written by provisioning; callers do not send them. Sending `observe_proxy_role_arn` is a 400.                          |
 
 ### Field summary
 
-| Field                             | Notes                                                                                                                             |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `name`, `region`, `instance_type` | Required.                                                                                                                         |
-| `plan_id`                         | Required for **managed**. Omit or non-paid for **shared**.                                                                        |
-| `payment_method_id`               | **Required** for **managed** and **self-hosted**. Omit for **shared**. Value is a UUID for a method **already** saved in the app. |
-| `connection_details`              | **Required for managed and self-hosted** — nested `observe_api` with the role (+ stream ARNs). Same remote-access shape for both. |
+| Field                             | Notes                                                                                                                                                                                                                                                                                                          |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`, `region`, `instance_type` | Required.                                                                                                                                                                                                                                                                                                      |
+| `plan_id`                         | Top-level only. Required for **managed** (`growth` or `scale`). Omit or `free` for unpaid **shared**; `starter` is paid shared. Do **not** send plan fields under `metadata`.                                                                                                                                  |
+| `payment_method_id`               | **Required** for **managed** and **self-hosted** (and for paid `starter`). Omit for unpaid **shared**. Value is a UUID for a method **already** saved in the app.                                                                                                                                              |
+| `connection_details`              | **Required for managed and self-hosted** — nested `observe_api` with `cross_account_role_arn`. `rstreams_secret_arn` and `rstreams_auth_arn` are written by provisioning; callers do not send them. Namespace, `api_url`, and `stack_id` are always server-derived. Sending `observe_proxy_role_arn` is a 400. |
 
 ### Correct examples
 
@@ -82,8 +84,7 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
 }
 ```
 
-**Paid Starter (managed)** — same observe_api remote-access shape as
-self-hosted:
+**Paid Growth (managed)** — same observe_api remote-access shape as self-hosted:
 
 ```json
 {
@@ -91,13 +92,11 @@ self-hosted:
   "name": "Production mesh",
   "region": "us-east-1",
   "instance_type": "managed",
-  "plan_id": "starter",
+  "plan_id": "growth",
   "payment_method_id": "550e8400-e29b-41d4-a716-446655440000",
   "connection_details": {
     "observe_api": {
-      "cross_account_role_arn": "arn:aws:iam::123456789012:role/LoxtepCrossAccountDeploymentRole",
-      "rstreams_secret_arn": "arn:aws:secretsmanager:us-east-1:123456789012:secret:resources",
-      "rstreams_auth_arn": "arn:aws:secretsmanager:us-east-1:123456789012:secret:auth"
+      "cross_account_role_arn": "arn:aws:iam::123456789012:role/LoxtepCrossAccountDeploymentRole"
     }
   }
 }
@@ -112,10 +111,9 @@ self-hosted:
 - `payment_method_id` (UUID — saved in the Loxtep app Billing settings)
 - `connection_details.observe_api.cross_account_role_arn` — the IAM role ARN
   registered via `register_infrastructure` (see the install flow below)
-- `connection_details.observe_api.rstreams_secret_arn` — Secrets Manager ARN of
-  the rstreams resources secret (in the customer AWS account)
-- `connection_details.observe_api.rstreams_auth_arn` — Secrets Manager ARN of
-  the rstreams auth secret (in the customer AWS account)
+- Do **not** send `rstreams_secret_arn` or `rstreams_auth_arn` — they are
+  written by provisioning from the deployed stack's outputs. Sending
+  `observe_proxy_role_arn` is a 400.
 
 ```json
 {
@@ -126,25 +124,71 @@ self-hosted:
   "payment_method_id": "550e8400-e29b-41d4-a716-446655440000",
   "connection_details": {
     "observe_api": {
-      "cross_account_role_arn": "arn:aws:iam::123456789012:role/LoxtepCrossAccountDeploymentRole",
-      "rstreams_secret_arn": "arn:aws:secretsmanager:us-east-1:123456789012:secret:loxtep/rstreams/resources-ABC",
-      "rstreams_auth_arn": "arn:aws:secretsmanager:us-east-1:123456789012:secret:loxtep/rstreams/auth-XYZ"
+      "cross_account_role_arn": "arn:aws:iam::123456789012:role/LoxtepCrossAccountDeploymentRole"
     }
   }
 }
 ```
 
-The earlier shape that only sent `cross_account_role_arn` is **wrong** — the API
-rejects self-hosted without all three `observe_api` ARNs.
+Only `cross_account_role_arn` is required on `observe_api` at create.
+`rstreams_secret_arn` and `rstreams_auth_arn` are written by provisioning after
+the stack deploys; callers do not send them.
 
 ### Wrong patterns (validation / API error)
 
-- `instance_type: "shared"` + `plan_id: "starter"` — **invalid** (use
-  **managed** + `plan_id` + `payment_method_id`).
+Each hit is a **400** (one issue per field). MCP `create_instance` maps to the
+same `PostInputSchema`. `CreateInstanceMcpFlatInputSchema`, `PostInputSchema`,
+and `InstanceConfigSchema` are `.strict()`: an unknown key is
+`Unrecognized key: "<key>"` (`unrecognized_keys`). A top-level MCP `api_url` is
+that 400, not dropped (`Validation failed: : Unrecognized key: "api_url"` after
+the facade strips `operation`; HTTP `details.field` is `"root"`).
+`connection_details` is still `.passthrough()`. `observe_api` is `.strict()`. A
+strict failure reports only the unknown key; platform-owned field refusals on
+the same request are not listed until the unknown keys are removed (for example
+MCP `instance_typo` plus `observe_api.namespace` returns only
+`Unrecognized key: "instance_typo"`).
+
+- `instance_type: "shared"` + `plan_id: "growth"` / `"scale"` / `"enterprise"` —
+  **invalid** (`plan_id` must match the instance type). Paid **`starter`** stays
+  on **shared** and needs `payment_method_id`.
 - **Managed** or **self-hosted** without **`payment_method_id`** — **invalid**
   at MCP and API.
-- **Self-hosted** without **`connection_details.observe_api`** ARNs —
-  **invalid**.
+- **Managed** or **self-hosted** without
+  **`connection_details.observe_api.cross_account_role_arn`** — **invalid**.
+- Platform-owned fields — do **not** send `api_url`, `stack_id`,
+  `metadata.routing`, `observe_api.namespace`, or
+  `observe_api.observe_proxy_role_arn`. Messages:
+  `api_url is set by the platform; do not send it.`,
+  `stack_id is set by the platform; do not send it.`,
+  `metadata.routing (observe namespace) is set by the platform; do not send it.`,
+  `observe_api.namespace is derived by the platform; do not send it.`,
+  `observe_api.observe_proxy_role_arn is written by provisioning; do not send it.`
+- Plan metadata — do **not** send `metadata.subscription`, `metadata.tier`,
+  `metadata.plan_id`, `metadata.limits`, or `metadata.subscription_details`.
+  Message:
+  `metadata.<key> is set by the platform from plan_id; send plan_id instead.`
+- Shared instances: `cross_account_role_arn`, `external_id`,
+  `rstreams_secret_arn`, and `rstreams_auth_arn` are refused
+  (`observe_api.<key> is not accepted for shared instances.`).
+- Managed / self-hosted: `cross_account_role_arn` must be
+  `arn:aws:iam::<12 digits>:role/...`. `rstreams_secret_arn` and
+  `rstreams_auth_arn` are written by provisioning; callers do not send them.
+- Unknown keys on the MCP flat input, the HTTP body, or `instance_config` (for
+  example `instance_typo`, top-level MCP `api_url`, HTTP `paymentMethodId`) are
+  a **400** `Unrecognized key: "<key>"`, not stripped. Unknown `observe_api`
+  keys (for example `api_base_url`) are the same. Extra keys under
+  `connection_details` (other than `observe_api`) are still allowed.
+
+## update_instance
+
+Observe namespace is set at instance creation. `update_instance` (PUT
+`/organizations/instances/{instance_id}`, SDK
+`client.workspace.instances.update`, CLI `loxtep instances update`) rejects any
+attempt to set, change, or remove it with **400** (`ValidationFailed`:
+`Observe namespace is set at account creation and cannot be changed`). Do not
+send `metadata.observe_namespace`, `metadata.observeNamespace`, or
+`metadata.routing.observe_namespace` / `observeNamespace`, and do not send
+`routing: {}` or `routing: null` to wipe it.
 
 ## Self-hosted install flow (new operations)
 
@@ -205,10 +249,10 @@ re-registration when the org is already configured:
 ### 4. `create_instance` — step 3
 
 The final step — see the [self-hosted example](#self-hosted-example-shape)
-above. Pass the role ARN you registered in step 2 plus the two rstreams secret
-ARNs the user created in their AWS account. `payment_method_id` is required
-(upfront Loxtep billing applies for self-hosted too — AWS resources are billed
-separately to the customer account).
+above. Pass the role ARN you registered in step 2. `rstreams_secret_arn` and
+`rstreams_auth_arn` are written by provisioning; callers do not send them.
+`payment_method_id` is required (upfront Loxtep billing applies for self-hosted
+too — AWS resources are billed separately to the customer account).
 
 ### Full flow in one agent turn
 
@@ -217,10 +261,8 @@ user:   "Let's set up a self-hosted Loxtep instance in my AWS account."
 agent:  1. get_deployment_urls → presents the one-click URL + CLI + Terraform tabs
         2. instructs user to deploy the role, copy RoleArn from CFN Outputs
         3. register_infrastructure({ cross_account_role_arn, region })
-        4. instructs user to create rstreams resources + auth secrets,
-           copy both secret ARNs
-        5. create_instance({ ..., payment_method_id, connection_details.observe_api.* })
-        6. polls list_instances until status="active" (~20–30 minutes)
+        4. create_instance({ ..., payment_method_id, connection_details.observe_api.cross_account_role_arn })
+        5. polls list_instances until status="active" (~20–30 minutes)
 ```
 
 The provisioner assumes the customer role via `sts:AssumeRole` (using the
@@ -265,12 +307,14 @@ At create:
   "name": "<name>",
   "region": "<region>",
   "instance_type": "self-hosted",
-  "payment_method_id": "<uuid>",
+  "payment_method_id": "550e8400-e29b-41d4-a716-446655440000",
   "connection_details": {
-    "observe_api": { "cross_account_role_arn": "<role-arn>" },
+    "observe_api": {
+      "cross_account_role_arn": "arn:aws:iam::123456789012:role/LoxtepCrossAccountDeploymentRole"
+    },
     "connector_vpc": {
-      "subnet_ids": ["subnet-<az1>", "subnet-<az2>"],
-      "security_group_id": "sg-<id>"
+      "subnet_ids": ["subnet-0123456789abcdef0", "subnet-0fedcba9876543210"],
+      "security_group_id": "sg-0123456789abcdef0"
     }
   }
 }
@@ -309,7 +353,7 @@ Same fields on other surfaces (permission `instances:update` /
 ```ts
 await client.workspace.instances.create({
   name, region, instance_type: 'self-hosted', payment_method_id,
-  connection_details: { observe_api: { ... }, connector_vpc: { subnet_ids: [...], security_group_id } },
+  connection_details: { observe_api: { cross_account_role_arn }, connector_vpc: { subnet_ids: [...], security_group_id } },
 });
 await client.workspace.instances.update(instanceId, {
   connection_details: { connector_vpc: { subnet_ids: [...], security_group_id } },
@@ -320,12 +364,21 @@ await client.workspace.instances.redeploy_runtimes(instanceId);
 ```bash
 loxtep instances create --name <n> --region <region> --type self-hosted \
   --payment-method-id <uuid> --cross-account-role-arn <arn> \
-  --rstreams-secret-arn <arn> --rstreams-auth-arn <arn> \
   --subnet-id subnet-<az1> --subnet-id-2 subnet-<az2> --security-group-id sg-<id>
 loxtep instances update <instance_id> \
   --subnet-id subnet-<az1> --subnet-id-2 subnet-<az2> --security-group-id sg-<id>
 loxtep instances redeploy-runtimes <instance_id>
 ```
+
+The HTTP/MCP create body only needs `cross_account_role_arn`. On loxtep-sdk
+`main` (`de6bc7c0e7380f3d1afee9556d5a5b6bd2b0dd4b`), `parseCreateInstanceArgs`
+still requires **all three ARNs** on the client for **self-hosted**:
+`--cross-account-role-arn`, `--rstreams-secret-arn`, and `--rstreams-auth-arn`
+(`self-hosted requires --cross-account-role-arn, --rstreams-secret-arn, and --rstreams-auth-arn`).
+The API does not; the secret ARNs are written by provisioning. Prefer MCP or
+HTTP create without them. Managed CLI create does not require the secret flags.
+The TypeScript/CLI snippets above use placeholders (`name`, `<n>`, `<uuid>`) and
+were **not** run through the schemas; the JSON create bodies in this skill were.
 
 The platform reapplies the per-instance runtimes stack (`force_redeploy`). The
 customer does not run a Loxtep microservice deploy. Shared `connectors-*`
@@ -344,6 +397,44 @@ loxtep instances redeploy-runtimes <instance_id>
 Runtimes upgrades keep `connector_vpc` on the instance record. Connector
 create/test is **`connect-external-system`**. Workflow deploy onto the private
 Lambda is **`loxtep-deployments`**.
+
+## Bring your own Lambda (BYOL)
+
+Register a customer-deployed Lambda with LeoCron **without** Studio workflow
+deploy. Dedicated instances only (self-hosted or managed with
+`cross_account_role_arn` + `external_id`). Shared instances are rejected.
+
+Customer guide: `/docs/guides/bring-your-own-lambda`.
+
+### Agent flow
+
+1. `list_instances` — confirm instance type is not `shared`.
+2. Ensure the Lambda is in the **same AWS account/region** as the instance bus.
+3. `loxtep instances stream-config` / REST stream-config for bus resource names
+   (not over MCP). Tell the customer to set `RSTREAMS_CONFIG_SECRET` and
+   `LEOAUTH_CONFIG_SECRET` on the function.
+4. Register:
+
+```json
+{
+  "operation": "register_custom_bot",
+  "instance_id": "<uuid>",
+  "name": "My Worker",
+  "slug": "my-worker",
+  "lambda_name": "my-company-worker",
+  "paused": true,
+  "_metadata": { "skill_name": "loxtep-instances" }
+}
+```
+
+5. Return `iam_policy` + checklist from the response; customer attaches IAM to
+   the Lambda role.
+6. Unpause in Observe (LeoCron `paused` is runtime SoT after first register).
+7. Optional: `reconcile_custom_bots` for catalog ↔ LeoCron drift.
+
+CLI (SDK): `loxtep bots register|list|get|update|deregister|reconcile`.
+
+Permissions: `instances:bots:write` / `instances:bots:read`.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 
@@ -373,9 +464,13 @@ permissions: {}
 
 <!-- END loxtep skill-scope (skill-package-v1) -->
 
-## Optional attribution
+## Skill attribution (required)
 
-Add `"_metadata": { "skill_name": "loxtep-instances" }` alongside other fields.
+MCP tool calls need a resolvable skill name. Prefer
+`"_metadata": { "skill_name": "loxtep-instances" }` alongside other fields;
+otherwise the server infers from the operation map or `X-Skill-Name`.
+Unresolvable calls are denied (`MISSING_SKILL_ATTRIBUTION`). The skill name also
+drives scope checks.
 
 ## Auth
 
