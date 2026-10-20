@@ -337,10 +337,33 @@ silent drop. Preview (`loxtep_build` `preview_transform` and
 `POST /workflows/projects/{project_id}/preview/transformation`) returns those
 labelled refusals as `transformed_event: null` and
 `errors: [{ message, code, field }]` (REST HTTP 200) instead of a generic
-failure or 500. `explode_array` cannot do this: it splits one array and copies
-the others whole. `explode_array` requires `on_empty` (`drop` |
-`keep_original` | `error`); a missing `on_empty` is refused. See
-`get_entity_schemas` → transformation `transform_type` enum and GET
+failure or 500. `explode_array` cannot zip parallel arrays: it splits one array
+field and copies the others whole.
+
+**`explode_array`** — one event per element of a single array field. Set
+`operation_config.on_empty` (`drop` | `keep_original` | `error`); it is required
+and has no default. Missing or unknown `on_empty` is refused at validation
+(`INVALID_CONFIG` from `validateTransformConfig`, `save_workflow_bundle`,
+`TransformService.execute`) and at runtime (`ON_EMPTY_REQUIRED` from
+`explodeArray`). `drop`: empty array emits no events (`dropped: 1`,
+`drop_reason: 'empty_array'`; transformer logs `Transformer dropped events`).
+`keep_original`: the source event passes through unchanged. `error`: refused
+with `EMPTY_ARRAY` (event goes to the error path). A non-array `field` fails the
+event (`INVALID_TYPE`); it does not pass through with `errors[]`.
+`preview_transform` (same REST preview route): `drop` on empty →
+`transformed_events: []`, `event_count: 0`; `keep_original` → the source event
+as the one `transformed_events` item; `error`, `INVALID_TYPE`, and missing
+`on_empty` throw (`success: false`; REST 422). `TransformService` wraps those
+runtime `ExplodeArrayError` codes as `EXECUTION_ERROR`. Minimal config:
+
+```json
+{
+  "transform_type": "explode_array",
+  "operation_config": { "field": "items", "on_empty": "drop" }
+}
+```
+
+See `get_entity_schemas` → transformation `transform_type` enum and GET
 `/workflows/transforms/types`.
 
 Scenario 2 runbook (transform derivation → queryable sink):
