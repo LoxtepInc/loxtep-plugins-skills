@@ -417,10 +417,11 @@ CLI (`@loxtep/sdk`) posts `--entity-type` to the same endpoint:
 
 On success, `data.entities` is always present. It lists every collection that
 was attempted (`entity_type`, `status: captured|error`, `record_count`,
-`message`), including when only one collection was sampled. Top-level
-`entity_type` is that one concrete name when a single collection was sampled;
-otherwise it is the request token (`all` / `*`), never a comma list. Top-level
-`record_count` is the sum of captured collections.
+`message`, and optionally `code`, `missing_segment`, `connection_id` when a
+collection hits `DataPathResolutionError`), including when only one collection
+was sampled. Top-level `entity_type` is that one concrete name when a single
+collection was sampled; otherwise it is the request token (`all` / `*`), never a
+comma list. Top-level `record_count` is the sum of captured collections.
 
 If **any** collection fails, REST returns **422** (not 200) — mixed run or
 all-fail. That body is
@@ -471,6 +472,26 @@ Illustrative shape (from unit tests, not a live capture):
 }
 ```
 
+**HTTP / rest-api `data_path`:** Sample capture and ingest share
+`extractRecordsFromResponse`. There is **no** Studio UI field and **no** MCP
+argument named `data_path`. Set it on the connection entity
+`configuration.data_path` (`save_workflow_bundle` or `update_trigger` /
+`update_target`). Capture reads `configuration`, not `ingestion_config`. Parent
+catalog polls use `ingestion_config.entity_loop.parent_poll.data_path`.
+
+- Unset + array body → that array. Unset + object body →
+  `DATA_PATH_REQUIRED_FOR_OBJECT_BODY` (set `` `$` `` for the whole object as
+  one record; envelope keys are not guessed).
+- `` `$` `` + object → one record. `` `.` `` is not a root token.
+- Blank → `DATA_PATH_BLANK`. Missing segment → `DATA_PATH_MISSING_SEGMENT`
+  (names the segment and keys present). Path to object/scalar/null →
+  `DATA_PATH_RESOLVED_NOT_OBJECT_OR_ARRAY`. Unset + scalar/null →
+  `DATA_PATH_UNSET_NOT_OBJECT_OR_ARRAY`.
+- Ingest throws; the run fails (entity-loop checkpoint is not saved on this
+  throw — code trace). On capture, those codes land on `entities[]`.
+
+See `docs/api/connector-guide.md` and `docs/api/HTTP_ERROR_CODES_REFERENCE.md`.
+
 **Forbidden / do not invent:**
 
 - `loxtep connector test` (singular)
@@ -492,24 +513,25 @@ only when save and deploy both succeed.
 
 ## 9. Diagnose failures (customer vs Loxtep)
 
-| Code / symptom                                                                                                                | Layer                | Typical owner                                                                                          |
-| ----------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------ |
-| Unknown `connector_type`                                                                                                      | availability         | Agent: `list_connector_types`; Loxtep if catalog/template sync stale                                   |
-| Missing credentials message                                                                                                   | authentication       | Customer (supply on manage / `update_connector`)                                                       |
-| OAuth used with `create_connector`                                                                                            | authentication       | Agent: use `get_oauth_url`                                                                             |
-| `TLS_POLICY_VIOLATION` / `TLS_FAILURE`                                                                                        | authentication / TLS | Customer cert/hostname/CA                                                                              |
-| `MISSING_DISCOVERY_PERMISSION` / `MISSING_FIND_PERMISSION` / `MISSING_COLLECTION_ACCESS` / `MISSING_CHANGE_STREAM_PERMISSION` | authentication       | Customer source grants                                                                                 |
-| `UNSUPPORTED_STANDALONE`                                                                                                      | source topology      | Customer (replica set / mongos for CDC types)                                                          |
-| `PRIVATE_PROBE_FAILED` / cannot resolve `connectors-private-512`                                                              | runtime / network    | Loxtep runtimes deploy; customer if subnet/SG IDs never supplied                                       |
-| `AMBIGUOUS_CATALOG_FK` (`table_name`, `column_name`, `referenced_tables`)                                                     | source catalog       | Customer DBA: drop or fix the duplicate FOREIGN KEY so the column points at one table                  |
-| `CATALOG_READ_FAILED`                                                                                                         | source catalog       | Customer: restore `information_schema` / catalog grants, then Test again                               |
-| `SQL_CATALOG_CACHE_FAILED`                                                                                                    | control plane        | Loxtep: catalog was readable; writing `entity_field_schemas` failed. Re-test; if it persists, platform |
-| `POSTGRES_TABLE_CATALOG_MISSING` (probe `tls.policy` is `verified`)                                                           | source catalog       | Customer: the authorized table returned no column rows. Restore SELECT on columns, then Test again     |
-| `TABLE_CATALOGS_TOO_LARGE` (more than 256 tables)                                                                             | source catalog       | Customer: shrink the table allowlist; Loxtep refuses to truncate `account_info.table_catalogs`         |
-| Timeout / ENI / routing to private IP                                                                                         | network              | Customer VPC routing, SG, DNS                                                                          |
-| `403` / permission denied on MCP                                                                                              | RBAC                 | Customer org admin (`get_current_user`)                                                                |
-| Probe `passed: true` but no data product                                                                                      | ingestion            | Expected until authorized deploy                                                                       |
-| Shared connector Lambda testing a private host                                                                                | network              | Agent: set `network_binding: customer_vpc` and use private runtime                                     |
+| Code / symptom                                                                                                                      | Layer                | Typical owner                                                                                                                                           |
+| ----------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unknown `connector_type`                                                                                                            | availability         | Agent: `list_connector_types`; Loxtep if catalog/template sync stale                                                                                    |
+| Missing credentials message                                                                                                         | authentication       | Customer (supply on manage / `update_connector`)                                                                                                        |
+| OAuth used with `create_connector`                                                                                                  | authentication       | Agent: use `get_oauth_url`                                                                                                                              |
+| `TLS_POLICY_VIOLATION` / `TLS_FAILURE`                                                                                              | authentication / TLS | Customer cert/hostname/CA                                                                                                                               |
+| `MISSING_DISCOVERY_PERMISSION` / `MISSING_FIND_PERMISSION` / `MISSING_COLLECTION_ACCESS` / `MISSING_CHANGE_STREAM_PERMISSION`       | authentication       | Customer source grants                                                                                                                                  |
+| `UNSUPPORTED_STANDALONE`                                                                                                            | source topology      | Customer (replica set / mongos for CDC types)                                                                                                           |
+| `PRIVATE_PROBE_FAILED` / cannot resolve `connectors-private-512`                                                                    | runtime / network    | Loxtep runtimes deploy; customer if subnet/SG IDs never supplied                                                                                        |
+| `AMBIGUOUS_CATALOG_FK` (`table_name`, `column_name`, `referenced_tables`)                                                           | source catalog       | Customer DBA: drop or fix the duplicate FOREIGN KEY so the column points at one table                                                                   |
+| `CATALOG_READ_FAILED`                                                                                                               | source catalog       | Customer: restore `information_schema` / catalog grants, then Test again                                                                                |
+| `SQL_CATALOG_CACHE_FAILED`                                                                                                          | control plane        | Loxtep: catalog was readable; writing `entity_field_schemas` failed. Re-test; if it persists, platform                                                  |
+| `POSTGRES_TABLE_CATALOG_MISSING` (probe `tls.policy` is `verified`)                                                                 | source catalog       | Customer: the authorized table returned no column rows. Restore SELECT on columns, then Test again                                                      |
+| `TABLE_CATALOGS_TOO_LARGE` (more than 256 tables)                                                                                   | source catalog       | Customer: shrink the table allowlist; Loxtep refuses to truncate `account_info.table_catalogs`                                                          |
+| `DATA_PATH_*` (`REQUIRED_FOR_OBJECT_BODY`, `BLANK`, `MISSING_SEGMENT`, `RESOLVED_NOT_OBJECT_OR_ARRAY`, `UNSET_NOT_OBJECT_OR_ARRAY`) | HTTP body → records  | Customer: set connection `configuration.data_path` (`$` for whole-object, or a dot path that yields an array). Not a Connector API field; no Studio UI. |
+| Timeout / ENI / routing to private IP                                                                                               | network              | Customer VPC routing, SG, DNS                                                                                                                           |
+| `403` / permission denied on MCP                                                                                                    | RBAC                 | Customer org admin (`get_current_user`)                                                                                                                 |
+| Probe `passed: true` but no data product                                                                                            | ingestion            | Expected until authorized deploy                                                                                                                        |
+| Shared connector Lambda testing a private host                                                                                      | network              | Agent: set `network_binding: customer_vpc` and use private runtime                                                                                      |
 
 Sanitize every error string before showing it (redact URI userinfo and PEMs).
 
@@ -726,6 +748,10 @@ That clears only the backfill checkpoint. CDC and lookup checkpoints stay.
   Typed misses are 404/400; untyped errors are 500. MCP reports
   `capture_samples failed` and `{ message, details }` (including
   `details.entities` on mixed-run and all-fail 422), not a 200 payload.
+  Per-collection error rows may include `code`, `missing_segment`, and
+  `connection_id` when HTTP record extraction fails (`DATA_PATH_*`). Fix
+  `configuration.data_path` on the connection — do not invent a
+  `capture_samples` `data_path` argument.
 - **Private test on the API Lambda** — set `network_binding: customer_vpc` and
   use an instance whose runtimes stack has `connectors-private-512`.
 - **Warehouse bind** (Snowflake / Databricks table in place) is
@@ -733,6 +759,9 @@ That clears only the backfill checkpoint. CDC and lookup checkpoints stay.
 
 ## Known gaps (do not invent APIs)
 
+- No MCP argument named `data_path` and no Studio UI field. Set
+  `configuration.data_path` on the connection entity (`save_workflow_bundle` /
+  `update_trigger`). Sample capture does not read `ingestion_config.data_path`.
 - No MCP `get_connector`; use `list_connectors` or SDK/REST GET.
 - No MCP for connector packages; REST
   `GET /dataproducts/connector-packages/{slug}`.
