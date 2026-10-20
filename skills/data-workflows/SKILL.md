@@ -434,7 +434,14 @@ or coerce an empty date to `1970-01-01` / unix 0.
 5. **`preview_query_trigger`** (dry SELECT sample) then **`run_query_trigger`**
    (emit rows to the sink queue) or wait for the cron schedule. Both refuse
    unless every source value that would go into `lx__id` is already a non-empty
-   scalar on each row.
+   scalar on each row. Both also refuse a warehouse read whose `status` is not
+   `completed`: a parquet-fallback **partial** Iceberg read is
+   `SQL preview refused a partial Iceberg read` (preview) or
+   `Query trigger inspect refused a partial Iceberg read` (run) — the bot is not
+   triggered. Other non-completed statuses (failed timeout, DuckDB
+   `memory limit exceeded` as `query_error`, cancelled) return
+   `SQL preview failed` / `Query trigger inspect failed` with the warehouse
+   `error` string as `message`.
 6. Verify with **`execute_query`** on the sink data product.
 
 Glossary: **Projection** (entity Store) ≠ **SQL derivation** (`query_trigger`) ≠
