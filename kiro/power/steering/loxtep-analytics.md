@@ -119,7 +119,9 @@ Fields that may appear on the result (only these exist on
   (`No Iceberg snapshots yet`) is only a complete empty `metadata/` LIST, not
   these catalog states. Rebuild permanently deletes the table and recreates it
   from the queue. Always `dry_run: true` first. Never rebuild without explicit
-  confirmation.
+  confirmation. Do not treat rebuild or backfill status as a lock — a second
+  request while one is running is accepted. An unexpected upstream 409 is an
+  error, not "already running".
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 
