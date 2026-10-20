@@ -92,7 +92,21 @@ promotion.
 
 1. **Identify domain boundary:** What business capability area?
 2. **Extract concepts:** From schemas, APIs, docs, stakeholder interviews.
-3. **Define relationships:** Type each connection between concepts.
+   Thesaurus `scheme: field` terms are vocabulary keys, not ontology concepts.
+3. **Define relationships:** Type each connection between ontology concepts
+   (`create_ontology_relationship`). Connect / induction does **not** treat a
+   column name ending in `_id` as a foreign key. Shape-field relations are not
+   user-declarable today. Postgres and MySQL source foreign keys are read from
+   the database catalog as `references_shape`. Mark identifiers with
+   `is_primary_key` (or `schema.key`) on the **data-product schema** path, or
+   rely on Postgres / MySQL catalog PRIMARY KEY flags cached on the connector
+   (tier B: `postgres`, `postgresql`, `mysql`, `mysql-source` only). JSON Schema
+   snapshots still drop those flags. Other connectors (MongoDB, REST, and so on)
+   still do not emit catalog keys. Warehouses that do not cache field lists
+   (Databricks, Snowflake, Redshift, BigQuery, Athena) still use sample
+   inference. Missing catalog fields on the four SQL types **DEFER** induction;
+   they do not infer from samples. A duplicate FOREIGN KEY on one column is
+   `AMBIGUOUS_CATALOG_FK` — drop or fix it, then Test again.
 4. **Resolve conflicts:** Same term, different meanings across teams.
 5. **Formalize:** Create ontology concepts via `create_ontology_concept`.
 6. **Link:** Create relationships via `create_ontology_relationship`.
@@ -149,28 +163,28 @@ promotion.
 
 ## MCP mapping
 
-| `operation`                                       | Facade           | Scope        | Notes                                        |
-| ------------------------------------------------- | ---------------- | ------------ | -------------------------------------------- |
-| `create_term`                                     | `loxtep_meaning` | organization | Canonical term + aliases                     |
-| `sync_vocabulary`                                 | `loxtep_meaning` | organization | Bulk vocabulary sync                         |
-| `resolve_canonical_key`                           | `loxtep_meaning` | organization | Alias → canonical resolution                 |
-| `create_schema` / `apply_schema` / `patch_schema` | `loxtep_define`  | organization | Domain **shapes** (not DP schemas)           |
-| `create_ontology_concept`                         | `loxtep_meaning` | organization | Graph type node (`node_type` lowercase enum) |
-| `create_ontology_relationship`                    | `loxtep_meaning` | organization | Edge between entity types                    |
-| `get_ontology_relationships`                      | `loxtep_meaning` | organization | Query graph edges                            |
-| `update_ontology_concept`                         | `loxtep_meaning` | organization | Modify concept definition                    |
-| `delete_ontology_concept`                         | `loxtep_meaning` | organization | Soft-delete (tombstone)                      |
-| `register_namespace_mapping`                      | `loxtep_meaning` | organization | Cross-system prefix mapping                  |
-| `list_namespace_mappings`                         | `loxtep_meaning` | organization | View registered namespaces                   |
-| `create_enterprise_override`                      | `loxtep_meaning` | organization | Delta when pack baseline wrong               |
-| `list_enterprise_overrides`                       | `loxtep_meaning` | organization | Audit active/proposed overrides              |
-| `resolve_semantic_gap`                            | `loxtep_meaning` | organization | Close gap issue + create override            |
-| `request_semantic_inference`                      | `loxtep_meaning` | organization | Explicit hosted inference only. Does not write `schema.key` |
-| `get_semantic_inference`                          | `loxtep_meaning` | organization | Read the hosted inference snapshot           |
-| `promote_semantic_inference`                      | `loxtep_meaning` | organization | `accept` or `dismiss` a completed run        |
+| `operation`                                       | Facade           | Scope        | Notes                                                         |
+| ------------------------------------------------- | ---------------- | ------------ | ------------------------------------------------------------- |
+| `create_term`                                     | `loxtep_meaning` | organization | Canonical term + aliases                                      |
+| `sync_vocabulary`                                 | `loxtep_meaning` | organization | Bulk vocabulary sync                                          |
+| `resolve_canonical_key`                           | `loxtep_meaning` | organization | Alias → canonical resolution                                  |
+| `create_schema` / `apply_schema` / `patch_schema` | `loxtep_define`  | organization | Domain **shapes** (not DP schemas)                            |
+| `create_ontology_concept`                         | `loxtep_meaning` | organization | Graph type node (`node_type` lowercase enum)                  |
+| `create_ontology_relationship`                    | `loxtep_meaning` | organization | Edge between entity types                                     |
+| `get_ontology_relationships`                      | `loxtep_meaning` | organization | Query graph edges                                             |
+| `update_ontology_concept`                         | `loxtep_meaning` | organization | Modify concept definition                                     |
+| `delete_ontology_concept`                         | `loxtep_meaning` | organization | Soft-delete (tombstone)                                       |
+| `register_namespace_mapping`                      | `loxtep_meaning` | organization | Cross-system prefix mapping                                   |
+| `list_namespace_mappings`                         | `loxtep_meaning` | organization | View registered namespaces                                    |
+| `create_enterprise_override`                      | `loxtep_meaning` | organization | Delta when pack baseline wrong                                |
+| `list_enterprise_overrides`                       | `loxtep_meaning` | organization | Audit active/proposed overrides                               |
+| `resolve_semantic_gap`                            | `loxtep_meaning` | organization | Close gap issue + create override                             |
+| `request_semantic_inference`                      | `loxtep_meaning` | organization | Explicit hosted inference only. Does not write `schema.key`   |
+| `get_semantic_inference`                          | `loxtep_meaning` | organization | Read the hosted inference snapshot                            |
+| `promote_semantic_inference`                      | `loxtep_meaning` | organization | `accept` or `dismiss` a completed run                         |
 | `apply_glossary_bindings`                         | `loxtep_meaning` | organization | Apply accepted glossary bindings. Does not write `schema.key` |
-| `discover_ontology_relationships`                 | `loxtep_meaning` | organization | Candidate edges. Optional `limit` 1–500      |
-| `accept_ontology_relationships`                   | `loxtep_meaning` | organization | Persist accepted edges                       |
+| `discover_ontology_relationships`                 | `loxtep_meaning` | organization | Candidate edges. Optional `limit` 1–500                       |
+| `accept_ontology_relationships`                   | `loxtep_meaning` | organization | Persist accepted edges                                        |
 
 **Define meaning** = terms + shapes. Ontology concepts are graph types /
 relationships — use them after terms/shapes exist when you need typed edges.
@@ -221,6 +235,18 @@ Do not claim full MCP↔SDK parity for namespace mappings or
   shape's `is_primary_key` fields, projected onto `data_products.schema` by
   apply. Iceberg reads that snapshot. Use `define-data-product-shape` for the
   shape, pin, and snapshot.
+- **Do not infer keys or relations from `*_id` names.** Semantic connect /
+  ontology induction treats a field as an identifier when it is a declared key
+  on the data-product schema path, or when Postgres / MySQL catalog PRIMARY KEY
+  flags are cached on the connector (`postgres`, `postgresql`, `mysql`,
+  `mysql-source`). Those four types DEFER without samples when the cache is
+  missing or stale. Databricks, Snowflake, Redshift, BigQuery, and Athena keep
+  sample inference. On the semantic connect path only, high-confidence bindings
+  still stay `needs_review` when any field mapping needs review. Org-wide
+  inference auto-accepts on threshold plus override conflict only. Shape-field
+  relations are not user-declarable today. Postgres and MySQL source FKs are
+  read from the database catalog. Duplicate FKs on one column fail Test /
+  listing / sync (`AMBIGUOUS_CATALOG_FK`); fix the source constraint.
 - **Confusing with loxtep-ontology:** That Agent-Scope Skill is for MCP CRUD
   operations on ontology entities. This Agent-Scope Skill is the _methodology_
   for deciding what to create.
@@ -270,9 +296,12 @@ Legacy names: `loxtep_ontology`, `loxtep_semantic_layer`.
 (Bronze/Silver/Gold) and override-coverage on flagged divergent fields — see
 **`promote-data-product`** and **`data-product-modeling`**.
 
-## Optional attribution
+## Skill attribution (required)
 
-`_metadata: { "skill_name": "semantic-ontology-mapping" }`
+MCP tool calls need a resolvable skill name. Prefer
+`_metadata: { "skill_name": "semantic-ontology-mapping" }`; otherwise the server
+infers from the operation map or `X-Skill-Name`. Unresolvable calls are denied
+(`MISSING_SKILL_ATTRIBUTION`). The skill name also drives scope checks.
 
 ## Auth
 
