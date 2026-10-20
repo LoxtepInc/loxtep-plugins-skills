@@ -3,8 +3,8 @@ name: loxtep-queue-tracing
 description:
   Trace rstreams bots and queues for deployment or data-flow failures. Use when
   debugging stuck workflows, missing events, bot checkpoints, or Observe/botmon
-  empty results. reading queue events from the live runtime. Trace actions
-  through the platform event queues to see what actually happened. Combines
+  empty results. Read queue events from the live runtime. Trace actions through
+  the platform event queues to see what actually happened. Combines
   loxtep_observe (read_queue_events) with knowledge of queue naming conventions.
   User story S7 extension. See docs/skills-user-stories.md.
 ---
@@ -66,7 +66,96 @@ container_id:
 | `{ns}-workflows-github-sync-requested`     | GitHub sync events                          |
 | `{ns}-workflows-notifications`             | User notifications                          |
 
+## `read_queue_events` response (do this first)
+
+`loxtep_observe` `read_queue_events` calls `GET /app/observe/search` and returns
+the botmon search body unchanged under **`events`**. The scan walks the stream
+**forward** from `eid` (default: about 60 minutes before now). Matching events
+are appended in that scan order — not reverse chronological, and not "most
+recent first."
+
+On success the tool data looks like:
+
+```json
+{
+  "queue_name": "lxappdev-workflows-workflow-deployment-errors",
+  "search_eid": "z/2026/10/19/05/56/1760854560123-0000000",
+  "instance_id": "9c5a188a-8e71-4bf7-b83c-362cc0e6d9bd",
+  "events": {
+    "results": [],
+    "resumptionToken": null,
+    "last_time": null,
+    "count": 0,
+    "agg": {},
+    "scan_incomplete": false
+  }
+}
+```
+
+Unverified example of the response shape (not captured from a live instance).
+
+| `events` field    | Meaning                                                                                        |
+| ----------------- | ---------------------------------------------------------------------------------------------- |
+| `results`         | Matching events from this scan, in forward scan order                                          |
+| `resumptionToken` | Last **scanned** eid (whether or not it matched). Pass as the next request's `eid` to continue |
+| `scan_incomplete` | `true`: the time budget cut the scan short. `false`: the scan stopped on its own               |
+| `count`           | Events **scanned**, not `results.length`                                                       |
+| `last_time`       | Timestamp of the last scanned event, or `null`                                                 |
+
+**Empty `results` does not mean "no events"** unless `scan_incomplete` is
+`false` **and** `resumptionToken` is `null`. A budget-cut scan that matched
+nothing still has `scan_incomplete: true` and a `resumptionToken` when any event
+was scanned — continue. A queue that is empty after `eid` is a 200 with
+`results: []`, `resumptionToken: null`, `scan_incomplete: false`.
+
+There is no separate resumption input. Continue with:
+
+```json
+{
+  "operation": "read_queue_events",
+  "queue_name": "lxappdev-workflows-workflow-deployment-errors",
+  "eid": "z/2026/10/17/19/02/b",
+  "count": 10
+}
+```
+
+Use the previous page's `events.resumptionToken` as `eid`. Unverified example of
+the input shape (not captured from a live instance).
+
+`scan_incomplete: false` means this scan stopped on its own (end of stream, a
+full page of matches, or the post-match time cap), so `results` /
+`resumptionToken` are authoritative. If `resumptionToken` is still set, request
+the next page — a full page is not the end of the stream.
+
+### Errors (non-2xx)
+
+Non-2xx Observe/botmon responses are MCP failures: `error` is
+`Observe search returned HTTP <status>`; `message` carries the downstream body
+(or a stringified `downstream_response`).
+
+| HTTP | `code`                      | What to do                                                                                                              |
+| ---- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| 503  | `scan_incomplete`           | Budget expired **before any event was scanned** — no resume position. Retry; or pass a later `eid` to narrow the window |
+| 502  | `stream_read_failed`        | Stream read failed (e.g. DynamoDB capacity). Retry later; do not treat as an empty queue                                |
+| 400  | `invalid_filter_expression` | `search_text` was treated as a bad filter expression. Drop or simplify `search_text`                                    |
+
+Unverified example of a 503 downstream body (not captured from a live instance):
+
+```json
+{
+  "success": false,
+  "code": "scan_incomplete",
+  "error": "Search time budget expired before any event was scanned; no resume position. Retry the request.",
+  "queue": "ops-alert-requested",
+  "start": "z/2026/10/17/19/00/",
+  "scanned": 0
+}
+```
+
 ## Happy-path flows
+
+JSON call shapes below are unverified templates (placeholders such as `{ns}`),
+not live captures.
 
 ### Flow — Debug a failed deployment
 
@@ -79,9 +168,13 @@ container_id:
      "count": 5
    }
    ```
-3. Read the event payload — it contains the error message, workflow_id, and
+3. If `events.resumptionToken` is set, call again with `eid` set to that token
+   until the page is complete (`scan_incomplete` false and no token, or you have
+   the event you need). Handle 503/502 as above — do not stop on empty
+   `results`.
+4. Read the event payload — it contains the error message, workflow_id, and
    context.
-4. Cross-reference with the deployment-requested queue to see the triggering
+5. Cross-reference with the deployment-requested queue to see the triggering
    event:
    ```json
    {
@@ -108,8 +201,18 @@ container_id:
 ### Flow — Trace "nothing happened"
 
 1. Start at the trigger queue (e.g., `*-deployment-requested` or `*-source`).
-2. Confirm the event exists and has correct payload.
-3. Walk downstream queue by queue until you find where events stop.
+2. Call `read_queue_events`. **Do not conclude the queue is empty** from
+   `events.results: []` alone:
+   - `scan_incomplete: true` and a `resumptionToken` → continue with `eid` =
+     that token.
+   - MCP error `Observe search returned HTTP 503` with `code: scan_incomplete` →
+     retry, or retry with a later `eid`.
+   - MCP error `Observe search returned HTTP 502` with
+     `code: stream_read_failed` → retry later; the stream was not proven empty.
+   - `scan_incomplete: false` and `resumptionToken` null → this window really
+     has no matching events.
+3. Once a complete page says the trigger event exists (or truly does not), walk
+   downstream queue by queue until you find where events stop.
 4. Check the error queue for the last node that received events.
 
 ### Flow — Verify event emission after code change
@@ -123,14 +226,19 @@ container_id:
      "count": 1
    }
    ```
-3. Verify the event payload matches expectations.
+3. Continue from `resumptionToken` if the first page is incomplete. Then verify
+   the event payload matches expectations.
 
 ## Tracing tips
 
-- **Most recent events first:** `read_queue_events` returns events in reverse
-  chronological order by default.
+- **Forward from `eid`:** omitted `eid` anchors about 60 minutes before now.
+  Results are in scan order (older → newer in that window), not reverse
+  chronological and not "most recent first."
+- **Continue with `eid`:** pass `events.resumptionToken` as `eid`. The input
+  schema has `eid` only — no separate resumption field.
 - **Use `search_text`** to filter for specific workflow_id, organization_id, or
-  error messages.
+  error messages. A `search_text` that looks like a `$.…` filter expression can
+  400 with `invalid_filter_expression`.
 - **Error queues are gold:** When something fails silently, the error queue
   (`*-err`) almost always has the real error with stack trace.
 - **Queue names from deployment:** Use `get_runtime_mapping` (loxtep_build) to
@@ -151,8 +259,12 @@ container_id:
 
 ## Pitfalls
 
+- **Empty `results` is not "nothing happened":** only `scan_incomplete: false`
+  **and** no `resumptionToken` means this window has no matching events. A 503
+  `scan_incomplete` or 502 `stream_read_failed` is not an empty queue.
 - **Namespace matters:** Queue names are namespace-prefixed. Using the wrong
-  namespace returns empty results.
+  namespace can look empty — still apply the completeness check above before
+  concluding that.
 - **Queue observability required:** `read_queue_events` needs your instance to
   support queue inspection. If unavailable, use the Loxtep UI or contact
   support.
@@ -161,9 +273,12 @@ container_id:
 - **Event retention:** Queues retain events based on the instance's retention
   policy. Very old events may be unavailable.
 
-## Optional attribution
+## Skill attribution (required)
 
-`_metadata: { "skill_name": "loxtep-queue-tracing" }`
+MCP tool calls need a resolvable skill name. Prefer
+`_metadata: { "skill_name": "loxtep-queue-tracing" }`; otherwise the server
+infers from the operation map or `X-Skill-Name`. Unresolvable calls are denied
+(`MISSING_SKILL_ATTRIBUTION`). The skill name also drives scope checks.
 
 ## Auth
 

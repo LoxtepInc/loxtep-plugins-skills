@@ -30,8 +30,19 @@ organization level.
    not a data-product schema blob.
 2. `apply_schema` to pin the shape on a data product. Apply writes
    `data_product_schema_applications` and refreshes the catalog snapshot
-   `data_products.schema`, including `schema.key` from
-   `fields[].is_primary_key`. Iceberg reads that snapshot. See
+   `data_products.schema`, including `schema.key` from `fields[].is_primary_key`
+   on that data-product schema path. JSON Schema snapshots still drop
+   `is_primary_key` and `schema.key`. Postgres and MySQL source catalog field
+   lists keep `is_primary_key` (and `references_shape`) on the connector cache
+   for induction; Iceberg still reads the data-product schema snapshot. If both
+   `schema.key` and `is_primary_key` are present they must agree; semantic
+   bootstrap throws `DeclaredKeyConflictError` instead of unioning them.
+   Recovery: (a) if a shape is applied, `get_definition_status` reports a
+   `storage_key_conflict` blocker, and `apply_schema` or
+   `apply_definition_proposal` with matching keys fixes it; (b) if no shape is
+   applied, the only fix is `PUT /dataproducts/{id}` with a matching
+   `schema.key`. MCP `update_data_product` does not. `catalog_refresh` does not
+   repair that. See
    [shape, application, and catalog snapshot](../../../docs/concepts/shape-application-catalog-snapshot.md).
 3. Align the shape to a concept URI via `patch_schema` /
    `client.define.shapes.align({ aligned_to_concept_uri })`.
@@ -43,8 +54,8 @@ organization level.
 
 1. `create_data_contract` on `loxtep_build` with `data_product_id`, `name`, and
    `schema_version_id` from the applied shape version.
-2. `schema_version_id` is stored as `schema_ref`. It names the shape version.
-   It does not write `schema.key`.
+2. `schema_version_id` is stored as `schema_ref`. It names the shape version. It
+   does not write `schema.key`.
 
 ### Flow — Quality on definitions
 
@@ -98,9 +109,12 @@ relationships — not the primary path for field vocabulary.
 
 <!-- SCOPE_BLOCK -->
 
-## Optional attribution
+## Skill attribution (required)
 
-`_metadata: { "skill_name": "org-semantics-quality" }`
+MCP tool calls need a resolvable skill name. Prefer
+`_metadata: { "skill_name": "org-semantics-quality" }`; otherwise the server
+infers from the operation map or `X-Skill-Name`. Unresolvable calls are denied
+(`MISSING_SKILL_ATTRIBUTION`). The skill name also drives scope checks.
 
 ## Auth
 

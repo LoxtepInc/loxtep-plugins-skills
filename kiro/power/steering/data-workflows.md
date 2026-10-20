@@ -49,10 +49,16 @@ User editing open flow in Studio UI (tiny incremental change)?
 After connect-external-system (Connect)?
   → Require a passing `test_connector` and **user authorization** before ingest.
     `test_connector` is not ingest. `capture_samples` retrieves source rows.
-  → rest-api / file-transfer after Test: list_connector_entities →
-    apply_template (workflow / connector-ingestion) → set entities + schedule + how →
-    save_workflow_bundle → deploy_workflow. Or `confirm_connector_entity_selection` (PKO fan-out per entity).
+  → list_connector_entities after Test: rest-api, file-transfer, mongodb-source,
+    postgres (`postgresql` / `postgres-source`), mysql-source (`mysql`).
+  → rest-api / file-transfer: apply_template (workflow / connector-ingestion) →
+    set entities + schedule + how → save_workflow_bundle → deploy_workflow.
+    Or `confirm_connector_entity_selection` (PKO fan-out per entity).
     Assessor fires the trigger. Do not add a scheduler. Do not pull without a workflow.
+  → mongodb-source / postgres: `confirm_connector_entity_selection` (PKO fan-out).
+    Postgres: prefer this over the database-cdc template.
+  → mysql-source / mysql: confirm is not a MySQL path — start at
+    get_entity_schemas, compose bundle
   → Other types: connector_id + samples — start at get_entity_schemas, compose bundle
   → Put the connector on a Trigger connection at the ingest head
   → Private-network connections keep `network_binding` on the org connector;
@@ -307,22 +313,64 @@ https://github.com/LoxtepInc/loxtep-project-template
 under one object (`daily.time`, `daily.temperature_2m_max`, …) and the product
 needs one event per index. Config: `source_path`, `index_field`, optional
 `index_as`, `include_fields`, `carry_fields`, and optional `primary_key` (a
-non-empty list of unique field names). `primary_key` names output fields
-(`carry_fields`, `index_as`, or a zipped array) whose values, in list order, are
-joined with `|` into `lx__id` on each emitted event (latitude + longitude +
-`obs_date` → `40.71|-74.01|2026-01-01`). Key parts may be any scalar: string,
-finite number, boolean or bigint. Objects and arrays are refused, and so are
-missing, null, blank, non-finite and `|`-containing parts. If an upstream event
-already carries `lx__id`, you must declare `primary_key` — without it the split
-is refused (`LX_ID_WITHOUT_PRIMARY_KEY`). Carrying or zipping `lx__id` itself is
-refused (`LX_ID_CARRIED`). With `primary_key` it also refuses a listed field
-that is not an output field, and duplicate stamped keys across emitted events.
-An incoming `lx__id` is accepted when it equals the stamped key. It is refused
-only when it disagrees. All of those refusals, plus mismatched lengths,
-missing/non-array fields, an empty index, and null or duplicate index values, go
-to the error queue — no silent drop. `explode_array` cannot do this: it splits
-one array and copies the others whole. See `get_entity_schemas` → transformation
-`transform_type` enum and GET `/workflows/transforms/types`.
+non-empty list of unique field names). `source_path` may be dotted
+(`hourly.data`); runtime and schema inference both walk that path. Schema
+inference refuses instead of inventing `{type:'string'}` columns when the path
+is missing or not an object, a carry field is missing, or a listed field is
+missing, not an array, or an array without an `items` schema
+(`SOURCE_PATH_MISSING`, `SOURCE_PATH_NOT_OBJECT`, `CARRY_FIELD_MISSING`,
+`FIELD_MISSING`, `FIELD_NOT_ARRAY`, `SCHEMA_ITEMS_MISSING`). A deployed
+transformer whose stored `input_schema` is stale fails on those codes (event
+goes to the error path) instead of passing a bogus schema. `primary_key` names
+output fields (`carry_fields`, `index_as`, or a zipped array) whose values, in
+list order, are joined with `|` into `lx__id` on each emitted event (latitude +
+longitude + `obs_date` → `40.71|-74.01|2026-01-01`). Key parts may be any
+scalar: string, finite number, boolean or bigint. Objects and arrays are
+refused, and so are missing, blank, non-finite and `|`-containing parts. A null
+carry field is refused as `CARRY_FIELD_NULL` before key stamping — even when
+that field is listed in `primary_key` (not `PRIMARY_KEY_PART_MISSING`). A null
+on a zipped array used as a key part is still `PRIMARY_KEY_PART_MISSING`. If an
+upstream event already carries `lx__id`, you must declare `primary_key` —
+without it the split is refused (`LX_ID_WITHOUT_PRIMARY_KEY`). Carrying or
+zipping `lx__id` itself is refused (`LX_ID_CARRIED`). With `primary_key` it also
+refuses a listed field that is not an output field, and duplicate stamped keys
+across emitted events. An incoming `lx__id` is accepted when it equals the
+stamped key. It is refused only when it disagrees. All of those refusals, plus
+mismatched lengths, missing/non-array fields, an empty index, null or duplicate
+index values, mixed-type index values (`INDEX_MIXED_TYPES`), and a
+present-but-null carry field (`CARRY_FIELD_NULL`), go to the error queue — no
+silent drop. Preview (`loxtep_build` `preview_transform` and
+`POST /workflows/projects/{project_id}/preview/transformation`) returns those
+labelled refusals as `transformed_event: null` and
+`errors: [{ message, code, field }]` (REST HTTP 200) instead of a generic
+failure or 500. `explode_array` cannot zip parallel arrays: it splits one array
+field and copies the others whole.
+
+**`explode_array`** — one event per element of a single array field. Set
+`operation_config.on_empty` (`drop` | `keep_original` | `error`); it is required
+and has no default. Missing or unknown `on_empty` is refused at validation
+(`INVALID_CONFIG` from `validateTransformConfig`, `save_workflow_bundle`,
+`TransformService.execute`) and at runtime (`ON_EMPTY_REQUIRED` from
+`explodeArray`). `drop`: empty array emits no events (`dropped: 1`,
+`drop_reason: 'empty_array'`; transformer logs `Transformer dropped events`).
+`keep_original`: the source event passes through unchanged. `error`: refused
+with `EMPTY_ARRAY` (event goes to the error path). A non-array `field` fails the
+event (`INVALID_TYPE`); it does not pass through with `errors[]`.
+`preview_transform` (same REST preview route): `drop` on empty →
+`transformed_events: []`, `event_count: 0`; `keep_original` → the source event
+as the one `transformed_events` item; `error`, `INVALID_TYPE`, and missing
+`on_empty` throw (`success: false`; REST 422). `TransformService` wraps those
+runtime `ExplodeArrayError` codes as `EXECUTION_ERROR`. Minimal config:
+
+```json
+{
+  "transform_type": "explode_array",
+  "operation_config": { "field": "items", "on_empty": "drop" }
+}
+```
+
+See `get_entity_schemas` → transformation `transform_type` enum and GET
+`/workflows/transforms/types`.
 
 Scenario 2 runbook (transform derivation → queryable sink):
 [`docs/runbooks/transform-enrichment-scenario-2.md`](../../docs/runbooks/transform-enrichment-scenario-2.md).
@@ -373,7 +421,14 @@ or coerce an empty date to `1970-01-01` / unix 0.
 5. **`preview_query_trigger`** (dry SELECT sample) then **`run_query_trigger`**
    (emit rows to the sink queue) or wait for the cron schedule. Both refuse
    unless every source value that would go into `lx__id` is already a non-empty
-   scalar on each row.
+   scalar on each row. Both also refuse a warehouse read whose `status` is not
+   `completed`: a parquet-fallback **partial** Iceberg read is
+   `SQL preview refused a partial Iceberg read` (preview) or
+   `Query trigger inspect refused a partial Iceberg read` (run) — the bot is not
+   triggered. Other non-completed statuses (failed timeout, DuckDB
+   `memory limit exceeded` as `query_error`, cancelled) return
+   `SQL preview failed` / `Query trigger inspect failed` with the warehouse
+   `error` string as `message`.
 6. Verify with **`execute_query`** on the sink data product.
 
 Glossary: **Projection** (entity Store) ≠ **SQL derivation** (`query_trigger`) ≠
@@ -692,6 +747,53 @@ Notes:
 | 9b   | Deploy single workflow                      | `loxtep_build`     | `deploy_workflow`                                                                                                                                                                                                                 | **project**                                     | `project_id`, `workflow_id`, `instance_id`, optional `force_redeploy`, `skip_validation`                                        |
 | 10   | List/get deployments                        | `loxtep_observe`   | `list_deployments`, `get_deployment`                                                                                                                                                                                              | **organization**                                | `deployment_id`, optional filters                                                                                               |
 | 11   | Runtime mapping                             | `loxtep_build`     | `get_runtime_mapping`                                                                                                                                                                                                             | **project**                                     | `workflow_id`, `project_id`                                                                                                     |
+
+## Tune node batch size and memory
+
+Set these on the **entity JSON** (bundle file), then `save_workflow_bundle` →
+`deploy_workflow`. `get_entity_schemas` lists the same fields. A set value that
+deploy cannot honor **fails the deploy** — it does not warn and default.
+
+| Field               | Valid values                            | What it controls                                 |
+| ------------------- | --------------------------------------- | ------------------------------------------------ |
+| `batch_size`        | integer **1–10000**                     | Events per handler call (rstreams offload batch) |
+| `runtime_memory_mb` | **256**, **512**, **1024**, or **2048** | Shared runtimes Lambda memory tier               |
+
+### Where to put the fields
+
+| Entity         | Location                                                                                                                                                 | Unset `batch_size` | Unset `runtime_memory_mb`                                                             |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------- |
+| Transformation | Top-level on `transformations/{id}.json`                                                                                                                 | 300                | Derived from `transform_type` (see below). Registers on shared `transformers-{mb}`.   |
+| Validation     | Top-level on `validations/{id}.json`                                                                                                                     | 300                | Shared runtimes segment resolvable: `connectors-256`. Otherwise `validation-handler`. |
+| Quality rule   | Top-level on `quality-rules/{id}.json`                                                                                                                   | 300                | Same as validation, except the legacy Lambda is `quality-rule-handler`.               |
+| Connection     | `ingestion_config.batch_size` / `ingestion_config.runtime_memory_mb` (same keys on `configuration` also work; `ingestion_config` wins when both are set) | 100                | Shared runtimes segment resolvable: `connectors-256`. Otherwise `connection-handler`. |
+
+Unset transformation memory is 1024 for `execute_code_function`,
+`derived_columns`, `concatenate_columns`, `explode_array`, `zip_arrays`,
+`array_to_column`, and `route` with `prepare`; 512 for `parse_json`,
+`xml_to_json`, `extract_json_path`, `regex_extractor`, `flatten`, and `filter`;
+otherwise 256. Derived unset never selects 2048.
+
+A **set** `runtime_memory_mb` (including explicit **256**) registers on
+`connectors-{mb}` (connections, validations, quality rules) or
+`transformers-{mb}` (transformations). Shared runtimes resolve when the instance
+has `connection_details.runtimes_stack_identifier` **or** deploy can derive
+`organization_id` + `instance_id`.
+
+A connection that requires a customer VPC (`network_binding: customer_vpc` /
+`private`, `require_private_network: true`, or `mongodb-source` / `mongodb`)
+registers on `connectors-private` at **512 MB** regardless of the requested
+`runtime_memory_mb`.
+
+### Deploy errors
+
+| Error                               | When                                                                                                       | Fix                                                                                                                                  |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `InvalidNodeRuntimeTuningError`     | A field is **set** but not a valid value (e.g. `batch_size` 0 / 10001 / `"lots"`, `runtime_memory_mb` 999) | Omit the field or set a value from the table above. Connection `batch_size` is the same 1–10000 rule.                                |
+| `NodeRuntimeTuningUnavailableError` | `runtime_memory_mb` is **set** (including 256) and no shared runtimes segment resolves                     | Deploy to an instance that supplies `organization_id` + `instance_id` (or `runtimes_stack_identifier`), or omit `runtime_memory_mb`. |
+
+Do not put `runtime_memory_mb` on the connection entity root — the connection
+schema rejects unknown top-level properties. Use `ingestion_config`.
 
 ## Pitfalls
 
