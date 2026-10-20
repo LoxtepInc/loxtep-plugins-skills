@@ -62,10 +62,16 @@ User editing open flow in Studio UI (tiny incremental change)?
 After connect-external-system (Connect)?
   → Require a passing `test_connector` and **user authorization** before ingest.
     `test_connector` is not ingest. `capture_samples` retrieves source rows.
-  → rest-api / file-transfer after Test: list_connector_entities →
-    apply_template (workflow / connector-ingestion) → set entities + schedule + how →
-    save_workflow_bundle → deploy_workflow. Or `confirm_connector_entity_selection` (PKO fan-out per entity).
+  → list_connector_entities after Test: rest-api, file-transfer, mongodb-source,
+    postgres (`postgresql` / `postgres-source`), mysql-source (`mysql`).
+  → rest-api / file-transfer: apply_template (workflow / connector-ingestion) →
+    set entities + schedule + how → save_workflow_bundle → deploy_workflow.
+    Or `confirm_connector_entity_selection` (PKO fan-out per entity).
     Assessor fires the trigger. Do not add a scheduler. Do not pull without a workflow.
+  → mongodb-source / postgres: `confirm_connector_entity_selection` (PKO fan-out).
+    Postgres: prefer this over the database-cdc template.
+  → mysql-source / mysql: confirm is not a MySQL path — start at
+    get_entity_schemas, compose bundle
   → Other types: connector_id + samples — start at get_entity_schemas, compose bundle
   → Put the connector on a Trigger connection at the ingest head
   → Private-network connections keep `network_binding` on the org connector;
