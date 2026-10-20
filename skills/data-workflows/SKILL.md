@@ -761,6 +761,53 @@ Notes:
 | 10   | List/get deployments                        | `loxtep_observe`   | `list_deployments`, `get_deployment`                                                                                                                                                                                              | **organization**                                | `deployment_id`, optional filters                                                                                               |
 | 11   | Runtime mapping                             | `loxtep_build`     | `get_runtime_mapping`                                                                                                                                                                                                             | **project**                                     | `workflow_id`, `project_id`                                                                                                     |
 
+## Tune node batch size and memory
+
+Set these on the **entity JSON** (bundle file), then `save_workflow_bundle` →
+`deploy_workflow`. `get_entity_schemas` lists the same fields. A set value that
+deploy cannot honor **fails the deploy** — it does not warn and default.
+
+| Field               | Valid values                            | What it controls                                 |
+| ------------------- | --------------------------------------- | ------------------------------------------------ |
+| `batch_size`        | integer **1–10000**                     | Events per handler call (rstreams offload batch) |
+| `runtime_memory_mb` | **256**, **512**, **1024**, or **2048** | Shared runtimes Lambda memory tier               |
+
+### Where to put the fields
+
+| Entity         | Location                                                                                                                                                 | Unset `batch_size` | Unset `runtime_memory_mb`                                                             |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------- |
+| Transformation | Top-level on `transformations/{id}.json`                                                                                                                 | 300                | Derived from `transform_type` (see below). Registers on shared `transformers-{mb}`.   |
+| Validation     | Top-level on `validations/{id}.json`                                                                                                                     | 300                | Shared runtimes segment resolvable: `connectors-256`. Otherwise `validation-handler`. |
+| Quality rule   | Top-level on `quality-rules/{id}.json`                                                                                                                   | 300                | Same as validation, except the legacy Lambda is `quality-rule-handler`.               |
+| Connection     | `ingestion_config.batch_size` / `ingestion_config.runtime_memory_mb` (same keys on `configuration` also work; `ingestion_config` wins when both are set) | 100                | Shared runtimes segment resolvable: `connectors-256`. Otherwise `connection-handler`. |
+
+Unset transformation memory is 1024 for `execute_code_function`,
+`derived_columns`, `concatenate_columns`, `explode_array`, `zip_arrays`,
+`array_to_column`, and `route` with `prepare`; 512 for `parse_json`,
+`xml_to_json`, `extract_json_path`, `regex_extractor`, `flatten`, and `filter`;
+otherwise 256. Derived unset never selects 2048.
+
+A **set** `runtime_memory_mb` (including explicit **256**) registers on
+`connectors-{mb}` (connections, validations, quality rules) or
+`transformers-{mb}` (transformations). Shared runtimes resolve when the instance
+has `connection_details.runtimes_stack_identifier` **or** deploy can derive
+`organization_id` + `instance_id`.
+
+A connection that requires a customer VPC (`network_binding: customer_vpc` /
+`private`, `require_private_network: true`, or `mongodb-source` / `mongodb`)
+registers on `connectors-private` at **512 MB** regardless of the requested
+`runtime_memory_mb`.
+
+### Deploy errors
+
+| Error                               | When                                                                                                       | Fix                                                                                                                                  |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `InvalidNodeRuntimeTuningError`     | A field is **set** but not a valid value (e.g. `batch_size` 0 / 10001 / `"lots"`, `runtime_memory_mb` 999) | Omit the field or set a value from the table above. Connection `batch_size` is the same 1–10000 rule.                                |
+| `NodeRuntimeTuningUnavailableError` | `runtime_memory_mb` is **set** (including 256) and no shared runtimes segment resolves                     | Deploy to an instance that supplies `organization_id` + `instance_id` (or `runtimes_stack_identifier`), or omit `runtime_memory_mb`. |
+
+Do not put `runtime_memory_mb` on the connection entity root — the connection
+schema rejects unknown top-level properties. Use `ingestion_config`.
+
 ## Pitfalls
 
 - **`create_delivery` / `list_deliveries`** — **Removed** (consumptions table
