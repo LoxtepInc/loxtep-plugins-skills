@@ -95,6 +95,13 @@ Fields that may appear on the result (only these exist on
 - **Partial `execute_query` results** — `success: true` can still mean
   `data.status: "partial"`. Honor `sampled` even when `status` is `completed`.
   See **Reading `execute_query` results**.
+- **Timeout vs memory-limit** — a statement timeout and a DuckDB
+  `memory limit exceeded` both come back as failed (`error`:
+  `Query execution failed`). Distinguish them from `message`: timeout text is
+  like `Query exceeded timeout of 60 seconds` (default 60s); OOM text contains
+  `memory limit exceeded`. This tool does **not** return HTTP `error_code`
+  values (`query_timeout` / `query_error` / `query_cancelled`). Those are on
+  `POST /dataproducts/warehouse/execute`. Do not describe an OOM as a timeout.
 - **`get_query_results` vs `partial`** — today a `partial` poll looks pending.
   Trust `execute_query`'s `data.status` until they match.
 - Large result sets — use limits / pagination per platform.
