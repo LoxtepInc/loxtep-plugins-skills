@@ -306,10 +306,22 @@ https://github.com/LoxtepInc/loxtep-project-template
 **`zip_arrays`** — use when a source (e.g. Open-Meteo) returns parallel arrays
 under one object (`daily.time`, `daily.temperature_2m_max`, …) and the product
 needs one event per index. Config: `source_path`, `index_field`, optional
-`index_as`, `include_fields`, `carry_fields`. It refuses mismatched lengths,
-missing/non-array fields, an empty index, and null or duplicate index values
-(error queue — no silent drop). `explode_array` cannot do this: it splits one
-array and copies the others whole. See `get_entity_schemas` → transformation
+`index_as`, `include_fields`, `carry_fields`, and optional `primary_key` (a
+non-empty list of unique field names). `primary_key` names output fields
+(`carry_fields`, `index_as`, or a zipped array) whose values, in list order, are
+joined with `|` into `lx__id` on each emitted event (latitude + longitude +
+`obs_date` → `40.71|-74.01|2026-01-01`). Key parts may be any scalar: string,
+finite number, boolean or bigint. Objects and arrays are refused, and so are
+missing, null, blank, non-finite and `|`-containing parts. If an upstream event
+already carries `lx__id`, you must declare `primary_key` — without it the split
+is refused (`LX_ID_WITHOUT_PRIMARY_KEY`). Carrying or zipping `lx__id` itself is
+refused (`LX_ID_CARRIED`). With `primary_key` it also refuses a listed field
+that is not an output field, and duplicate stamped keys across emitted events.
+An incoming `lx__id` is accepted when it equals the stamped key. It is refused
+only when it disagrees. All of those refusals, plus mismatched lengths,
+missing/non-array fields, an empty index, and null or duplicate index values, go
+to the error queue — no silent drop. `explode_array` cannot do this: it splits
+one array and copies the others whole. See `get_entity_schemas` → transformation
 `transform_type` enum and GET `/workflows/transforms/types`.
 
 Scenario 2 runbook (transform derivation → queryable sink):
@@ -699,10 +711,11 @@ Notes:
   concatenates those source values with `|` into `lx__id`. `lx__id` is not a
   field to pick. When `schema.key` is absent, the primary-key flags are the key.
   A fielded schema with neither fails PUT, enable, sync, and rebuild. A stored
-  `schema.key` that disagrees with the flags is rejected. `query_trigger.primary_key`
-  only names values a SQL trigger concatenates into `lx__id`. A contract or
-  semantic binding does not set `schema.key`. Enable with `loxtep_observe` →
-  `enable_iceberg_table`. Read `get_definition_status` `stores` first.
+  `schema.key` that disagrees with the flags is rejected.
+  `query_trigger.primary_key` only names values a SQL trigger concatenates into
+  `lx__id`. A contract or semantic binding does not set `schema.key`. Enable
+  with `loxtep_observe` → `enable_iceberg_table`. Read `get_definition_status`
+  `stores` first.
 - **`create_data_product` for new ingest flows** — Wrong path. Standalone create
   bypasses the workflow graph, queues, bots, and deployment bindings. Always
   embed `data-products/{id}.json` in `save_workflow_bundle`, then deploy. See
@@ -787,7 +800,12 @@ labels.
 samples → Organize bundle authoring here (Trigger at ingest head). P2 = design +
 deploy ingestion workflow. Delivery = Flow D (Target at tail).
 
-## Optional attribution
+## Skill attribution (required)
+
+MCP tool calls need a resolvable skill name. Prefer `_metadata.skill_name`;
+otherwise the server infers from the operation map or `X-Skill-Name`.
+Unresolvable calls are denied (`MISSING_SKILL_ATTRIBUTION`). The skill name also
+drives scope checks.
 
 ```json
 {
