@@ -320,22 +320,41 @@ https://github.com/LoxtepInc/loxtep-project-template
 under one object (`daily.time`, `daily.temperature_2m_max`, …) and the product
 needs one event per index. Config: `source_path`, `index_field`, optional
 `index_as`, `include_fields`, `carry_fields`, and optional `primary_key` (a
-non-empty list of unique field names). `primary_key` names output fields
-(`carry_fields`, `index_as`, or a zipped array) whose values, in list order, are
-joined with `|` into `lx__id` on each emitted event (latitude + longitude +
-`obs_date` → `40.71|-74.01|2026-01-01`). Key parts may be any scalar: string,
-finite number, boolean or bigint. Objects and arrays are refused, and so are
-missing, null, blank, non-finite and `|`-containing parts. If an upstream event
-already carries `lx__id`, you must declare `primary_key` — without it the split
-is refused (`LX_ID_WITHOUT_PRIMARY_KEY`). Carrying or zipping `lx__id` itself is
-refused (`LX_ID_CARRIED`). With `primary_key` it also refuses a listed field
-that is not an output field, and duplicate stamped keys across emitted events.
-An incoming `lx__id` is accepted when it equals the stamped key. It is refused
-only when it disagrees. All of those refusals, plus mismatched lengths,
-missing/non-array fields, an empty index, and null or duplicate index values, go
-to the error queue — no silent drop. `explode_array` cannot do this: it splits
-one array and copies the others whole. See `get_entity_schemas` → transformation
-`transform_type` enum and GET `/workflows/transforms/types`.
+non-empty list of unique field names). `source_path` may be dotted
+(`hourly.data`); runtime and schema inference both walk that path. Schema
+inference refuses instead of inventing `{type:'string'}` columns when the path
+is missing or not an object, a carry field is missing, or a listed field is
+missing, not an array, or an array without an `items` schema
+(`SOURCE_PATH_MISSING`, `SOURCE_PATH_NOT_OBJECT`, `CARRY_FIELD_MISSING`,
+`FIELD_MISSING`, `FIELD_NOT_ARRAY`, `SCHEMA_ITEMS_MISSING`). A deployed
+transformer whose stored `input_schema` is stale fails on those codes (event
+goes to the error path) instead of passing a bogus schema. `primary_key` names
+output fields (`carry_fields`, `index_as`, or a zipped array) whose values, in
+list order, are joined with `|` into `lx__id` on each emitted event (latitude +
+longitude + `obs_date` → `40.71|-74.01|2026-01-01`). Key parts may be any
+scalar: string, finite number, boolean or bigint. Objects and arrays are
+refused, and so are missing, blank, non-finite and `|`-containing parts. A null
+carry field is refused as `CARRY_FIELD_NULL` before key stamping — even when
+that field is listed in `primary_key` (not `PRIMARY_KEY_PART_MISSING`). A null
+on a zipped array used as a key part is still `PRIMARY_KEY_PART_MISSING`. If an
+upstream event already carries `lx__id`, you must declare `primary_key` —
+without it the split is refused (`LX_ID_WITHOUT_PRIMARY_KEY`). Carrying or
+zipping `lx__id` itself is refused (`LX_ID_CARRIED`). With `primary_key` it also
+refuses a listed field that is not an output field, and duplicate stamped keys
+across emitted events. An incoming `lx__id` is accepted when it equals the
+stamped key. It is refused only when it disagrees. All of those refusals, plus
+mismatched lengths, missing/non-array fields, an empty index, null or duplicate
+index values, mixed-type index values (`INDEX_MIXED_TYPES`), and a
+present-but-null carry field (`CARRY_FIELD_NULL`), go to the error queue — no
+silent drop. Preview (`loxtep_build` `preview_transform` and
+`POST /workflows/projects/{project_id}/preview/transformation`) returns those
+labelled refusals as `transformed_event: null` and
+`errors: [{ message, code, field }]` (REST HTTP 200) instead of a generic
+failure or 500. `explode_array` cannot do this: it splits one array and copies
+the others whole. `explode_array` requires `on_empty` (`drop` |
+`keep_original` | `error`); a missing `on_empty` is refused. See
+`get_entity_schemas` → transformation `transform_type` enum and GET
+`/workflows/transforms/types`.
 
 Scenario 2 runbook (transform derivation → queryable sink):
 [`docs/runbooks/transform-enrichment-scenario-2.md`](../../docs/runbooks/transform-enrichment-scenario-2.md).
