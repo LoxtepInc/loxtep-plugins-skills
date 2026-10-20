@@ -47,6 +47,14 @@ For a customer-VPC probe when the org has multiple instances, use MCP
 **`connect-external-system`**. `test` does not start ingestion;
 `capture_samples` retrieves source rows and needs user authorization.
 
+MongoDB source backfill restart is a workflow connection, not an org connector.
+Pause the runner, then
+`loxtep triggers reset-backfill <connection_id> [--rebaseline-config-hash] [--project-id] [--instance-id]`
+or MCP `loxtep_build` operation `reset_backfill` (`workflows:update`). SDK:
+`client.build.triggers.reset_backfill`. That clears only
+`native-source-checkpoint:backfill:<connection_id>`. CDC and lookup checkpoints
+stay.
+
 ## CLI workspace commands (plural + status)
 
 - Prefer **`loxtep projects list`** / **`loxtep projects get <id>`** (plural).
@@ -309,19 +317,19 @@ automatically.
 
 ## MCP operations
 
-| Facade           | `operation`                                                       | Permission | Notes                                                                                                            |
-| ---------------- | ----------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------- |
-| `loxtep_build`   | `get_sdk_config`                                                  | read       | Writer identity + snippet. Bus physical names: REST stream-config, not this op                                   |
-| `loxtep_build`   | `get_entity_schemas` / `save_workflow_bundle` / `deploy_workflow` | write      | Delivery via Target connection + `workflow_type: "delivery"`. **`create_delivery` / `list_deliveries` removed**. |
-| `loxtep_build`   | `deploy_workflow`                                                 | write      | Deploy a single workflow to an instance                                                                          |
-| `loxtep_observe` | `list_deployments`                                                | read       | List deployment records (poll for status)                                                                        |
-| `loxtep_observe` | `get_deployment`                                                  | read       | Get a single deployment record by ID                                                                             |
-| `loxtep_review`  | `list_pending`                                                    | read       | SDK: `client.review.approvals.list_pending()`                                                                    |
-| `loxtep_review`  | `resolve`                                                         | write      | SDK: `client.review.approvals.approve()` / `.reject()`                                                           |
-| `loxtep_meaning` | `create_term` / `get_term` / … / `sync_vocabulary`                | write/read | SDK: `client.meaning.thesaurus.*`                                                                                |
-| `loxtep_meaning` | ontology concept CRUD + relationships                             | write/read | SDK: `client.meaning.ontology.*` (`node_type` lowercase: `entity`, …)                                            |
-| `loxtep_meaning` | `list_semantic_proposals` / `infer_proposal_definitions` / `accept_semantic_proposal` / `reject_semantic_proposal` | read/write | SDK: `client.meaning.proposals.*`; CLI: `loxtep proposals list\|accept\|reject\|infer-definitions` |
-| `loxtep_define`  | `create_schema` / `list_schemas` / `apply_schema` / `patch_schema` | write/read | Domain shapes: `client.define.shapes.*` (not data-product `client.define.schemas`)                               |
+| Facade           | `operation`                                                                                                        | Permission | Notes                                                                                                            |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------ | ---------- | ---------------------------------------------------------------------------------------------------------------- |
+| `loxtep_build`   | `get_sdk_config`                                                                                                   | read       | Writer identity + snippet. Bus physical names: REST stream-config, not this op                                   |
+| `loxtep_build`   | `get_entity_schemas` / `save_workflow_bundle` / `deploy_workflow`                                                  | write      | Delivery via Target connection + `workflow_type: "delivery"`. **`create_delivery` / `list_deliveries` removed**. |
+| `loxtep_build`   | `deploy_workflow`                                                                                                  | write      | Deploy a single workflow to an instance                                                                          |
+| `loxtep_observe` | `list_deployments`                                                                                                 | read       | List deployment records (poll for status)                                                                        |
+| `loxtep_observe` | `get_deployment`                                                                                                   | read       | Get a single deployment record by ID                                                                             |
+| `loxtep_review`  | `list_pending`                                                                                                     | read       | SDK: `client.review.approvals.list_pending()`                                                                    |
+| `loxtep_review`  | `resolve`                                                                                                          | write      | SDK: `client.review.approvals.approve()` / `.reject()`                                                           |
+| `loxtep_meaning` | `create_term` / `get_term` / … / `sync_vocabulary`                                                                 | write/read | SDK: `client.meaning.thesaurus.*`                                                                                |
+| `loxtep_meaning` | ontology concept CRUD + relationships                                                                              | write/read | SDK: `client.meaning.ontology.*` (`node_type` lowercase: `entity`, …)                                            |
+| `loxtep_meaning` | `list_semantic_proposals` / `infer_proposal_definitions` / `accept_semantic_proposal` / `reject_semantic_proposal` | read/write | SDK: `client.meaning.proposals.*`; CLI: `loxtep proposals list\|accept\|reject\|infer-definitions`               |
+| `loxtep_define`  | `create_schema` / `list_schemas` / `apply_schema` / `patch_schema`                                                 | write/read | Domain shapes: `client.define.shapes.*` (not data-product `client.define.schemas`)                               |
 
 **Define meaning** = terms + shapes. Ontology concepts are graph types /
 relationships. See `docs/sdk-mcp-mapping.md` in `@loxtep/sdk` for full parity
@@ -343,8 +351,8 @@ loxtep proposals accept <id> --definition "Business meaning…"
 loxtep proposals reject <id>
 ```
 
-Do not accept a `vocabulary_term` without a definition. Confidence on the proposal
-is business-field detection score, not glossary quality. Details:
+Do not accept a `vocabulary_term` without a definition. Confidence on the
+proposal is business-field detection score, not glossary quality. Details:
 **`loxtep-semantic-layer`** (Vocabulary agent proposals).
 
 ## Approving pipeline gates from code (`client.review.approvals`)
@@ -372,6 +380,30 @@ Engineers who need those run `loxtep instances stream-config [<instance_id>]`
 (Node CLI), `client.workspace.instances.get_stream_config(id)` (Node or Python
 SDK), or REST `GET /organizations/instances/{instance_id}/stream-config`
 (permission `instances:read`). Do not fetch them over MCP.
+
+## BYOL custom Lambda bots
+
+Register a customer-owned Lambda with LeoCron (no Studio deploy). Dedicated
+instances only. Full customer guide: `/docs/guides/bring-your-own-lambda`.
+
+```bash
+loxtep bots register --instance <id> --name "My Worker" --lambda-name my-fn
+loxtep bots list --instance <id>
+loxtep bots reconcile --instance <id>
+loxtep bots deregister --instance <id> --bot-id <bot_id>
+```
+
+```ts
+await client.workspace.custom_bots.register(instanceId, {
+  name: 'My Worker',
+  lambda_name: 'my-fn',
+  slug: 'my-worker',
+  paused: true,
+});
+```
+
+MCP: `loxtep_workspace` → `register_custom_bot` (skill **loxtep-instances**).
+Print returned `iam_policy` and env checklist; unpause in Observe when ready.
 
 <!-- SCOPE_BLOCK -->
 

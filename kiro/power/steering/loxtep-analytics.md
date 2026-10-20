@@ -89,6 +89,32 @@ Fields that may appear on the result (only these exist on
 - **Partial `execute_query` results** — `success: true` can still mean
   `data.status: "partial"`. Honor `sampled` even when `status` is `completed`.
   See **Reading `execute_query` results**.
+- **Incomplete Iceberg metadata is a failure** —
+  `Iceberg metadata LIST incomplete` (Studio Catalog SQL and server execute /
+  MCP `execute_query`) or `Iceberg batch-metadata failed` means LeoS3 table
+  version was not resolved. Versioned metadata GET is surface-specific: Studio
+  throws `Iceberg metadata GET incomplete (HTTP N) for <url>` /
+  `Iceberg metadata GET incomplete (invalid JSON) for <url>`
+  (`platform-frontend/src/lib/warehouse/bootstrap.ts`). Server warehouse execute
+  and MCP `execute_query` throw
+  `LeoS3 Iceberg metadata GET failed: <reason> (HTTP N) for <location> version <v>`
+  (`throwLeoS3MetadataFetchError` in
+  `_core/src/warehouse-sql/iceberg-metadata.ts`). `data.status` is `failed`, not
+  `completed` and not the file-cap `partial`. Do not present rows or counts as
+  the current table. Do not call `rebuild_iceberg_table` unless
+  `recovery.action` is `rebuild_iceberg`. `iceberg_health_status` is `unknown`
+  (version LIST) or `unreadable` (versioned metadata GET). Studio Catalog SQL
+  surfaces LIST/GET as `Failed to register Iceberg view(s): <table>: …`. HTTP
+  404 on `?batch-metadata=true` is “proxy does not implement it” and continues;
+  a truncated bundle (`partial: true`) is refused and the client continues to
+  pointers / a complete LIST.
+- **Timeout vs memory-limit** — a statement timeout and a DuckDB
+  `memory limit exceeded` both come back as failed (`error`:
+  `Query execution failed`). Distinguish them from `message`: timeout text is
+  like `Query exceeded timeout of 60 seconds` (default 60s); OOM text contains
+  `memory limit exceeded`. This tool does **not** return HTTP `error_code`
+  values (`query_timeout` / `query_error` / `query_cancelled`). Those are on
+  `POST /dataproducts/warehouse/execute`. Do not describe an OOM as a timeout.
 - **`get_query_results` vs `partial`** — today a `partial` poll looks pending.
   Trust `execute_query`'s `data.status` until they match.
 - Large result sets — use limits / pagination per platform.
@@ -108,11 +134,20 @@ Fields that may appear on the result (only these exist on
 - **Iceberg rebuild** — requires that enablement and the same storage identity.
   Iceberg stores are Amazon S3 Tables (compaction and snapshot cleanup are
   AWS-managed; there is no compact tool). If queries fail with missing data or a
-  stub schema, use `loxtep_observe` → `get_iceberg_health` (`managed_s3_tables`
-  status), then `rebuild_iceberg_table` with `confirm: true` and
-  `backfill_from`. Rebuild permanently deletes the table and recreates it from
-  the queue. Always `dry_run: true` first. Never rebuild without explicit
-  confirmation.
+  stub schema, use `loxtep_observe` → `get_iceberg_health`, then
+  `rebuild_iceberg_table` with `confirm: true` and `backfill_from`. Health
+  passes the catalog body through. `not_enabled` means Iceberg is off — enable
+  it first; do not rebuild (rebuild POST returns HTTP 400). `unknown` means
+  metadata or provision identity could not be resolved (including enabled
+  without `table_bucket_arn`); it is a warning, not a rebuild signal. Do not
+  rebuild on `not_enabled` or `unknown`. `managed_s3_tables` is a provisioned
+  Amazon S3 Tables product (AWS-managed maintenance). Warehouse `empty_ok`
+  (`No Iceberg snapshots yet`) is only a complete empty `metadata/` LIST, not
+  these catalog states. Rebuild permanently deletes the table and recreates it
+  from the queue. Always `dry_run: true` first. Never rebuild without explicit
+  confirmation. Do not treat rebuild or backfill status as a lock — a second
+  request while one is running is accepted. An unexpected upstream 409 is an
+  error, not "already running".
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 

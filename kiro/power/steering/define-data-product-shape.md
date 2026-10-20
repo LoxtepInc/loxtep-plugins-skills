@@ -33,11 +33,15 @@ those replace this proposal, approval, and apply workflow.
 7. `submit_semantic_bindings_proposal` separately. Shape approval does not
    accept ontology mappings. Semantic bindings do not write `schema.key`.
 8. Approve that revision, then apply it.
-9. `get_definition_status`. Read `stores` and `readiness_checks`.
+9. `get_definition_status`. Read `stores`, `blockers`, and `readiness_checks`.
    `identifier_present` means the applied shape marked `is_primary_key`.
    `storage_key_present` means Iceberg can use the catalog snapshot. When
-   `catalog_refresh` is set, call `apply_definition_proposal` with that
-   `semantic_proposal_id`. Do not submit another shape for a missing
+   `blockers` include `storage_key_conflict`, a shape is applied:
+   `apply_definition_proposal` or `apply_schema` with matching keys. When no
+   shape is applied, `PUT /dataproducts/{id}` with a matching `schema.key` is
+   the only fix; MCP `update_data_product` does not. `catalog_refresh` rewrites
+   a stale snapshot from an already-applied shape; it does not repair
+   `DeclaredKeyConflictError`. Do not submit another shape for a missing
    `schema.key`. Resume with `list_runs` and the stored procedure context
    instead of repeating completed steps.
 
@@ -67,12 +71,51 @@ semantic binding, or another key field does not replace this declaration.
 `get_definition_skill` returns this document. `get_procedure` with
 `procedure#define-data-product-via-agent` returns the executable steps.
 
+## Integer field types (Iceberg)
+
+When declaring numeric whole-number fields on the Shape:
+
+| Shape type | Iceberg storage         | Use when                                                              |
+| ---------- | ----------------------- | --------------------------------------------------------------------- |
+| `integer`  | Iceberg `long` (64-bit) | Default for counts, ids, and any whole number a JSON integer can hold |
+| `int`      | Iceberg `int` (32-bit)  | Only when the product explicitly needs a 32-bit column                |
+| `long`     | Iceberg `long` (64-bit) | Same physical type as Shape `integer`                                 |
+
+Existing Iceberg `int` columns widen to `long` via schema evolution when the
+Shape uses `integer` (or `long`). Out-of-range values (outside INT32 for `int`,
+or not a safe integer for `int`/`long`) are sent to the error queue — never
+truncated or coerced. Prefer `integer` unless you have a hard 32-bit
+requirement.
+
 ## How to derive a shape
 
 - Nested fields, JSON types, required vs optional, and nullability. Optional is
   not the same as nullable.
-- Identifiers and primary keys. Tombstones and delete markers are their own
-  record variants, not missing fields.
+- Identifiers: mark those fields `is_primary_key` on the **data-product schema**
+  path (`data_products.schema`, including REST/MCP shape `fields[]` that apply
+  writes onto that snapshot). JSON Schema snapshots still drop `is_primary_key`
+  and `schema.key`. Postgres and MySQL source catalog field lists (`postgres`,
+  `postgresql`, `mysql`, `mysql-source`) keep `is_primary_key` (from the PRIMARY
+  KEY constraint) and `references_shape` (from catalog foreign keys) on
+  `connectors.metadata.entity_field_schemas`; those feed ontology induction
+  (tier B) and, when promoted, write `schema.key` on the data product. Induction
+  DEFERs without samples when that cache is missing for those types. Databricks,
+  Snowflake, Redshift, BigQuery, and Athena still infer from samples. MongoDB,
+  REST, and other connectors are unchanged. The SDK has no `is_primary_key`
+  field and no reference field. Do not treat a `_id` suffix as a key or foreign
+  key. Shape-field relations are not user-declarable today. Postgres and MySQL
+  source FKs are read from the database catalog. A column with FOREIGN KEY
+  constraints to two tables is refused (`AMBIGUOUS_CATALOG_FK`); drop or fix the
+  duplicate constraint before Test / listing / sync. If both `schema.key` and
+  `is_primary_key` are present they must name the same fields; semantic
+  bootstrap throws `DeclaredKeyConflictError` instead of unioning them.
+  Recovery: (a) if a shape is applied, `get_definition_status` reports a
+  `storage_key_conflict` blocker, and `apply_definition_proposal` or
+  `apply_schema` with matching keys fixes it; (b) if no shape is applied, the
+  only fix is `PUT /dataproducts/{id}` with a matching `schema.key`. MCP
+  `update_data_product` does not accept `schema` and does not fix it.
+  `catalog_refresh` does not repair `DeclaredKeyConflictError`. Tombstones and
+  delete markers are their own record variants, not missing fields.
 - Descriptions and sensitive-data classifications only when evidence supports
   them. Say so in `uncertainty` when it does not.
 - Canonical targets, source-to-target field bindings, concept URIs

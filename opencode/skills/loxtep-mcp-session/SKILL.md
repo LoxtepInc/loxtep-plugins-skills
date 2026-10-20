@@ -41,10 +41,13 @@ without relying on any private repo or source tree.
 3. **`loxtep_session`** → **`get_current_organization`** — confirm org scope
    matches expectations.
 4. **`loxtep_session`** → **`platform_health_check`** (optional but recommended
-   on cold start) — ~5s Semantica-style doctor for auth, instance `observe_api`
-   secret orientation, graph reachability, decision-traces (empty-ok), and MCP
-   facade surface / deprecated names. Structured `checks[]` with
-   `pass|fail|warn`. Optional `instance_id`.
+   on cold start) — ~5s Semantica-style doctor for auth, instance Observe
+   namespace (same classifier as the proxy 409) plus public-instance deny-list,
+   graph reachability, decision-traces (empty-ok), and MCP facade surface /
+   deprecated names. Structured `checks[]` with `pass|fail|warn`. Optional
+   `instance_id`. A rejected namespace (`lxapp*` on a tenant, foreign `w-` /
+   `org-` prefix) **fails** `instance_observe_api`; it cannot be fixed with
+   `update_instance`.
 5. For **project-scoped** facades (`loxtep_build`, …), include **`project_id`**
    on every call that needs it.
 6. Open your MCP client’s **ListTools** (or schema) for **`loxtep_*`** tools —
@@ -81,7 +84,8 @@ skills are a local snapshot** — they do not auto-update for every install path
    - **Cursor (team marketplace):** admin **Refresh** (or **Auto Refresh** +
      GitHub App), then refocus or restart Cursor.
    - **Cursor (Import / local clone):** re-import the repo or reinstall the
-     plugin from `https://github.com/LoxtepInc/loxtep-plugins-skills` (`cursor/`).
+     plugin from `https://github.com/LoxtepInc/loxtep-plugins-skills`
+     (`cursor/`).
    - **Claude Code:** update the marketplace and reinstall —
      `claude plugin marketplace update` then
      `claude plugin install loxtep-claude@loxtep` (or `/plugin` UI).
@@ -138,9 +142,12 @@ permissions: {}
 
 <!-- END loxtep skill-scope (skill-package-v1) -->
 
-## Optional attribution
+## Skill attribution (required)
 
-`_metadata: { "skill_name": "loxtep-mcp-session" }`
+MCP tool calls need a resolvable skill name. Prefer
+`_metadata: { "skill_name": "loxtep-mcp-session" }`; otherwise the server infers
+from the operation map or `X-Skill-Name`. Unresolvable calls are denied
+(`MISSING_SKILL_ATTRIBUTION`). The skill name also drives scope checks.
 
 ## References
 

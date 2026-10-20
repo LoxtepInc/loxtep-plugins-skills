@@ -24,13 +24,13 @@ backwards (the deploy is the fix).
 
 Use **`loxtep_define`**. Do not call the governance REST API.
 
-| Op     | `operation`                  |
-| ------ | ---------------------------- |
-| List   | `list_governance_policies`   |
-| Get    | `get_governance_policy`      |
-| Create | `create_governance_policy`   |
-| Update | `update_governance_policy`   |
-| Delete | `delete_governance_policy`   |
+| Op     | `operation`                |
+| ------ | -------------------------- |
+| List   | `list_governance_policies` |
+| Get    | `get_governance_policy`    |
+| Create | `create_governance_policy` |
+| Update | `update_governance_policy` |
+| Delete | `delete_governance_policy` |
 
 Delete asks for approval. A deny rule whose `condition` is empty freezes every
 data product in scope.
@@ -46,8 +46,8 @@ on the same facade:
 
 `create_access_request` needs `resource_type` (`domain`, `data_product`, or
 `connector`), `resource_id`, and `access_type` (`owner`, `steward`, `engineer`,
-`member`, `viewer`, `consume`, or `use`). `decide_access_request` takes
-`action` `approve` or `reject`.
+`member`, `viewer`, `consume`, or `use`). `decide_access_request` takes `action`
+`approve` or `reject`.
 
 For _inspecting_ governance flags on existing data products, switch to the
 `discover-govern-lineage` skill (`loxtep_observe` → `get_governance_flags`).
