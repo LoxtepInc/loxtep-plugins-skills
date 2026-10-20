@@ -360,6 +360,9 @@ to sample that collection, or pass exact `all` or `*` (case-sensitive) to sample
 `metadata.supported_entities`. A wildcard with an empty allowlist is HTTP
 **400**:
 `entity_type is required when connector has no configured collections to sample`.
+SDK connectors (`connector_type: "sdk"`) refuse capture with HTTP **422**:
+`SDK connectors do not support bounded sample capture via catalog runtime`
+(`details: {}` — capture does not run, so there is no `entities` list).
 
 Do not treat this like ingest sync. Sync (`resolveEntitiesToSync`) covers every
 collection only when the requested entity is empty or exact `all`; `*` is
@@ -393,8 +396,11 @@ collections (mixed run) are still written to `metadata.sample_payloads` and
 still emit semantic bootstrap.
 
 All-fail uses the same prefix and `details.entities`. Status is on the thrown
-`WebError` (404 connector missing, 400 empty wildcard collections, 422 capture
-failures). Untyped errors are 500 with empty details. Message-text matching
+`WebError`: 404 connector not found (`details: { connector_id }`), 400 wildcard
+with no configured collections, 422 capture failures (mixed-run or all-fail,
+with `details.entities`), and 422 for SDK connectors
+(`SDK connectors do not support bounded sample capture via catalog runtime`,
+empty details). Untyped errors are 500 with empty details. Message-text matching
 (`not found` / `entity_type` / `not authenticated`) is not used.
 
 MCP `capture_samples` does not return the success payload on those errors. The
@@ -676,9 +682,12 @@ That clears only the backfill checkpoint. CDC and lookup checkpoints stay.
   (`metadata.custom_settings.collections`, else `tables`). For file-transfer,
   use the entity key from connector metadata / fileSpecs. Mixed-run and all-fail
   are loud **422** with `error.details.entities`; successful collections stay on
-  `metadata.sample_payloads`. Typed misses are 404/400; untyped errors are 500.
-  MCP reports `capture_samples failed` and `{ message, details }` (including
-  `details.entities` on 422), not a 200 payload.
+  `metadata.sample_payloads`. SDK connectors refuse with **422** and empty
+  details
+  (`SDK connectors do not support bounded sample capture via catalog runtime`).
+  Typed misses are 404/400; untyped errors are 500. MCP reports
+  `capture_samples failed` and `{ message, details }` (including
+  `details.entities` on mixed-run and all-fail 422), not a 200 payload.
 - **Private test on the API Lambda** — set `network_binding: customer_vpc` and
   use an instance whose runtimes stack has `connectors-private-512`.
 - **Warehouse bind** (Snowflake / Databricks table in place) is
