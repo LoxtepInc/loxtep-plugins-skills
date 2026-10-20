@@ -43,6 +43,7 @@ Ask before any mutating step. Do not treat inspection as permission to write.
 | `create_connector` / `update_connector`       | yes (credentials, metadata)                                                                     | `connectors:write`            | MCP / SDK / REST                                |
 | `get_oauth_url` without `connector_id`        | yes (creates connector)                                                                         | `connectors:read`             | MCP                                             |
 | `capture_samples`                             | yes (bounded source rows into metadata)                                                         | `connectors:read`             | MCP / CLI / SDK / REST                          |
+| `reset_backfill`                              | yes (one paused MongoDB backfill checkpoint)                                                    | `workflows:update`            | MCP `loxtep_build` / CLI / REST                 |
 | `confirm_connector_entity_selection`          | yes (starts PKO ingest design/deploy)                                                           | `connectors:write`            | MCP                                             |
 | `delete_connector`                            | yes (soft-delete; owner only; blocked if in use)                                                | `connectors:write` + approval | MCP                                             |
 | `run_connector_action`                        | yes (third-party side effect)                                                                   | `connectors:write` + approval | MCP                                             |
@@ -333,17 +334,91 @@ perform a bounded permission `find`/`watch().close()` on allowlisted names.
 
 **Samples** (separate, retrieves source rows; ask first):
 
+`entity_type` is still required (non-empty). Pass a **concrete collection name**
+to sample that collection, or pass exact `all` or `*` (case-sensitive) to sample
+**every** name in the connector allowlist:
+`metadata.custom_settings.collections`, or `metadata.custom_settings.tables` if
+`collections` is absent. Capture does **not** fall back to
+`metadata.supported_entities`. A wildcard with an empty allowlist is HTTP
+**400**:
+`entity_type is required when connector has no configured collections to sample`.
+
+Do not treat this like ingest sync. Sync (`resolveEntitiesToSync`) covers every
+collection only when the requested entity is empty or exact `all`; `*` is
+**not** a sync all-token.
+
 ```json
 {
   "operation": "capture_samples",
   "connector_id": "<uuid>",
-  "entity_type": "<name>",
+  "entity_type": "all",
   "limit": 10
 }
 ```
 
-CLI: `loxtep connectors capture-samples <id> --entity-type <name> [--limit N]`
-(`limit` 1–25). `entity_type` is required.
+CLI (`@loxtep/sdk`) posts `--entity-type` to the same endpoint:
+`loxtep connectors capture-samples <id> --entity-type <name> [--limit N]`
+(`limit` 1–25). Use a concrete name or `all` / `*`.
+
+On success, `data.entities` is always present. It lists every collection that
+was attempted (`entity_type`, `status: captured|error`, `record_count`,
+`message`), including when only one collection was sampled. Top-level
+`entity_type` is that one concrete name when a single collection was sampled;
+otherwise it is the request token (`all` / `*`), never a comma list. Top-level
+`record_count` is the sum of captured collections.
+
+If **any** collection fails, REST returns **422** (not 200) on a mixed run (some
+collections succeed, some fail). That body is
+`{ "success": false, "error": { "message": "Capture samples failed for collections: <name>: <msg>; …", "details": { "entities": [ … ] } } }`.
+`error.details.entities` applies only to that mixed run. Successful collections
+are still written to `metadata.sample_payloads` and still emit semantic
+bootstrap.
+
+If every collection fails, `captureConnectorSamples` throws before returning
+`entities`. The POST catch re-throws `WebError(msg, {}, …)`, so the body is
+`{ "success": false, "error": { "message": "<name>: <msg>; …", "details": {} } }`
+— no `entities`, and no `Capture samples failed for collections:` prefix. That
+status is 422 unless the thrown message contains `not found` (404) or
+`entity_type` / `not authenticated` (400).
+
+<!-- Maintainer: All-fail runs should carry entities too; a fix is planned.
+Update this when it lands. -->
+
+MCP `capture_samples` does not return the success payload on those errors. The
+tool sets `success: false` and `message: "capture_samples failed"`. Through MCP,
+`error` is not a string: it can be an object `{ message, details }` (the API
+body’s nested `error`). On a mixed-run 422, read `error.details.entities` for
+per-collection rows. On an all-fail 422/404/400, `error.details` is `{}` (no
+`entities`). The tool does not copy `details.entities` onto a dedicated MCP
+field.
+
+<!-- Maintainer: All-fail runs should carry entities too; a fix is planned.
+Update this when it lands. -->
+
+Illustrative shape (from unit tests, not a live capture):
+
+```json
+{
+  "success": true,
+  "data": {
+    "connector_id": "<uuid>",
+    "entity_type": "all",
+    "record_count": 3,
+    "entities": [
+      {
+        "entity_type": "event_log",
+        "status": "captured",
+        "record_count": 2
+      },
+      {
+        "entity_type": "event_data_log",
+        "status": "captured",
+        "record_count": 1
+      }
+    ]
+  }
+}
+```
 
 **Forbidden / do not invent:**
 
@@ -464,14 +539,14 @@ only):
 
 ### Flow — OAuth (e.g. Shopify)
 
-| Step | Action                       | Tool             | `operation`                                |
-| ---- | ---------------------------- | ---------------- | ------------------------------------------ |
-| 1    | Discover types               | `loxtep_connect` | `list_connector_types`                     |
-| 2    | Start OAuth                  | `loxtep_connect` | `get_oauth_url`                            |
-| 3    | User completes browser OAuth | —                | —                                          |
-| 4    | Connectivity probe           | `loxtep_connect` | `test_connector`                           |
-| 5    | Capture samples (ask first)  | `loxtep_connect` | `capture_samples` (`entity_type` required) |
-| 6    | **Hand off to studio**       | —                | **`data-workflows`** with `connector_id`   |
+| Step | Action                       | Tool             | `operation`                                          |
+| ---- | ---------------------------- | ---------------- | ---------------------------------------------------- |
+| 1    | Discover types               | `loxtep_connect` | `list_connector_types`                               |
+| 2    | Start OAuth                  | `loxtep_connect` | `get_oauth_url`                                      |
+| 3    | User completes browser OAuth | —                | —                                                    |
+| 4    | Connectivity probe           | `loxtep_connect` | `test_connector`                                     |
+| 5    | Capture samples (ask first)  | `loxtep_connect` | `capture_samples` (`entity_type`: name or `all`/`*`) |
+| 6    | **Hand off to studio**       | —                | **`data-workflows`** with `connector_id`             |
 
 ### Flow — rest-api or file-transfer after Test
 
@@ -521,6 +596,7 @@ probe is a no-op pass) → **`data-workflows`**. Post-deploy bootstrap:
 | List entities                          | `loxtep_connect` | `list_connector_entities`            | organization |
 | Confirm entity selection (PKO fan-out) | `loxtep_connect` | `confirm_connector_entity_selection` | organization |
 | Apply template                         | `loxtep_connect` | `apply_template`                     | **project**  |
+| Reset a paused MongoDB backfill        | `loxtep_build`   | `reset_backfill`                     | **project**  |
 
 ## SDK and CLI (actual methods)
 
@@ -537,8 +613,35 @@ loxtep connectors test <connector_id>
 loxtep connectors capture-samples <connector_id> --entity-type <name> [--limit N]
 ```
 
+`--entity-type` is required and is passed through to
+`POST /connectors/connectors/{connector_id}/capture-samples`. The value is a
+concrete collection name or exact `all` / `*` (same as MCP).
+
+There is still no `loxtep connector` (singular) and no
+`loxtep connectors create` / `loxtep connectors get`.
+
+MongoDB backfill restart uses the workflow connection id, not the org connector
+id. Pause the runner first. MCP `loxtep_build` operation `reset_backfill`
+(`connection_id`, optional `rebaseline_config_hash`, optional `instance_id`).
+CLI:
+
+```bash
+loxtep triggers reset-backfill <connection_id> [--rebaseline-config-hash] [--project-id] [--instance-id]
+```
+
+That clears only the backfill checkpoint. CDC and lookup checkpoints stay.
+
 ## Pitfalls
 
+- **Ambiguous source foreign keys (Postgres / MySQL):** If one column has
+  FOREIGN KEY constraints to two different tables, `getAvailableEntities` throws
+  `AmbiguousCatalogForeignKeyError` naming the table, column, and targets. On
+  Postgres, MCP `loxtep_connect` `list_connector_entities` and REST
+  `GET /connectors/{connector_id}/entities` fail with that reason (HTTP 422)
+  instead of listing the table. The error names the column; resolve the
+  conflicting FK constraints in the source, then list again. `test_connector` /
+  REST `POST .../test` still probes connectivity first; catalog cache after a
+  passing public test logs the same error and does not fail the probe.
 - **Pull without a workflow** — After Test on rest-api / file-transfer, compose
   from `connector-ingestion`, then **`save_workflow_bundle`** +
   **`deploy_workflow`** only with user authorization.
@@ -546,8 +649,17 @@ loxtep connectors capture-samples <connector_id> --entity-type <name> [--limit N
   (`update_connector`). Deploy hydrates transport / authentication / fileSpecs /
   `credential_parameter_store_refs` onto the connection `entity_config` by
   `connector_id` (connection fields still win).
-- **`capture_samples` requires `entity_type`** — for file-transfer, use the
-  entity key from connector metadata / fileSpecs.
+- **`capture_samples` requires `entity_type`** — a concrete collection, or exact
+  `all` / `*` for every allowlisted collection
+  (`metadata.custom_settings.collections`, else `tables`). For file-transfer,
+  use the entity key from connector metadata / fileSpecs. A mixed run is a loud
+  **422** with `error.details.entities`; successful collections stay on
+  `metadata.sample_payloads`. If every collection fails, REST is 422/404/400
+  with `error.details: {}` and no `entities`. MCP reports
+  `capture_samples failed` and the API error object (`error` may be
+  `{ message, details }`), not a 200 payload.
+  <!-- Maintainer: All-fail runs should carry entities too; a fix is planned.
+  Update this when it lands. -->
 - **Private test on the API Lambda** — set `network_binding: customer_vpc` and
   use an instance whose runtimes stack has `connectors-private-512`.
 - **Warehouse bind** (Snowflake / Databricks table in place) is
