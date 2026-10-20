@@ -95,6 +95,18 @@ Fields that may appear on the result (only these exist on
 - **Partial `execute_query` results** — `success: true` can still mean
   `data.status: "partial"`. Honor `sampled` even when `status` is `completed`.
   See **Reading `execute_query` results**.
+- **Incomplete Iceberg metadata is a failure** —
+  `Iceberg metadata LIST incomplete`, `Iceberg metadata GET incomplete`, or
+  `Iceberg batch-metadata failed` means LeoS3 table version was not resolved.
+  `data.status` is `failed`, not `completed` and not the file-cap `partial`. Do
+  not present rows or counts as the current table. Do not call
+  `rebuild_iceberg_table` unless `recovery.action` is `rebuild_iceberg`.
+  `iceberg_health_status` is `unknown` (version LIST) or `unreadable` (versioned
+  metadata GET). Studio Catalog SQL surfaces the same LIST/GET strings as
+  `Failed to register Iceberg view(s): <table>: …`. HTTP 404 on
+  `?batch-metadata=true` is “proxy does not implement it” and continues; a
+  truncated bundle (`partial: true`) is refused and the client continues to
+  pointers / a complete LIST.
 - **`get_query_results` vs `partial`** — today a `partial` poll looks pending.
   Trust `execute_query`'s `data.status` until they match.
 - Large result sets — use limits / pagination per platform.
