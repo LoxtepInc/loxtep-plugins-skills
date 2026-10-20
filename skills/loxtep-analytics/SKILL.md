@@ -114,10 +114,17 @@ Fields that may appear on the result (only these exist on
 - **Iceberg rebuild** — requires that enablement and the same storage identity.
   Iceberg stores are Amazon S3 Tables (compaction and snapshot cleanup are
   AWS-managed; there is no compact tool). If queries fail with missing data or a
-  stub schema, use `loxtep_observe` → `get_iceberg_health` (`managed_s3_tables`
-  status), then `rebuild_iceberg_table` with `confirm: true` and
-  `backfill_from`. Rebuild permanently deletes the table and recreates it from
-  the queue. Always `dry_run: true` first. Never rebuild without explicit
+  stub schema, use `loxtep_observe` → `get_iceberg_health`, then
+  `rebuild_iceberg_table` with `confirm: true` and `backfill_from`. Health
+  passes the catalog body through. `not_enabled` means Iceberg is off — enable
+  it first; do not rebuild (rebuild POST returns HTTP 400). `unknown` means
+  metadata or provision identity could not be resolved (including enabled
+  without `table_bucket_arn`); it is a warning, not a rebuild signal. Do not
+  rebuild on `not_enabled` or `unknown`. `managed_s3_tables` is a provisioned
+  Amazon S3 Tables product (AWS-managed maintenance). Warehouse `empty_ok`
+  (`No Iceberg snapshots yet`) is only a complete empty `metadata/` LIST, not
+  these catalog states. Rebuild permanently deletes the table and recreates it
+  from the queue. Always `dry_run: true` first. Never rebuild without explicit
   confirmation.
 
 <!-- SCOPE_BLOCK -->
