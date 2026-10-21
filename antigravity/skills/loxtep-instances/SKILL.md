@@ -416,7 +416,14 @@ publish queue (`{bot_id}-out`) afterward. Do not create a Studio workflow to
 “connect” the Lambda. Do not pass `source_queue` / `destination_queue` as a
 workflow container queue (`w-…-queue-…`).
 
-Customer guide: `/docs/guides/bring-your-own-lambda`.
+**When to use which (hybrid OK):** BYOL = customer-owned Lambda on the bus.
+Connector **Trigger** ingest / **Target** delivery = Loxtep workflow hops
+(`connect-external-system`, `data-workflows`, delivery guide). Studio custom
+code (MicroVM) = Loxtep hosts the hop. Mix on one dedicated instance; join via
+queue name + catalog bind — not by retargeting BYOL cron onto `w-…-queue-…`.
+
+Customer guide: `/docs/guides/bring-your-own-lambda` (section **When to use
+which**).
 
 ### Agent flow
 
