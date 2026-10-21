@@ -21,7 +21,15 @@ products.**
 | ------- | ------------------------------------------------------ | --------------------------------------------------- |
 | Design  | Output schema, provenance, transforms, trust plan      | —                                                   |
 | Create  | **Never** — no standalone MCP create                   | `data-products/{id}.json` in `save_workflow_bundle` |
-| Runtime | Post-deploy `update_data_product`, promotion, delivery | `deploy_workflow` → queues + `deployment_bindings`  |
+| Runtime | Promotion and delivery. Product **display name** is `name` in the checked-in `data-products/{id}.json`, then lint → push → scoped `deploy_workflow` | `deploy_workflow` → queues + `deployment_bindings`  |
+
+Do not set a product, bot, or queue display name with `update_data_product`.
+That leaves the runtime label out of the package. Declare a queue label with
+`output_queue_display_name` or `error_queue_display_name` on the owning node
+(or `output_queue_display_name` on the data product for its upstream writer's
+output queue), then lint, push, and scoped deploy. See **`data-workflows`**
+(Display names). If that field is missing from the schema the platform is
+running, report the gap. Do not rename the queue through an API.
 
 A correctly provisioned DP has `workflow_id`, `managed_by: "design-time"`,
 `deployed_by: "workflow-deployment"`, and `deployment_bindings` after deploy —
@@ -153,10 +161,10 @@ author bundle → deploy → verify with `get_data_product`.**
 
 Use when a Lambda is already registered on the instance bus (skill
 **loxtep-instances** BYOL) and the org wants a catalog data product on that
-queue. Do **not** add a Studio workflow node to “connect” the Lambda.
-Connector Trigger/Target and Studio custom-code hops remain valid on the same
-instance — bind each product to the queue that hop owns (hybrid; see BYOL guide
-**When to use which**).
+queue. Do **not** add a Studio workflow node to “connect” the Lambda. Connector
+Trigger/Target and Studio custom-code hops remain valid on the same instance —
+bind each product to the queue that hop owns (hybrid; see BYOL guide **When to
+use which**).
 
 1. Confirm the publish queue name: `{bot_id}-out` (default custom-bot
    destination). Leave `-in` / `-errors` unbound as the product stream.

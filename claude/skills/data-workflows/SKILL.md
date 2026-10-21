@@ -230,13 +230,66 @@ When the project is linked to GitHub (step 4 above):
 1. **Author locally** under `workflows/{workflow_id}/` — never inline-only MCP
    payloads.
 2. **Commit** to Git when the user expects version control.
-3. **Sync to Loxtep** — build the `files` map from the on-disk JSON and call
-   `save_workflow_bundle` (`dry_run: true` first, then persist). This uploads
-   local state to the org workspace store.
-4. **Deploy** — `deploy_workflow` / `deploy_project` (Flow H).
+3. **Sync to Loxtep** — `loxtep lint` then `loxtep push --workflow-id
+   <workflow_id>` (or `save_workflow_bundle` built from those files, dry-run
+   first). This uploads local state to the org workspace store.
+4. **Scoped deploy** — `deploy_workflow` for that `workflow_id` only. See
+   **Display names** below. Do not use `deploy_project` or `loxtep deploy` for
+   a one-workflow change.
 
 The platform store and the repo are two copies; **GitHub-attached projects
 expect the repo to lead** and sync pushes local → Loxtep.
+
+### Display names (GitHub-backed projects)
+
+The checked-in workflow package is the source of truth for every deployable
+display name. Change a label only by editing those files, then lint, push,
+scoped deploy, and read the names back.
+
+| Label | Declared in the package |
+| ----- | ----------------------- |
+| Workflow | `name` on `workflow.json` |
+| Bot | `name` on `connections/{id}.json`, `transformations/{id}.json`, or `validations/{id}.json` |
+| Product | `name` on `data-products/{id}.json` |
+| Output queue | `output_queue_display_name` on the node that owns the queue (`connections`, `transformations`, `validations`, `quality-rules`, `agents`, `approvals`). A data product may set it for its upstream writer's output queue when that writer leaves the field unset. The writer's value wins |
+| Error queue | `error_queue_display_name` on the same owning node. Approvals use it for the rejected queue. Agents keep `error_queue_name` as the queue id |
+
+Required path:
+
+1. Edit the package files.
+2. `loxtep lint --workflow <workflow_id>`
+3. `loxtep push --workflow-id <workflow_id>`
+4. `loxtep_build` → `deploy_workflow` with that `project_id`, `workflow_id`, and
+   `instance_id`. `loxtep deploy` and `deploy_project` redeploy every workflow
+   in the project. Do not use them to rename one flow.
+5. Read back design-time names from the files (`get_workflow`,
+   `get_data_product`) and runtime ids from `get_runtime_mapping`
+   (`bot_ids`, `queue_ids`, `deployment_bindings`). A runtime label that is not
+   in the package is not done.
+
+Do not rename with `update_workflow`, `update_data_product` (`name`), or
+Observe event-settings save. Those leave the runtime label out of source
+control.
+
+When `output_queue_display_name` or `error_queue_display_name` is set, scoped
+deploy writes that label onto the existing queue id (`overwrite_name`) and
+leaves bindings, checkpoints, and bot pause state unchanged. When the field is
+unset, deploy keeps the generated label (`{entity name} (output)`,
+`(transformed)`, `(ingested)`, `(validated)`, `(approved)`, or `(error)`) and
+does not replace a label already stored.
+
+If the running platform rejects these fields or a scoped deploy does not apply
+a declared label, stop and report that gap. Do not rename the queue through an
+API.
+
+**Regression.** After a scoped redeploy, the declared bot, product, and queue
+labels are
+still the names in the package, queue ids and `deployment_bindings` are
+unchanged, checkpoints are unchanged, and no other workflow has a new
+deployment or an unpaused bot. `list_deployments` filtered to other
+`workflow_id`s must not show a deployment started by this change. The unit
+check is `scoped redeploy preserves declared labels` in
+`platform-backend/_core/src/observe/registration-metadata.test.ts`.
 
 ### Flow C — Omnichannel data product (S2)
 
