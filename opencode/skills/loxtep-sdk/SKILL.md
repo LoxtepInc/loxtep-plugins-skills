@@ -51,12 +51,16 @@ For a customer-VPC probe when the org has multiple instances, use MCP
 `capture_samples` retrieves source rows and needs user authorization.
 
 MongoDB source backfill restart is a workflow connection, not an org connector.
-Pause the runner, then
-`loxtep triggers reset-backfill <connection_id> [--rebaseline-config-hash] [--project-id] [--instance-id]`
-or MCP `loxtep_build` operation `reset_backfill` (`workflows:update`). SDK:
-`client.build.triggers.reset_backfill`. That clears only
+Pause the runner bot first. Hosted MCP has no pause operation for that runner.
+In the Loxtep app, open Observe → Catalog, select the bot, then Actions → Pause
+Bots. Then MCP `loxtep_build` operation `reset_backfill` (`workflows:update`) or
+`POST /workflows/projects/{project_id}/connections/{connection_id}/reset-backfill`,
+CLI
+`loxtep triggers reset-backfill <connection_id> [--rebaseline-config-hash] [--project-id] [--instance-id]`,
+or SDK `client.build.triggers.reset_backfill` (`@loxtep/sdk` 0.9.33, Python
+`loxtep` 0.8.1). That clears only
 `native-source-checkpoint:backfill:<connection_id>`. CDC and lookup checkpoints
-stay.
+stay. See **`connect-external-system`**.
 
 ## CLI workspace commands (plural + status)
 
@@ -177,24 +181,24 @@ await writer.close();
 
 ## CRITICAL — Deployment prerequisite
 
-**Queues and bots do NOT exist until a workflow is deployed to an instance.**
-Design-time configuration (creating workflows, connections, data products via
-MCP or UI) only defines the graph — it does not provision runtime
-infrastructure. You **must** deploy the project before the SDK can write or read
-events.
+**Studio-owned bots and queues** do not exist until a workflow is deployed to an
+instance. Design-time configuration (creating workflows, connections, data
+products via MCP or UI) only defines the graph — it does not provision that
+runtime. For the **Studio path**, you **must** deploy the project before the SDK
+can write or read events through those containers.
 
-**Deployment creates:**
+**Deployment creates (Studio path):**
 
 - The microservice identifier (namespace for all bots/queues)
 - Bot registrations on the stream bus
 - Queue registrations on the stream bus
 - The `runtime_mapping` that maps entities → containers → bot_ids/queue_ids
 
-**If you skip deployment**, SDK calls to `data_products.get_writer()` or
-`workflows.get_writer()` will fail with "data product not deployed" or "queue
-not found" errors.
+**If you skip deployment on the Studio path**, SDK calls to
+`data_products.get_writer()` or `workflows.get_writer()` will fail with "data
+product not deployed" or "queue not found" errors.
 
-**How to deploy:** Use **`loxtep_build`** MCP facade:
+**How to deploy (Studio path):** Use **`loxtep_build`** MCP facade:
 
 1. `deploy_project` — triggers async deployment (requires `project_id` +
    `instance_id`)
@@ -203,6 +207,11 @@ not found" errors.
 
 See the **`data-workflows`** Agent-Scope Skill (Flow F — Deploy before SDK
 ingestion) for the full sequence.
+
+**BYOL exception:** customer-registered custom bots create their own queues on
+register. Bind `storage.rstreams_queue` (or runtime queue reconciliation) to
+`{bot_id}-out`, then use `get_writer` / `get_reader` with that product. Do not
+require a Studio workflow deploy solely to create those queue names.
 
 ## Runtime naming convention (how queues and bots are named)
 
@@ -389,6 +398,12 @@ SDK), or REST `GET /organizations/instances/{instance_id}/stream-config`
 Register a customer-owned Lambda with LeoCron (no Studio deploy). Dedicated
 instances only. Full customer guide: `/docs/guides/bring-your-own-lambda`.
 
+Registration creates `{bot_id}-in` / `-out` / `-errors`. Bind a data product to
+`{bot_id}-out` via runtime queue reconciliation or `storage.rstreams_queue`
+before expecting catalog/SDK product APIs. Do **not** tell the caller to deploy
+a Studio workflow just to obtain a queue name the Lambda already created. Do not
+retarget custom-bot queues onto `w-…-queue-…` container names.
+
 ```bash
 loxtep bots register --instance <id> --name "My Worker" --lambda-name my-fn
 loxtep bots list --instance <id>
@@ -403,10 +418,16 @@ await client.workspace.custom_bots.register(instanceId, {
   slug: 'my-worker',
   paused: true,
 });
+
+// After the product’s storage.rstreams_queue is the BYOL publish queue:
+const writer = await client.data_products.get_writer('my-data-product', {
+  bot_id: 'w-xxxx-yyyy-custom-my-worker', // checkpoint as the custom bot
+});
 ```
 
 MCP: `loxtep_workspace` → `register_custom_bot` (skill **loxtep-instances**).
-Print returned `iam_policy` and env checklist; unpause in Observe when ready.
+Print returned `iam_policy` and env checklist; bind `{bot_id}-out`; unpause in
+Observe when ready.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 

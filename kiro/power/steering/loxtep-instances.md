@@ -395,6 +395,12 @@ Register a customer-deployed Lambda with LeoCron **without** Studio workflow
 deploy. Dedicated instances only (self-hosted or managed with
 `cross_account_role_arn` + `external_id`). Shared instances are rejected.
 
+**Projects / Studio deploy are not required for the function.** Registration
+creates `{bot_id}-in` / `-out` / `-errors`. Bind a catalog data product to the
+publish queue (`{bot_id}-out`) afterward. Do not create a Studio workflow to
+“connect” the Lambda. Do not pass `source_queue` / `destination_queue` as a
+workflow container queue (`w-…-queue-…`).
+
 Customer guide: `/docs/guides/bring-your-own-lambda`.
 
 ### Agent flow
@@ -404,7 +410,7 @@ Customer guide: `/docs/guides/bring-your-own-lambda`.
 3. `loxtep instances stream-config` / REST stream-config for bus resource names
    (not over MCP). Tell the customer to set `RSTREAMS_CONFIG_SECRET` and
    `LEOAUTH_CONFIG_SECRET` on the function.
-4. Register:
+4. Register (leave queues default):
 
 ```json
 {
@@ -420,8 +426,18 @@ Customer guide: `/docs/guides/bring-your-own-lambda`.
 
 5. Return `iam_policy` + checklist from the response; customer attaches IAM to
    the Lambda role.
-6. Unpause in Observe (LeoCron `paused` is runtime SoT after first register).
-7. Optional: `reconcile_custom_bots` for catalog ↔ LeoCron drift.
+6. **Bind a data product to `{bot_id}-out`** (not `-in` / `-errors`):
+   - Prefer dry-run then run
+     `POST /dataproducts/dataproducts/runtime-queue-reconciliation`
+     (`instance_id`, `dry_run`). Needs `system:admin` | `data_products:admin` |
+     `instances:update`. Or `PUT` `storage.rstreams_queue` on an existing
+     product (skill **data-product-modeling**).
+   - Stub insert needs an active org project (placeholder deployment/workflow is
+     DB-only). If there is no project, say stub insert will skip until one
+     exists — still do not invent a Studio graph for the Lambda.
+   - List stubs: `GET /dataproducts?synthetic_visibility=include`.
+7. Unpause in Observe (LeoCron `paused` is runtime SoT after first register).
+8. Optional: `reconcile_custom_bots` for catalog ↔ LeoCron drift.
 
 CLI (SDK): `loxtep bots register|list|get|update|deregister|reconcile`.
 
