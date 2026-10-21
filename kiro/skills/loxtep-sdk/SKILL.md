@@ -16,8 +16,19 @@ metadata:
 
 | Surface              | Happy path                                                                                   |
 | -------------------- | -------------------------------------------------------------------------------------------- |
-| **CLI / code-first** | `loxtep ingest create` → `transform create` → `delivery create` → `lint` → `push` → `deploy` |
+| **CLI / code-first** | `loxtep ingest create` → `transform create` → `delivery create` → `lint` → `push` → scoped `deploy_workflow` |
 | **MCP (primitives)** | `get_entity_schemas` → `save_workflow_bundle` → `deploy_workflow`                            |
+
+GitHub-backed display names live in the checked-in package. Bot and product
+names are `name`. Output and error queue labels are
+`output_queue_display_name` and `error_queue_display_name` on the owning node.
+Change them with edit → `loxtep lint --workflow <id>` → `loxtep push
+--workflow-id <id>` → `deploy_workflow` for that workflow → read back the
+files and `get_runtime_mapping`. `loxtep deploy` deploys the whole project.
+Do not rename through `update_workflow`, `update_data_product`, or Observe
+event-settings. If the platform build does not accept or apply a declared
+queue label, stop and report that gap instead of an API rename. See
+**`data-workflows`**.
 
 **Trigger** = connector at the ingest head; **Target** = connector at the
 delivery tail — both are `connections/{id}.json` with `connector_id`. Delivery
