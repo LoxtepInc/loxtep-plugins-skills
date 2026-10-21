@@ -386,13 +386,20 @@ SDK), or REST `GET /organizations/instances/{instance_id}/stream-config`
 ## BYOL custom Lambda bots
 
 Register a customer-owned Lambda with LeoCron (no Studio deploy). Dedicated
-instances only. Full customer guide: `/docs/guides/bring-your-own-lambda`.
+instances only. Full customer guide: `/docs/guides/bring-your-own-lambda`
+(**When to use which**).
 
 Registration creates `{bot_id}-in` / `-out` / `-errors`. Bind a data product to
 `{bot_id}-out` via runtime queue reconciliation or `storage.rstreams_queue`
 before expecting catalog/SDK product APIs. Do **not** tell the caller to deploy
 a Studio workflow just to obtain a queue name the Lambda already created. Do not
 retarget custom-bot queues onto `w-…-queue-…` container names.
+
+**Hybrid:** SDK/connector Trigger ingest and Target delivery, Studio custom-code
+MicroVM hops, and BYOL can share one instance bus. Pick per hop; join with
+catalog `storage.rstreams_queue` (and SDK `get_reader` / `get_writer`). CLI
+ingest/delivery create → deploy remains the path when Loxtep should own that
+connector hop.
 
 ```bash
 loxtep bots register --instance <id> --name "My Worker" --lambda-name my-fn

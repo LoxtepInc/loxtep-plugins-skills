@@ -157,6 +157,9 @@ author bundle → deploy → verify with `get_data_product`.**
 Use when a Lambda is already registered on the instance bus (skill
 **loxtep-instances** BYOL) and the org wants a catalog data product on that
 queue. Do **not** add a Studio workflow node to “connect” the Lambda.
+Connector Trigger/Target and Studio custom-code hops remain valid on the same
+instance — bind each product to the queue that hop owns (hybrid; see BYOL guide
+**When to use which**).
 
 1. Confirm the publish queue name: `{bot_id}-out` (default custom-bot
    destination). Leave `-in` / `-errors` unbound as the product stream.
