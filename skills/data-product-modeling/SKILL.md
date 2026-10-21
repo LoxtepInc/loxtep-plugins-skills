@@ -149,6 +149,27 @@ author bundle → deploy → verify with `get_data_product`.**
 4. Version: additive = minor bump, breaking = major bump.
 5. `update_data_product` with versioned schema in the `schema` field.
 
+### Flow — Bind an existing runtime queue (BYOL)
+
+Use when a Lambda is already registered on the instance bus (skill
+**loxtep-instances** BYOL) and the org wants a catalog data product on that
+queue. Do **not** add a Studio workflow node to “connect” the Lambda.
+
+1. Confirm the publish queue name: `{bot_id}-out` (default custom-bot
+   destination). Leave `-in` / `-errors` unbound as the product stream.
+2. Bind:
+   - `PUT` the data product with `storage.rstreams_queue` set to that exact
+     queue name, **or**
+   - `POST /dataproducts/dataproducts/runtime-queue-reconciliation` with
+     `dry_run: true`, then `false` (needs `system:admin` | `data_products:admin`
+     | `instances:update`). List stubs with `synthetic_visibility=include`.
+3. Retire duplicate synthetic stubs after the canonical product is correct.
+4. SDK: `data_products.get_writer` / `get_reader` with optional `bot_id` = the
+   custom bot id for checkpointing.
+
+Operator detail: `docs/operations/runtime-queue-link-queue-workflow.md`.
+Customer guide: `/docs/guides/bring-your-own-lambda`.
+
 ### Flow — Lineage Documentation
 
 1. For consumer DPs: document upstream source DPs.
@@ -207,7 +228,12 @@ Transform Logic:  [expression]
 
 - **Direct `create_data_product`** — Bypasses workflow graph, queues, and
   deployment bindings. Design in this skill; provision via **`data-workflows`**
-  bundle + deploy.
+  bundle + deploy — **except** when binding an existing BYOL runtime queue
+  (`storage.rstreams_queue` / runtime reconciliation). That path does not need a
+  new workflow node.
+- **Studio graph for BYOL** — Do not invent a workflow edge onto `w-…-queue-…`
+  container queues to attach a customer Lambda. Bind the product to
+  `{bot_id}-out` instead.
 - **`create_delivery` / `list_deliveries`** — Legacy consumptions-table path.
   Prefer Target connection in a delivery workflow bundle.
 - **`workflow_type: "consumption"`** — Removed. Use **`delivery`**.
@@ -235,6 +261,8 @@ Transform Logic:  [expression]
 - **discover-govern-lineage:** Catalog discovery, governance policies
 - **data-workflows:** Bundle authoring, deploy, runtime verification (mandatory
   for creation)
+- **loxtep-instances:** BYOL register → then this skill binds
+  `storage.rstreams_queue` / reconciliation to `{bot_id}-out`
 
 <!-- SCOPE_BLOCK -->
 
