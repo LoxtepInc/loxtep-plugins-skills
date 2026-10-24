@@ -77,6 +77,14 @@ In lineage views:
 - **Empty or sparse results** — Discovery/search tools may need
   platform-injected search/evidence services in the AI runtime; behavior can
   differ between local tests and production.
+- **`derives_from` / `depends_on` edge direction** — PROV orientation:
+  `source_id` = derived product, `target_id` = upstream origin. Do not flip to
+  “feeder → consumer”; that breaks Ready promotion lineage and cache
+  `upstream_count` for these types. Other relationship types use data-flow
+  feeder → consumer.
+- **`get_lineage_impact`** returns **downstream** impact only. For upstream /
+  Ready lineage, use `get_data_product.lineage.upstream_count` or
+  `graph_traversal` with `direction: both`.
 
 <!-- SCOPE_BLOCK -->
 

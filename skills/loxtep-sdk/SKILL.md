@@ -11,21 +11,20 @@ description:
 
 ## Methodology (CLI vs MCP)
 
-| Surface              | Happy path                                                                                   |
-| -------------------- | -------------------------------------------------------------------------------------------- |
+| Surface              | Happy path                                                                                                   |
+| -------------------- | ------------------------------------------------------------------------------------------------------------ |
 | **CLI / code-first** | `loxtep ingest create` → `transform create` → `delivery create` → `lint` → `push` → scoped `deploy_workflow` |
-| **MCP (primitives)** | `get_entity_schemas` → `save_workflow_bundle` → `deploy_workflow`                            |
+| **MCP (primitives)** | `get_entity_schemas` → `save_workflow_bundle` → `deploy_workflow`                                            |
 
 GitHub-backed display names live in the checked-in package. Bot and product
-names are `name`. Output and error queue labels are
-`output_queue_display_name` and `error_queue_display_name` on the owning node.
-Change them with edit → `loxtep lint --workflow <id>` → `loxtep push
---workflow-id <id>` → `deploy_workflow` for that workflow → read back the
-files and `get_runtime_mapping`. `loxtep deploy` deploys the whole project.
-Do not rename through `update_workflow`, `update_data_product`, or Observe
-event-settings. If the platform build does not accept or apply a declared
-queue label, stop and report that gap instead of an API rename. See
-**`data-workflows`**.
+names are `name`. Output and error queue labels are `output_queue_display_name`
+and `error_queue_display_name` on the owning node. Change them with edit →
+`loxtep lint --workflow <id>` → `loxtep push --workflow-id <id>` →
+`deploy_workflow` for that workflow → read back the files and
+`get_runtime_mapping`. `loxtep deploy` deploys the whole project. Do not rename
+through `update_workflow`, `update_data_product`, or Observe event-settings. If
+the platform build does not accept or apply a declared queue label, stop and
+report that gap instead of an API rename. See **`data-workflows`**.
 
 **Trigger** = connector at the ingest head; **Target** = connector at the
 delivery tail — both are `connections/{id}.json` with `connector_id`. Delivery
@@ -97,7 +96,8 @@ Do **not** teach `client.targets.create` / MCP `create_delivery` as the happy
 path for pushing data out. Author a delivery workflow with a **Target**
 connection via **`data-workflows`** Flow D (`save_workflow_bundle` +
 `deploy_workflow`), or CLI `loxtep delivery create` → `lint` → `push` →
-`deploy`.
+`deploy`. Write policy (`table`, `write_mode`, upsert `primary_key`, batch
+sizes) lives on connection **`delivery_config`**, not `configuration`.
 
 ```bash
 loxtep delivery create …   # local package: Target at delivery tail
@@ -217,9 +217,10 @@ See the **`data-workflows`** Agent-Scope Skill (Flow F — Deploy before SDK
 ingestion) for the full sequence.
 
 **BYOL exception:** customer-registered custom bots create their own queues on
-register. Bind `storage.rstreams_queue` (or runtime queue reconciliation) to
-`{bot_id}-out`, then use `get_writer` / `get_reader` with that product. Do not
-require a Studio workflow deploy solely to create those queue names.
+register. Bind `{bot_id}-out` via runtime queue reconciliation (or workflow
+deploy), then use `get_writer` / `get_reader` with that product. Queue handle:
+`deployment_bindings.queue_name`. Do not require a Studio workflow deploy solely
+to create those queue names.
 
 ## Runtime naming convention (how queues and bots are named)
 
@@ -408,16 +409,16 @@ instances only. Full customer guide: `/docs/guides/bring-your-own-lambda`
 (**When to use which**).
 
 Registration creates `{bot_id}-in` / `-out` / `-errors`. Bind a data product to
-`{bot_id}-out` via runtime queue reconciliation or `storage.rstreams_queue`
-before expecting catalog/SDK product APIs. Do **not** tell the caller to deploy
-a Studio workflow just to obtain a queue name the Lambda already created. Do not
-retarget custom-bot queues onto `w-…-queue-…` container names.
+`{bot_id}-out` via runtime queue reconciliation before expecting catalog/SDK
+product APIs. Do **not** tell the caller to deploy a Studio workflow just to
+obtain a queue name the Lambda already created. Do not retarget custom-bot
+queues onto `w-…-queue-…` container names.
 
 **Hybrid:** SDK/connector Trigger ingest and Target delivery, Studio custom-code
 MicroVM hops, and BYOL can share one instance bus. Pick per hop; join with
-catalog `storage.rstreams_queue` (and SDK `get_reader` / `get_writer`). CLI
-ingest/delivery create → deploy remains the path when Loxtep should own that
-connector hop.
+catalog queue bindings (`deployment_bindings.queue_name`) and SDK `get_reader` /
+`get_writer`. CLI ingest/delivery create → deploy remains the path when Loxtep
+should own that connector hop.
 
 ```bash
 loxtep bots register --instance <id> --name "My Worker" --lambda-name my-fn
@@ -434,7 +435,7 @@ await client.workspace.custom_bots.register(instanceId, {
   paused: true,
 });
 
-// After the product’s storage.rstreams_queue is the BYOL publish queue:
+// After deployment_bindings.queue_name is the BYOL publish queue:
 const writer = await client.data_products.get_writer('my-data-product', {
   bot_id: 'w-xxxx-yyyy-custom-my-worker', // checkpoint as the custom bot
 });

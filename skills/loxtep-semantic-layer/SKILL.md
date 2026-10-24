@@ -6,8 +6,9 @@ description:
   Use when the user wants to search the semantic layer, retrieve semantic
   artifacts, check semantic completeness, manage canonical knowledge (strategy,
   positioning, brand voice, org structure, process docs), stage/review/approve
-  semantic packages (HITL before deploy), or review vocabulary_term agent
-  proposals (list, infer definitions, accept/reject).
+  semantic packages (HITL before deploy), maintain shared organization meaning
+  independently of products, or review typed semantic proposals and verify their
+  effects.
 ---
 
 # Semantic Layer (Customer MCP)
@@ -34,6 +35,80 @@ structure, and process documentation.
 ## Prerequisites
 
 - MCP auth. Operations are **organization**-scoped.
+
+## Shared meaning journey (no product required)
+
+Shared vocabulary, concepts, relationships, and reusable shapes have their own
+journey. A product can consume them later. Do not create a product, start
+promotion, or require a delivery workflow to define organization meaning.
+
+1. **Scope and evidence:** identify the business domain, owner, intended
+   meaning, source evidence, and unresolved questions. A field name or model
+   confidence alone does not establish a business definition.
+2. **Reuse:** inspect active packs, existing terms, ontology concepts, and org
+   shapes before drafting. Use `loxtep-ontology` for terms/concepts and
+   `loxtep_define` `list_schemas` for shapes. Search results of type `schema`
+   are not the org shape registry. Prefer aliases for naming differences;
+   overrides require real semantic divergence.
+3. **Draft:** define terms (language), concepts and relationships (business
+   model), and shapes (reusable structure) separately. Align shapes to concepts;
+   only apply shapes to products when the user requests product work.
+4. **Review the exact change:** identify the proposal/package ID, revision when
+   available, scope, evidence, intended effect, and affected consumers. Explain
+   whether acceptance creates an artifact, applies one, or only records a
+   decision. Inbox is a decision surface, not proof of artifact availability.
+5. **Verify availability:** read the resulting term/concept/shape or package
+   verification result. Report decision, artifact availability, and product
+   usage separately. Missing effects remain unfinished even after acceptance.
+6. **Optional product adoption:** hand the verified artifact IDs to
+   `define-data-product-shape` / `promote-data-product`; recheck the product's
+   actual readiness. Shared meaning itself has no bronze/silver/gold lifecycle.
+
+### Route review by proposal type
+
+Use `list_semantic_proposals` with `page` and `page_size` (maximum 100),
+following pagination until complete. Group by proposal type and scope. Do not
+silently report the first page as the whole backlog. Duplicate names are review
+groups, not permission to bulk accept: definitions may conflict across sources.
+
+| Proposal type                                 | Current effect / required verification                                                                                                                                                                                                                                                                   |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `vocabulary_term`                             | Acceptance with a definition upserts an org term. Read it back and check aliases and definition; graph propagation is separate.                                                                                                                                                                          |
+| `canonical_shape`                             | Acceptance creates/revises a shape and attempts specified product applications. Read the shape and check each intended product; inspect `materialization.status` and `failed_data_products`. A partial application is unfinished consumer work; retry using the saved `schema_id`.                       |
+| `type_binding` / `semantic_infer_ontology`    | Acceptance can write a product graph mapping. Inspect mapping and review state. Do not use this to bypass shape → concept alignment on a product with an applied shape.                                                                                                                                  |
+| `ontology_concept_mapping_proposal`           | Acceptance saves a shared concept, its reviewed property mappings, and class relationships. Read `get_ontology_concept` using the returned `concept_id`; inspect field mappings, review status and provenance. Product IDs are provenance; adoption is separate. Canonical targets require active packs. |
+| `product_shape` / `product_semantic_bindings` | Product definition work: follow `define-data-product-shape`, exact revision approval/application, and read definition status. Do not infer application from the generic decision label.                                                                                                                  |
+
+Inspect `materialized` in the accept response. `false` means decision-only;
+missing means unverified. Even `true` does not prove every consumer was updated
+or that a product is Ready. Never invent an apply operation or bypass a required
+human review to compensate for a missing effect.
+
+### Organization inference and review
+
+Organization-wide ontology inference and product semantic inference are
+distinct. Use `loxtep_meaning` with `_metadata.skill_name: loxtep-ontology`:
+
+1. `start_ontology_inference` with optional `data_product_ids` (1–50); omit for
+   eligible connected products across the organization. Record `run_id`. This is
+   optional evidence gathering; authored shared meaning needs no product.
+2. `get_ontology_inference_run` with that exact `run_id`. Inspect status,
+   completed counts, and each failed/skipped source. Submission is not
+   completion. Policy may auto-accept eligible mappings.
+3. `list_inferred_ontology` with `needs_review: true`, optionally scoped to one
+   product. Inspect `invalid` rows as well as `items`.
+4. `review_inferred_ontology` with `data_product_id` and `action`
+   accept/reject/edit. Edits supply the intended type or complete field
+   mappings, retaining property kinds and references. Read the returned review
+   state. Correct mappings projected from applied shapes through shape
+   alignment.
+5. `cancel_ontology_inference_run` stops a run when requested. Finished items
+   remain; inspect the returned state rather than promising rollback.
+
+Do not substitute product `request_semantic_inference` for an organization run.
+Graph-inferred mappings use `review_inferred_ontology`; SQL induction proposals
+use `accept_semantic_proposal`. Discover available schemas when working against
+an older deployed version. No mapping acceptance proves product readiness.
 
 ## Happy-path flow
 
@@ -66,6 +141,9 @@ structure, and process documentation.
    `reject_semantic_package`, or the authenticated inbox `review_url`).
 5. **Do not deploy** until the user explicitly asks after approval. Deploy is
    `deploy_semantic_package` — a separate step.
+6. After authorized deployment, call `verify_semantic_package` and inspect its
+   result. Approval alone is not deployment; deployment alone is not verified
+   availability. Surface failed checks and the next concrete repair.
 
 ### Vocabulary agent proposals (connect → review → assert)
 
