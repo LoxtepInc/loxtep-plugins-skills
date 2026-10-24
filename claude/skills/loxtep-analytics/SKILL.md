@@ -60,10 +60,27 @@ always a complete answer. The tool returns the full warehouse result in `data`
 - any other status — failed tool response
   `Unhandled warehouse query status: <status>`.
 
-If `recovery.action` is `rebuild_iceberg`, or `iceberg_health_status` /
-`iceberg_health_reason` are set, follow the Iceberg rebuild guidance in Pitfalls
-(`get_iceberg_health`, then `rebuild_iceberg_table` with `dry_run: true` first;
-never rebuild without explicit confirmation).
+Rebuild guidance in Pitfalls applies only when `recovery.action` is
+`rebuild_iceberg`, or `iceberg_health_status` is a rebuild status (`empty_stub`,
+`schema_mismatch`, `partition_mismatch`, `no_data_files`). Then use
+`loxtep_observe` → `get_iceberg_health`, then `rebuild_iceberg_table` with
+`dry_run: true` first; never rebuild without explicit confirmation.
+
+`iceberg_health_status` / `iceberg_health_reason` being set is not itself a
+rebuild signal. Treat these warehouse statuses as follows (none of them include
+recovery, and none are a rebuild signal):
+
+- `retryable` — transient metadata load (5xx / 408 / 429 / network). Retry the
+  query. Do not rebuild.
+- `unauthorized` — 401/403 on the S3 Tables metadata GET or `iceberg_scan`
+  (`IcebergMetadataLoadAuthError`). The table itself was not checked. Do not
+  rebuild.
+- `metadata_config_error` — no transport / other 4xx / unclassified. Fix the
+  proxy URL or metadata location. Do not rebuild.
+- `unknown` — health could not identify or assess the Iceberg table. Do not
+  rebuild on this status alone.
+- `unreadable` without `recovery.action === 'rebuild_iceberg'` — not a rebuild
+  signal. Do not rebuild.
 
 `get_query_results` is the async/paginated poll. Today it does **not** surface
 `status: "partial"` the way `execute_query` does: any status other than
@@ -76,7 +93,8 @@ Fields that may appear on the result (only these exist on
 `WarehouseQueryResult`): `query_id`, `status`, `results`, `columns`,
 `row_count`, `total_count`, `execution_time_ms`, `error`, `policy_info`,
 `tables_referenced`, `recovery`
-(`{ action: 'rebuild_iceberg', data_product_id }`), `iceberg_health_status`,
+(`{ action: 'rebuild_iceberg', data_product_id }` — the rebuild signal, not
+`iceberg_health_status` alone), `iceberg_health_status`,
 `iceberg_health_reason`, `files_read`, `files_expected`, `engine` (`duckdb` |
 `snowflake` | `databricks`), `sampled`, `applied_caps` (`row_limit`,
 `byte_limit`).
@@ -98,25 +116,20 @@ Fields that may appear on the result (only these exist on
 - **Partial `execute_query` results** — `success: true` can still mean
   `data.status: "partial"`. Honor `sampled` even when `status` is `completed`.
   See **Reading `execute_query` results**.
-- **Incomplete Iceberg metadata is a failure** —
-  `Iceberg metadata LIST incomplete` (Studio Catalog SQL and server execute /
-  MCP `execute_query`) or `Iceberg batch-metadata failed` means LeoS3 table
-  version was not resolved. Versioned metadata GET is surface-specific: Studio
-  throws `Iceberg metadata GET incomplete (HTTP N) for <url>` /
-  `Iceberg metadata GET incomplete (invalid JSON) for <url>`
-  (`platform-frontend/src/lib/warehouse/bootstrap.ts`). Server warehouse execute
-  and MCP `execute_query` throw
-  `LeoS3 Iceberg metadata GET failed: <reason> (HTTP N) for <location> version <v>`
-  (`throwLeoS3MetadataFetchError` in
-  `_core/src/warehouse-sql/iceberg-metadata.ts`). `data.status` is `failed`, not
-  `completed` and not the file-cap `partial`. Do not present rows or counts as
-  the current table. Do not call `rebuild_iceberg_table` unless
-  `recovery.action` is `rebuild_iceberg`. `iceberg_health_status` is `unknown`
-  (version LIST) or `unreadable` (versioned metadata GET). Studio Catalog SQL
-  surfaces LIST/GET as `Failed to register Iceberg view(s): <table>: …`. HTTP
-  404 on `?batch-metadata=true` is “proxy does not implement it” and continues;
-  a truncated bundle (`partial: true`) is refused and the client continues to
-  pointers / a complete LIST.
+- **S3 Tables metadata load failure is a failed query** — managed reads use
+  `GET .../iceberg/metadata-location`, then that `metadata.json`. There is no
+  `metadata/` LIST and no `?batch-metadata=true`. Server execute and MCP
+  `execute_query` put the same text in `error` and in the health reason:
+  `S3 Tables metadata GET failed: HTTP N for <location>` (or `via Observe`), or
+  `S3 Tables metadata JSON is malformed at <location> (HTTP N)`. `data.status`
+  is `failed`, not `completed` and not the file-cap `partial`. Do not present
+  rows or counts as the current table. Rebuild only when `recovery.action` is
+  `rebuild_iceberg` (scan recovery: missing or corrupt metadata). `retryable`,
+  `unauthorized`, and `metadata_config_error` are not rebuild signals. A LeoS3
+  product on the platform or browser warehouse fails with
+  `LeoS3 Iceberg tables are readable only inside the instance runtime`. Studio
+  Catalog SQL with no metadata location reports
+  `Failed to register Iceberg view(s): <table>: LeoS3 Iceberg tables are readable only inside the instance runtime; run this query on the server warehouse`.
 - **Timeout vs memory-limit** — a statement timeout and a DuckDB
   `memory limit exceeded` both come back as failed (`error`:
   `Query execution failed`). Distinguish them from `message`: timeout text is
@@ -148,15 +161,20 @@ Fields that may appear on the result (only these exist on
   passes the catalog body through. `not_enabled` means Iceberg is off — enable
   it first; do not rebuild (rebuild POST returns HTTP 400). `unknown` means
   metadata or provision identity could not be resolved (including enabled
-  without `table_bucket_arn`); it is a warning, not a rebuild signal. Do not
-  rebuild on `not_enabled` or `unknown`. `managed_s3_tables` is a provisioned
+  without S3 Tables identity — `table_bucket_arn`, or stamped
+  `s3_tables_namespace` + `s3_tables_table`); it is a warning, not a rebuild
+  signal. Do not rebuild on `not_enabled` or `unknown`. Warehouse execute
+  `retryable`, `unauthorized`, `metadata_config_error`, and `unreadable` without
+  `recovery.action === 'rebuild_iceberg'` are also not rebuild signals — see
+  **Reading `execute_query` results**. `managed_s3_tables` is a provisioned
   Amazon S3 Tables product (AWS-managed maintenance). Warehouse `empty_ok`
-  (`No Iceberg snapshots yet`) is only a complete empty `metadata/` LIST, not
-  these catalog states. Rebuild permanently deletes the table and recreates it
-  from the queue. Always `dry_run: true` first. Never rebuild without explicit
-  confirmation. Do not treat rebuild or backfill status as a lock — a second
-  request while one is running is accepted. An unexpected upstream 409 is an
-  error, not "already running".
+  (`No Iceberg snapshots yet`) is `metadata_load: not_found` (classified missing
+  metadata JSON at a resolved location), not these catalog states. Rebuild
+  permanently deletes the table and recreates it from the queue. Always
+  `dry_run: true` first. Never rebuild without explicit confirmation. Do not
+  treat rebuild or backfill status as a lock — a second request while one is
+  running is accepted. An unexpected upstream 409 is an error, not "already
+  running".
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 

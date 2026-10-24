@@ -17,19 +17,19 @@ pipeline via **`data-workflows`** (bundle + deploy).
 **Do not call `create_data_product` to provision new source or consumer data
 products.**
 
-| Phase   | This skill (`data-product-modeling`)                   | **`data-workflows`**                                |
-| ------- | ------------------------------------------------------ | --------------------------------------------------- |
-| Design  | Output schema, provenance, transforms, trust plan      | —                                                   |
-| Create  | **Never** — no standalone MCP create                   | `data-products/{id}.json` in `save_workflow_bundle` |
+| Phase   | This skill (`data-product-modeling`)                                                                                                                | **`data-workflows`**                                |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Design  | Output schema, provenance, transforms, trust plan                                                                                                   | —                                                   |
+| Create  | **Never** — no standalone MCP create                                                                                                                | `data-products/{id}.json` in `save_workflow_bundle` |
 | Runtime | Promotion and delivery. Product **display name** is `name` in the checked-in `data-products/{id}.json`, then lint → push → scoped `deploy_workflow` | `deploy_workflow` → queues + `deployment_bindings`  |
 
 Do not set a product, bot, or queue display name with `update_data_product`.
 That leaves the runtime label out of the package. Declare a queue label with
-`output_queue_display_name` or `error_queue_display_name` on the owning node
-(or `output_queue_display_name` on the data product for its upstream writer's
-output queue), then lint, push, and scoped deploy. See **`data-workflows`**
-(Display names). If that field is missing from the schema the platform is
-running, report the gap. Do not rename the queue through an API.
+`output_queue_display_name` or `error_queue_display_name` on the owning node (or
+`output_queue_display_name` on the data product for its upstream writer's output
+queue), then lint, push, and scoped deploy. See **`data-workflows`** (Display
+names). If that field is missing from the schema the platform is running, report
+the gap. Do not rename the queue through an API.
 
 A correctly provisioned DP has `workflow_id`, `managed_by: "design-time"`,
 `deployed_by: "workflow-deployment"`, and `deployment_bindings` after deploy —
@@ -143,9 +143,12 @@ author bundle → deploy → verify with `get_data_product`.**
    - Delivery Target: **`data-workflows`** Flow D — Target connection in a
      `workflow_type: "delivery"` bundle (not `create_delivery`).
    - Graph sync: auto-handled by prior promotion.
-   - PROV-O lineage: document upstream lineage via `update_data_product` lineage
-     field.
-3. `get_promotion_readiness` again to confirm.
+   - Upstream lineage (Ready / gold): create a native catalog edge via
+     `POST /dataproducts/lineage` (not `update_data_product.lineage` JSON). For
+     `derives_from` / `depends_on`, use **PROV orientation**: `source_id` = this
+     (derived) product, `target_id` = upstream product. Then re-check with
+     `get_promotion_readiness` and `target_tier: gold`.
+3. `get_promotion_readiness` with `target_tier: gold` again to confirm.
 4. `promote_data_product` to mark delivery-ready (see
    **`promote-data-product`**).
 
@@ -168,12 +171,10 @@ use which**).
 
 1. Confirm the publish queue name: `{bot_id}-out` (default custom-bot
    destination). Leave `-in` / `-errors` unbound as the product stream.
-2. Bind:
-   - `PUT` the data product with `storage.rstreams_queue` set to that exact
-     queue name, **or**
-   - `POST /dataproducts/dataproducts/runtime-queue-reconciliation` with
-     `dry_run: true`, then `false` (needs `system:admin` | `data_products:admin`
-     | `instances:update`). List stubs with `synthetic_visibility=include`.
+2. Bind via `POST /dataproducts/dataproducts/runtime-queue-reconciliation` with
+   `dry_run: true`, then `false` (needs `system:admin` | `data_products:admin` |
+   `instances:update`). List stubs with `synthetic_visibility=include`. Confirm
+   `deployment_bindings.queue_name` on the product matches `{bot_id}-out`.
 3. Retire duplicate synthetic stubs after the canonical product is correct.
 4. SDK: `data_products.get_writer` / `get_reader` with optional `bot_id` = the
    custom bot id for checkpointing.
@@ -183,11 +184,18 @@ Customer guide: `/docs/guides/bring-your-own-lambda`.
 
 ### Flow — Lineage Documentation
 
-1. For consumer DPs: document upstream source DPs.
-2. For each field: source_dp.field → [transform] → target_field.
-3. Use `search_catalog` (`loxtep_query`) and `get_lineage_impact`
-   (`loxtep_observe`) to inspect existing lineage.
-4. Record provenance in the data product metadata via `update_data_product`.
+1. For consumer / derived DPs: create an upstream edge with
+   `POST /dataproducts/lineage` (harvest writes the graph edge).
+2. **`derives_from` / `depends_on` orientation (PROV):** `source_id` = derived
+   product, `target_id` = upstream origin. Do **not** reverse this to “feeder →
+   consumer” — that inverts Ready-gate and cache semantics for these
+   relationship types.
+3. Other types (`produces`, `transforms`, …) use data-flow orientation:
+   `source_id` = feeder, `target_id` = consumer.
+4. For each field: upstream_dp.field → [transform] → this_dp.field.
+5. Inspect with `graph_traversal` (`loxtep_query`, mode `lineage`) and
+   `get_data_product.lineage` (`upstream_count`). `get_lineage_impact` is
+   **downstream impact only** — it will not prove Ready upstream lineage.
 
 ## Provenance Card Template
 
@@ -239,9 +247,9 @@ Transform Logic:  [expression]
 
 - **Direct `create_data_product`** — Bypasses workflow graph, queues, and
   deployment bindings. Design in this skill; provision via **`data-workflows`**
-  bundle + deploy — **except** when binding an existing BYOL runtime queue
-  (`storage.rstreams_queue` / runtime reconciliation). That path does not need a
-  new workflow node.
+  bundle + deploy — **except** when binding an existing BYOL runtime queue via
+  runtime queue reconciliation (sets `deployment_bindings.queue_name`). That
+  path does not need a new workflow node.
 - **Studio graph for BYOL** — Do not invent a workflow edge onto `w-…-queue-…`
   container queues to attach a customer Lambda. Bind the product to
   `{bot_id}-out` instead.
@@ -272,8 +280,8 @@ Transform Logic:  [expression]
 - **discover-govern-lineage:** Catalog discovery, governance policies
 - **data-workflows:** Bundle authoring, deploy, runtime verification (mandatory
   for creation)
-- **loxtep-instances:** BYOL register → then this skill binds
-  `storage.rstreams_queue` / reconciliation to `{bot_id}-out`
+- **loxtep-instances:** BYOL register → then runtime reconciliation binds
+  `{bot_id}-out` on `deployment_bindings.queue_name`
 
 <!-- SCOPE_BLOCK -->
 

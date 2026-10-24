@@ -29,7 +29,9 @@
 ## Steps
 
 1. Find products — `list_data_products`; read **`medallion`**, not only `status`
-2. Run readiness checklist — `get_promotion_readiness`
+2. Run readiness checklist — `get_promotion_readiness` with the **same**
+   `target_tier` you intend to promote to (`silver` or `gold`). Default is
+   `silver`; Ready / `lineage-exists` only appears for `target_tier: gold`.
 3. Remediate **required** (blocking) gates first — each unsatisfied prerequisite
    carries `guidance` pointing at the PKO step/skill that clears it
 4. Offer **advisory** gates as suggestions — they never block promotion, but
@@ -67,6 +69,10 @@
 - Approval routes to the **domain owner**, not a generic admin
 - Never call `list_promotion_candidates` for data-product Ready/In Progress —
   that tool is memory/CDLC only
+- Ready gate `lineage-exists` needs a catalog/graph edge with PROV orientation
+  for `derives_from`: `source_id` = this product, `target_id` = upstream.
+  Writing JSON into `update_data_product.lineage` does **not** satisfy the gate.
+  Re-check with `get_promotion_readiness` + `target_tier: gold`.
 
 ## References
 

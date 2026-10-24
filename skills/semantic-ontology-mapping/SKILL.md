@@ -12,6 +12,16 @@ Systematic discovery, formalization, and alignment of business semantics across
 organizational boundaries — making implicit knowledge explicit,
 machine-readable, and actionable.
 
+## Journey and completion
+
+This work can start and finish independently of data product promotion. Follow
+`loxtep-semantic-layer`'s shared meaning journey: scope/evidence → reuse → draft
+→ typed review → verify availability → optional product adoption. Terms,
+concepts, relationships, and shapes are distinct artifacts; a product is a
+consumer, not a prerequisite. Return verified artifact IDs and unresolved
+questions. Do not equate an accepted proposal with a materialized mapping or
+apply bronze/silver/gold readiness to shared meaning.
+
 ## When to use
 
 - "**Semantic** mapping", "**ontology** design", "**process** mapping",
@@ -101,9 +111,14 @@ promotion.
    Thesaurus `scheme: field` terms are vocabulary keys, not ontology concepts.
 3. **Define relationships:** Type each connection between ontology concepts
    (`create_ontology_relationship`). Connect / induction does **not** treat a
-   column name ending in `_id` as a foreign key. Shape-field relations are not
-   user-declarable today. Postgres and MySQL source foreign keys are read from
-   the database catalog as `references_shape`. Mark identifiers with
+   column name ending in `_id` as a foreign key. Declare `references_shape` as a
+   non-empty string (target shape name or canonical key). REST and MCP shape
+   schemas, proposal accept, apply, data-product normalize, and schema cache
+   sync keep it. An object, array, or empty string is HTTP 400. The target shape
+   does not have to exist. The SDK still has no reference field. Studio has no
+   picker. Graph sync reads `references_shape` as the target node scope and does
+   not resolve it to a data product. Postgres and MySQL source foreign keys are
+   read from the database catalog as `references_shape`. Mark identifiers with
    `is_primary_key` (or `schema.key`) on the **data-product schema** path, or
    rely on Postgres / MySQL catalog PRIMARY KEY flags cached on the connector
    (tier B: `postgres`, `postgresql`, `mysql`, `mysql-source` only). JSON Schema
@@ -249,10 +264,15 @@ Do not claim full MCP↔SDK parity for namespace mappings or
   missing or stale. Databricks, Snowflake, Redshift, BigQuery, and Athena keep
   sample inference. On the semantic connect path only, high-confidence bindings
   still stay `needs_review` when any field mapping needs review. Org-wide
-  inference auto-accepts on threshold plus override conflict only. Shape-field
-  relations are not user-declarable today. Postgres and MySQL source FKs are
-  read from the database catalog. Duplicate FKs on one column fail Test /
-  listing / sync (`AMBIGUOUS_CATALOG_FK`); fix the source constraint.
+  inference auto-accepts on threshold plus override conflict only. Declare
+  `references_shape` as a non-empty string. REST and MCP shape schemas, proposal
+  accept, apply, normalize, and schema cache sync keep it; an object, array, or
+  empty string is HTTP 400. The target shape does not have to exist. The SDK
+  still has no reference field, and Studio has no picker. Graph sync reads
+  `references_shape` as the target node scope and does not resolve it to a data
+  product. Postgres and MySQL source FKs are read from the database catalog.
+  Duplicate FKs on one column fail Test / listing / sync
+  (`AMBIGUOUS_CATALOG_FK`); fix the source constraint.
 - **Confusing with loxtep-ontology:** That Agent-Scope Skill is for MCP CRUD
   operations on ontology entities. This Agent-Scope Skill is the _methodology_
   for deciding what to create.

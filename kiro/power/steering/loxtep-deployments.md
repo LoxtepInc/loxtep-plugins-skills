@@ -67,14 +67,14 @@ and inspect runtime mappings.
   `deploy_workflow` for that workflow → read back design-time names and
   `get_runtime_mapping`. Output and error queue labels are
   `output_queue_display_name` and `error_queue_display_name` on the node that
-  owns the queue. A declared name is applied to the existing queue id. An
-  unset field keeps the generated label and does not replace a stored one.
-  Do not rename with `update_workflow`, `update_data_product`, or Observe
-  event-settings. If the platform build rejects those fields or does not
-  apply a declared label, stop and report the gap (**`data-workflows`**,
-  Display names). Do not rename the queue through an API. A scoped redeploy
-  must keep declared labels, immutable bot/queue ids, bindings, and
-  checkpoints, and must not start or unpause any other workflow.
+  owns the queue. A declared name is applied to the existing queue id. An unset
+  field keeps the generated label and does not replace a stored one. Do not
+  rename with `update_workflow`, `update_data_product`, or Observe
+  event-settings. If the platform build rejects those fields or does not apply a
+  declared label, stop and report the gap (**`data-workflows`**, Display names).
+  Do not rename the queue through an API. A scoped redeploy must keep declared
+  labels, immutable bot/queue ids, bindings, and checkpoints, and must not start
+  or unpause any other workflow.
 - **Deploy is required after ANY graph change** — adding or removing nodes,
   wiring edges, updating transformation configs, or changing the trigger
   schedule are all design-time operations that have no runtime effect until

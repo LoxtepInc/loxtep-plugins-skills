@@ -24,6 +24,20 @@ it. Then use `loxtep_meaning`: `request_semantic_inference`,
 `discover_ontology_relationships` then `accept_ontology_relationships`. None of
 those replace this proposal, approval, and apply workflow.
 
+## Procedure ownership and resume
+
+These steps are performed by the external agent. The generic PKO engine parks
+steps marked `execution_mode: external_agent` with a required-action message; it
+does not execute their MCP instructions or create a second workflow approval.
+
+Keep the same `procedure_run_id` on submitted proposals. Submission links the
+run to the real proposal approval; approval and application update its current
+step, exact proposal/revision, and `context.next_operation`. An applied shape
+moves to semantic proposal work, not back to another shape approval. Use typed
+definition status and persisted effects to resume; do not approve an obsolete
+generic gate. Definition completion and product Ready/publication remain
+separate.
+
 ## Workflow
 
 1. `list_data_products` — read `processing_role` or `kind`. Medallion `bronze` /
@@ -110,10 +124,16 @@ requirement.
   (tier B) and, when promoted, write `schema.key` on the data product. Induction
   DEFERs without samples when that cache is missing for those types. Databricks,
   Snowflake, Redshift, BigQuery, and Athena still infer from samples. MongoDB,
-  REST, and other connectors are unchanged. The SDK has no `is_primary_key`
-  field and no reference field. Do not treat a `_id` suffix as a key or foreign
-  key. Shape-field relations are not user-declarable today. Postgres and MySQL
-  source FKs are read from the database catalog. A column with FOREIGN KEY
+  REST, and other connectors are unchanged. Declare a reference with
+  `references_shape` (non-empty string: target shape name or canonical key).
+  REST ShapeFieldSchema, MCP SchemaFieldSchema, proposal accept,
+  apply_definition_proposal, data-product schema normalize, and schema cache
+  sync keep it. An object, array, or empty string is HTTP 400. The target shape
+  does not need to exist. The SDK still has no `references_shape` or
+  `is_primary_key` field. Studio has no picker. Graph sync reads
+  `references_shape` as the target node scope and does not resolve it to a data
+  product. Do not treat a `_id` suffix as a key or foreign key. Postgres and
+  MySQL source FKs are read from the database catalog. A column with FOREIGN KEY
   constraints to two tables is refused (`AMBIGUOUS_CATALOG_FK`); drop or fix the
   duplicate constraint before Test / listing / sync. If both `schema.key` and
   `is_primary_key` are present they must name the same fields; semantic

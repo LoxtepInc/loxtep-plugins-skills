@@ -5,6 +5,16 @@
 Manage **ontology concepts**, **vocabulary terms** (thesaurus), and **namespace
 mappings** for the semantic layer.
 
+## Journey and completion
+
+This work can start and finish independently of data product promotion. Follow
+`loxtep-semantic-layer`'s shared meaning journey: scope/evidence → reuse → draft
+→ typed review → verify availability → optional product adoption. Terms,
+concepts, relationships, and shapes are distinct artifacts; a product is a
+consumer, not a prerequisite. Return verified artifact IDs and unresolved
+questions. Do not equate an accepted proposal with a materialized mapping or
+apply bronze/silver/gold readiness to shared meaning.
+
 ## When to use
 
 - "**Thesaurus** terms", "**vocabulary** sync", "**ontology** concept",
@@ -12,6 +22,17 @@ mappings** for the semantic layer.
   **vocabulary** term", "register **namespace**"
 - "**Enterprise override**", "**semantic gap**", "**Minimal Ontology**",
   "**divergence**", "**Govern step**", "resolve gap", "override coverage"
+
+## Organization inference controls
+
+Follow `loxtep-semantic-layer` for the full review journey. Hosted Meaning
+operations include `start_ontology_inference`, `get_ontology_inference_run`,
+`cancel_ontology_inference_run`, `list_inferred_ontology`, and
+`review_inferred_ontology`. Run IDs identify organization inference, not product
+mapping runs. A run may contain failed/skipped items or mappings auto-accepted
+under policy. Inspect actual effects before claiming completion. Accepted
+induction proposals return shared concept IDs and property mappings; use
+`get_ontology_concept` to verify them before optional product adoption.
 
 ## Minimal Ontology Principle (MOP)
 
@@ -44,14 +65,18 @@ A field becomes an identifier property when it is a declared key
 `connectors.metadata.entity_field_schemas` and become `declared_key` /
 `is_declared_key` in induction (tier B). JSON Schema snapshots still drop
 `is_primary_key` and `schema.key`. MongoDB, REST, and other connectors do not
-emit catalog keys. Shape-field relations are not user-declarable today. Postgres
-and MySQL source foreign keys are read from the database catalog as
-`references_shape` on the connector cache. REST and MCP shape-field schemas,
-proposal accept, `apply_definition_proposal`, data-product schema normalize
-(`data_products.schema`), and schema cleanup still drop `references_shape`. The
-SDK has no reference field and no `is_primary_key` field. Bootstrap induction
-tables are single-table, so a declared `references_shape` whose target is not in
-the same batch still resolves as not in the induction batch.
+emit catalog keys. A shape field declares a reference with `references_shape`, a
+non-empty string (target shape name or canonical key). REST `ShapeFieldSchema`,
+MCP `SchemaFieldSchema`, proposal accept, `apply_definition_proposal`,
+data-product schema normalize, and schema cache sync keep it. An object, array,
+or empty string is HTTP 400, not dropped. The target shape does not have to
+exist. The SDK still has no `references_shape` or `is_primary_key` field. Studio
+has no picker. Graph sync reads `references_shape` as the target node scope and
+does not resolve it to a data product. Postgres and MySQL source foreign keys
+are still read from the database catalog as `references_shape` on the connector
+cache. Bootstrap induction tables are single-table, so a declared
+`references_shape` whose target is not in the same batch still resolves as not
+in the induction batch.
 
 Field-list cache (and therefore catalog-key induction) is only for `postgres`,
 `postgresql`, `mysql`, and `mysql-source`. When those types have no usable

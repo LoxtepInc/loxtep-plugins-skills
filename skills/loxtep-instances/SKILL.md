@@ -449,8 +449,9 @@ which**).
    - Prefer dry-run then run
      `POST /dataproducts/dataproducts/runtime-queue-reconciliation`
      (`instance_id`, `dry_run`). Needs `system:admin` | `data_products:admin` |
-     `instances:update`. Or `PUT` `storage.rstreams_queue` on an existing
-     product (skill **data-product-modeling**).
+     `instances:update` (skill **data-product-modeling**). Do not instruct
+     customers to set internal storage queue fields — bindings come from
+     reconciliation or deploy.
    - Stub insert needs an active org project (placeholder deployment/workflow is
      DB-only). If there is no project, say stub insert will skip until one
      exists — still do not invent a Studio graph for the Lambda.

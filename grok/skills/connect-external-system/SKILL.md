@@ -46,25 +46,25 @@ that step.
 
 Ask before any mutating step. Do not treat inspection as permission to write.
 
-| Action                                        | Mutates                                                                                                                                                                              | Permission                    | Surface                                         |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------- | ----------------------------------------------- |
-| `list_connector_types`                        | no                                                                                                                                                                                   | `connectors:read`             | MCP `loxtep_connect`                            |
-| `list_connectors`                             | no                                                                                                                                                                                   | `connectors:read`             | MCP `loxtep_connect`                            |
-| `list_templates` / `get_template`             | no                                                                                                                                                                                   | `catalog:read`                | MCP `loxtep_connect`                            |
-| `GET /dataproducts/connector-packages/{slug}` | no                                                                                                                                                                                   | `catalog:read`                | REST only                                       |
-| `list_instances` / `get_infrastructure`       | no                                                                                                                                                                                   | `instances:read`              | MCP `loxtep_workspace`                          |
-| `list_observe_bots`                           | no                                                                                                                                                                                   | `instances:read`              | MCP `loxtep_observe`                            |
-| `get_runtime_mapping`                         | no                                                                                                                                                                                   | project read                  | MCP `loxtep_build`                              |
-| `test_connector`                              | no ingest; public path may persist `last_tested_at` / `last_test_sample` when the caller also has `connectors:write`; customer-VPC path may persist `last_tested_at` without samples | `connectors:read`             | MCP / CLI / SDK / REST                          |
-| `create_connector` / `update_connector`       | yes (credentials, metadata)                                                                                                                                                          | `connectors:write`            | MCP / SDK / REST                                |
-| `get_oauth_url` without `connector_id`        | yes (creates connector)                                                                                                                                                              | `connectors:read`             | MCP                                             |
-| `capture_samples`                             | yes (bounded source rows into metadata)                                                                                                                                              | `connectors:read`             | MCP / CLI / SDK / REST                          |
-| `reset_backfill`                              | yes (one paused MongoDB backfill checkpoint)                                                                                                                                         | `workflows:update`            | MCP `loxtep_build` / CLI / REST                 |
-| `confirm_connector_entity_selection`          | yes (starts PKO ingest design/deploy)                                                                                                                                                | `connectors:write`            | MCP                                             |
-| `delete_connector`                            | yes (soft-delete; owner only; blocked if in use)                                                                                                                                     | `connectors:write` + approval | MCP                                             |
-| `run_connector_action`                        | yes (third-party side effect)                                                                                                                                                        | `connectors:write` + approval | MCP                                             |
-| `deploy_project` / `deploy_workflow`          | yes (runtime bots/queues)                                                                                                                                                            | project write                 | MCP `loxtep_build` — **`loxtep-deployments`**   |
-| `register_infrastructure` / `create_instance` | yes (org infra / instance)                                                                                                                                                           | instances write               | MCP `loxtep_workspace` — **`loxtep-instances`** |
+| Action                                        | Mutates                                                                                                                                                                              | Permission                    | Surface                                                      |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------- | ------------------------------------------------------------ |
+| `list_connector_types`                        | no                                                                                                                                                                                   | `connectors:read`             | MCP `loxtep_connect`                                         |
+| `list_connectors`                             | no                                                                                                                                                                                   | `connectors:read`             | MCP `loxtep_connect`                                         |
+| `list_templates` / `get_template`             | no                                                                                                                                                                                   | `catalog:read`                | MCP `loxtep_connect`                                         |
+| `GET /dataproducts/connector-packages/{slug}` | no                                                                                                                                                                                   | `catalog:read`                | REST only                                                    |
+| `list_instances` / `get_infrastructure`       | no                                                                                                                                                                                   | `instances:read`              | MCP `loxtep_workspace`                                       |
+| `list_observe_bots`                           | no                                                                                                                                                                                   | `instances:read`              | MCP `loxtep_observe`                                         |
+| `get_runtime_mapping`                         | no                                                                                                                                                                                   | project read                  | MCP `loxtep_build`                                           |
+| `test_connector`                              | no ingest; public path may persist `last_tested_at` / `last_test_sample` when the caller also has `connectors:write`; customer-VPC path may persist `last_tested_at` without samples | `connectors:read`             | MCP / CLI / SDK / REST                                       |
+| `create_connector` / `update_connector`       | yes (credentials, metadata)                                                                                                                                                          | `connectors:write`            | MCP / SDK / REST                                             |
+| `get_oauth_url` without `connector_id`        | yes (creates connector)                                                                                                                                                              | `connectors:read`             | MCP                                                          |
+| `capture_samples`                             | yes (bounded source rows into metadata)                                                                                                                                              | `connectors:read`             | MCP / CLI / SDK / REST                                       |
+| `reset_backfill`                              | yes (one paused MongoDB backfill checkpoint)                                                                                                                                         | `workflows:update`            | MCP `loxtep_build` / CLI / SDK / REST (pause via Observe UI) |
+| `confirm_connector_entity_selection`          | yes (starts PKO ingest design/deploy)                                                                                                                                                | `connectors:write`            | MCP                                                          |
+| `delete_connector`                            | yes (soft-delete; owner only; blocked if in use)                                                                                                                                     | `connectors:write` + approval | MCP                                                          |
+| `run_connector_action`                        | yes (third-party side effect)                                                                                                                                                        | `connectors:write` + approval | MCP                                                          |
+| `deploy_project` / `deploy_workflow`          | yes (runtime bots/queues)                                                                                                                                                            | project write                 | MCP `loxtep_build` — **`loxtep-deployments`**                |
+| `register_infrastructure` / `create_instance` | yes (org infra / instance)                                                                                                                                                           | instances write               | MCP `loxtep_workspace` — **`loxtep-instances`**              |
 
 ## When to use
 
@@ -336,16 +336,16 @@ prefix). HTTP **200** `{ success: true, data }` only when `passed: true`. When
 `passed` is false the handler throws `WebError` and the body is
 `{ success: false, error: { message, details } }` (`errorResponse`): `details`
 is the failed test result (`details.passed`, `details.error.code`). Statuses
-from `connectionTestActionStatus`: **400** `CONNECTOR_NOT_CONFIGURED`, **422**
-`AMBIGUOUS_CATALOG_FK`, **502** every other failure (including "Connector not
-authenticated..." when there is no `error.code`).
+from `connectionTestActionStatus`: **401** `CONNECTOR_NOT_AUTHENTICATED`
+("Connector not authenticated..."), **400** `CONNECTOR_NOT_CONFIGURED`, **422**
+`AMBIGUOUS_CATALOG_FK`, **502** every other failure.
 
 MCP `test_connector` POSTs that REST path. A non-2xx body with that envelope
 returns `success: false` and `error: { message, details }` (the failed test
 result). An unparseable non-2xx body returns
 `{ message: "test_connector unexpected error envelope", details: <raw body> }`.
-A 2xx body with `passed: false` is also an MCP error (string `error`, not the
-details object).
+A 2xx body is success, including a body whose `passed` is false. Connection-test
+failures are non-2xx.
 
 CLI: `loxtep connectors test <connector_id>` — body is empty; **no**
 `--instance-id`. SDK `client.connect.connectors.test(connector_id)` posts `{}`.
@@ -473,18 +473,17 @@ Illustrative shape (from unit tests, not a live capture):
 ```
 
 **HTTP / rest-api `data_path`:** Sample capture and ingest share
-`extractRecordsFromResponse`. There is **no** Studio UI field and **no** MCP
-argument named `data_path`. Set it on the connection entity
-`configuration.data_path` (`save_workflow_bundle`, or `update_trigger` /
-`update_target` after `get_trigger` / `get_target`). Capture reads
-`configuration`, not `ingestion_config`. Parent catalog polls use
-`ingestion_config.entity_loop.parent_poll.data_path`.
+`readConnectionDataPath` and `extractRecordsFromResponse`. Set
+`configuration.data_path` or `ingestion_config.data_path` (Studio ingestion
+field, `save_workflow_bundle`, or `update_trigger` / `update_target`). They are
+the same field and must not disagree. Parent catalog polls use
+`ingestion_config.entity_loop.parent_poll.data_path` only for the parent
+response. That path does not replace the connection path.
 
-Read the connection first and send the **full** `configuration` object back with
-`data_path` added. A partial `configuration` **replaces** the existing one
-(`updateConnection` L2619–2625; `mergeConnectionBody` L133–135), so
-`configuration: { data_path: "$" }` alone drops `base_url`, `url`, `headers`,
-and auth.
+Send only the `configuration` keys you want to change. Omitted keys are kept. An
+explicit null removes that key. `configuration: { data_path: "$" }` keeps
+`base_url`, `url`, `headers`, and auth. A top-level `configuration: null` is
+rejected.
 
 - Unset + array body → that array. Unset + object body →
   `DATA_PATH_REQUIRED_FOR_OBJECT_BODY` (set `` `$` `` for the whole object as
@@ -522,25 +521,25 @@ only when save and deploy both succeed.
 
 ## 9. Diagnose failures (customer vs Loxtep)
 
-| Code / symptom                                                                                                                      | Layer                | Typical owner                                                                                                                                           |
-| ----------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Unknown `connector_type`                                                                                                            | availability         | Agent: `list_connector_types`; Loxtep if catalog/template sync stale                                                                                    |
-| Missing credentials message                                                                                                         | authentication       | Customer (supply on manage / `update_connector`)                                                                                                        |
-| OAuth used with `create_connector`                                                                                                  | authentication       | Agent: use `get_oauth_url`                                                                                                                              |
-| `TLS_POLICY_VIOLATION` / `TLS_FAILURE`                                                                                              | authentication / TLS | Customer cert/hostname/CA                                                                                                                               |
-| `MISSING_DISCOVERY_PERMISSION` / `MISSING_FIND_PERMISSION` / `MISSING_COLLECTION_ACCESS` / `MISSING_CHANGE_STREAM_PERMISSION`       | authentication       | Customer source grants                                                                                                                                  |
-| `UNSUPPORTED_STANDALONE`                                                                                                            | source topology      | Customer (replica set / mongos for CDC types)                                                                                                           |
-| `PRIVATE_PROBE_FAILED` / cannot resolve `connectors-private-512`                                                                    | runtime / network    | Loxtep runtimes deploy; customer if subnet/SG IDs never supplied                                                                                        |
-| `AMBIGUOUS_CATALOG_FK` (`table_name`, `column_name`, `referenced_tables`)                                                           | source catalog       | Customer DBA: drop or fix the duplicate FOREIGN KEY so the column points at one table                                                                   |
-| `CATALOG_READ_FAILED`                                                                                                               | source catalog       | Customer: restore `information_schema` / catalog grants, then Test again                                                                                |
-| `SQL_CATALOG_CACHE_FAILED`                                                                                                          | control plane        | Loxtep: catalog was readable; writing `entity_field_schemas` failed. Re-test; if it persists, platform                                                  |
-| `POSTGRES_TABLE_CATALOG_MISSING` (probe `tls.policy` is `verified`)                                                                 | source catalog       | Customer: the authorized table returned no column rows. Restore SELECT on columns, then Test again                                                      |
-| `TABLE_CATALOGS_TOO_LARGE` (more than 256 tables)                                                                                   | source catalog       | Customer: shrink the table allowlist; Loxtep refuses to truncate `account_info.table_catalogs`                                                          |
-| `DATA_PATH_*` (`REQUIRED_FOR_OBJECT_BODY`, `BLANK`, `MISSING_SEGMENT`, `RESOLVED_NOT_OBJECT_OR_ARRAY`, `UNSET_NOT_OBJECT_OR_ARRAY`) | HTTP body → records  | Customer: set connection `configuration.data_path` (`$` for whole-object, or a dot path that yields an array). Not a Connector API field; no Studio UI. |
-| Timeout / ENI / routing to private IP                                                                                               | network              | Customer VPC routing, SG, DNS                                                                                                                           |
-| `403` / permission denied on MCP                                                                                                    | RBAC                 | Customer org admin (`get_current_user`)                                                                                                                 |
-| Probe `passed: true` but no data product                                                                                            | ingestion            | Expected until authorized deploy                                                                                                                        |
-| Shared connector Lambda testing a private host                                                                                      | network              | Agent: set `network_binding: customer_vpc` and use private runtime                                                                                      |
+| Code / symptom                                                                                                                      | Layer                | Typical owner                                                                                                                                                                                   |
+| ----------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unknown `connector_type`                                                                                                            | availability         | Agent: `list_connector_types`; Loxtep if catalog/template sync stale                                                                                                                            |
+| Missing credentials message                                                                                                         | authentication       | Customer (supply on manage / `update_connector`)                                                                                                                                                |
+| OAuth used with `create_connector`                                                                                                  | authentication       | Agent: use `get_oauth_url`                                                                                                                                                                      |
+| `TLS_POLICY_VIOLATION` / `TLS_FAILURE`                                                                                              | authentication / TLS | Customer cert/hostname/CA                                                                                                                                                                       |
+| `MISSING_DISCOVERY_PERMISSION` / `MISSING_FIND_PERMISSION` / `MISSING_COLLECTION_ACCESS` / `MISSING_CHANGE_STREAM_PERMISSION`       | authentication       | Customer source grants                                                                                                                                                                          |
+| `UNSUPPORTED_STANDALONE`                                                                                                            | source topology      | Customer (replica set / mongos for CDC types)                                                                                                                                                   |
+| `PRIVATE_PROBE_FAILED` / cannot resolve `connectors-private-512`                                                                    | runtime / network    | Loxtep runtimes deploy; customer if subnet/SG IDs never supplied                                                                                                                                |
+| `AMBIGUOUS_CATALOG_FK` (`table_name`, `column_name`, `referenced_tables`)                                                           | source catalog       | Customer DBA: drop or fix the duplicate FOREIGN KEY so the column points at one table                                                                                                           |
+| `CATALOG_READ_FAILED`                                                                                                               | source catalog       | Customer: restore `information_schema` / catalog grants, then Test again                                                                                                                        |
+| `SQL_CATALOG_CACHE_FAILED`                                                                                                          | control plane        | Loxtep: catalog was readable; writing `entity_field_schemas` failed. Re-test; if it persists, platform                                                                                          |
+| `POSTGRES_TABLE_CATALOG_MISSING` (probe `tls.policy` is `verified`)                                                                 | source catalog       | Customer: the authorized table returned no column rows. Restore SELECT on columns, then Test again                                                                                              |
+| `TABLE_CATALOGS_TOO_LARGE` (more than 256 tables)                                                                                   | source catalog       | Customer: shrink the table allowlist; Loxtep refuses to truncate `account_info.table_catalogs`                                                                                                  |
+| `DATA_PATH_*` (`REQUIRED_FOR_OBJECT_BODY`, `BLANK`, `MISSING_SEGMENT`, `RESOLVED_NOT_OBJECT_OR_ARRAY`, `UNSET_NOT_OBJECT_OR_ARRAY`) | HTTP body → records  | Customer: set `configuration.data_path` or `ingestion_config.data_path` (`$` for whole-object, or a dot path that yields an array). Studio writes the ingestion field. Disagreeing copies fail. |
+| Timeout / ENI / routing to private IP                                                                                               | network              | Customer VPC routing, SG, DNS                                                                                                                                                                   |
+| `403` / permission denied on MCP                                                                                                    | RBAC                 | Customer org admin (`get_current_user`)                                                                                                                                                         |
+| Probe `passed: true` but no data product                                                                                            | ingestion            | Expected until authorized deploy                                                                                                                                                                |
+| Shared connector Lambda testing a private host                                                                                      | network              | Agent: set `network_binding: customer_vpc` and use private runtime                                                                                                                              |
 
 Sanitize every error string before showing it (redact URI userinfo and PEMs).
 
@@ -708,15 +707,44 @@ There is still no `loxtep connector` (singular) and no
 `loxtep connectors create` / `loxtep connectors get`.
 
 MongoDB backfill restart uses the workflow connection id, not the org connector
-id. Pause the runner first. MCP `loxtep_build` operation `reset_backfill`
-(`connection_id`, optional `rebaseline_config_hash`, optional `instance_id`).
-CLI:
+id. Pause the runner bot first. Hosted MCP has no pause operation for that
+runner. In the Loxtep app, open Observe → Catalog, select the bot, then Actions
+→ Pause Bots (`/observe/catalog`). Then reset with MCP `loxtep_build` operation
+`reset_backfill` (`connection_id`, optional `rebaseline_config_hash`, optional
+`instance_id`) or REST
+`POST /workflows/projects/{project_id}/connections/{connection_id}/reset-backfill`
+(`workflows:update`). CLI (`@loxtep/sdk` 0.9.33, Python `loxtep` 0.8.1):
 
 ```bash
 loxtep triggers reset-backfill <connection_id> [--rebaseline-config-hash] [--project-id] [--instance-id]
 ```
 
-That clears only the backfill checkpoint. CDC and lookup checkpoints stay.
+SDK: `client.build.triggers.reset_backfill` (Node and Python).
+
+The reset reads `native-source-checkpoint:backfill:<connection_id>` through
+Observe and writes that same item back with the top-level cursor and each
+collection's `backfill_cursor` and `completed` flag removed. `last_sync_at` and
+resume tokens stay. It does not invoke the runner, and it never deletes a `cdc:`
+checkpoint, a snapshot cursor, or a lookup layout. When no backfill checkpoint
+is stored, the call still succeeds and does not create one. Optional
+`rebaseline_config_hash` rewrites the stored hash from the runner's live entity
+config only when a checkpoint already exists. If several deployed instances
+match, pass `instance_id`.
+
+Success (200) returns `connection_id`, `namespace` (`backfill`),
+`checkpoint_id`, `bot_id`, `instance_id`, `config_hash_rebaselined`,
+`prior_checkpoint` (null when nothing was stored), and `audit_id`. Failures: 409
+`not_paused` (pause first); 409 `ambiguous` (several instances — pass
+`instance_id`); 409 `connection_mismatch`; 409 `lost_update` (this reset's write
+is rejected when another writer saved the checkpoint after the reset read it;
+details `{attempted_revision, expected_prior_revision}`; handler does not retry
+internally; shipped message at `reset-connection-backfill.ts:648-651` tells the
+caller to read it again and retry the reset); 404 `bot_not_found` / `archived` /
+`project_not_found`; 400 `not_backfill` / `config`; 502 `unavailable`; 500
+`audit_failed` (the checkpoint write already happened, or the checkpoint was
+already empty, and the audit record failed). These REST and MCP calls were not
+run in this docs pass — treat the codes as read from the shipped handler,
+unverified against a live environment.
 
 ## Pitfalls
 
@@ -728,10 +756,10 @@ That clears only the backfill checkpoint. CDC and lookup checkpoints stay.
     `POST /connectors/connectors/{connector_id}/test` / native
     `test_connection`): `passed: false` with `error.code` `AMBIGUOUS_CATALOG_FK`
     and `table_name`, `column_name`, `referenced_tables`. REST Test throws that
-    payload as HTTP **422** (`error.details`). Native `test_connection` returns
-    HTTP 200 `{ success: true, data: { status, result } }` where `data.status`
-    is `connectionTestActionStatus` (422 for this code). MCP `test_connector`
-    reports the REST failure as an error (`error.message` + `error.details`).
+    payload as HTTP **422** (`error.details`). Native `test_connection` throws
+    the same `WebError` and HTTP status as REST Test (401 / 400 / 422 / 502).
+    MCP `test_connector` reports the REST failure as an error (`error.message` +
+    `error.details`).
   - **List** (`list_connector_entities` / REST
     `GET /connectors/connectors/{connector_id}/entities`): HTTP 422. Postgres
     **and** `mysql-source` / `mysql` listing go through the same catalog read.
@@ -758,10 +786,10 @@ That clears only the backfill checkpoint. CDC and lookup checkpoints stay.
   `capture_samples failed` and `{ message, details }` (including
   `details.entities` on mixed-run and all-fail 422), not a 200 payload.
   Per-collection error rows may include `code`, `missing_segment`, and
-  `connection_id` when HTTP record extraction fails (`DATA_PATH_*`). Read the
-  connection and send the full `configuration` with `data_path` added — do not
-  invent a `capture_samples` `data_path` argument, and do not send a partial
-  `configuration`.
+  `connection_id` when HTTP record extraction fails (`DATA_PATH_*`). Set
+  `configuration.data_path` or `ingestion_config.data_path` on the connection.
+  Those copies must match. Omitted configuration keys are kept; an explicit null
+  removes that key. Do not invent a `capture_samples` `data_path` argument.
 - **Private test on the API Lambda** — set `network_binding: customer_vpc` and
   use an instance whose runtimes stack has `connectors-private-512`.
 - **Warehouse bind** (Snowflake / Databricks table in place) is
@@ -769,16 +797,23 @@ That clears only the backfill checkpoint. CDC and lookup checkpoints stay.
 
 ## Known gaps (do not invent APIs)
 
-- No MCP argument named `data_path` and no Studio UI field. Read the connection
-  (`get_trigger` / `get_target`) and send the full `configuration` (existing
-  keys plus `data_path`) on `save_workflow_bundle` / `update_trigger` /
-  `update_target`. A partial `configuration` replaces the existing one. Sample
-  capture does not read `ingestion_config.data_path`.
+- No MCP argument named `data_path` on `capture_samples`.
+  `configuration.data_path` and `ingestion_config.data_path` are the same record
+  path. Studio writes `ingestion_config.data_path`. On `update_trigger` /
+  `update_target` / REST connection PUT, send only the keys you want to change.
+  Omitted keys are kept. An explicit null removes that key.
+  `configuration: { data_path: "$" }` keeps `base_url`, `url`, `headers`, and
+  auth. Disagreeing copies fail the read and the deploy. `parent_poll.data_path`
+  is only the parent catalog. `save_workflow_bundle` still writes the connection
+  file as given.
 - No MCP `get_connector`; use `list_connectors` or SDK/REST GET.
 - No MCP for connector packages; REST
   `GET /dataproducts/connector-packages/{slug}`.
 - `list_connector_types` has no config schema, TLS, or `network_binding`.
 - CLI cannot create/get/update connectors or pass `instance_id` to test.
+- MCP has no pause operation for a workflow runner bot. Pause it in the Loxtep
+  app UI (Observe → Catalog → select the bot → Actions → Pause Bots) before
+  `reset_backfill`.
 - SDK `test` cannot pass `instance_id`.
 - Shared `connectors-*` workers stay off-VPC; only `connectors-private-512`
   receives `connector_vpc`.

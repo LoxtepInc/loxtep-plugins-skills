@@ -4,7 +4,8 @@ name: loxtep-journey-orchestrator
 description:
   Orchestrate the full Connect → Organize → Use journey. Use when an agent needs
   to take a data source from first connection through to live delivery, handling
-  approvals and transitions at each step.
+  approvals and transitions at each step, or maintain shared organization
+  meaning independently of data product promotion.
 license: MIT
 metadata:
   platform: loxtep
@@ -29,6 +30,24 @@ it matters.
 - Any flow that spans more than one step (Connect → Organize, or Organize → Use)
 
 For single-step work, use the focused skill for that step directly.
+
+## Choose the journey before acting
+
+- **Shared meaning:** maintain vocabulary, concepts, relationships, or reusable
+  shapes without a product. Follow `loxtep-semantic-layer` and
+  `loxtep-ontology`: evidence → reuse → draft → typed review → verify artifact
+  availability. No connector, delivery, or product promotion is required.
+- **Product readiness:** apply verified shared meaning to a particular product,
+  then evaluate its own readiness. Follow the steps below.
+- **Both:** complete the shared change once, then explicitly apply it to the
+  intended products. Track artifact availability and consumer adoption
+  separately.
+
+Do not route every review through `list_pending` + `resolve`. Semantic
+proposals, product definition revisions, and semantic packages have distinct
+typed review operations. Read the artifact's actual state after resolving a
+decision. A stale Inbox item is not evidence that an already-applied definition
+needs reapproval.
 
 ## Connect
 
@@ -72,19 +91,21 @@ rules, and is published as trusted.
 **Agent actions:**
 
 1. Define what the data means — hand off to `semantic-ontology-mapping` skill
-2. Surface the draft definitions for domain owner review — check `list_pending`
-   (expect `requesting_actor: pko-engine` for PKO mapping gates; do not require
-   `list_agents` heartbeats — see
-   [pko-engine-vs-seeded-agents.md](../../../docs/agent-orchestration/pko-engine-vs-seeded-agents.md))
-   and surface to the right person
-3. On approval, apply definition/CDLC transitions as required — not
-   `promote_data_product` (that is medallion only)
+2. Surface the exact draft revision for domain owner review using
+   `define-data-product-shape`. Inspect `list_pending` for any associated
+   workflow gate, but do not substitute its resolution for definition approval.
+3. Apply the approved definition revision and read definition status. Shared
+   semantic packages use their own stage/review/approve/deploy/verify path; do
+   not require a package for every direct vocabulary or shape edit.
 4. Infer and review relationships between entities
 5. Generate and review quality rules
-6. Run the **semantic medallion** readiness checklist —
-   `get_promotion_readiness` (Raw/In Progress/Ready = bronze/silver/gold;
-   orthogonal to `status`)
-7. Route to domain owner for final approval — `list_pending`, `resolve`
+6. Establish the required quality, lineage, and delivery interface before
+   promotion (use `data-workflows` Flow D for delivery). Then run the **semantic
+   medallion** readiness checklist — `get_promotion_readiness` (Raw/In
+   Progress/Ready = bronze/silver/gold; orthogonal to `status`)
+7. If policy requires a workflow approval, route its exact current request to
+   the domain owner using `list_pending` / `resolve`; do not invent another
+   gate.
 8. Apply medallion promotion — `promote_data_product` with `target_tier`
    `silver` or `gold`
 
@@ -93,8 +114,9 @@ cross-domain use is the goal). Do not confuse with lifecycle `status=active`.
 
 **Rules:**
 
-- Approvals surface automatically in the inbox, Slack, and email — do not
-  re-implement gate logic; use `list_pending` + `resolve`
+- Use `list_pending` + `resolve` for workflow approval requests. For semantic
+  proposals/packages and definition revisions use their typed review operations;
+  verify effects rather than assuming a workflow decision performed the change.
 - After each approval, call `record_decision_trace`
 - Run `query_context` before each approval gate for current state
 
@@ -105,11 +127,12 @@ through the channel the user chooses.
 
 **Agent actions:**
 
-1. Author a **delivery workflow** (`workflow_type: "delivery"`) with a
-   **Target** connection at the tail — hand off to `data-workflows` Flow D
-   (`get_entity_schemas` → `save_workflow_bundle` → `deploy_workflow`). Prefer
-   Target `connections/{id}.json` + `connector_id`; do **not** happy-path
-   `create_delivery` / `list_deliveries`.
+1. Verify the delivery interface established before promotion; if another
+   channel is needed, author a **delivery workflow**
+   (`workflow_type: "delivery"`) with a **Target** connection at the tail — hand
+   off to `data-workflows` Flow D (`get_entity_schemas` → `save_workflow_bundle`
+   → `deploy_workflow`). Prefer Target `connections/{id}.json` + `connector_id`;
+   do **not** happy-path `create_delivery` / `list_deliveries`.
 2. Verify agent MCP access — confirm the data product appears in
    `list_data_products` and is reachable via the SDK
 3. Set access rules — `governance-policies` (`list_governance_policies`,
