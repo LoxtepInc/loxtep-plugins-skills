@@ -93,11 +93,12 @@ from the data product name or UUID — no manual runtime-mapping lookups needed.
 ### Delivery (outbound) — prefer Target connections
 
 Do **not** teach `client.targets.create` / MCP `create_delivery` as the happy
-path for pushing data out. Author a delivery workflow with a **Target**
-connection via **`data-workflows`** Flow D (`save_workflow_bundle` +
-`deploy_workflow`), or CLI `loxtep delivery create` → `lint` → `push` →
-`deploy`. Write policy (`table`, `write_mode`, upsert `primary_key`, batch
-sizes) lives on connection **`delivery_config`**, not `configuration`.
+path for pushing data out. Author a delivery workflow via **`data-workflows`**
+Flow D: `data-product-trigger` head + **Target** tail (`save_workflow_bundle` +
+`save_delivery_grant` + `deploy_workflow`), or CLI `loxtep delivery create` →
+`lint` → `push` → `deploy`. Write policy (`table`, `write_mode`, upsert
+`primary_key`, batch sizes) lives on connection **`delivery_config`**, not
+`configuration`.
 
 ```bash
 loxtep delivery create …   # local package: Target at delivery tail
@@ -338,19 +339,19 @@ automatically.
 
 ## MCP operations
 
-| Facade           | `operation`                                                                                                        | Permission | Notes                                                                                                            |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------ | ---------- | ---------------------------------------------------------------------------------------------------------------- |
-| `loxtep_build`   | `get_sdk_config`                                                                                                   | read       | Writer identity + snippet. Bus physical names: REST stream-config, not this op                                   |
-| `loxtep_build`   | `get_entity_schemas` / `save_workflow_bundle` / `deploy_workflow`                                                  | write      | Delivery via Target connection + `workflow_type: "delivery"`. **`create_delivery` / `list_deliveries` removed**. |
-| `loxtep_build`   | `deploy_workflow`                                                                                                  | write      | Deploy a single workflow to an instance                                                                          |
-| `loxtep_observe` | `list_deployments`                                                                                                 | read       | List deployment records (poll for status)                                                                        |
-| `loxtep_observe` | `get_deployment`                                                                                                   | read       | Get a single deployment record by ID                                                                             |
-| `loxtep_review`  | `list_pending`                                                                                                     | read       | SDK: `client.review.approvals.list_pending()`                                                                    |
-| `loxtep_review`  | `resolve`                                                                                                          | write      | SDK: `client.review.approvals.approve()` / `.reject()`                                                           |
-| `loxtep_meaning` | `create_term` / `get_term` / … / `sync_vocabulary`                                                                 | write/read | SDK: `client.meaning.thesaurus.*`                                                                                |
-| `loxtep_meaning` | ontology concept CRUD + relationships                                                                              | write/read | SDK: `client.meaning.ontology.*` (`node_type` lowercase: `entity`, …)                                            |
-| `loxtep_meaning` | `list_semantic_proposals` / `infer_proposal_definitions` / `accept_semantic_proposal` / `reject_semantic_proposal` | read/write | SDK: `client.meaning.proposals.*`; CLI: `loxtep proposals list\|accept\|reject\|infer-definitions`               |
-| `loxtep_define`  | `create_schema` / `list_schemas` / `apply_schema` / `patch_schema`                                                 | write/read | Domain shapes: `client.define.shapes.*` (not data-product `client.define.schemas`)                               |
+| Facade           | `operation`                                                                                                        | Permission | Notes                                                                                              |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------ | ---------- | -------------------------------------------------------------------------------------------------- |
+| `loxtep_build`   | `get_sdk_config`                                                                                                   | read       | Writer identity + snippet. Bus physical names: REST stream-config, not this op                     |
+| `loxtep_build`   | `get_entity_schemas` / `save_workflow_bundle` / `save_delivery_grant` / `deploy_workflow`                          | write      | Delivery: DPT head + Target + grant. **`create_delivery` / `list_deliveries` removed**.            |
+| `loxtep_build`   | `deploy_workflow`                                                                                                  | write      | Deploy a single workflow to an instance                                                            |
+| `loxtep_observe` | `list_deployments`                                                                                                 | read       | List deployment records (poll for status)                                                          |
+| `loxtep_observe` | `get_deployment`                                                                                                   | read       | Get a single deployment record by ID                                                               |
+| `loxtep_review`  | `list_pending`                                                                                                     | read       | SDK: `client.review.approvals.list_pending()`                                                      |
+| `loxtep_review`  | `resolve`                                                                                                          | write      | SDK: `client.review.approvals.approve()` / `.reject()`                                             |
+| `loxtep_meaning` | `create_term` / `get_term` / … / `sync_vocabulary`                                                                 | write/read | SDK: `client.meaning.thesaurus.*`                                                                  |
+| `loxtep_meaning` | ontology concept CRUD + relationships                                                                              | write/read | SDK: `client.meaning.ontology.*` (`node_type` lowercase: `entity`, …)                              |
+| `loxtep_meaning` | `list_semantic_proposals` / `infer_proposal_definitions` / `accept_semantic_proposal` / `reject_semantic_proposal` | read/write | SDK: `client.meaning.proposals.*`; CLI: `loxtep proposals list\|accept\|reject\|infer-definitions` |
+| `loxtep_define`  | `create_schema` / `list_schemas` / `apply_schema` / `patch_schema`                                                 | write/read | Domain shapes: `client.define.shapes.*` (not data-product `client.define.schemas`)                 |
 
 **Define meaning** = terms + shapes. Ontology concepts are graph types /
 relationships. See `docs/sdk-mcp-mapping.md` in `@loxtep/sdk` for full parity

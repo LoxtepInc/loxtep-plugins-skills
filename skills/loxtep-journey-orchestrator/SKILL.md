@@ -127,9 +127,10 @@ through the channel the user chooses.
 
 1. Verify the delivery interface established before promotion; if another
    channel is needed, author a **delivery workflow**
-   (`workflow_type: "delivery"`) with a **Target** connection at the tail — hand
-   off to `data-workflows` Flow D (`get_entity_schemas` → `save_workflow_bundle`
-   → `deploy_workflow`). Prefer Target `connections/{id}.json` + `connector_id`;
+   (`workflow_type: "delivery"`) with a **`data-product-trigger` head** and a
+   **Target** connection at the tail — hand off to `data-workflows` Flow D
+   (`get_entity_schemas` → `save_workflow_bundle` → `save_delivery_grant` →
+   `deploy_workflow`). Prefer Target `connections/{id}.json` + `connector_id`;
    do **not** happy-path `create_delivery` / `list_deliveries`.
 2. Verify agent MCP access — confirm the data product appears in
    `list_data_products` and is reachable via the SDK
@@ -199,11 +200,13 @@ readiness/policy concern after the bridge, not a P3 start gate.
 **Bundle authoring (P2):** use `save_workflow_bundle` only. Do not use
 `patch_workflow_graph` for new flows. Handoff from P1 = `connector_id` + samples
 → `data-workflows` Flow E (Trigger at ingest head). Delivery (P5) = Flow D
-(Target at tail, `workflow_type: "delivery"`).
+(`data-product-trigger` head + Target at tail + grant,
+`workflow_type: "delivery"`).
 
 **CLI methodology (code-first):** `ingest create` → `transform create` →
 `delivery create` → `lint` → `push` → `deploy`. MCP stays primitives:
-`get_entity_schemas` → `save_workflow_bundle` → `deploy_workflow`.
+`get_entity_schemas` → `save_workflow_bundle` → `save_delivery_grant` →
+`deploy_workflow`.
 
 **Platform graph:** loaded via `graph-seed-platform-pko` bot for system org;
 tenants read via `query_context` / federated `get_procedure`.
