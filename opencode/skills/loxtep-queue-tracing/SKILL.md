@@ -72,10 +72,11 @@ container_id:
 ## `read_queue_events` response (do this first)
 
 `loxtep_observe` `read_queue_events` calls `GET /app/observe/search` and returns
-the botmon search body unchanged under **`events`**. The scan walks the stream
-**forward** from `eid` (default: about 60 minutes before now). Matching events
-are appended in that scan order — not reverse chronological, and not "most
-recent first."
+the botmon search body under **`events`**, with paging fields added
+(`next_cursor`, `has_more`, `limit`). The tool also repeats `next_cursor`,
+`has_more` and `limit` at the top level. The scan walks the stream **forward**
+from `eid` (default: about 60 minutes before now). Matching events are appended
+in that scan order — not reverse chronological, and not "most recent first."
 
 On success the tool data looks like:
 
@@ -87,11 +88,18 @@ On success the tool data looks like:
   "events": {
     "results": [],
     "resumptionToken": null,
+    "resumption_token": null,
+    "next_cursor": null,
+    "has_more": false,
+    "limit": 10,
     "last_time": null,
     "count": 0,
     "agg": {},
     "scan_incomplete": false
-  }
+  },
+  "next_cursor": null,
+  "has_more": false,
+  "limit": 10
 }
 ```
 
@@ -99,19 +107,27 @@ Unverified example of the response shape (not captured from a live instance).
 
 | `events` field    | Meaning                                                                                        |
 | ----------------- | ---------------------------------------------------------------------------------------------- |
-| `results`         | Matching events from this scan, in forward scan order                                          |
-| `resumptionToken` | Last **scanned** eid (whether or not it matched). Pass as the next request's `eid` to continue |
+| `results`         | Matching events from this page, in forward scan order. At most `limit` events                  |
+| `next_cursor`     | Pass as the next request's `eid` to continue. `null` only when `has_more` is `false`           |
+| `has_more`        | `true`: more events may remain, so request the next page. `false`: this window is done         |
+| `limit`           | Effective page size after the server cap (at most 100)                                         |
+| `resumptionToken` | Botmon's resume eid, kept for the Observe UI (also `resumption_token`). Page on `next_cursor`. |
 | `scan_incomplete` | `true`: the time budget cut the scan short. `false`: the scan stopped on its own               |
 | `count`           | Events **scanned**, not `results.length`                                                       |
 | `last_time`       | Timestamp of the last scanned event, or `null`                                                 |
 
-**Empty `results` does not mean "no events"** unless `scan_incomplete` is
-`false` **and** `resumptionToken` is `null`. A budget-cut scan that matched
-nothing still has `scan_incomplete: true` and a `resumptionToken` when any event
-was scanned — continue. A queue that is empty after `eid` is a 200 with
-`results: []`, `resumptionToken: null`, `scan_incomplete: false`.
+**Empty `results` does not mean "no events"** unless `has_more` is `false`. A
+budget-cut scan that matched nothing still has `has_more: true` and a
+`next_cursor` — continue. A window with no matching events after `eid` is a 200
+with `results: []`, `has_more: false`, `next_cursor: null`.
 
-There is no separate resumption input. Continue with:
+`has_more` is `true` when the time budget cut the scan
+(`scan_incomplete: true`), when the page is full (`results.length` equals
+`limit`), or when botmon reports more (for example, its 4 MB per-call response
+budget cut a short page). A short page is not the end of the window unless
+`has_more` is `false`.
+
+There is no separate cursor input. Continue with:
 
 ```json
 {
@@ -122,13 +138,17 @@ There is no separate resumption input. Continue with:
 }
 ```
 
-Use the previous page's `events.resumptionToken` as `eid`. Unverified example of
-the input shape (not captured from a live instance).
+Use the previous page's `next_cursor` as `eid`, and repeat until `has_more` is
+`false`. Unverified example of the input shape (not captured from a live
+instance).
 
-`scan_incomplete: false` means this scan stopped on its own (end of stream, a
-full page of matches, or the post-match time cap), so `results` /
-`resumptionToken` are authoritative. If `resumptionToken` is still set, request
-the next page — a full page is not the end of the stream.
+### `count`
+
+- Default 10.
+- Values above 100 are accepted and capped at 100 per call. `limit` in the
+  response shows the size that was used. Page with `next_cursor` for more.
+- Fractions (`1.5`), `Infinity`, `NaN` and values below 1 are rejected with a
+  validation error. They are never rounded or defaulted.
 
 ### Errors (non-2xx)
 
@@ -136,11 +156,17 @@ Non-2xx Observe/botmon responses are MCP failures: `error` is
 `Observe search returned HTTP <status>`; `message` carries the downstream body
 (or a stringified `downstream_response`).
 
-| HTTP | `code`                      | What to do                                                                                                              |
-| ---- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| 503  | `scan_incomplete`           | Budget expired **before any event was scanned** — no resume position. Retry; or pass a later `eid` to narrow the window |
-| 502  | `stream_read_failed`        | Stream read failed (e.g. DynamoDB capacity). Retry later; do not treat as an empty queue                                |
-| 400  | `invalid_filter_expression` | `search_text` was treated as a bad filter expression. Drop or simplify `search_text`                                    |
+| HTTP | `code`                       | What to do                                                                                                              |
+| ---- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| 503  | `scan_incomplete`            | Budget expired **before any event was scanned** — no resume position. Retry; or pass a later `eid` to narrow the window |
+| 502  | `stream_read_failed`         | Stream read failed (e.g. DynamoDB capacity). Retry later; do not treat as an empty queue                                |
+| 502  | `observe_search_shape_error` | Botmon page broke the paging contract (e.g. `has_more` missing). Report it; do not treat as an empty queue              |
+| 400  | `invalid_filter_expression`  | `search_text` was treated as a bad filter expression. Drop or simplify `search_text`                                    |
+
+For `observe_search_shape_error`, the MCP `message` is the contract error text
+(for example `Missing required field: has_more`), not the code. If the MCP
+tool's own check of the page fails, the error is `ReadQueueEventsContractError`
+with that text and no HTTP status.
 
 Unverified example of a 503 downstream body (not captured from a live instance):
 
@@ -171,10 +197,9 @@ not live captures.
      "count": 5
    }
    ```
-3. If `events.resumptionToken` is set, call again with `eid` set to that token
-   until the page is complete (`scan_incomplete` false and no token, or you have
-   the event you need). Handle 503/502 as above — do not stop on empty
-   `results`.
+3. If `has_more` is `true`, call again with `eid` set to `next_cursor` until
+   `has_more` is `false` or you have the event you need. Handle 503/502 as above
+   — do not stop on empty `results`.
 4. Read the event payload — it contains the error message, workflow_id, and
    context.
 5. Cross-reference with the deployment-requested queue to see the triggering
@@ -206,14 +231,12 @@ not live captures.
 1. Start at the trigger queue (e.g., `*-deployment-requested` or `*-source`).
 2. Call `read_queue_events`. **Do not conclude the queue is empty** from
    `events.results: []` alone:
-   - `scan_incomplete: true` and a `resumptionToken` → continue with `eid` =
-     that token.
+   - `has_more: true` → continue with `eid` = `next_cursor`.
    - MCP error `Observe search returned HTTP 503` with `code: scan_incomplete` →
      retry, or retry with a later `eid`.
    - MCP error `Observe search returned HTTP 502` with
      `code: stream_read_failed` → retry later; the stream was not proven empty.
-   - `scan_incomplete: false` and `resumptionToken` null → this window really
-     has no matching events.
+   - `has_more: false` → this window really has no matching events.
 3. Once a complete page says the trigger event exists (or truly does not), walk
    downstream queue by queue until you find where events stop.
 4. Check the error queue for the last node that received events.
@@ -229,16 +252,16 @@ not live captures.
      "count": 1
    }
    ```
-3. Continue from `resumptionToken` if the first page is incomplete. Then verify
-   the event payload matches expectations.
+3. Continue from `next_cursor` while `has_more` is `true`. Then verify the event
+   payload matches expectations.
 
 ## Tracing tips
 
 - **Forward from `eid`:** omitted `eid` anchors about 60 minutes before now.
   Results are in scan order (older → newer in that window), not reverse
   chronological and not "most recent first."
-- **Continue with `eid`:** pass `events.resumptionToken` as `eid`. The input
-  schema has `eid` only — no separate resumption field.
+- **Continue with `eid`:** pass `next_cursor` as `eid`. The input schema has
+  `eid` only — no separate cursor field. Each call returns at most 100 events.
 - **Use `search_text`** to filter for specific workflow_id, organization_id, or
   error messages. A `search_text` that looks like a `$.…` filter expression can
   400 with `invalid_filter_expression`.
@@ -262,9 +285,10 @@ not live captures.
 
 ## Pitfalls
 
-- **Empty `results` is not "nothing happened":** only `scan_incomplete: false`
-  **and** no `resumptionToken` means this window has no matching events. A 503
-  `scan_incomplete` or 502 `stream_read_failed` is not an empty queue.
+- **Empty `results` is not "nothing happened":** only `has_more: false` means
+  this window has no matching events. A 503 `scan_incomplete`, 502
+  `stream_read_failed` or 502 `observe_search_shape_error` is not an empty
+  queue.
 - **Namespace matters:** Queue names are namespace-prefixed. Using the wrong
   namespace can look empty — still apply the completeness check above before
   concluding that.
