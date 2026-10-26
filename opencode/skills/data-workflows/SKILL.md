@@ -339,9 +339,18 @@ loxtep deploy
      node.
    - Tail: **Target** `connections/{id}.json` with `connector_id`,
      `connector_mode: "outbound"`, and write policy on **`delivery_config`**
-     (`table`, `write_mode`, upsert `primary_key`, `batch_size` /
-     `insert_batch_size`, `conflict_update`). Auth/transport stay on the org
-     connector — do **not** put write-policy keys under `configuration`.
+     (`table` or alias `destination_table`, `write_mode`, upsert `primary_key`,
+     `batch_size` / `insert_batch_size`, `conflict_update`). Postgres outbound
+     does **not** read `dest_table` (that alias is for other providers).
+     Auth/transport stay on the org connector — do **not** put write-policy keys
+     under `configuration`. **Known issues (not intended validation):**
+     `insert_batch_size` above 10000 is silently clamped to 10000, invalid
+     values silently fall back to 1000, and when `insert_batch_size` is unset
+     the stream-read `batch_size` is silently used as the INSERT batch size
+     (`insert_batch_size ?? batch_size ?? 1000`)
+     ([issue 3326](https://github.com/LoxtepInc/loxtep/issues/3326)); an
+     unrecognized `write_mode` silently becomes `upsert`
+     ([issue 3327](https://github.com/LoxtepInc/loxtep/issues/3327)).
    - Optional transforms between head and Target. When present, the Target’s
      `upstream_entity_id` / `upstream_entity_type` must point at the last
      transform (not the trigger). Deploy registers source connections, then
@@ -987,6 +996,13 @@ schema rejects unknown top-level properties. Use `ingestion_config`.
 - **Target-only delivery bundle** — Save rejects a delivery graph whose head is
   not a `data-product-trigger` (`DELIVERY_FIRST_NODE_NOT_DATA_PRODUCT_TRIGGER`).
 - **Write-policy keys under `configuration`** — refused; use `delivery_config`.
+  For Postgres Targets: use `table` or `destination_table` (not `dest_table`).
+  `insert_batch_size` clamp/fallback, silent reuse of stream-read `batch_size`
+  as the INSERT size when `insert_batch_size` is unset, and `write_mode`
+  coercion are known issues
+  ([issue 3326](https://github.com/LoxtepInc/loxtep/issues/3326),
+  [issue 3327](https://github.com/LoxtepInc/loxtep/issues/3327)) — not intended
+  ranges to rely on.
 - **`workflow_type: "consumption"`** — Removed. Use **`delivery`**.
 - **Inline-only bundle authoring** — Composing the `files` map solely inside a
   `save_workflow_bundle` tool call with no `workflows/{workflow_id}/` files on
