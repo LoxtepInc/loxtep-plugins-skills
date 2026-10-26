@@ -346,7 +346,15 @@ loxtep deploy
      embedding walks that chain back to the trigger’s `source_data_product_id` —
      do not expect the transform id itself to be the grant key.
 5. `save_workflow_bundle` (`dry_run: true` → fix → persist).
-6. `deploy_workflow` (Flow H).
+6. **Delivery grants (required for outbound writers):** declare
+   `grants/{grant_id}.json` (or `project_files` / `save_delivery_grant`) with
+   `data_product_id`, consumer (`party_subject_type` + party id — e.g. domain),
+   `access_method` (e.g. `export`), and destination `connection_id`. Save
+   materializes into `data_product_subscribers`. Prefer MCP
+   `list_delivery_grants` / `get_delivery_grant` / `save_delivery_grant` /
+   `update_delivery_grant` over direct REST grant calls.
+7. `deploy_workflow` (Flow H) — embeds the active grant into outbound Target
+   writers (D6). Grant changes need a redeploy to refresh the writer snapshot.
 
 ### Flow F — Enrich/stage from an existing data product (enrichment workflow)
 
