@@ -999,9 +999,16 @@ schema rejects unknown top-level properties. Use `ingestion_config`.
   `write_mode` coercion are known issues
   ([issue 3326](https://github.com/LoxtepInc/loxtep/issues/3326),
   [issue 3327](https://github.com/LoxtepInc/loxtep/issues/3327)) — not intended
-  ranges to rely on. On the connector-action push path (org connector
-  `custom_settings`), `custom_settings.batch_size` is still read as a deprecated
-  alias when `custom_settings.insert_batch_size` is unset.
+  ranges to rely on. **Known issue (not intended behavior):** on the
+  connector-action push path (org connector `custom_settings`, not delivery
+  Target `delivery_config`), the INSERT batch size resolves as
+  `options.batch_size || insert_batch_size || custom_settings.batch_size || 1000`.
+  A per-call `options.batch_size` wins over `insert_batch_size`. When
+  `insert_batch_size` is unset, the stream-read `batch_size` is silently used as
+  the INSERT batch size, and with neither set a hidden default of 1000 applies.
+  Because `||` treats `0` as unset, an explicit `0` silently falls through to
+  the next value
+  ([issue 3326](https://github.com/LoxtepInc/loxtep/issues/3326)).
 - **`workflow_type: "consumption"`** — Removed. Use **`delivery`**.
 - **Inline-only bundle authoring** — Composing the `files` map solely inside a
   `save_workflow_bundle` tool call with no `workflows/{workflow_id}/` files on
