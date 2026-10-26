@@ -124,7 +124,14 @@ author bundle → deploy → verify with `get_data_product`.**
    - Schema version: `update_data_product` with schema `version: "1.0"`.
    - Field descriptions: `update_data_product` with all fields described.
    - PII classified: `tag_pii_fields` via `loxtep_define`.
-   - Quality rules: `create_quality_rule` via `loxtep_define` (≥3 rules). Check
+   - Quality rules: `list_quality_rules` with `view: "effective"` and
+     `data_product_id`. Add or override with `create_quality_rule` via
+     `loxtep_define`. The gate normally checks each blocking rule's own
+     `threshold`. **Known issue:** when the effective-rules lookup fails or
+     `blockingQualityRules` is omitted, `checkQualityRules` falls back to the
+     legacy aggregate (at least 3 active rules and an overall score of at least
+     80%). The swap is silent. That is not a product feature. See
+     [issue 3318](https://github.com/LoxtepInc/loxtep/issues/3318). Check scores
      with `get_quality_score` via `loxtep_observe`.
    - Glossary terms: `append_synonym` via `loxtep_meaning` for each field.
    - Primary entity: `update_data_product` with

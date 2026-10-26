@@ -62,9 +62,35 @@ organization level.
 
 ### Flow — Quality on definitions
 
-1. `list_quality_rules` → `get_quality_rule`.
-2. `create_quality_rule` / `update_quality_rule`.
+1. `list_quality_rules` with `view: "owned"` (default) to see rows this Data
+   Council / domain / product **owns**. Pass `view: "effective"` and
+   `data_product_id` for the live merged set. `view=effective` requires
+   `data_product_id`.
+2. `create_quality_rule` / `update_quality_rule`. Create takes exactly one of
+   `data_product_id` or `domain_id`. Product rows are additions, overrides, or
+   suppressions — parents are not copied onto the product.
 3. `test_quality_rule` before enabling in production.
+
+### Flow — Live inheritance and the quality-rules gate
+
+Rules inherit live **Data Council → domain ancestors → product**.
+
+- Override or suppress needs `allow_exceptions` on the inherited rule.
+  `suppressed` requires `overrides_rule_id`.
+- Empty `applies_to` on a Council-owned rule is org-wide. Empty `applies_to` on
+  a domain-owned rule is that domain's subtree, not org-wide. A domain rule
+  cannot replace a no-exception Council gate.
+- The `quality-rules` promotion gate normally uses the effective set: each
+  `blocks_promotion` rule is checked against **its own** `threshold`. Zero
+  blocking rules is satisfied / `not_applicable`. Unmeasured blocking rules pass
+  with `awaiting_live_measurement`. Seeded freshness windows: `flexible` = none
+  (`freshness_hours` is `null`); `standard` = 48 hours; `strict` = 4 hours.
+  Timeliness threshold is 95 on standard and strict.
+- **Known issue:** when the effective-rules lookup fails or
+  `blockingQualityRules` is omitted, `checkQualityRules` falls back to the
+  legacy aggregate (at least 3 active rules and an overall score of at least
+  80%). The swap is silent. That is not a product feature. See
+  [issue 3318](https://github.com/LoxtepInc/loxtep/issues/3318).
 
 ## MCP mapping
 

@@ -17,7 +17,8 @@
 
 - "Promote to Ready" / "In Progress → Ready" / "Silver → Gold"
 - "Run the readiness check" / "what's blocking promotion"
-- After definitions, data standards, and the delivery interface are in place
+- After definitions and data standards are in place. An outbound delivery
+  workflow is optional for Ready.
 - The Ready gate itself — last step before agents consume across domains
 
 ## When NOT to use
@@ -60,9 +61,16 @@
 - Definitions must be reviewed before running this — use
   `semantic-ontology-mapping` first
 - Data standards (field descriptions, PII classification, quality rules, data
-  contract) are cleared by `procedure#establish-data-standards`, not here
-- A registered delivery endpoint is a **Ready gate** — register delivery before
-  promoting to gold, not after
+  contract) are cleared by `procedure#establish-data-standards`, not here.
+  **Known issue:** the `quality-rules` gate normally uses per-rule thresholds;
+  when the effective-rules lookup fails or `blockingQualityRules` is omitted,
+  `checkQualityRules` falls back to the legacy aggregate (at least 3 active
+  rules and an overall score of at least 80%). The swap is silent. That is not a
+  product feature. See
+  [issue 3318](https://github.com/LoxtepInc/loxtep/issues/3318).
+- Ready gate `delivery-endpoint` (Consumption methods) is satisfied by the
+  baseline data product trigger (`event_stream`). An outbound delivery workflow
+  is optional and is **not** required to reach Ready.
 - Which gates block is **per organization** (governance tier + per-policy
   `blocks_promotion`). Never assume the full checklist is mandatory; read
   `required` on each prerequisite
