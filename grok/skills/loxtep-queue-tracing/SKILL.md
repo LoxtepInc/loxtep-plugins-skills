@@ -83,7 +83,7 @@ On success the tool data looks like:
 ```json
 {
   "queue_name": "lxappdev-workflows-workflow-deployment-errors",
-  "search_eid": "z/2026/10/19/05/56/1760854560123-0000000",
+  "search_eid": "z/2026/10/19/05/56/1792389360123-0000000",
   "instance_id": "9c5a188a-8e71-4bf7-b83c-362cc0e6d9bd",
   "events": {
     "results": [],
@@ -94,6 +94,7 @@ On success the tool data looks like:
     "limit": 10,
     "last_time": null,
     "count": 0,
+    "scanned_count": 0,
     "agg": {},
     "scan_incomplete": false
   },
@@ -113,7 +114,8 @@ Unverified example of the response shape (not captured from a live instance).
 | `limit`           | Effective page size after the server cap (at most 100)                                         |
 | `resumptionToken` | Botmon's resume eid, kept for the Observe UI (also `resumption_token`). Page on `next_cursor`. |
 | `scan_incomplete` | `true`: the time budget cut the scan short. `false`: the scan stopped on its own               |
-| `count`           | Events **scanned**, not `results.length`                                                       |
+| `count`           | Events **scanned on this call**, not `results.length` (same as `scanned_count`; not summable)  |
+| `scanned_count`   | Explicit per-call scanned tally (same integer as `count`; resume may re-count boundary eid)    |
 | `last_time`       | Timestamp of the last scanned event, or `null`                                                 |
 
 **Empty `results` does not mean "no events"** unless `has_more` is `false`. A
@@ -133,7 +135,7 @@ There is no separate cursor input. Continue with:
 {
   "operation": "read_queue_events",
   "queue_name": "lxappdev-workflows-workflow-deployment-errors",
-  "eid": "z/2026/10/17/19/02/b",
+  "eid": "z/2026/10/17/19/02/1792263751456-0000000",
   "count": 10
 }
 ```
@@ -150,6 +152,45 @@ instance).
 - Fractions (`1.5`), `Infinity`, `NaN` and values below 1 are rejected with a
   validation error. They are never rounded or defaulted.
 
+### `eid`
+
+Since #3451 (#3436). The check is `queueEidPathTimestampMismatch`. The check
+does not rewrite the path, replace the timestamp, or fall back to another read.
+
+After the check passes, `ReadQueueEventsTool` calls `resolveObserveSearchEid`
+(`platform-backend/_core/src/observe/search-eid.ts`). That normalization is the
+same as before #3451. `normalizeTimelineEidForBotmonSearch` trims the eid and
+appends `-0000000` when the last segment is a bare millisecond of 10 or more
+digits. An omitted or blank eid becomes the default anchor.
+
+Accepted: omitted or blank; `z/` and a path prefix through the minute, trailing
+slash optional (`z/2026/10/17/19/02/`); a full
+`z/YYYY/MM/DD/HH/mm/<n>[-<ordinal>]` whose numeric terminal `n` is `<= 10000` (a
+seconds checkpoint); a millisecond terminal only when the UTC minute of that
+millisecond equals the path.
+
+Anything else is refused, including a path/timestamp mismatch and a malformed
+value (`not-an-eid`, `z/foo`, `z/2026/10/25/00/00/nope`). The message is
+`eid <eid> path and timestamp disagree` (`<eid>` is the trimmed value).
+
+Through `loxtep_observe` the refusal is input validation, before HTTP: 400
+`invalid_tool_input`. The composed message is not asserted end to end. From
+`validateInput` it is
+`Validation failed: eid: eid <eid> path and timestamp disagree`, with `details`
+`{ "tool_name": "read_queue_events", "mcp_facade": "loxtep_observe", "code": "invalid_tool_input" }`.
+
+Pass the previous page's `next_cursor` unchanged, or build the eid from one
+timestamp (the path is the UTC minute of the millisecond), or use a path prefix
+such as `z/2026/10/17/19/02/`.
+
+Known issues, not fixed here:
+[#3454](https://github.com/LoxtepInc/loxtep/issues/3454) (botmon `searchQueue`
+builds `slice_end` from the eid milliseconds and orders the cursor by the date
+path; an eid that reaches botmon another way can still 500 `slice_bounds_error`)
+and [#3455](https://github.com/LoxtepInc/loxtep/issues/3455)
+(`loadQueueSampleWindow` in `_core/src/observe/load-queue-samples.ts` forwards a
+caller eid to the Observe proxy without this check).
+
 ### Errors (non-2xx)
 
 Non-2xx Observe/botmon responses are MCP failures: `error` is
@@ -162,6 +203,10 @@ Non-2xx Observe/botmon responses are MCP failures: `error` is
 | 502  | `stream_read_failed`         | Stream read failed (e.g. DynamoDB capacity). Retry later; do not treat as an empty queue                                |
 | 502  | `observe_search_shape_error` | Botmon page broke the paging contract (e.g. `has_more` missing). Report it; do not treat as an empty queue              |
 | 400  | `invalid_filter_expression`  | `search_text` was treated as a bad filter expression. Drop or simplify `search_text`                                    |
+
+An eid refusal is not in this table: it fails input validation before HTTP (400
+`invalid_tool_input`). Direct `GET /app/observe/search` callers get 400
+`eid_path_timestamp_mismatch`.
 
 For `observe_search_shape_error`, the MCP `message` is the contract error text
 (for example `Missing required field: has_more`), not the code. If the MCP
@@ -285,6 +330,10 @@ not live captures.
 
 ## Pitfalls
 
+- **Do not hand-build a mismatched `eid`.** A path and a millisecond from
+  different instants, or a truncated token, is refused and not rewritten. Pass
+  `next_cursor` unchanged, build both parts from one timestamp, or use a path
+  prefix. See `eid` above.
 - **Empty `results` is not "nothing happened":** only `has_more: false` means
   this window has no matching events. A 503 `scan_incomplete`, 502
   `stream_read_failed` or 502 `observe_search_shape_error` is not an empty
