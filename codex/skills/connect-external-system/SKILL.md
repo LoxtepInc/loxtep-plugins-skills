@@ -298,8 +298,25 @@ hostname fails closed (`TLS_POLICY_VIOLATION` / `TLS_FAILURE`) unless a
 documented insecure gate exists for that type. Ask the customer for the CA and
 hostname policy; do not disable verification.
 
+Postgres (`postgres` / `postgresql` / `postgres-source`) also has
+`custom_settings.auth_mode`:
+
+| `auth_mode`          | Create path                                                                                                                                                                                                                                           |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `password` (default) | stored `password` or `connection_string`                                                                                                                                                                                                              |
+| `iam`                | RDS IAM. Discrete `host` / `port` / `database` / `username` only. `ssl_mode=verify-full` and `ssl_ca` (CA PEM) required. Do not set `password` or `connection_string`. Do not enable CDC. `aws_region` optional when it matches runtime `AWS_REGION`. |
+
+IAM username is the database user granted `rds_iam`, not an access key. The
+runtime principal needs `rds-db:connect` on
+`arn:aws:rds-db:<region>:<account>:dbuser:<proxy-resource-id>/<db-username>`.
+The RDS Proxy must have IAM authentication enabled. Studio clears a stored
+password and forces `verify-full` when the user picks `iam`.
+
 Type-specific contracts (do not copy their field names into other types):
 
+- Postgres IAM / private probe:
+  `platform-backend/connectors/providers/postgres/PRIVATE_TEST.md` (minimum
+  version `postgres-private-probe/1`)
 - MongoDB source private probe:
   `platform-backend/connectors/providers/mongodb-source/PATCH_PRIVATE_TEST.md`
   (minimum version `mongodb-source-private-probe/1`)
@@ -534,6 +551,10 @@ only when save and deploy both succeed.
 | `CATALOG_READ_FAILED`                                                                                                               | source catalog       | Customer: restore `information_schema` / catalog grants, then Test again                                                                                                                        |
 | `SQL_CATALOG_CACHE_FAILED`                                                                                                          | control plane        | Loxtep: catalog was readable; writing `entity_field_schemas` failed. Re-test; if it persists, platform                                                                                          |
 | `POSTGRES_TABLE_CATALOG_MISSING` (probe `tls.policy` is `verified`)                                                                 | source catalog       | Customer: the authorized table returned no column rows. Restore SELECT on columns, then Test again                                                                                              |
+| `auth_mode=iam` rejects `connection_string`, a stored password, any TLS mode other than `verify-full`, missing `ssl_ca`, or CDC     | authentication / TLS | Customer: discrete host fields, no password, `ssl_mode=verify-full`, CA PEM, incremental or snapshot only                                                                                       |
+| `PostgreSQL auth_mode=iam requires username.`                                                                                       | authentication       | Customer: set discrete `username` (the DB user with `rds_iam`)                                                                                                                                  |
+| `PostgreSQL auth_mode=iam does not allow pg_pool_options.<key>. TLS and the auth token come from the connector.`                    | authentication / TLS | Customer: remove `pg_pool_options.password`, `.connectionString`, or `.ssl` — IAM owns the token and TLS                                                                                        |
+| `Failed to sign an RDS IAM auth token` / `rds-db:connect`                                                                           | authentication       | Customer (or Loxtep runtimes): grant `rds-db:connect` on the proxy DB user; confirm `aws_region` and the `rds_iam` role                                                                         |
 | `TABLE_CATALOGS_TOO_LARGE` (more than 256 tables)                                                                                   | source catalog       | Customer: shrink the table allowlist; Loxtep refuses to truncate `account_info.table_catalogs`                                                                                                  |
 | `DATA_PATH_*` (`REQUIRED_FOR_OBJECT_BODY`, `BLANK`, `MISSING_SEGMENT`, `RESOLVED_NOT_OBJECT_OR_ARRAY`, `UNSET_NOT_OBJECT_OR_ARRAY`) | HTTP body → records  | Customer: set `configuration.data_path` or `ingestion_config.data_path` (`$` for whole-object, or a dot path that yields an array). Studio writes the ingestion field. Disagreeing copies fail. |
 | Timeout / ENI / routing to private IP                                                                                               | network              | Customer VPC routing, SG, DNS                                                                                                                                                                   |

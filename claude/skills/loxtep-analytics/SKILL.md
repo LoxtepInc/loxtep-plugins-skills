@@ -3,8 +3,9 @@
 name: loxtep-analytics
 description:
   Use when the user wants SQL analytics over the mesh, SQL queries, list tables,
-  table schema, execute query, or poll query results. Customer MCP loxtep_query.
-  User story S6. See docs/skills-user-stories.md.
+  table schema, execute query, poll query results, or row-embedding semantic
+  search. Customer MCP loxtep_query. User story S6. See
+  docs/skills-user-stories.md.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/claude/skills/loxtep-analytics/SKILL.md
 ---
@@ -12,12 +13,15 @@ metadata:
 # Analytics and SQL (Customer MCP)
 
 **Story S6:** Explore curated mesh data with **SQL** — discover tables, inspect
-schema, run queries, fetch results.
+schema, run queries, fetch results. Row-embedding **semantic search** is the
+same tool (`loxtep_query` → `semantic_search`) when the product has Iceberg row
+embeddings enabled.
 
 ## When to use
 
 - “Run **SQL**”, “**list tables**”, “**schema** for table”, “**execute_query**”,
-  “get **query results**”
+  “get **query results**”, “**semantic_search**”, “find similar rows”, “row
+  embeddings”
 
 ## Prerequisites
 
@@ -30,15 +34,18 @@ schema, run queries, fetch results.
 3. `execute_query` with the required `query` parameter (the SQL text). The
    required parameter is named `query`, not `sql`.
 4. `get_query_results` if execution is asynchronous or paginated.
+5. Optional: `semantic_search` when the product has row embeddings enabled
+   (`data_product_id` + `query`; optional `top_k`, `filters`).
 
 ## MCP mapping
 
-| Step    | Tool           | `operation`         | Scope        |
-| ------- | -------------- | ------------------- | ------------ |
-| List    | `loxtep_query` | `list_tables`       | organization |
-| Schema  | `loxtep_query` | `get_table_schema`  | organization |
-| Run     | `loxtep_query` | `execute_query`     | organization |
-| Results | `loxtep_query` | `get_query_results` | organization |
+| Step     | Tool           | `operation`         | Scope        |
+| -------- | -------------- | ------------------- | ------------ |
+| List     | `loxtep_query` | `list_tables`       | organization |
+| Schema   | `loxtep_query` | `get_table_schema`  | organization |
+| Run      | `loxtep_query` | `execute_query`     | organization |
+| Results  | `loxtep_query` | `get_query_results` | organization |
+| Semantic | `loxtep_query` | `semantic_search`   | organization |
 
 ## Reading `execute_query` results
 
@@ -111,6 +118,87 @@ Fields that may appear on the result (only these exist on
 - Whether `sampled: true` with `status: "completed"` is intended is still
   undecided. Honor `sampled` today. Update this when the fix lands.
 
+## Row embeddings and `semantic_search`
+
+Opt-in per data product. Iceberg must already be enabled. Configure
+`metadata.storage_indexing_preferences.row_embeddings` on
+`PUT /dataproducts/dataproducts/{data_product_id}`:
+
+- `fields` — existing string-typed, non-PII schema fields (required, min 1)
+- `dimensions` — `256` | `512` | `1024` (default `256`)
+- `mode` — `live` | `batch` | `hybrid` (default `hybrid`)
+- `null` clears / disables. Omitted leaves the pref unchanged.
+
+The Iceberg table stores JSON-string columns `lx__embedding` and
+`lx__embedding_hash`. Default warehouse views `SELECT * EXCLUDE` those columns.
+Search embeds the query with Bedrock Titan V2 at the product's dimensions, then
+DuckDB `from_json` + `array_cosine_similarity` over a direct `iceberg_scan` (so
+the hidden columns are visible). There is no SDK method and no CLI command
+(`sdk-mcp-parity.json` marks `semantic_search` `mcp_only`).
+
+Refused:
+
+- Iceberg off → `409` `iceberg_required` / “semantic search requires an
+  Iceberg-backed data product”
+- Prefs absent → `409` `embeddings_disabled`
+- `organizations.attributes.privacy.no_records_to_models` on → `409`
+  `privacy_blocked`
+- PII / missing / non-string `fields` → `400` `invalid_fields`
+
+MCP `loxtep_query` → `semantic_search` proxies
+`POST /dataproducts/dataproducts/{data_product_id}/semantic-search`. Permission:
+`data_products:read` (REST authorizer also accepts `analytics:execute`).
+
+| Field             | Required | Notes                                                              |
+| ----------------- | -------- | ------------------------------------------------------------------ |
+| `data_product_id` | yes      | UUID                                                               |
+| `query`           | yes      | Non-empty. REST max 8000 characters.                               |
+| `top_k`           | no       | Integer 1–100. REST default `10`.                                  |
+| `filters`         | no       | Equality only (`col = value`). Values: string, number, or boolean. |
+
+Success `data`:
+
+```json
+{
+  "items": [{ "order_id": "…", "score": 0.87 }],
+  "coverage": {
+    "embedding_rows_embedded": 120,
+    "embedding_rows_total": 200
+  }
+}
+```
+
+`items` are table rows plus `score`. `get_iceberg_health` may also return
+`embedding_rows_total`, `embedding_rows_embedded`, and `embedding_job`.
+
+**Known issue:** Empty `coverage` or a `partial` warehouse result can look like
+full success. The handler logs a warning and still returns `success: true` with
+empty coverage when the coverage query fails, and a `partial` warehouse result
+returns plain success with no flag. See issue
+[3325](https://github.com/LoxtepInc/loxtep/issues/3325).
+
+**Known issue:** Frontend types and defaults differ from this backend shape
+(`{ items, coverage }`, REST `top_k` default 10). See issue
+[3324](https://github.com/LoxtepInc/loxtep/issues/3324).
+
+**Known issue:** `semantic_search` fails with a knex
+`Undefined binding data_product_id` error on some products. See issue
+[3322](https://github.com/LoxtepInc/loxtep/issues/3322).
+
+Example (MCP). **Unverified** as a live happy path (see issue
+[3322](https://github.com/LoxtepInc/loxtep/issues/3322)). Do not treat the
+following as a live transcript.
+
+```json
+{
+  "operation": "semantic_search",
+  "data_product_id": "2dbc4415-e3a6-427c-99fe-b3a5234ff175",
+  "query": "late west-coast shipments",
+  "top_k": 10,
+  "filters": { "status": "open" }
+}
+```
+
 ## Pitfalls
 
 - **Partial `execute_query` results** — `success: true` can still mean
@@ -153,15 +241,25 @@ Fields that may appear on the result (only these exist on
   as a key field, and do not default the key to it. Omit `backfill_from` to skip
   history replay. The partition field must be on the schema. Empty or “unknown
   table” warehouse errors usually mean Iceberg was never enabled.
+- **`semantic_search` needs row embeddings** — SQL `execute_query` does not
+  imply vectors. Enable Iceberg, then set `row_embeddings`. Hidden
+  `lx__embedding*` columns are not in default views; do not `SELECT` them
+  expecting search. `filters` are equality only.
 - **Iceberg rebuild** — requires that enablement and the same storage identity.
   Iceberg stores are Amazon S3 Tables (compaction and snapshot cleanup are
   AWS-managed; there is no compact tool). If queries fail with missing data or a
   stub schema, use `loxtep_observe` → `get_iceberg_health`, then
-  `rebuild_iceberg_table` with `confirm: true` and `backfill_from`. Health
-  passes the catalog body through. `not_enabled` means Iceberg is off — enable
-  it first; do not rebuild (rebuild POST returns HTTP 400). `unknown` means
-  metadata or provision identity could not be resolved (including enabled
-  without S3 Tables identity — `table_bucket_arn`, or stamped
+  `rebuild_iceberg_table` with `confirm: true` and `backfill_from` as a `z/`
+  queue eid (`z/` = start of the queue; a longer `z/…` eid starts there).
+  Aliases (`start`, `start_of_queue`, `checkpoint`, `now`, `all`, durations) are
+  refused. The hosted MCP rebuild schema still lists those aliases; only `z/`
+  eids work. See issue [3323](https://github.com/LoxtepInc/loxtep/issues/3323).
+  That `z/` rule is rebuild-only — enable still uses
+  `now`/`1h`/`6h`/`1d`/`7d`/`30d`/`all`, or omits `backfill_from` to skip
+  history. Health passes the catalog body through. `not_enabled` means Iceberg
+  is off — enable it first; do not rebuild (rebuild POST returns HTTP 400).
+  `unknown` means metadata or provision identity could not be resolved
+  (including enabled without S3 Tables identity — `table_bucket_arn`, or stamped
   `s3_tables_namespace` + `s3_tables_table`); it is a warning, not a rebuild
   signal. Do not rebuild on `not_enabled` or `unknown`. Warehouse execute
   `retryable`, `unauthorized`, `metadata_config_error`, and `unreadable` without

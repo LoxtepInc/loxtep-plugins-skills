@@ -54,13 +54,13 @@ author bundle → deploy → verify with `get_data_product`.**
 
 ### Source vs Consumer
 
-| Aspect      | Source (kind: source)                               | Consumer (kind: consumer)                                       |
-| ----------- | --------------------------------------------------- | --------------------------------------------------------------- |
-| Nature      | Atomic, domain-owned                                | Composed, projected                                             |
-| Origin      | External system ingestion                           | Derived from source DPs                                         |
-| Workflow    | connector-ingestion, webhook, sdk (Trigger at head) | delivery workflow (`workflow_type: "delivery"`, Target at tail) |
-| Trust level | Draft → validated                                   | Validated → delivery-ready                                      |
-| UI route    | /source/data-products                               | /consumer/data-products                                         |
+| Aspect      | Source (kind: source)                               | Consumer (kind: consumer)                                                                                           |
+| ----------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Nature      | Atomic, domain-owned                                | Composed, projected                                                                                                 |
+| Origin      | External system ingestion                           | Derived from source DPs                                                                                             |
+| Workflow    | connector-ingestion, webhook, sdk (Trigger at head) | delivery workflow (`workflow_type: "delivery"`, `data-product-trigger` head, Target at tail, then a delivery grant) |
+| Trust level | Draft → validated                                   | Validated → delivery-ready                                                                                          |
+| UI route    | /source/data-products                               | /consumer/data-products                                                                                             |
 
 ### Terminology Note
 
@@ -103,11 +103,14 @@ author bundle → deploy → verify with `get_data_product`.**
 4. **Gap analysis:** Which source DPs don't exist yet? Design + deploy them via
    **`data-workflows`** first (not `create_data_product`).
 5. **Specify transforms:** JOIN keys, aggregations, derivations, filters.
-6. **Design workflow:** Source DP head → transform chain → **Target** connection
-   at the tail (`workflow_type: "delivery"`).
-7. **Wire consumer DP:** **`data-workflows`** Flow D — `data-products/{id}.json`
-   - Target `connections/{id}.json` in delivery bundle + `save_workflow_bundle`
-   - deploy. **Do not** call `create_data_product` or `create_delivery`.
+6. **Design workflow:** `data-product-trigger` head (`source_data_product_id`) →
+   transform chain → **Target** connection at the tail
+   (`workflow_type: "delivery"`). Do **not** put a `data-products` node at the
+   head.
+7. **Wire consumer DP:** **`data-workflows`** Flow D — Target
+   `connections/{id}.json` in the delivery bundle + `save_workflow_bundle` +
+   `save_delivery_grant` (or `grants/{id}.json`) + deploy. **Do not** call
+   `create_data_product` or `create_delivery`.
 8. **Verify after deploy:** `get_data_product` / `get_runtime_mapping` — confirm
    Target container bindings.
 
@@ -124,7 +127,14 @@ author bundle → deploy → verify with `get_data_product`.**
    - Schema version: `update_data_product` with schema `version: "1.0"`.
    - Field descriptions: `update_data_product` with all fields described.
    - PII classified: `tag_pii_fields` via `loxtep_define`.
-   - Quality rules: `create_quality_rule` via `loxtep_define` (≥3 rules). Check
+   - Quality rules: `list_quality_rules` with `view: "effective"` and
+     `data_product_id`. Add or override with `create_quality_rule` via
+     `loxtep_define`. The gate normally checks each blocking rule's own
+     `threshold`. **Known issue:** when the effective-rules lookup fails or
+     `blockingQualityRules` is omitted, `checkQualityRules` falls back to the
+     legacy aggregate (at least 3 active rules and an overall score of at least
+     80%). The swap is silent. That is not a product feature. See
+     [issue 3318](https://github.com/LoxtepInc/loxtep/issues/3318). Check scores
      with `get_quality_score` via `loxtep_observe`.
    - Glossary terms: `append_synonym` via `loxtep_meaning` for each field.
    - Primary entity: `update_data_product` with
@@ -143,8 +153,9 @@ author bundle → deploy → verify with `get_data_product`.**
    - Data contract: `create_data_contract` with SLA terms and
      `schema_version_id` via `loxtep_build`. That id is stored as `schema_ref`
      and does not write `schema.key`.
-   - Delivery Target: **`data-workflows`** Flow D — Target connection in a
-     `workflow_type: "delivery"` bundle (not `create_delivery`).
+   - Delivery Target: **`data-workflows`** Flow D — `data-product-trigger` head
+     - Target connection + grant in a `workflow_type: "delivery"` bundle (not
+       `create_delivery`).
    - Graph sync: auto-handled by prior promotion.
    - Upstream lineage (Ready / gold): create a native catalog edge via
      `POST /dataproducts/lineage` (not `update_data_product.lineage` JSON). For
@@ -215,19 +226,19 @@ Transform Logic:  [expression]
 
 ## MCP mapping
 
-| `operation`                                                       | Facade         | Scope        | Notes                                                                                                         |
-| ----------------------------------------------------------------- | -------------- | ------------ | ------------------------------------------------------------------------------------------------------------- |
-| `list_data_products`                                              | `loxtep_build` | organization | Filters: `kind`, `domain_id`, `status`, `medallion`                                                           |
-| `get_data_product`                                                | `loxtep_build` | organization | Full ODPS document by `data_product_id`                                                                       |
-| `get_lexicon`                                                     | `loxtep_build` | organization | Glossary/lexicon for a data product                                                                           |
-| `create_data_product`                                             | `loxtep_build` | organization | **Agents: do not use** for new DPs. Author via workflow bundle + deploy.                                      |
-| `update_data_product`                                             | `loxtep_build` | organization | Partial update; use for schema, metadata, status                                                              |
-| `delete_data_product`                                             | `loxtep_build` | project      | Remove a data product by `project_id`, `data_product_id`                                                      |
-| `get_entity_schemas` / `save_workflow_bundle` / `deploy_workflow` | `loxtep_build` | project      | Delivery: Target connection + `workflow_type: "delivery"`. **`create_delivery` / `list_deliveries` removed**. |
-| `get_promotion_readiness`                                         | `loxtep_build` | organization | Check prerequisites, progress, promotability for a data product.                                              |
-| `promote_data_product`                                            | `loxtep_build` | organization | Execute tier transition (Silver/Gold). Validates prerequisites server-side.                                   |
-| `create_data_contract`                                            | `loxtep_build` | organization | Create contract with SLA terms. Pass `schema_version_id` as `schema_ref`. It does not write `schema.key`.     |
-| `list_data_contracts`                                             | `loxtep_build` | organization | List contracts, optionally filtered by `data_product_id`.                                                     |
+| `operation`                                                                               | Facade         | Scope        | Notes                                                                                                     |
+| ----------------------------------------------------------------------------------------- | -------------- | ------------ | --------------------------------------------------------------------------------------------------------- |
+| `list_data_products`                                                                      | `loxtep_build` | organization | Filters: `kind`, `domain_id`, `status`, `medallion`                                                       |
+| `get_data_product`                                                                        | `loxtep_build` | organization | Full ODPS document by `data_product_id`                                                                   |
+| `get_lexicon`                                                                             | `loxtep_build` | organization | Glossary/lexicon for a data product                                                                       |
+| `create_data_product`                                                                     | `loxtep_build` | organization | **Agents: do not use** for new DPs. Author via workflow bundle + deploy.                                  |
+| `update_data_product`                                                                     | `loxtep_build` | organization | Partial update; use for schema, metadata, status                                                          |
+| `delete_data_product`                                                                     | `loxtep_build` | project      | Remove a data product by `project_id`, `data_product_id`                                                  |
+| `get_entity_schemas` / `save_workflow_bundle` / `save_delivery_grant` / `deploy_workflow` | `loxtep_build` | project      | Delivery: DPT head + Target + grant. **`create_delivery` / `list_deliveries` removed**.                   |
+| `get_promotion_readiness`                                                                 | `loxtep_build` | organization | Check prerequisites, progress, promotability for a data product.                                          |
+| `promote_data_product`                                                                    | `loxtep_build` | organization | Execute tier transition (Silver/Gold). Validates prerequisites server-side.                               |
+| `create_data_contract`                                                                    | `loxtep_build` | organization | Create contract with SLA terms. Pass `schema_version_id` as `schema_ref`. It does not write `schema.key`. |
+| `list_data_contracts`                                                                     | `loxtep_build` | organization | List contracts, optionally filtered by `data_product_id`.                                                 |
 
 ## Decision tree
 
