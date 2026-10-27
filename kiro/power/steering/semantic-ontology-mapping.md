@@ -201,6 +201,17 @@ promotion.
 | `discover_ontology_relationships`                 | `loxtep_meaning` | organization | Candidate edges. Optional `limit` 1–500                       |
 | `accept_ontology_relationships`                   | `loxtep_meaning` | organization | Persist accepted edges                                        |
 
+`apply_glossary_bindings` uses `target_identifiers[0]` on
+`metadata.semantic_mapping.entries` where `target_kind` is `glossary_term` and
+`source_path` is set. A UUID matches the glossary term name or `term_id`. A
+plain name matches the name. A miss of either creates a glossary term named that
+key. An absolute IRI (`scheme:`, including `urn:patch:term:v1:*`) resolves
+through the thesaurus (`term_uri`, then the SKOS canonical key; soft-deleted
+rows are ignored) and must link a glossary term in the same organization.
+Otherwise the call is HTTP 422 `Unresolvable glossary target: <key>`
+(`error.details.term_key`; `WebError.kind` is `unprocessable`) and nothing is
+written. `process-glossary-bindings-requested` uses the same function.
+
 **Define meaning** = terms + shapes. Ontology concepts are graph types /
 relationships — use them after terms/shapes exist when you need typed edges.
 
