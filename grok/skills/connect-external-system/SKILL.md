@@ -389,8 +389,13 @@ Customer-VPC Postgres probe (`postgres-private-probe/1`) adds
 `table_name`, `primary_key`, and `fields` with `is_primary_key` /
 `references_shape` when declared. An authorized table with no column rows fails
 with `POSTGRES_TABLE_CATALOG_MISSING` and `tls.policy: "verified"` (not a TLS
-rejection). More than 256 catalogs is `TABLE_CATALOGS_TOO_LARGE`; Loxtep does
-not truncate the list.
+rejection). An explicit table allowlist is resolved across schemas: unqualified
+names use the connector's default schema, and `schema.table` entries are looked
+up in the schema they name. When any allowlisted table is not visible, Test
+fails with `ALLOWLIST_DISCOVERY_INCOMPLETE`, `tls.policy: "verified"`, and
+`missing_tables` listing those `schema.table` names. `tables` and
+`table_catalogs` still describe the tables that were visible. More than 256
+catalogs is `TABLE_CATALOGS_TOO_LARGE`; Loxtep does not truncate the list.
 
 Public `test_connector` runs in-process `testConnection()`, then the SQL catalog
 read for those four types. A successful public test may persist `last_tested_at`
@@ -551,6 +556,7 @@ only when save and deploy both succeed.
 | `CATALOG_READ_FAILED`                                                                                                               | source catalog       | Customer: restore `information_schema` / catalog grants, then Test again                                                                                                                        |
 | `SQL_CATALOG_CACHE_FAILED`                                                                                                          | control plane        | Loxtep: catalog was readable; writing `entity_field_schemas` failed. Re-test; if it persists, platform                                                                                          |
 | `POSTGRES_TABLE_CATALOG_MISSING` (probe `tls.policy` is `verified`)                                                                 | source catalog       | Customer: the authorized table returned no column rows. Restore SELECT on columns, then Test again                                                                                              |
+| `ALLOWLIST_DISCOVERY_INCOMPLETE` (`missing_tables`, probe `tls.policy` is `verified`)                                               | source catalog       | Customer: those allowlisted tables were not visible. Grant the existing role access, or correct the allowlist. Not a TLS or permission-policy change                                            |
 | `auth_mode=iam` rejects `connection_string`, a stored password, any TLS mode other than `verify-full`, missing `ssl_ca`, or CDC     | authentication / TLS | Customer: discrete host fields, no password, `ssl_mode=verify-full`, CA PEM, incremental or snapshot only                                                                                       |
 | `PostgreSQL auth_mode=iam requires username.`                                                                                       | authentication       | Customer: set discrete `username` (the DB user with `rds_iam`)                                                                                                                                  |
 | `PostgreSQL auth_mode=iam does not allow pg_pool_options.<key>. TLS and the auth token come from the connector.`                    | authentication / TLS | Customer: remove `pg_pool_options.password`, `.connectionString`, or `.ssl` — IAM owns the token and TLS                                                                                        |
