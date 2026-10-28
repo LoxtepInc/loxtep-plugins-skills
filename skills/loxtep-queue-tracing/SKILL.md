@@ -80,7 +80,7 @@ On success the tool data looks like:
 ```json
 {
   "queue_name": "lxappdev-workflows-workflow-deployment-errors",
-  "search_eid": "z/2026/10/19/05/56/1760854560123-0000000",
+  "search_eid": "z/2026/10/19/05/56/1792389360123-0000000",
   "instance_id": "9c5a188a-8e71-4bf7-b83c-362cc0e6d9bd",
   "events": {
     "results": [],
@@ -91,6 +91,7 @@ On success the tool data looks like:
     "limit": 10,
     "last_time": null,
     "count": 0,
+    "scanned_count": 0,
     "agg": {},
     "scan_incomplete": false
   },
@@ -102,27 +103,38 @@ On success the tool data looks like:
 
 Unverified example of the response shape (not captured from a live instance).
 
-| `events` field    | Meaning                                                                                        |
-| ----------------- | ---------------------------------------------------------------------------------------------- |
-| `results`         | Matching events from this page, in forward scan order. At most `limit` events                  |
-| `next_cursor`     | Pass as the next request's `eid` to continue. `null` only when `has_more` is `false`           |
-| `has_more`        | `true`: more events may remain, so request the next page. `false`: this window is done         |
-| `limit`           | Effective page size after the server cap (at most 100)                                         |
-| `resumptionToken` | Botmon's resume eid, kept for the Observe UI (also `resumption_token`). Page on `next_cursor`. |
-| `scan_incomplete` | `true`: the time budget cut the scan short. `false`: the scan stopped on its own               |
-| `count`           | Events **scanned**, not `results.length`                                                       |
-| `last_time`       | Timestamp of the last scanned event, or `null`                                                 |
+| `events` field    | Meaning                                                                                                                                                                                                                                        |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `results`         | Matching events from this page, in forward scan order. At most `limit` events                                                                                                                                                                  |
+| `next_cursor`     | Pass as the next request's `eid` to continue. `null` only when `has_more` is `false`                                                                                                                                                           |
+| `has_more`        | `true`: more events may remain, so request the next page. `false`: this window is done                                                                                                                                                         |
+| `limit`           | Effective page size after the server cap (at most 100)                                                                                                                                                                                         |
+| `resumptionToken` | Resume eid (also `resumption_token`). On a 200 0-scan incomplete page whose botmon token is later than the request eid, this is the request eid. Botmon's later token is not published. Otherwise it is botmon's token. Page on `next_cursor`. |
+| `scan_incomplete` | `true`: the time budget cut the scan short. `false`: the scan stopped on its own                                                                                                                                                               |
+| `count`           | Events **scanned on this call**, not `results.length` (same as `scanned_count`; not summable)                                                                                                                                                  |
+| `scanned_count`   | Explicit per-call scanned tally (same integer as `count`; resume may re-count boundary eid)                                                                                                                                                    |
+| `last_time`       | Timestamp of the last scanned event, or `null`                                                                                                                                                                                                 |
 
-**Empty `results` does not mean "no events"** unless `has_more` is `false`. A
-budget-cut scan that matched nothing still has `has_more: true` and a
-`next_cursor` — continue. A window with no matching events after `eid` is a 200
-with `results: []`, `has_more: false`, `next_cursor: null`.
+**Empty `results` does not mean "no events".** Read the status with the page:
 
-`has_more` is `true` when the time budget cut the scan
-(`scan_incomplete: true`), when the page is full (`results.length` equals
-`limit`), or when botmon reports more (for example, its 4 MB per-call response
-budget cut a short page). A short page is not the end of the window unless
-`has_more` is `false`.
+- **200**, `has_more: true`, `next_cursor` equal to the request `eid`: a 0-scan
+  budget cut (#3481, #3368). Nothing was read, and botmon's token was later than
+  the start, so the page resumes at the request eid. Pass that `next_cursor`
+  back as `eid`. If you omitted `eid`, the server used the default anchor (now,
+  minus 60 minutes, minus 1 second, terminal `-0000000`). `next_cursor` is that
+  anchor. MCP also echoes it as `search_eid`. Pass that value back as `eid`.
+  Omitting `eid` again computes a new, later anchor. If botmon's token is not
+  later than the start, that token is kept.
+- **503** `scan_incomplete`, and no `next_cursor`: events were scanned and none
+  matched (#3547, #3485). That is not an empty queue. Botmon's token is not
+  published.
+- **200**, `has_more: false`, `next_cursor: null` is the only "no matching
+  events" signal.
+
+`has_more` is `true` on every `scan_incomplete` page that returns 200. It is
+also `true` when the page is full (`results.length` equals `limit`), or when
+botmon reports more (for example, its 4 MB per-call response budget cut a short
+page). A short page is not the end of the window unless `has_more` is `false`.
 
 There is no separate cursor input. Continue with:
 
@@ -130,7 +142,7 @@ There is no separate cursor input. Continue with:
 {
   "operation": "read_queue_events",
   "queue_name": "lxappdev-workflows-workflow-deployment-errors",
-  "eid": "z/2026/10/17/19/02/b",
+  "eid": "z/2026/10/17/19/02/1792263751456-0000000",
   "count": 10
 }
 ```
@@ -147,34 +159,122 @@ instance).
 - Fractions (`1.5`), `Infinity`, `NaN` and values below 1 are rejected with a
   validation error. They are never rounded or defaulted.
 
+### `eid`
+
+Since #3451 (#3436). The check is `queueEidPathTimestampMismatch`. The check
+does not rewrite the path, replace the timestamp, or fall back to another read.
+
+After the check passes, `ReadQueueEventsTool` calls `resolveObserveSearchEid`
+(`platform-backend/_core/src/observe/search-eid.ts`). That normalization is the
+same as before #3451. `normalizeTimelineEidForBotmonSearch` trims the eid and
+appends `-0000000` when the last segment is a bare millisecond of 10 or more
+digits. An omitted or blank eid becomes the default anchor.
+
+Accepted: omitted or blank; `z/` and a path prefix through the minute, trailing
+slash optional (`z/2026/10/17/19/02/`); a full
+`z/YYYY/MM/DD/HH/mm/<n>[-<ordinal>]` whose numeric terminal `n` is `<= 10000` (a
+seconds checkpoint); a millisecond terminal only when the UTC minute of that
+millisecond equals the path.
+
+Anything else is refused, including a path/timestamp mismatch and a malformed
+value (`not-an-eid`, `z/foo`, `z/2026/10/25/00/00/nope`). The message is
+`eid <eid> path and timestamp disagree` (`<eid>` is the trimmed value).
+
+Through `loxtep_observe` the refusal is input validation, before HTTP: 400
+`invalid_tool_input`. The composed message is not asserted end to end. From
+`validateInput` it is
+`Validation failed: eid: eid <eid> path and timestamp disagree`, with `details`
+`{ "tool_name": "read_queue_events", "mcp_facade": "loxtep_observe", "code": "invalid_tool_input" }`.
+
+Pass the previous page's `next_cursor` unchanged, or build the eid from one
+timestamp (the path is the UTC minute of the millisecond), or use a path prefix
+such as `z/2026/10/17/19/02/`.
+
+Known issues, not fixed here:
+[#3454](https://github.com/LoxtepInc/loxtep/issues/3454) (botmon `searchQueue`
+builds `slice_end` from the eid milliseconds and orders the cursor by the date
+path; an eid that reaches botmon another way can still 500 `slice_bounds_error`)
+and [#3455](https://github.com/LoxtepInc/loxtep/issues/3455)
+(`loadQueueSampleWindow` in `_core/src/observe/load-queue-samples.ts` forwards a
+caller eid to the Observe proxy without this check).
+
 ### Errors (non-2xx)
 
-Non-2xx Observe/botmon responses are MCP failures: `error` is
-`Observe search returned HTTP <status>`; `message` carries the downstream body
-(or a stringified `downstream_response`).
+Non-2xx Observe search responses are MCP failures. `error` is
+`Observe search returned HTTP <status>`. `message` comes from
+`formatObserveSearchError` (`platform-backend/ai/lib/tools/streaming.ts`): when
+`error.details.downstream_response` is present, `message` is that value as JSON;
+otherwise `message` is `error.message`.
 
-| HTTP | `code`                       | What to do                                                                                                              |
-| ---- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| 503  | `scan_incomplete`            | Budget expired **before any event was scanned** — no resume position. Retry; or pass a later `eid` to narrow the window |
-| 502  | `stream_read_failed`         | Stream read failed (e.g. DynamoDB capacity). Retry later; do not treat as an empty queue                                |
-| 502  | `observe_search_shape_error` | Botmon page broke the paging contract (e.g. `has_more` missing). Report it; do not treat as an empty queue              |
-| 400  | `invalid_filter_expression`  | `search_text` was treated as a bad filter expression. Drop or simplify `search_text`                                    |
+The only window control is the start `eid`. The scan walks forward from `eid`
+toward now. There is no end-of-window input on `McpReadQueueEventsInputSchema`
+or on `GET /app/observe/search`. A later `eid` is how you narrow the window.
+
+| HTTP | `code`                            | What to do                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 503  | `scan_incomplete` (Loxtep, #3547) | Events were scanned and none matched. Message: `scan_incomplete page scanned events but returned 0 matches; refusing to publish the resumptionToken`. No `next_cursor`. The same request will likely 503 again. Use a later `eid`, or drop or broaden `search_text` and filter the events yourself. Paging a sparse filter to the end is a known limitation ([#3485](https://github.com/LoxtepInc/loxtep/issues/3485), open; botmon `searchQueue` half). Do not treat this as fixed. |
+| 503  | `scan_incomplete` (botmon)        | The budget ran out before any slice completed, or before any event was read. Retry, or pass a later `eid`.                                                                                                                                                                                                                                                                                                                                                                           |
+| 502  | `stream_read_failed`              | Stream read failed (e.g. DynamoDB capacity). Retry later; do not treat as an empty queue                                                                                                                                                                                                                                                                                                                                                                                             |
+| 502  | `observe_search_shape_error`      | Botmon page broke the paging contract (e.g. `has_more` missing). Report it; do not treat as an empty queue                                                                                                                                                                                                                                                                                                                                                                           |
+| 400  | `invalid_filter_expression`       | `search_text` was treated as a bad filter expression. Drop or simplify `search_text`                                                                                                                                                                                                                                                                                                                                                                                                 |
+
+For the #3547 503, the MCP `message` is
+`scan_incomplete page scanned events but returned 0 matches; refusing to publish the resumptionToken`
+and nothing else. It starts with `scan_incomplete`. There is no separate `code`
+field. If this tool re-shapes an older proxy page and throws, `error` is the
+class name `ReadQueueEventsScanIncompleteError`, the message is that same
+sentence, and there is no HTTP status.
+
+For botmon's 503, the MCP `message` is the JSON of `downstream_response`, so it
+contains `"code":"scan_incomplete"` and one of the two `error` strings below.
+
+An eid refusal is not in this table: it fails input validation before HTTP (400
+`invalid_tool_input`). Direct `GET /app/observe/search` callers get 400
+`eid_path_timestamp_mismatch`.
 
 For `observe_search_shape_error`, the MCP `message` is the contract error text
 (for example `Missing required field: has_more`), not the code. If the MCP
 tool's own check of the page fails, the error is `ReadQueueEventsContractError`
 with that text and no HTTP status.
 
-Unverified example of a 503 downstream body (not captured from a live instance):
+Unverified example of a 503 downstream body (not captured from a live instance).
+Read at submodule pin `259d44d8` (`lambda/botmon/searchQueue/index.js`); the
+submodule was not checked out here. `jsonError` sets `success: false` on the
+thrown object. Queue and start below are placeholders.
 
 ```json
 {
   "success": false,
   "code": "scan_incomplete",
-  "error": "Search time budget expired before any event was scanned; no resume position. Retry the request.",
+  "error": "Search time budget expired before any slice completed; no safe resume position. Retry the request.",
   "queue": "ops-alert-requested",
   "start": "z/2026/10/17/19/00/",
-  "scanned": 0
+  "slice_ms": 60000
+}
+```
+
+```json
+{
+  "success": false,
+  "code": "scan_incomplete",
+  "error": "Search time budget expired before any event was read; no safe resume position. Retry the request.",
+  "queue": "ops-alert-requested",
+  "start": "z/2026/10/17/19/00/"
+}
+```
+
+Unverified example of the #3547 HTTP 503 body (derived from `defaultErrorFilter`
+and `errorResponse`; no test asserts this body):
+
+```json
+{
+  "success": false,
+  "error": {
+    "message": "scan_incomplete page scanned events but returned 0 matches; refusing to publish the resumptionToken",
+    "details": {
+      "code": "scan_incomplete"
+    }
+  }
 }
 ```
 
@@ -195,8 +295,11 @@ not live captures.
    }
    ```
 3. If `has_more` is `true`, call again with `eid` set to `next_cursor` until
-   `has_more` is `false` or you have the event you need. Handle 503/502 as above
-   — do not stop on empty `results`.
+   `has_more` is `false` or you have the event you need. Do not stop on empty
+   `results`. A 503 after a scan that read events and matched none has no cursor
+   — use a later `eid`, or drop `search_text` (the same request will likely 503
+   again). A botmon 503 (no slice completed, or no event read) — retry, or pass
+   a later `eid`. Handle 502 as in the table above.
 4. Read the event payload — it contains the error message, workflow_id, and
    context.
 5. Cross-reference with the deployment-requested queue to see the triggering
@@ -228,9 +331,16 @@ not live captures.
 1. Start at the trigger queue (e.g., `*-deployment-requested` or `*-source`).
 2. Call `read_queue_events`. **Do not conclude the queue is empty** from
    `events.results: []` alone:
-   - `has_more: true` → continue with `eid` = `next_cursor`.
-   - MCP error `Observe search returned HTTP 503` with `code: scan_incomplete` →
-     retry, or retry with a later `eid`.
+   - `has_more: true` → continue with `eid` = `next_cursor`. On a 0-scan budget
+     cut that cursor is the request eid. If you omitted `eid`, pass the returned
+     default anchor back explicitly.
+   - MCP error `Observe search returned HTTP 503` whose `message` is
+     `scan_incomplete page scanned events but returned 0 matches; refusing to publish the resumptionToken`
+     → not an empty queue and not transient. Use a later `eid`, or drop
+     `search_text`. There is no cursor.
+   - MCP error `Observe search returned HTTP 503` whose `message` is botmon JSON
+     (`"code":"scan_incomplete"`, budget expired before any slice completed or
+     before any event was read) → retry, or pass a later `eid`.
    - MCP error `Observe search returned HTTP 502` with
      `code: stream_read_failed` → retry later; the stream was not proven empty.
    - `has_more: false` → this window really has no matching events.
@@ -282,10 +392,18 @@ not live captures.
 
 ## Pitfalls
 
+- **Do not hand-build a mismatched `eid`.** A path and a millisecond from
+  different instants, or a truncated token, is refused and not rewritten. Pass
+  `next_cursor` unchanged, build both parts from one timestamp, or use a path
+  prefix. See `eid` above.
 - **Empty `results` is not "nothing happened":** only `has_more: false` means
-  this window has no matching events. A 503 `scan_incomplete`, 502
-  `stream_read_failed` or 502 `observe_search_shape_error` is not an empty
-  queue.
+  this window has no matching events. A 503 `scan_incomplete` on a filtered
+  search is not an empty queue and not transient; narrow with a later `eid` or
+  drop `search_text`. A 502 `stream_read_failed` or 502
+  `observe_search_shape_error` is not an empty queue. Known issue
+  [#3518](https://github.com/LoxtepInc/loxtep/issues/3518): a long run of empty
+  hour slices also reports scanned 0, so following `next_cursor` can return the
+  same eid repeatedly and not advance.
 - **Namespace matters:** Queue names are namespace-prefixed. Using the wrong
   namespace can look empty — still apply the completeness check above before
   concluding that.
