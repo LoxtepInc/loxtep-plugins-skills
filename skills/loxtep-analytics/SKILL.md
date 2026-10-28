@@ -249,13 +249,12 @@ following as a live transcript.
   `rebuild_iceberg_table` with `confirm: true` and `backfill_from` as a `z/`
   queue eid (`z/` = start of the queue; a longer `z/…` eid starts there).
   Aliases (`start`, `start_of_queue`, `checkpoint`, `now`, `all`, durations) are
-  refused. The hosted MCP rebuild schema still lists those aliases; only `z/`
-  eids work. See issue [3323](https://github.com/LoxtepInc/loxtep/issues/3323).
-  That `z/` rule is rebuild-only — enable still uses
-  `now`/`1h`/`6h`/`1d`/`7d`/`30d`/`all`, or omits `backfill_from` to skip
-  history. Health passes the catalog body through. `not_enabled` means Iceberg
-  is off — enable it first; do not rebuild (rebuild POST returns HTTP 400).
-  `unknown` means metadata or provision identity could not be resolved
+  refused. The hosted `rebuild_iceberg_table` advertisement uses that same `z/`
+  schema. Enable windows stay on enable. That `z/` rule is rebuild-only — enable
+  still uses `now`/`1h`/`6h`/`1d`/`7d`/`30d`/`all`, or omits `backfill_from` to
+  skip history. Health passes the catalog body through. `not_enabled` means
+  Iceberg is off — enable it first; do not rebuild (rebuild POST returns HTTP
+  400). `unknown` means metadata or provision identity could not be resolved
   (including enabled without S3 Tables identity — `table_bucket_arn`, or stamped
   `s3_tables_namespace` + `s3_tables_table`); it is a warning, not a rebuild
   signal. Do not rebuild on `not_enabled` or `unknown`. Warehouse execute

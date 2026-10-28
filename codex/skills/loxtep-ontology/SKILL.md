@@ -1,14 +1,15 @@
-<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: loxtep-ontology
 description:
   Manage Loxtep ontology concepts and vocabulary terms via MCP. Use when
   creating/updating concepts, linking vocabulary, or exploring ontology
   structure for an organization. namespace mappings, or sync vocabularies. Part
-  of the Organize step for defining shared meaning across systems.
+  in Meaning for defining shared language across systems.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/codex/skills/loxtep-ontology/SKILL.md
 ---
+
+<!-- GENERATED FILE -- single source: loxtep/scripts/plugins-skills-generate-skills.mjs. From the loxtep root run `PLUGINS_SKILLS_ROOT=<plugins-skills> node scripts/sync-skills-to-plugins-skills.mjs` (or that generator with PLUGINS_SKILLS_ROOT set). Do not edit client copies; do not run sibling scripts/generate-skills.mjs. -->
 
 # Ontology, vocabulary, and namespace management
 
@@ -38,11 +39,13 @@ apply bronze/silver/gold readiness to shared meaning.
 Follow `loxtep-semantic-layer` for the full review journey. Hosted Meaning
 operations include `start_ontology_inference`, `get_ontology_inference_run`,
 `cancel_ontology_inference_run`, `list_inferred_ontology`, and
-`review_inferred_ontology`. Run IDs identify organization inference, not product
-mapping runs. A run may contain failed/skipped items or mappings auto-accepted
-under policy. Inspect actual effects before claiming completion. Accepted
-induction proposals return shared concept IDs and property mappings; use
-`get_ontology_concept` to verify them before optional product adoption.
+`review_inferred_ontology`. These organization-inference controls are currently
+MCP-only; do not invent `client.meaning.*` SDK methods for them. Run IDs
+identify organization inference, not product mapping runs. A run may contain
+failed/skipped items or mappings auto-accepted under policy. Inspect actual
+effects before claiming completion. Accepted induction proposals return shared
+concept IDs and property mappings; use `get_ontology_concept` to verify them
+before optional product adoption.
 
 ## Minimal Ontology Principle (MOP)
 
@@ -253,7 +256,7 @@ classes, and do not bulk-apply a review set from this operation. See
 | `list_enterprise_overrides`    | organization | Filters: `override_status`, `override_source`                                                                                                                              |
 | `resolve_semantic_gap`         | organization | `issue_id` + override fields; marks AO issue done, `override_source=agent_gap`                                                                                             |
 
-All rows above are MCP `loxtep_meaning` operations (Organize / Approve path).
+All rows above are MCP `loxtep_meaning` operations (Meaning review path).
 
 **Define meaning** = vocabulary **terms** + domain **shapes**. Ontology concepts
 are for **graph types and relationships** between them — not a substitute for

@@ -1,13 +1,14 @@
-<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: semantic-ontology-mapping
 description:
   Use when the user wants to define what business terms mean, map concepts
   across systems, resolve vocabulary conflicts, or build a shared language for
-  their data. This is the meaning-definition work inside the Organize step.
+  their data. This is meaning-definition work in Meaning.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/codex/skills/semantic-ontology-mapping/SKILL.md
 ---
+
+<!-- GENERATED FILE -- single source: loxtep/scripts/plugins-skills-generate-skills.mjs. From the loxtep root run `PLUGINS_SKILLS_ROOT=<plugins-skills> node scripts/sync-skills-to-plugins-skills.mjs` (or that generator with PLUGINS_SKILLS_ROOT set). Do not edit client copies; do not run sibling scripts/generate-skills.mjs. -->
 
 # Semantic & Ontological Mapping for Business Environments
 

@@ -21,7 +21,7 @@ metadata:
 | Step                     | Ends with                          | Do NOT do in this step                |
 | ------------------------ | ---------------------------------- | ------------------------------------- |
 | **Connect**              | `connector_id`, tested credentials | Piecemeal graph patches; ingestion    |
-| **Organize** (next step) | Full workflow saved and deployed   | Piecemeal graph patches for new flows |
+| **Products** (next step) | Full workflow saved and deployed   | Piecemeal graph patches for new flows |
 
 **Prerequisite:** A Loxtep **project** must exist before building the workflow
 (`create_project` or reuse — see **`data-workflows`**). Org connector create and

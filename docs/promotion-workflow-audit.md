@@ -17,13 +17,13 @@
 
 | # | Prerequisite | MCP | SDK | CLI |
 |---|---|---|---|---|
-| 1 | Schema version ≥ 1.0 | `loxtep_build` → `update_data_product` | `client.data_products.update()` | `loxtep data-products create/get` + update |
-| 2 | All fields have descriptions | `loxtep_build` → `update_data_product` | `client.data_products.update()` | same |
-| 3 | PII fields classified | `loxtep_define` → `tag_pii_fields` | `client.schemas.tag_pii_fields(dp_id, fields)` | via SDK |
+| 1 | Schema version ≥ 1.0 | `loxtep_build` → `update_data_product` | `client.build.data_products.update()` | `loxtep data-products create/get` + update |
+| 2 | All fields have descriptions | `loxtep_build` → `update_data_product` | `client.build.data_products.update()` | same |
+| 3 | PII fields classified | `loxtep_define` → `tag_pii_fields` | `client.define.schemas.tag_pii_fields(dp_id, fields)` | via SDK |
 | 4 | ≥3 active quality rules | `loxtep_define` → `create_quality_rule` | `client.quality.create()` | `loxtep quality create` |
 | 5 | Quality score ≥ 80% | `loxtep_observe` → `get_quality_score` | `client.quality` list + check | `loxtep quality` |
 | 6 | ≥1 glossary term (field alias) | `loxtep_meaning` → `append_synonym` | `client.thesaurus.append_synonym()` | via SDK |
-| 7 | ≥1 primary entity with natural key | `loxtep_build` → `update_data_product` | `client.data_products.update()` | same |
+| 7 | ≥1 primary entity with natural key | `loxtep_build` → `update_data_product` | `client.build.data_products.update()` | same |
 
 ---
 
@@ -31,11 +31,11 @@
 
 | # | Prerequisite | MCP | SDK | CLI |
 |---|---|---|---|---|
-| 8 | All fields have ontology bindings | `loxtep_meaning` → `bind_field_to_ontology` | `client.data_products.promote()` triggers engine validation | via MCP/SDK |
+| 8 | All fields have ontology bindings | `loxtep_meaning` → `bind_field_to_ontology` | `client.build.data_products.promote()` triggers engine validation | via MCP/SDK |
 | 9 | Active data contract with SLA | `loxtep_build` → `create_data_contract` | `client.data_contracts.create()` | `loxtep data-contracts create` |
 | 10 | ≥1 delivery interface | `loxtep_build` → `create_delivery` | `client.deliveries.create()` | via SDK |
 | 11 | Graph sync | Auto-handled by Silver promotion engine | — | — |
-| 12 | PROV-O lineage | `update_data_product` lineage field | `client.data_products.update()` | same |
+| 12 | PROV-O lineage | `update_data_product` lineage field | `client.build.data_products.update()` | same |
 
 ---
 
@@ -43,8 +43,8 @@
 
 | Action | MCP | SDK | CLI |
 |---|---|---|---|
-| Check readiness | `loxtep_build` → `get_promotion_readiness` | `client.data_products.readiness(id)` | `loxtep data-products readiness <id>` |
-| Execute promotion | `loxtep_build` → `promote_data_product` | `client.data_products.promote(id, 'silver'\|'gold')` | `loxtep data-products promote <id> --target silver\|gold` |
+| Check readiness | `loxtep_build` → `get_promotion_readiness` | `client.build.data_products.readiness(id)` | `loxtep data-products readiness <id>` |
+| Execute promotion | `loxtep_build` → `promote_data_product` | `client.build.data_products.promote(id, 'silver'\|'gold')` | `loxtep data-products promote <id> --target silver\|gold` |
 | Create data contract | `loxtep_build` → `create_data_contract` | `client.data_contracts.create(payload)` | `loxtep data-contracts create --data-product-id <id> --name <name>` |
 | List data contracts | `loxtep_build` → `list_data_contracts` | `client.data_contracts.list({ data_product_id })` | `loxtep data-contracts list` |
 

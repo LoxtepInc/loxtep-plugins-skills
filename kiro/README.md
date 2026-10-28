@@ -83,7 +83,7 @@ Skill bundles live under `kiro/skills/<slug>/SKILL.md`. When using the Power, **
 
 ### Loxtep Customer MCP
 
-**10 MCP job facades** (`loxtep_session`, `loxtep_connect`, `loxtep_workspace`, `loxtep_build`, …) — projects, workflows, connectors, data products, schemas, quality, catalog, semantic layer, ontology, analytics, deployments, workspace/queue ops, process intelligence, agent orchestration.
+**11 hosted MCP tools:** ten job facades (`loxtep_session`, `loxtep_connect`, `loxtep_workspace`, `loxtep_build`, …) plus the MCP Apps-only `loxtep_package_review` review card. They cover Connect → Products ↔ Meaning → Use, with Inbox, Observe, and Organization supporting the journey.
 
 ### Skills (26 bundles)
 

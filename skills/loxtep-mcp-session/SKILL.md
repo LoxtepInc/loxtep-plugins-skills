@@ -31,8 +31,8 @@ without relying on any private repo or source tree.
    - **`user`** / **`organization`** — identity context.
 2. **`loxtep_session`** → **`get_platform_model`** (no arguments). Returns the
    Loxtep platform model: concepts, relationships, and the confusions to avoid
-   (connector vs connection, shape vs concept vs data product, Organize vs
-   Define). Load this before any tool that creates or changes Loxtep resources.
+   (connector vs connection, shape vs concept vs data product, Products vs
+   Meaning). Load this before any tool that creates or changes Loxtep resources.
    The model describes Loxtep. It is not a vocabulary pack and not the
    customer's business ontology (`loxtep_meaning`).
 3. **`loxtep_session`** → **`get_current_organization`** — confirm org scope

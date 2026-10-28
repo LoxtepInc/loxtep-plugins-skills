@@ -1,18 +1,19 @@
-<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: promote-data-product
 description:
   Use when a data product should move along the semantic medallion axis (Raw →
   In Progress → Ready), not when changing lifecycle status (draft/active) or
   promoting CDLC/memory candidates. Runs the readiness checklist, remediates
-  gates, and applies promote_data_product. Final Organize step before trusted
-  cross-domain use.
+  gates, and applies promote_data_product. Final Products readiness step before
+  trusted cross-domain use.
 license: MIT
 metadata:
   platform: loxtep
   category: catalog
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/opencode/skills/promote-data-product/SKILL.md
 ---
+
+<!-- GENERATED FILE -- single source: loxtep/scripts/plugins-skills-generate-skills.mjs. From the loxtep root run `PLUGINS_SKILLS_ROOT=<plugins-skills> node scripts/sync-skills-to-plugins-skills.mjs` (or that generator with PLUGINS_SKILLS_ROOT set). Do not edit client copies; do not run sibling scripts/generate-skills.mjs. -->
 
 # Promote data product medallion (Raw → In Progress → Ready)
 

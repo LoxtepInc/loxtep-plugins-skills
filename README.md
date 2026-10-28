@@ -16,17 +16,22 @@ installers below remain for humans who want to click through it themselves.
 
 **Loxtep is the AI-first, governed data layer for your business.** You build
 agents in the tools you already use — Claude Code, Cursor, Codex, OpenCode, Kiro,
-Antigravity — and Loxtep handles the hard part: **ingesting your data, giving
+Antigravity, and Grok — and Loxtep handles the hard part: **ingesting your data, giving
 your agents trustworthy context, and governing every access** (audit + field
 masking on by default). Connect a source (Postgres, Shopify, Stripe, a webhook),
 and your agents query governed data over a hosted MCP server instead of
 hand-rolling pipelines or inventing field names.
 
-The hosted MCP registers **10 job facades** (`loxtep_session`, `loxtep_connect`,
-`loxtep_workspace`, `loxtep_build`, …). Each call sets
+The hosted MCP exposes **11 tools**: ten job facades (`loxtep_session`,
+`loxtep_connect`, `loxtep_workspace`, `loxtep_build`, …) plus the MCP Apps-only
+`loxtep_package_review` review card. Each job-facade call sets
 **`operation`** to the flat action name (e.g. `list_projects`,
 `create_data_product`) plus that action's arguments. Tool definitions and scopes
 are published on the hosted MCP server.
+
+The customer journey is **Connect → Products ↔ Meaning → Use**. **Inbox**
+carries human decisions, **Observe** carries operational evidence, and
+**Organization** contains administrative setup.
 
 New here? Start with the **Starter set** — session/auth, connect one source, and
 query — then opt into the full skill set when you need it. See
@@ -189,7 +194,8 @@ See [`codex/README.md`](codex/README.md) for details.
 
 ### Antigravity
 
-Antigravity does not support hosted MCP OAuth natively — use `mcp-remote` as a bridge.
+Antigravity supports hosted MCP and OAuth directly. Use `serverUrl`; do not put
+`mcp-remote` in front of it.
 
 **IDE:** Agent panel → **⋯ → MCP Servers → Manage MCP Servers → View raw config** (edits `~/.gemini/config/mcp_config.json`).
 
@@ -197,8 +203,7 @@ Antigravity does not support hosted MCP OAuth natively — use `mcp-remote` as a
 {
   "mcpServers": {
     "loxtep": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.loxtep.io/ai/mcp/stream"]
+      "serverUrl": "https://mcp.loxtep.io/ai/mcp/stream"
     }
   }
 }
@@ -211,7 +216,17 @@ mkdir -p ~/.gemini/skills
 cp -r antigravity/skills/* ~/.gemini/skills/
 ```
 
-Requires Node.js 18+. See [`antigravity/README.md`](antigravity/README.md) for details.
+See [`antigravity/README.md`](antigravity/README.md) for authentication and
+verification details.
+
+### Grok
+
+Install the `loxtep` user-marketplace plugin, or copy this repo's generated
+skills into your Grok skills directory. Follow the live
+[Loxtep setup guide](https://docs.loxtep.io/docs/setup.md) for the current Grok
+MCP and OAuth steps.
+
+See [`grok/README.md`](grok/README.md) for details.
 
 ### Manual / other clients
 
@@ -227,7 +242,8 @@ For any MCP client with native OAuth support, add this to its MCP config:
 }
 ```
 
-For clients without OAuth support, wrap with `mcp-remote` (see Antigravity above).
+If a client does not support remote OAuth, follow the current setup guide for
+that client instead of assuming a local bridge.
 
 ### Skills-only install (npx skills)
 
@@ -295,8 +311,9 @@ plugin **or** `npx skills` — to avoid duplicate skill copies.
 | **Claude** | Claude Code & Cowork | [claude/](claude/) | Marketplace plugin **`loxtep-claude@loxtep`**. Hosted MCP, 26 skills, auth rule. |
 | **OpenCode** | OpenCode | [opencode/](opencode/) | `opencode.json` (`type: remote`) + 26 skills. Native OAuth. |
 | **Kiro** | Kiro IDE | [kiro/](kiro/) | Kiro Power (`kiro/power/`) or MCP config. 26 skills + 13 steering guides. |
-| **Antigravity** | Google Antigravity | [antigravity/](antigravity/) | `~/.gemini/config/mcp_config.json` via `mcp-remote`. 26 skills in `~/.gemini/skills/`. |
+| **Antigravity** | Google Antigravity | [antigravity/](antigravity/) | Native `serverUrl` MCP + OAuth. 26 skills in `~/.gemini/skills/`. |
 | **Codex** | OpenAI Codex | [codex/](codex/) | `~/.codex/config.toml` + skills in `~/.agents/skills/`. Native OAuth. |
+| **Grok** | Grok | [grok/](grok/) | User-marketplace plugin or generated skill bundles; hosted MCP + OAuth. |
 
 ## Repository layout
 
@@ -306,11 +323,12 @@ plugin **or** `npx skills` — to avoid duplicate skill copies.
 - **kiro/** — Kiro IDE: MCP config and README.
 - **antigravity/** — Antigravity IDE: MCP config and README.
 - **codex/** — Codex CLI/IDE: TOML snippet and README.
+- **grok/** — Grok skill bundles and install guidance.
 
 See each directory's `README.md` for install and usage instructions.
 
 Every skill under `claude/skills/`, `cursor/skills/`, `codex/skills/`,
-`kiro/skills/`, `opencode/skills/`, `antigravity/skills/`, plus
+`kiro/skills/`, `opencode/skills/`, `antigravity/skills/`, `grok/skills/`, plus
 `kiro/power/steering/` and the `claude`/`cursor` `rules/*.mdc` auth rule, is
 **generated** from a single canonical source in `skills/`. See
 [CONTRIBUTING.md](CONTRIBUTING.md) before editing a skill.

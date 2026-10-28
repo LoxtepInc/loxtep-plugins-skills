@@ -1,13 +1,15 @@
-<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: org-semantics-quality
 description:
   Use when the user wants to define schemas, tag PII fields, manage quality
-  rules, or govern data definitions at the organization level. Part of the
-  Organize step. Not for catalog search — use discover-govern-lineage for that.
+  rules, or govern data definitions at the organization level. Works across
+  Products and Meaning. Not for catalog search — use discover-govern-lineage for
+  that.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/kiro/skills/org-semantics-quality/SKILL.md
 ---
+
+<!-- GENERATED FILE -- single source: loxtep/scripts/plugins-skills-generate-skills.mjs. From the loxtep root run `PLUGINS_SKILLS_ROOT=<plugins-skills> node scripts/sync-skills-to-plugins-skills.mjs` (or that generator with PLUGINS_SKILLS_ROOT set). Do not edit client copies; do not run sibling scripts/generate-skills.mjs. -->
 
 # Schemas and quality rules
 

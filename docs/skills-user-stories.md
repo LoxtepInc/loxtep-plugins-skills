@@ -31,20 +31,23 @@ Platform PKO procedures: `platform-backend/graph/platform-pko/` · architecture:
 | S11 | Provision or list runtime instances                       | `loxtep-instances`            |
 | S12 | Recover from auth failures on MCP                         | `loxtep-auth`                 |
 
-### Organize
+### Products
 
-| ID  | Story                                                          | Primary skill              |
-| --- | -------------------------------------------------------------- | -------------------------- |
-| S2  | Build a **data product** that unifies data across channels     | `data-workflows`           |
-| S4  | Define schemas, semantics, PII, and quality rules              | `org-semantics-quality`    |
-| S5  | Discover assets, lineage, evidence, governance                 | `discover-govern-lineage`  |
-| S7  | Snapshots, compare versions, reindex workspace, inspect queues | `loxtep-workspace`         |
-| S8  | Entity and decision intelligence and unified context retrieval | `loxtep-process-intel`     |
-| S9  | Process graphs — CRUD, import/export, dependencies             | `loxtep-procedures`        |
-| S13 | Manage ontology, vocabulary, and namespace mappings            | `loxtep-ontology`          |
-| S14 | Deploy projects and workflows to runtime instances             | `loxtep-deployments`       |
-| S15 | Search semantic layer, retrieve artifacts, check completeness  | `loxtep-semantic-layer`    |
-| S17 | Publish a data product as trusted after readiness checks       | **`promote-data-product`** |
+| ID  | Story                                                      | Primary skill              |
+| --- | ---------------------------------------------------------- | -------------------------- |
+| S2  | Build a **data product** that unifies data across channels | `data-workflows`           |
+| S4  | Define schemas, PII, and quality rules                     | `org-semantics-quality`    |
+| S14 | Deploy projects and workflows to runtime instances         | `loxtep-deployments`       |
+| S17 | Publish a data product as trusted after readiness checks   | **`promote-data-product`** |
+
+### Meaning
+
+| ID  | Story                                                          | Primary skill           |
+| --- | -------------------------------------------------------------- | ----------------------- |
+| S8  | Entity and decision intelligence and unified context retrieval | `loxtep-process-intel`  |
+| S9  | Process graphs — CRUD, import/export, dependencies             | `loxtep-procedures`     |
+| S13 | Manage ontology, vocabulary, and namespace mappings            | `loxtep-ontology`       |
+| S15 | Search semantic layer, retrieve artifacts, check completeness  | `loxtep-semantic-layer` |
 
 ### Use
 
@@ -54,11 +57,18 @@ Platform PKO procedures: `platform-backend/graph/platform-pko/` · architecture:
 | S6  | Query mesh data with SQL / analytics             | `loxtep-analytics`       |
 | S10 | Agent issues/goals/workstreams                   | `loxtep-agent-workspace` |
 
+### Observe and Organization
+
+| ID  | Story                                                          | Primary skill             |
+| --- | -------------------------------------------------------------- | ------------------------- |
+| S5  | Discover assets, lineage, evidence, governance                 | `discover-govern-lineage` |
+| S7  | Snapshots, compare versions, reindex workspace, inspect queues | `loxtep-workspace`        |
+
 ### Cross-cutting
 
-| ID  | Story                                                 | Primary skill                     |
-| --- | ----------------------------------------------------- | --------------------------------- |
-| S16 | Orchestrate the full Connect → Organize → Use journey | **`loxtep-journey-orchestrator`** |
+| ID  | Story                                                                  | Primary skill                     |
+| --- | ---------------------------------------------------------------------- | --------------------------------- |
+| S16 | Orchestrate Connect → Products ↔ Meaning → Use, with Inbox and Observe | **`loxtep-journey-orchestrator`** |
 
 ---
 
@@ -71,7 +81,7 @@ Platform PKO procedures: `platform-backend/graph/platform-pko/` · architecture:
 | **Preconditions** | MCP auth; optional `project_id` for templates only (not required for org connector)                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | **Happy path**    | `list_connector_types` → inspect instance runtime when private → OAuth or `create_connector` → `test_connector` (no ingest) → optional `capture_samples` (authorized) → hand off to **`data-workflows`**                                                                                                                                                                                                                                                                                                                    |
 | **MCP**           | `loxtep_connect` (`list_connector_types`, `create_connector`, `get_oauth_url`, `test_connector` + optional `instance_id`, `capture_samples`, `list_templates`, `apply_template`); runtime inspect: `list_instances`, `list_observe_bots`; MongoDB backfill reset: pause the runner bot first (MCP has no pause for that runner; Observe → Catalog → select the bot → Actions → Pause Bots), then `loxtep_build` `reset_backfill` or REST `POST /workflows/projects/{project_id}/connections/{connection_id}/reset-backfill` |
-| **CLI**           | `loxtep connectors list`; `loxtep connectors test <id>`; `loxtep connectors capture-samples <id> --entity-type <name> [--limit N]` (never invent `loxtep connector test` or `loxtep connectors create`). MongoDB backfill restart: pause the runner in Observe, then `loxtep triggers reset-backfill <connection_id>`                                                                                                                                                                                                                                                                                  |
+| **CLI**           | `loxtep connectors list`; `loxtep connectors test <id>`; `loxtep connectors capture-samples <id> --entity-type <name> [--limit N]` (never invent `loxtep connector test` or `loxtep connectors create`). MongoDB backfill restart: pause the runner in Observe, then `loxtep triggers reset-backfill <connection_id>`                                                                                                                                                                                                       |
 | **Primary skill** | **`connect-external-system`** (private path also **`loxtep-instances`**, **`loxtep-deployments`**)                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 ---
@@ -89,7 +99,7 @@ Platform PKO procedures: `platform-backend/graph/platform-pko/` · architecture:
 
 ---
 
-## S16 — Journey orchestrator (Connect → Organize → Use)
+## S16 — Journey orchestrator (Connect → Products ↔ Meaning → Use)
 
 | Field             | Detail                                                                                                                                        |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
