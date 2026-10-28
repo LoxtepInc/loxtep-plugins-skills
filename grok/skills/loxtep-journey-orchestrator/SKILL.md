@@ -1,11 +1,10 @@
-<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: loxtep-journey-orchestrator
 description:
-  Orchestrate the full Connect → Organize → Use journey. Use when an agent needs
-  to take a data source from first connection through to live delivery, handling
-  approvals and transitions at each step, or maintain shared organization
-  meaning independently of data product promotion.
+  Orchestrate the full Connect → Products ↔ Meaning → Use journey. Use when an
+  agent needs to take a data source from first connection through to live
+  delivery, handling approvals and transitions at each step, or maintain shared
+  organization meaning independently of data product promotion.
 license: MIT
 metadata:
   platform: loxtep
@@ -13,11 +12,13 @@ metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/grok/skills/loxtep-journey-orchestrator/SKILL.md
 ---
 
+<!-- GENERATED FILE -- single source: loxtep/scripts/plugins-skills-generate-skills.mjs. From the loxtep root run `PLUGINS_SKILLS_ROOT=<plugins-skills> node scripts/sync-skills-to-plugins-skills.mjs` (or that generator with PLUGINS_SKILLS_ROOT set). Do not edit client copies; do not run sibling scripts/generate-skills.mjs. -->
+
 # Loxtep journey orchestrator
 
 Guides an agent through the complete journey from connecting a data source to
-delivering trusted, AI-ready data — across three steps with human approval where
-it matters.
+delivering trusted, AI-ready data across the customer journey, with human
+approval where it matters.
 
 > **Scope:** human-supervised execution. Every approval gate requires a human
 > decision. Do not attempt to auto-resolve approvals or skip gates.
@@ -27,7 +28,8 @@ it matters.
 - "Take me through the whole setup" — end-to-end from source to delivery
 - "What's next?" — picking up mid-journey and finding the right step
 - "Walk me through connecting Shopify and making it ready for my agent"
-- Any flow that spans more than one step (Connect → Organize, or Organize → Use)
+- Any flow that spans more than one area (Connect → Products, Products ↔
+  Meaning, or Products → Use)
 
 For single-step work, use the focused skill for that step directly.
 
@@ -58,8 +60,11 @@ product.
 
 1. Confirm MCP session and org context — `get_current_user`,
    `get_current_organization`
-2. Create or reuse a project — `create_project` or `list_projects`, record
-   `project_id`
+2. List domains and projects, then apply the workspace-boundary rule from
+   **`data-workflows`**: reuse a project when ownership and execution lifecycle
+   are shared; use another project in the same domain for execution isolation;
+   create a domain only for distinct semantic ownership or governance. Confirm
+   before creating a domain, then record the chosen `project_id`.
 3. Follow **`connect-external-system`**: `list_connector_types`, decide public
    vs private, inspect instance runtime (`list_instances`, `list_observe_bots`)
    before creating a private connector
@@ -83,7 +88,7 @@ authorized ingest — samples confirmed and deployment status `deployed`.
 - Embed data product definitions inside the workflow bundle — do not call
   `create_data_product` directly; deployment provisions it
 
-## Organize
+## Products ↔ Meaning
 
 **Goal:** The data product has approved definitions, relationships, and quality
 rules, and is published as trusted.
@@ -132,8 +137,8 @@ through the channel the user chooses.
    (`workflow_type: "delivery"`) with a **`data-product-trigger` head** and a
    **Target** connection at the tail — hand off to `data-workflows` Flow D
    (`get_entity_schemas` → `save_workflow_bundle` → `save_delivery_grant` →
-   `deploy_workflow`). Prefer Target `connections/{id}.json` + `connector_id`;
-   do **not** happy-path `create_delivery` / `list_deliveries`.
+   `deploy_workflow`). Prefer Target `connections/{id}.json` + `connector_id`.
+   List existing delivery workflows with `list_workflows`.
 2. Verify agent MCP access — confirm the data product appears in
    `list_data_products` and is reachable via the SDK
 3. Set access rules — `governance-policies` (`list_governance_policies`,
@@ -147,10 +152,10 @@ access rules are enforced.
 
 Each step ends with a clear handoff artifact:
 
-| From     | Handoff                                           | To       |
-| -------- | ------------------------------------------------- | -------- |
-| Connect  | `connector_id` + confirmed samples + `project_id` | Organize |
-| Organize | Approved data product, promotion confirmed        | Use      |
+| From               | Handoff                                           | To       |
+| ------------------ | ------------------------------------------------- | -------- |
+| Connect            | `connector_id` + confirmed samples + `project_id` | Products |
+| Products ↔ Meaning | Approved data product, promotion confirmed        | Use      |
 
 If picking up mid-journey, call `query_context` with the data product name to
 find current state before deciding which step applies.
@@ -178,7 +183,9 @@ for the full internal → user language mapping.
 | P6    | `procedure#govern-data-access`             | `governance-policies`                   |
 | P7    | `procedure#maintain-ai-ready-asset`        | `discover-govern-lineage`               |
 
-**Step → journey mapping:** P0–P2 = Connect · P3–P4 = Organize · P5–P7 = Use
+**Step → journey mapping:** P0–P2 = Connect and Products · P3–P4 = Products ↔
+Meaning · P5 = Use enablement · P6–P7 = Organization governance and ongoing
+Observe evidence. Inbox supplies human decisions across all phases.
 
 **Promotion gates:** `procedure#establish-data-standards` and
 `procedure#register-delivery-interface` run **before** promotion because their

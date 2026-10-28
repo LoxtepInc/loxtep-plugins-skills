@@ -16,7 +16,7 @@ const TOOLS = ['claude', 'cursor', 'codex', 'kiro', 'opencode', 'antigravity', '
 const REPO_URL_BASE =
   'https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main';
 const GENERATED_HEADER =
-  '<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->';
+  '<!-- GENERATED FILE -- single source: loxtep/scripts/plugins-skills-generate-skills.mjs. From the loxtep root run `PLUGINS_SKILLS_ROOT=<plugins-skills> node scripts/sync-skills-to-plugins-skills.mjs` (or that generator with PLUGINS_SKILLS_ROOT set). Do not edit client copies; do not run sibling scripts/generate-skills.mjs. -->';
 
 const CHECK = process.argv.includes('--check');
 
@@ -328,7 +328,7 @@ for (const slug of slugs) {
     const frontmatter = emitSkillFrontmatter(fm, tool, slug);
     let renderedBody = renderBody(body, tool);
     renderedBody = injectScopeBlock(renderedBody, slug);
-    const out = `${GENERATED_HEADER}\n${frontmatter}\n\n${renderedBody}`;
+    const out = `${frontmatter}\n\n${GENERATED_HEADER}\n\n${renderedBody}`;
     plannedWrites.set(path.join(ROOT, tool, 'skills', slug, 'SKILL.md'), out);
   }
 
@@ -356,7 +356,7 @@ for (const slug of slugs) {
         if (!fs.existsSync(rulesDir)) continue; // only tools with a rules/ dir today
         const frontmatter = emitRuleFrontmatter(ruleFm, tool);
         const renderedBody = renderBody(ruleBody, tool);
-        const out = `${GENERATED_HEADER}\n${frontmatter}\n\n${renderedBody}`;
+        const out = `${frontmatter}\n\n${GENERATED_HEADER}\n\n${renderedBody}`;
         plannedWrites.set(path.join(rulesDir, ruleFileName), out);
       }
     }

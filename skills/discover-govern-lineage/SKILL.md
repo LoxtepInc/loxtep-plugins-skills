@@ -3,7 +3,8 @@ name: discover-govern-lineage
 description:
   Use when the user wants to discover data assets, explore lineage, check
   governance flags, or understand what connects to what. Covers catalog search,
-  evidence, domains, and tags. Use step and Organize step visibility.
+  evidence, domains, and tags. Covers product discovery in Use and operational
+  visibility in Observe.
 ---
 
 # Discover, lineage, and governance

@@ -1,7 +1,7 @@
 ---
 name: "loxtep"
 displayName: "Loxtep Enterprise Context Layer"
-description: "Loxtep is the Enterprise Context Layer — turning organizational knowledge into machine-usable context for AI. Manage governed data products, semantic ontology, process graphs, entity context, and decision traces. 10 MCP job facades with per-call operation."
+description: "Loxtep is the Enterprise Context Layer — turning organizational knowledge into machine-usable context for AI. Manage governed data products, semantic ontology, process graphs, entity context, and decision traces. 11 hosted MCP tools: ten job facades plus the MCP Apps review card."
 keywords: ["loxtep", "context-layer", "data-product", "workflow", "connector", "semantic-layer", "ontology", "governance", "process-intelligence", "streaming"]
 author: "Loxtep"
 ---

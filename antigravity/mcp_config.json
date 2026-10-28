@@ -1,8 +1,7 @@
 {
   "mcpServers": {
     "loxtep": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.loxtep.io/ai/mcp/stream"]
+      "serverUrl": "https://mcp.loxtep.io/ai/mcp/stream"
     }
   }
 }

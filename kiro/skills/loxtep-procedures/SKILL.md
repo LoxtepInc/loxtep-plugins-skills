@@ -1,4 +1,3 @@
-<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: loxtep-procedures
 description:
@@ -8,6 +7,8 @@ description:
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/kiro/skills/loxtep-procedures/SKILL.md
 ---
+
+<!-- GENERATED FILE -- single source: loxtep/scripts/plugins-skills-generate-skills.mjs. From the loxtep root run `PLUGINS_SKILLS_ROOT=<plugins-skills> node scripts/sync-skills-to-plugins-skills.mjs` (or that generator with PLUGINS_SKILLS_ROOT set). Do not edit client copies; do not run sibling scripts/generate-skills.mjs. -->
 
 # Procedures & Process Graph
 
@@ -110,9 +111,8 @@ dependencies** in the process graph. Import/export JSON-LD graphs.
 
 Procedure CRUD + import/export are shipped on the Phase D context namespace (CLI
 mirrors the same verbs). Causal / similar-decision surfaces for Studio live
-under `client.context.process_intelligence` — MCP/SDK job grouping may still say
-Organize internally; public Steward copy is Connect → Define → Use (Inbox and
-Observe are cross-cutting, not a fourth step).
+under `client.context.process_intelligence`. Customer-facing placement follows
+Connect → Products ↔ Meaning → Use; Inbox and Observe are cross-cutting.
 
 | MCP `operation`              | SDK                                                                         | Notes                              |
 | ---------------------------- | --------------------------------------------------------------------------- | ---------------------------------- |
@@ -138,8 +138,8 @@ const exported = await client.context.procedures.export_process_graph({
 ```
 
 This skill is **not** an agent build/deploy runtime and does **not** ship a
-custom-connector backend — keep procedure authoring inside the existing Connect
-→ Organize → Use surfaces.
+custom-connector backend — keep procedure authoring inside the existing Meaning
+and Products surfaces.
 
 ## Pitfalls
 
@@ -211,7 +211,7 @@ former procedures-only facade was folded into this surface).
 **Platform PKO procedures** — stable `@id` values like
 `procedure#connect-external-system`. Use `get_procedure` to read step
 `metadata.skill_ref` / `metadata.api_ref` / HITL gates; use
-**`loxtep-journey-orchestrator`** to walk Connect → Organize → Use.
+**`loxtep-journey-orchestrator`** to walk Connect → Products ↔ Meaning → Use.
 
 ## Skill attribution (required)
 

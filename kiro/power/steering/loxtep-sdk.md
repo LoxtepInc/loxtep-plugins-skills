@@ -1,4 +1,4 @@
-<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
+<!-- GENERATED FILE -- single source: loxtep/scripts/plugins-skills-generate-skills.mjs. From the loxtep root run `PLUGINS_SKILLS_ROOT=<plugins-skills> node scripts/sync-skills-to-plugins-skills.mjs` (or that generator with PLUGINS_SKILLS_ROOT set). Do not edit client copies; do not run sibling scripts/generate-skills.mjs. -->
 
 # Loxtep Node SDK (Agent-Scope Skill)
 
@@ -21,9 +21,9 @@ report that gap instead of an API rename. See **`data-workflows`**.
 
 **Trigger** = connector at the ingest head; **Target** = connector at the
 delivery tail — both are `connections/{id}.json` with `connector_id`. Delivery
-workflows use `workflow_type: "delivery"` (never `consumption`). Prefer Target
-connections in the bundle over `create_delivery` / `list_deliveries` (legacy
-consumptions table).
+workflows use `workflow_type: "delivery"` (never `consumption`). Author Target
+connections via `save_workflow_bundle`, then `deploy_workflow`. List with
+`list_workflows`.
 
 ## Connectors (org credentials — not ingest)
 
@@ -78,18 +78,19 @@ stay. See **`connect-external-system`**.
 
 ## Recommended: Data-product-centric writer & reader
 
-**Use `data_products.get_writer(id_or_name)` and
-`data_products.get_reader(id_or_name)` as the primary pattern.** These methods
-resolve all plumbing (queue names, bot IDs, stream bus config) automatically
-from the data product name or UUID — no manual runtime-mapping lookups needed.
+**Use top-level `client.get_writer(id_or_name)` and
+`client.get_reader(id_or_name)` as the primary pattern.** These methods resolve
+all plumbing (queue names, bot IDs, stream bus config) automatically from the
+data product name or UUID — no manual runtime-mapping lookups needed.
 
 ### Delivery (outbound) — prefer Target connections
 
-Do **not** teach `client.targets.create` / MCP `create_delivery` as the happy
-path for pushing data out. Author a delivery workflow via **`data-workflows`**
-Flow D: `data-product-trigger` head + **Target** tail (`save_workflow_bundle` +
-`save_delivery_grant` + `deploy_workflow`), or CLI `loxtep delivery create` →
-`lint` → `push` → `deploy`. Write policy (`table`, `write_mode`, upsert
+Do **not** teach `client.targets.create` as the happy path for pushing data out.
+Author a delivery workflow via **`data-workflows`** Flow D:
+`data-product-trigger` head + **Target** tail (`save_workflow_bundle` with
+`workflow_type: "delivery"` + `save_delivery_grant` + `deploy_workflow`), or CLI
+`loxtep delivery create` → `lint` → `push` → `deploy`. List delivery workflows
+with MCP `list_workflows`. Write policy (`table`, `write_mode`, upsert
 `primary_key`, batch sizes) lives on connection **`delivery_config`**, not
 `configuration`.
 
@@ -111,7 +112,7 @@ const client = new LoxtepClient({
 });
 
 // Resolve by name — SDK handles queue, bot_id, and stream bus config
-const writer = await client.data_products.get_writer('my-data-product');
+const writer = await client.get_writer('my-data-product');
 
 writer.write({ id: '123', name: 'Example', timestamp: Date.now() });
 writer.write({ id: '456', name: 'Another', timestamp: Date.now() });
@@ -129,7 +130,7 @@ const client = new LoxtepClient({
   auth: { type: 'jwt', token: process.env.LOXTEP_AUTH_TOKEN! },
 });
 
-const reader = await client.data_products.get_reader('my-data-product');
+const reader = await client.get_reader('my-data-product');
 
 for await (const event of reader) {
   console.log(event.payload);
@@ -140,14 +141,14 @@ for await (const event of reader) {
 
 ```ts
 // Writer options
-const writer = await client.data_products.get_writer('my-data-product', {
+const writer = await client.get_writer('my-data-product', {
   bot_id: 'custom-bot-id', // override resolved bot (advanced)
   batch_size: 100, // events per batch (default: 100)
   max_retries: 3, // retry attempts (default: 3)
 });
 
 // Reader options
-const reader = await client.data_products.get_reader('my-data-product', {
+const reader = await client.get_reader('my-data-product', {
   bot_id: 'my-reader-bot', // custom reader identity for checkpointing
   from: 'z/2024/01/01', // start position
   batch_size: 100, // events per batch (default: 100)
@@ -159,18 +160,18 @@ const reader = await client.data_products.get_reader('my-data-product', {
 The SDK caches resolved data product config in memory. To force re-resolution:
 
 ```ts
-client.data_products.invalidate_cache('my-data-product'); // specific
-client.data_products.invalidate_cache(); // all
+client.build.data_products.invalidate_cache('my-data-product'); // specific
+client.build.data_products.invalidate_cache(); // all
 ```
 
-### Lower-level escape hatch: `workflows.get_writer`
+### Lower-level escape hatch: `client.build.workflows.get_writer`
 
 For cases where you need explicit control over bot_id and queue name (e.g.,
 writing to a queue that isn't a data product, or using a non-standard bot
-identity), use the lower-level `workflows.get_writer()`:
+identity), use the lower-level `client.build.workflows.get_writer()`:
 
 ```ts
-const writer = await client.workflows.get_writer({
+const writer = await client.build.workflows.get_writer('<workflow-id>', {
   bot_id: 'custom-bot-id',
   queue: 'explicit-queue-name',
 });
@@ -178,8 +179,8 @@ writer.write({ ... });
 await writer.close();
 ```
 
-> **Prefer `data_products.get_writer`** unless you have a specific reason to
-> manage queue/bot resolution yourself.
+> **Prefer `client.get_writer`** unless you have a specific reason to manage
+> queue/bot resolution yourself.
 
 ## CRITICAL — Deployment prerequisite
 
@@ -197,15 +198,15 @@ can write or read events through those containers.
 - The `runtime_mapping` that maps entities → containers → bot_ids/queue_ids
 
 **If you skip deployment on the Studio path**, SDK calls to
-`data_products.get_writer()` or `workflows.get_writer()` will fail with "data
-product not deployed" or "queue not found" errors.
+`client.get_writer()` or `client.build.workflows.get_writer()` will fail with
+"data product not deployed" or "queue not found" errors.
 
 **How to deploy (Studio path):** Use **`loxtep_build`** MCP facade:
 
 1. `deploy_project` — triggers async deployment (requires `project_id` +
    `instance_id`)
 2. `list_deployments` or `get_deployment` — poll until status is `deployed`
-3. After deployment, `data_products.get_writer('name')` resolves automatically
+3. After deployment, `client.get_writer('name')` resolves automatically
 
 See the **`data-workflows`** Agent-Scope Skill (Flow F — Deploy before SDK
 ingestion) for the full sequence.
@@ -309,16 +310,17 @@ product, then read its `queue_ids[0]` (input queue) for writing events.
 
 The SDK writes events through the **stream bus** — not via HTTP.
 
-**Recommended:** Use `data_products.get_writer('name')` — it resolves the
-runtime mapping, bot_id, queue, and stream bus config automatically. See the top
-of this document.
+**Recommended:** Use `client.get_writer('name')` — it resolves the runtime
+mapping, bot_id, queue, and stream bus config automatically. See the top of this
+document.
 
 **Lower-level path (explicit control):**
 
 1. Resolve the runtime mapping (via MCP `get_runtime_mapping` or CLI
    `loxtep config export`)
 2. Configure the SDK client with the deployed `bot_id` and target queue
-3. Use `workflows.get_writer()` which writes directly to the stream bus queue
+3. Use `client.build.workflows.get_writer()` which writes directly to the stream
+   bus queue
 
 **Quick path — export config from a deployed connector:**
 
@@ -335,7 +337,7 @@ automatically.
 | Facade           | `operation`                                                                                                        | Permission | Notes                                                                                              |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------ | ---------- | -------------------------------------------------------------------------------------------------- |
 | `loxtep_build`   | `get_sdk_config`                                                                                                   | read       | Writer identity + snippet. Bus physical names: REST stream-config, not this op                     |
-| `loxtep_build`   | `get_entity_schemas` / `save_workflow_bundle` / `save_delivery_grant` / `deploy_workflow`                          | write      | Delivery: DPT head + Target + grant. **`create_delivery` / `list_deliveries` removed**.            |
+| `loxtep_build`   | `get_entity_schemas` / `save_workflow_bundle` / `save_delivery_grant` / `deploy_workflow` / `list_workflows`       | write/read | Delivery: DPT head + Target + grant (`workflow_type: "delivery"`); grant operations are MCP-only.  |
 | `loxtep_build`   | `deploy_workflow`                                                                                                  | write      | Deploy a single workflow to an instance                                                            |
 | `loxtep_observe` | `list_deployments`                                                                                                 | read       | List deployment records (poll for status)                                                          |
 | `loxtep_observe` | `get_deployment`                                                                                                   | read       | Get a single deployment record by ID                                                               |
@@ -349,6 +351,10 @@ automatically.
 **Define meaning** = terms + shapes. Ontology concepts are graph types /
 relationships. See `docs/sdk-mcp-mapping.md` in `@loxtep/sdk` for full parity
 tables (and explicit MCP-only gaps).
+
+Current MCP-only gaps include delivery grant list/get/save/update and
+organization ontology inference start/get/cancel/list/review. Use `loxtep_build`
+and `loxtep_meaning` respectively; do not invent SDK methods for them.
 
 ### Vocabulary proposals (SDK + CLI)
 
@@ -374,9 +380,10 @@ proposal is business-field detection score, not glossary quality. Details:
 
 The `define` PKO pipeline (schema → meaning → relationships → quality → promote)
 pauses at each `hitl_gate: approval` step and creates an `approval_request` —
-the same record surfaced in the Steward Inbox/Define surfaces and delivered over
-Slack/email. Resolve it programmatically with the Phase D review namespace
-(`@loxtep/sdk@0.9.7+`); do not use a top-level `client.approvals` path:
+the same record surfaced in Inbox and the product's Meaning review surfaces and
+delivered over Slack/email. Resolve it programmatically with the Phase D review
+namespace (`@loxtep/sdk@0.9.7+`); do not use a top-level `client.approvals`
+path:
 
 ```ts
 const pending = await client.review.approvals.list_pending();
@@ -430,7 +437,7 @@ await client.workspace.custom_bots.register(instanceId, {
 });
 
 // After deployment_bindings.queue_name is the BYOL publish queue:
-const writer = await client.data_products.get_writer('my-data-product', {
+const writer = await client.get_writer('my-data-product', {
   bot_id: 'w-xxxx-yyyy-custom-my-worker', // checkpoint as the custom bot
 });
 ```
@@ -476,15 +483,16 @@ permissions:
 **MCP facade mapping:** deploy writes (`deploy_project`, `deploy_workflow`,
 `get_runtime_mapping`) → `loxtep_build`. Deployment status reads
 (`list_deployments`, `get_deployment`) → `loxtep_observe`. Delivery → Target
-connection in `save_workflow_bundle` (`workflow_type: "delivery"`), not
-`create_delivery` / `list_deliveries`. SDK config → `get_sdk_config`. Approvals
-→ `loxtep_review` (`list_pending`, `resolve`) / `client.review.approvals.*`
-(CLI: `loxtep approvals`).
+connection in `save_workflow_bundle` (`workflow_type: "delivery"`) then
+`deploy_workflow`; list with `list_workflows`. SDK config → `get_sdk_config`.
+Approvals → `loxtep_review` (`list_pending`, `resolve`) /
+`client.review.approvals.*` (CLI: `loxtep approvals`).
 
-Use the **10 MCP job facades** above when calling hosted MCP tools; the SDK
-namespaces mirror those facades (`client.build`, `client.observe`,
-`client.review`, …). Deprecated 22-facade names are not accepted by the hosted
-server.
+Use the ten job-aligned MCP facades above for ordinary calls. Hosted MCP exposes
+an eleventh tool, `loxtep_package_review`, for its MCP Apps review card; it is
+not an SDK namespace. The ten SDK namespaces mirror the job facades
+(`client.build`, `client.observe`, `client.review`, …). Deprecated 22-facade
+names are not accepted by the hosted server.
 
 ## Auth (single mental model)
 
@@ -560,9 +568,9 @@ loxtep config export --from-data-product "<name_or_uuid>" --format sh
 loxtep config export --from-data-product "<name_or_uuid>" --format json
 ```
 
-> **Note:** For most use cases, `data_products.get_writer('name')` resolves
-> everything automatically — you only need CLI config export for debugging or
-> non-SDK environments.
+> **Note:** For most use cases, `client.get_writer('name')` resolves everything
+> automatically — you only need CLI config export for debugging or non-SDK
+> environments.
 
 ## MCP vs SDK
 
@@ -573,10 +581,10 @@ loxtep config export --from-data-product "<name_or_uuid>" --format json
 
 ## Stream vs replay
 
-- **`data_products.stream`:** live bus via the stream data plane when `bot_id` +
-  bus config exists.
-- **`data_products.replay`:** historical path via platform HTTP (observe/trace
-  semantics).
+- **`client.build.data_products.stream`:** live bus via the stream data plane
+  when `bot_id` + bus config exists.
+- **`client.build.data_products.replay`:** historical path via platform HTTP
+  (observe/trace semantics).
 
 ## Bus credentials
 

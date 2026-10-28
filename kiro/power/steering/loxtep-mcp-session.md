@@ -1,4 +1,4 @@
-<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
+<!-- GENERATED FILE -- single source: loxtep/scripts/plugins-skills-generate-skills.mjs. From the loxtep root run `PLUGINS_SKILLS_ROOT=<plugins-skills> node scripts/sync-skills-to-plugins-skills.mjs` (or that generator with PLUGINS_SKILLS_ROOT set). Do not edit client copies; do not run sibling scripts/generate-skills.mjs. -->
 
 # Loxtep MCP — session, capabilities, and denials
 
@@ -22,8 +22,8 @@ without relying on any private repo or source tree.
    - **`user`** / **`organization`** — identity context.
 2. **`loxtep_session`** → **`get_platform_model`** (no arguments). Returns the
    Loxtep platform model: concepts, relationships, and the confusions to avoid
-   (connector vs connection, shape vs concept vs data product, Organize vs
-   Define). Load this before any tool that creates or changes Loxtep resources.
+   (connector vs connection, shape vs concept vs data product, Products vs
+   Meaning). Load this before any tool that creates or changes Loxtep resources.
    The model describes Loxtep. It is not a vocabulary pack and not the
    customer's business ontology (`loxtep_meaning`).
 3. **`loxtep_session`** → **`get_current_organization`** — confirm org scope

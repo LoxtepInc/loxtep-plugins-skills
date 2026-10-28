@@ -2,8 +2,9 @@
 name: org-semantics-quality
 description:
   Use when the user wants to define schemas, tag PII fields, manage quality
-  rules, or govern data definitions at the organization level. Part of the
-  Organize step. Not for catalog search — use discover-govern-lineage for that.
+  rules, or govern data definitions at the organization level. Works across
+  Products and Meaning. Not for catalog search — use discover-govern-lineage for
+  that.
 ---
 
 # Schemas and quality rules

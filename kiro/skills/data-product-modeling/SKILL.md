@@ -1,13 +1,14 @@
-<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: data-product-modeling
 description:
   Use when the user wants to design or model a data product — define its output
   shape, trace where fields come from, and plan how sources connect. Design
-  only; creation happens through data-workflows. Part of the Organize step.
+  only; creation happens through data-workflows. Part of Products.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/kiro/skills/data-product-modeling/SKILL.md
 ---
+
+<!-- GENERATED FILE -- single source: loxtep/scripts/plugins-skills-generate-skills.mjs. From the loxtep root run `PLUGINS_SKILLS_ROOT=<plugins-skills> node scripts/sync-skills-to-plugins-skills.mjs` (or that generator with PLUGINS_SKILLS_ROOT set). Do not edit client copies; do not run sibling scripts/generate-skills.mjs. -->
 
 # Data product design
 
@@ -70,9 +71,9 @@ author bundle → deploy → verify with `get_data_product`.**
   `connector_id`). Prefer this in `save_workflow_bundle` for outbound flows.
 - **Delivery workflow** — A workflow with `workflow_type: 'delivery'` that
   pushes data to external systems. **Never** use `consumption` as
-  `workflow_type`.
-- **`create_delivery` / `list_deliveries` removed** — legacy consumptions-table
-  path. Author Targets via the delivery bundle instead.
+  `workflow_type`. Author outbound Targets with `save_workflow_bundle`
+  (`workflow_type: "delivery"` + Target connection), then `deploy_workflow`.
+  List delivery workflows with `list_workflows`.
 
 ## Happy-path flows
 
@@ -108,9 +109,10 @@ author bundle → deploy → verify with `get_data_product`.**
    (`workflow_type: "delivery"`). Do **not** put a `data-products` node at the
    head.
 7. **Wire consumer DP:** **`data-workflows`** Flow D — Target
-   `connections/{id}.json` in the delivery bundle + `save_workflow_bundle` +
-   `save_delivery_grant` (or `grants/{id}.json`) + deploy. **Do not** call
-   `create_data_product` or `create_delivery`.
+   `connections/{id}.json` in the delivery bundle, then `save_workflow_bundle`
+   (`workflow_type: "delivery"`), `save_delivery_grant` (or `grants/{id}.json`),
+   and `deploy_workflow`. **Do not** call `create_data_product`. List with
+   `list_workflows`.
 8. **Verify after deploy:** `get_data_product` / `get_runtime_mapping` — confirm
    Target container bindings.
 
@@ -154,8 +156,9 @@ author bundle → deploy → verify with `get_data_product`.**
      `schema_version_id` via `loxtep_build`. That id is stored as `schema_ref`
      and does not write `schema.key`.
    - Delivery Target: **`data-workflows`** Flow D — `data-product-trigger` head
-     - Target connection + grant in a `workflow_type: "delivery"` bundle (not
-       `create_delivery`).
+     with Target connection and grant via `save_workflow_bundle`
+     (`workflow_type: "delivery"`) then `deploy_workflow`; list with
+     `list_workflows`.
    - Graph sync: auto-handled by prior promotion.
    - Upstream lineage (Ready / gold): create a native catalog edge via
      `POST /dataproducts/lineage` (not `update_data_product.lineage` JSON). For
@@ -226,19 +229,19 @@ Transform Logic:  [expression]
 
 ## MCP mapping
 
-| `operation`                                                                               | Facade         | Scope        | Notes                                                                                                     |
-| ----------------------------------------------------------------------------------------- | -------------- | ------------ | --------------------------------------------------------------------------------------------------------- |
-| `list_data_products`                                                                      | `loxtep_build` | organization | Filters: `kind`, `domain_id`, `status`, `medallion`                                                       |
-| `get_data_product`                                                                        | `loxtep_build` | organization | Full ODPS document by `data_product_id`                                                                   |
-| `get_lexicon`                                                                             | `loxtep_build` | organization | Glossary/lexicon for a data product                                                                       |
-| `create_data_product`                                                                     | `loxtep_build` | organization | **Agents: do not use** for new DPs. Author via workflow bundle + deploy.                                  |
-| `update_data_product`                                                                     | `loxtep_build` | organization | Partial update; use for schema, metadata, status                                                          |
-| `delete_data_product`                                                                     | `loxtep_build` | project      | Remove a data product by `project_id`, `data_product_id`                                                  |
-| `get_entity_schemas` / `save_workflow_bundle` / `save_delivery_grant` / `deploy_workflow` | `loxtep_build` | project      | Delivery: DPT head + Target + grant. **`create_delivery` / `list_deliveries` removed**.                   |
-| `get_promotion_readiness`                                                                 | `loxtep_build` | organization | Check prerequisites, progress, promotability for a data product.                                          |
-| `promote_data_product`                                                                    | `loxtep_build` | organization | Execute tier transition (Silver/Gold). Validates prerequisites server-side.                               |
-| `create_data_contract`                                                                    | `loxtep_build` | organization | Create contract with SLA terms. Pass `schema_version_id` as `schema_ref`. It does not write `schema.key`. |
-| `list_data_contracts`                                                                     | `loxtep_build` | organization | List contracts, optionally filtered by `data_product_id`.                                                 |
+| `operation`                                                                                                  | Facade         | Scope        | Notes                                                                                                     |
+| ------------------------------------------------------------------------------------------------------------ | -------------- | ------------ | --------------------------------------------------------------------------------------------------------- |
+| `list_data_products`                                                                                         | `loxtep_build` | organization | Filters: `kind`, `domain_id`, `status`, `medallion`                                                       |
+| `get_data_product`                                                                                           | `loxtep_build` | organization | Full ODPS document by `data_product_id`                                                                   |
+| `get_lexicon`                                                                                                | `loxtep_build` | organization | Glossary/lexicon for a data product                                                                       |
+| `create_data_product`                                                                                        | `loxtep_build` | organization | **Agents: do not use** for new DPs. Author via workflow bundle + deploy.                                  |
+| `update_data_product`                                                                                        | `loxtep_build` | organization | Partial update; use for schema, metadata, status                                                          |
+| `delete_data_product`                                                                                        | `loxtep_build` | project      | Remove a data product by `project_id`, `data_product_id`                                                  |
+| `get_entity_schemas` / `save_workflow_bundle` / `save_delivery_grant` / `deploy_workflow` / `list_workflows` | `loxtep_build` | project      | Delivery: DPT head + Target + grant (`workflow_type: "delivery"`); list via `list_workflows`.             |
+| `get_promotion_readiness`                                                                                    | `loxtep_build` | organization | Check prerequisites, progress, promotability for a data product.                                          |
+| `promote_data_product`                                                                                       | `loxtep_build` | organization | Execute tier transition (Silver/Gold). Validates prerequisites server-side.                               |
+| `create_data_contract`                                                                                       | `loxtep_build` | organization | Create contract with SLA terms. Pass `schema_version_id` as `schema_ref`. It does not write `schema.key`. |
+| `list_data_contracts`                                                                                        | `loxtep_build` | organization | List contracts, optionally filtered by `data_product_id`.                                                 |
 
 ## Decision tree
 
@@ -267,8 +270,9 @@ Transform Logic:  [expression]
 - **Studio graph for BYOL** — Do not invent a workflow edge onto `w-…-queue-…`
   container queues to attach a customer Lambda. Bind the product to
   `{bot_id}-out` instead.
-- **`create_delivery` / `list_deliveries`** — Legacy consumptions-table path.
-  Prefer Target connection in a delivery workflow bundle.
+- **Delivery create/list** — Use `save_workflow_bundle`
+  (`workflow_type: "delivery"` + Target connection) then `deploy_workflow`; list
+  with `list_workflows`.
 - **`workflow_type: "consumption"`** — Removed. Use **`delivery`**.
 - **Supply-driven thinking** — Don't start with "what data do we have?" Start
   with "what data do we need?" and work backward.

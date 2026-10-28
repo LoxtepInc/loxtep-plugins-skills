@@ -83,7 +83,7 @@ You are not duct-taping integrations. You are **publishing governed data product
 
 ### Loxtep Customer MCP
 
-Hosted at `https://mcp.loxtep.io/ai/mcp/stream` — **10 MCP job facades** (`loxtep_session`, `loxtep_connect`, `loxtep_workspace`, `loxtep_build`, …) with `operation`-based dispatch covering projects, workflows, connectors, **data products**, schemas, quality rules, catalog, **semantic layer**, ontology, analytics, deployments, workspace/queue ops, process intelligence, and agent orchestration.
+Hosted at `https://mcp.loxtep.io/ai/mcp/stream` — **11 tools:** ten job facades (`loxtep_session`, `loxtep_connect`, `loxtep_workspace`, `loxtep_build`, …) plus the MCP Apps-only `loxtep_package_review` review card. They cover Connect → Products ↔ Meaning → Use, with Inbox, Observe, and Organization supporting the journey.
 
 ### Auth recovery rule
 

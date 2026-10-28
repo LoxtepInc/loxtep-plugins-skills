@@ -1,4 +1,3 @@
-<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
 ---
 name: mcp-integration
 description:
@@ -9,6 +8,8 @@ description:
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/kiro/skills/mcp-integration/SKILL.md
 ---
+
+<!-- GENERATED FILE -- single source: loxtep/scripts/plugins-skills-generate-skills.mjs. From the loxtep root run `PLUGINS_SKILLS_ROOT=<plugins-skills> node scripts/sync-skills-to-plugins-skills.mjs` (or that generator with PLUGINS_SKILLS_ROOT set). Do not edit client copies; do not run sibling scripts/generate-skills.mjs. -->
 
 # Loxtep hosted MCP integration
 
@@ -23,8 +24,8 @@ metadata:
 ## What it does
 
 Connects the agent client to Loxtep's hosted MCP server, orients via session
-tools, maps Connect → Organize → Use goals to the consolidated ten-tool surface,
-and smoke-tests reachability.
+tools, maps Connect → Products ↔ Meaning → Use goals to ten job facades plus the
+MCP Apps review tool, and smoke-tests reachability.
 
 ## Hosted MCP only
 
@@ -46,20 +47,21 @@ Do **not** suggest local stdio MCP servers or `npx @loxtep/customer-mcp-server`.
 }
 ```
 
-## Connect → Organize → Use (job facades)
+## Connect → Products ↔ Meaning → Use
 
-| Step         | Tool               | Purpose                                                                                |
-| ------------ | ------------------ | -------------------------------------------------------------------------------------- |
-| **Connect**  | `loxtep_session`   | Who am I, which org, logout                                                            |
-| **Connect**  | `loxtep_connect`   | Connectors, OAuth, samples, starter templates                                          |
-| **Connect**  | `loxtep_workspace` | Projects, instances, snapshots, version history                                        |
-| **Organize** | `loxtep_build`     | Workflows, triggers, data products, deploy writes                                      |
-| **Organize** | `loxtep_define`    | Schemas, quality rules, PII tagging                                                    |
-| **Organize** | `loxtep_meaning`   | Vocabulary, ontology, semantic layer                                                   |
-| **Organize** | `loxtep_review`    | Lifecycle transitions, approvals, context mining                                       |
-| **Use**      | `loxtep_query`     | Catalog search, analytics SQL, COA graph serve (`translate_sparql`, `graph_traversal`) |
-| **Use**      | `loxtep_observe`   | Quality scores, lineage, queues, deployment status                                     |
-| **Use**      | `loxtep_context`   | Process intel, procedures, agent workspace                                             |
+| Customer area               | Tool                    | Purpose                                                                                |
+| --------------------------- | ----------------------- | -------------------------------------------------------------------------------------- |
+| **Orientation**             | `loxtep_session`        | Who am I, which org, logout                                                            |
+| **Connect**                 | `loxtep_connect`        | Connectors, OAuth, samples, starter templates                                          |
+| **Products / Organization** | `loxtep_workspace`      | Projects, instances, snapshots, version history                                        |
+| **Products**                | `loxtep_build`          | Workflows, triggers, data products, deploy writes                                      |
+| **Products / Meaning**      | `loxtep_define`         | Shapes, schemas, quality rules, PII tagging                                            |
+| **Meaning**                 | `loxtep_meaning`        | Vocabulary, ontology, semantic layer                                                   |
+| **Inbox**                   | `loxtep_review`         | Lifecycle transitions, approvals, context mining                                       |
+| **Meaning / Inbox**         | `loxtep_package_review` | MCP Apps review card for semantic packages                                             |
+| **Use**                     | `loxtep_query`          | Catalog search, analytics SQL, COA graph serve (`translate_sparql`, `graph_traversal`) |
+| **Observe**                 | `loxtep_observe`        | Quality scores, lineage, queues, deployment status                                     |
+| **Meaning / Use**           | `loxtep_context`        | Process intel, procedures, agent workspace                                             |
 
 Each call sets **`operation`** to the flat action name plus that action's
 arguments. Example:
@@ -85,9 +87,9 @@ passing a `project_id`.
 | 2    | Map user goal to tool + `operation` | Use the table above; full operation lists in [AGENTS.md](../../../AGENTS.md) |
 | 3    | Validate agent run                  | Smoke test: `loxtep_session` → `get_current_user`, then one domain call      |
 
-Organize review gates auto-run inference and park on `awaiting_approval`;
-resolve via `loxtep_review` (`list_pending`, `resolve`) — same record as the
-Define workspace inbox, Slack, and email.
+Product and Meaning review gates auto-run inference and park on
+`awaiting_approval`; resolve via `loxtep_review` (`list_pending`, `resolve`) —
+same record as the Inbox, Slack, and email.
 
 Orient first with **`loxtep-mcp-session`** — `get_current_user` returns RBAC
 grants.
@@ -118,11 +120,15 @@ drives scope checks.
 **PKO P5:** `procedure#enable-agent-mcp-access` — grant agents hosted MCP access
 after delivery interfaces are registered.
 
-**10 MCP job facades (greenfield — no deprecated aliases):** `loxtep_session`,
+**Ten MCP job facades (greenfield — no deprecated aliases):** `loxtep_session`,
 `loxtep_connect`, `loxtep_workspace`, `loxtep_build`, `loxtep_define`,
 `loxtep_meaning`, `loxtep_review`, `loxtep_query`, `loxtep_observe`,
 `loxtep_context`. Old names such as `loxtep_connectors`, `loxtep_workflows`, or
 `loxtep_data_products` are **not** registered on the hosted server.
+
+Hosted MCP exposes **11 tools total**: those ten job facades plus
+`loxtep_package_review`, an MCP Apps review card. The card is not an eleventh
+SDK namespace.
 
 ### COA serve ops on `loxtep_query` (DynamoDB — never Neptune)
 

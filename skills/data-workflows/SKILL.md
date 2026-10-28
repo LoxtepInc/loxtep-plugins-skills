@@ -2,15 +2,9 @@
 name: data-workflows
 description:
   Use when the user wants to build, deploy, or operate data workflows and data
-  products. Covers the Connect step (wiring sources into workflows) and Organize
-  step (deploying and verifying). Always use save_workflow_bundle for new flows.
-trigger: |
-  TRIGGER when: User asks about creating/listing/updating data products, workflows,
-  ingestion pipelines, or delivery workflows in Loxtep. Patterns: "create data product",
-  "build workflow", "ingest data", "setup ingestion", "unify data",
-  "delivery workflow", "target connection", "webhook destination". Always invoke before making direct
-  loxtep_build MCP calls. Use save_workflow_bundle for new
-  flows. Embed data-products/{id}.json in the bundle — do not call create_data_product.
+  products. Covers Connect (wiring sources into workflows), Products (building
+  and deploying), and the handoff to Meaning. Always use save_workflow_bundle
+  for new flows.
 ---
 
 # Data mesh studio (Customer MCP)
@@ -34,9 +28,10 @@ etc.) or **SDK connector** for programmatic ingestion, and
 | **CLI / code-first** | `loxtep ingest create` → `transform create` → `delivery create` → `lint` → `push` → `deploy`                |
 | **MCP (primitives)** | `get_entity_schemas` → compose `files` → `save_workflow_bundle` (`dry_run: true` first) → `deploy_workflow` |
 
-Do **not** teach `create_delivery` / `list_deliveries` as the happy path — those
-hit the legacy consumptions table. Prefer a **Target** connection
-(`connections/{id}.json` + `connector_id`) on a delivery workflow bundle.
+Outbound delivery happy path: `save_workflow_bundle` with
+`workflow_type: "delivery"` and a **Target** connection
+(`connections/{id}.json` + `connector_id`), then `deploy_workflow`. List
+delivery workflows with `list_workflows`.
 
 ### Trigger vs Target
 
@@ -84,7 +79,7 @@ User asks to "create a source/consumer data product"?
 
 User asks to deliver / push data out?
   → Delivery workflow: workflow_type "delivery" + Target connection at the tail
-  → Prefer save_workflow_bundle (not create_delivery / list_deliveries)
+  → save_workflow_bundle → deploy_workflow; list with list_workflows
 
 Starting any new flow?
   → create_project (or list_projects + reuse) FIRST — all workflow ops need project_id
@@ -103,7 +98,7 @@ Correct DPs carry `managed_by: "design-time"` and
 bundle (`connections/{connection_id}.json`) — Trigger at ingest head, Target at
 delivery tail.
 
-## Project and local bundle files (CRITICAL — before Organize)
+## Project and local bundle files (CRITICAL — before building in Products)
 
 **Every flow starts with a Loxtep project.** Workflows, connections, and data
 products are **project-scoped** — you need `project_id` on all workflow MCP
@@ -152,7 +147,8 @@ deploy.
   sources in a project.
 - **S3:** Author a **delivery workflow** (`workflow_type: "delivery"`) with a
   **`data-product-trigger` head**, a **Target** connection at the tail, and a
-  **delivery grant** (Flow D) — not `create_delivery`.
+  **delivery grant** (Flow D) via `save_workflow_bundle` → `deploy_workflow`;
+  list with `list_workflows`.
 - User asks for **projects**, **flows**, **templates**, **data products**,
   **Triggers** / **Targets**, or composing/saving workflow bundles.
 - **SDK / programmatic ingestion:** If the user wants to write events from their
@@ -191,25 +187,45 @@ deploy.
 **Do this before connect, bundle authoring, or deploy.** Skip only when
 `project_id` is already known and the project exists.
 
+Treat domains and projects as consequential boundaries, not folders:
+
+- Reuse the same project when ownership, repository/deployment lifecycle, and
+  runtime changes are shared.
+- Create another project in the same domain when execution or code lifecycle
+  needs isolation but business vocabulary and semantic ownership remain shared.
+- Create another domain only when semantic ownership, governance authority, or
+  accountability genuinely differs. Cross-domain consumption requires a Ready
+  upstream; In Progress is sufficient between projects in the same domain.
+- When uncertain, recommend one domain and one project. Split only when a real
+  boundary emerges.
+
+Before creating anything, list existing domains and projects, recommend a
+placement with a short rationale, and ask for confirmation before creating a new
+domain. Never silently choose among multiple domains.
+
 1. `loxtep_session` → `get_current_user` (confirm RBAC + org).
-2. `loxtep_workspace` → `list_projects` — reuse when the user names an existing
-   mesh project. Rows include `github_state` / `next_action` (hosted MCP cannot
-   see local disk — `local_present` stays false).
-3. If none exists: `create_project` with `name` (optional `description`,
-   `domain_id`).
-4. **Layer status before deep work:** `get_project_workspace_status` (or CLI
+2. `loxtep_query` → `list_domains`, then `loxtep_workspace` → `list_projects`.
+   Reuse when the user names an existing mesh project. Rows include
+   `github_state` / `next_action` (hosted MCP cannot see local disk —
+   `local_present` stays false).
+3. If a distinct semantic/governance boundary is confirmed and does not exist,
+   `loxtep_workspace` → `create_domain`; record `domain_id`.
+4. If no suitable project exists: `create_project` with `name`, `domain_id`, and
+   an optional `description`. When multiple domains exist, `domain_id` must
+   reflect the user's explicit choice.
+5. **Layer status before deep work:** `get_project_workspace_status` (or CLI
    `loxtep projects list` + `loxtep status`). If `next_action` is `clone` /
    `link`, run `plan_project_materialization` / plan `cli_commands` on the agent
    FS — hosted MCP never writes local paths.
-5. **Optional — GitHub attach:** `update_project` with `project_id` and
+6. **Optional — GitHub attach:** `update_project` with `project_id` and
    `github_*` fields (or pass `github_action` on `create_project`) to link the
    Loxtep project to the customer's GitHub repo. Required for repo ↔ platform
    sync workflows.
-6. **Code-first repos:** run `loxtep init` and `loxtep attach` in the repo root
+7. **Code-first repos:** run `loxtep init` and `loxtep attach` in the repo root
    (see **`loxtep-sdk`**) instead of hand-rolling paths when the CLI is
    available. After attach: **`projects list` + `status`**, then clone/link
    before ingest/deploy.
-7. Record `project_id` — every subsequent workflow MCP call in this session uses
+8. Record `project_id` — every subsequent workflow MCP call in this session uses
    it.
 
 Optional template bootstrap (after project exists):
@@ -306,9 +322,9 @@ is `scoped redeploy preserves declared labels` in
 
 ### Flow D — Delivery workflow with Target connection (S3)
 
-Outbound flows use **`workflow_type: "delivery"`** (never `consumption`). Prefer
-a **Target** connection in `save_workflow_bundle` — do **not** call
-`create_delivery` / `list_deliveries` (legacy consumptions-table path).
+Outbound flows use **`workflow_type: "delivery"`** (never `consumption`). Author
+a **Target** connection in `save_workflow_bundle`, then `deploy_workflow`. List
+delivery workflows with `list_workflows`.
 
 **CLI methodology (code-first):**
 
@@ -342,12 +358,13 @@ loxtep deploy
      providers). Unset `insert_batch_size` defaults to **1000**; stream-read
      `batch_size` is not applied to SQL INSERT chunking on this path.
      Auth/transport stay on the org connector — do **not** put write-policy keys
-     under `configuration`. **Known issues (not intended validation):**
-     `insert_batch_size` above 10000 is silently clamped to 10000, invalid
-     values silently fall back to 1000
-     ([issue 3326](https://github.com/LoxtepInc/loxtep/issues/3326)); an
-     unrecognized `write_mode` silently becomes `upsert`
-     ([issue 3327](https://github.com/LoxtepInc/loxtep/issues/3327)).
+     under `configuration`. Omitted `write_mode` defaults to `upsert`. An
+     unrecognized `write_mode` is refused at save (`invalid_write_mode`, allowed
+     values `append`, `upsert`, `replace`) and throws at delivery — it does not
+     write rows. **Known issue (not intended validation):** `insert_batch_size`
+     above 10000 is silently clamped to 10000, and invalid values silently fall
+     back to 1000
+     ([issue 3326](https://github.com/LoxtepInc/loxtep/issues/3326)).
    - Optional transforms between head and Target. When present, the Target’s
      `upstream_entity_id` / `upstream_entity_type` must point at the last
      transform (not the trigger). Deploy registers source connections, then
@@ -899,11 +916,11 @@ runtime bindings; then the SDK resolves everything from the data product
    name.
 
    ```js
-   const writer = await client.data_products.get_writer('<name>');
+   const writer = await client.get_writer('<name>');
    writer.write({ id, timestamp, payload }); // payload = your event body
    await writer.close();
 
-   const reader = await client.data_products.get_reader('<name>');
+   const reader = await client.get_reader('<name>');
    for await (const event of reader) {
      /* ... */
    }
@@ -922,20 +939,20 @@ Notes:
 
 ## MCP mapping (operations and scope)
 
-| Step | User intent                                 | Tool               | `operation`                                                                                                                                                                                                                       | Scope                                           | Key args                                                                                                                                               |
-| ---- | ------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1    | Who am I?                                   | `loxtep_session`   | `get_current_user`                                                                                                                                                                                                                | organization                                    | —                                                                                                                                                      |
-| 2    | Which org?                                  | `loxtep_session`   | `get_current_organization`                                                                                                                                                                                                        | organization                                    | —                                                                                                                                                      |
-| 3    | List/create/update/delete projects + status | `loxtep_workspace` | `list_projects`, `get_project`, `create_project`, `update_project`, `delete_project`, `get_project_workspace_status`, `list_project_changes`, `plan_project_materialization`                                                      | organization                                    | `name`, ids, materialization_plan                                                                                                                      |
-| 4    | Templates                                   | `loxtep_connect`   | `list_templates`, `get_template`, `apply_template`                                                                                                                                                                                | organization / **project** for `apply_template` | `apply_template`: `project_id`, `template_type`, `template_slug`                                                                                       |
-| 5    | Workflows                                   | `loxtep_build`     | `get_entity_schemas`, `save_workflow_bundle`, `list_workflows`, `get_workflow`, `get_workflow_graph`, `preview_transform`, `create_workflow`, `update_workflow`, `delete_workflow`, `patch_workflow_graph` (Studio UI edits only) | **project**                                     | `project_id`                                                                                                                                           |
-| 6    | Existing Trigger/Target connections         | `loxtep_build`     | `list_triggers`/`list_targets`, `get_*`, `update_*`, `delete_*`, `test_*`                                                                                                                                                         | **project**                                     | `project_id` — new tails via bundle, not create\_\* ops                                                                                                |
-| 7    | Data products (inspect/update after deploy) | `loxtep_build`     | `list_data_products`, `get_data_product`, `get_lexicon`, `update_data_product`, `delete_data_product`                                                                                                                             | **project** or org per op                       | **Do not** `create_data_product` — author via bundle `data-products/{id}.json`                                                                         |
-| 8    | Delivery (outbound)                         | `loxtep_build`     | `get_entity_schemas` (`pattern: "delivery"`), `save_workflow_bundle`, `list_delivery_grants` / `get_delivery_grant` / `save_delivery_grant` / `update_delivery_grant`, `deploy_workflow`                                          | **project** (grants list/get are org-scoped)    | DPT head + Target `connections/{id}.json` + `connector_id` + `delivery_config`; grant before deploy. **`create_delivery` / `list_deliveries` removed** |
-| 9    | Deploy project                              | `loxtep_build`     | `deploy_project`                                                                                                                                                                                                                  | **project**                                     | `project_id`, `instance_id`, optional `force_redeploy`                                                                                                 |
-| 9b   | Deploy single workflow                      | `loxtep_build`     | `deploy_workflow`                                                                                                                                                                                                                 | **project**                                     | `project_id`, `workflow_id`, `instance_id`, optional `force_redeploy`, `skip_validation`                                                               |
-| 10   | List/get deployments                        | `loxtep_observe`   | `list_deployments`, `get_deployment`                                                                                                                                                                                              | **organization**                                | `deployment_id`, optional filters                                                                                                                      |
-| 11   | Runtime mapping                             | `loxtep_build`     | `get_runtime_mapping`                                                                                                                                                                                                             | **project**                                     | `workflow_id`, `project_id`                                                                                                                            |
+| Step | User intent                                 | Tool               | `operation`                                                                                                                                                                                                                       | Scope                                           | Key args                                                                                                                                 |
+| ---- | ------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | Who am I?                                   | `loxtep_session`   | `get_current_user`                                                                                                                                                                                                                | organization                                    | —                                                                                                                                        |
+| 2    | Which org?                                  | `loxtep_session`   | `get_current_organization`                                                                                                                                                                                                        | organization                                    | —                                                                                                                                        |
+| 3    | List/create/update/delete projects + status | `loxtep_workspace` | `list_projects`, `get_project`, `create_project`, `update_project`, `delete_project`, `get_project_workspace_status`, `list_project_changes`, `plan_project_materialization`                                                      | organization                                    | `name`, ids, materialization_plan                                                                                                        |
+| 4    | Templates                                   | `loxtep_connect`   | `list_templates`, `get_template`, `apply_template`                                                                                                                                                                                | organization / **project** for `apply_template` | `apply_template`: `project_id`, `template_type`, `template_slug`                                                                         |
+| 5    | Workflows                                   | `loxtep_build`     | `get_entity_schemas`, `save_workflow_bundle`, `list_workflows`, `get_workflow`, `get_workflow_graph`, `preview_transform`, `create_workflow`, `update_workflow`, `delete_workflow`, `patch_workflow_graph` (Studio UI edits only) | **project**                                     | `project_id`                                                                                                                             |
+| 6    | Existing Trigger/Target connections         | `loxtep_build`     | `list_triggers`/`list_targets`, `get_*`, `update_*`, `delete_*`, `test_*`                                                                                                                                                         | **project**                                     | `project_id` — new tails via bundle, not create\_\* ops                                                                                  |
+| 7    | Data products (inspect/update after deploy) | `loxtep_build`     | `list_data_products`, `get_data_product`, `get_lexicon`, `update_data_product`, `delete_data_product`                                                                                                                             | **project** or org per op                       | **Do not** `create_data_product` — author via bundle `data-products/{id}.json`                                                           |
+| 8    | Delivery (outbound)                         | `loxtep_build`     | `get_entity_schemas` (`pattern: "delivery"`), `save_workflow_bundle`, `list_workflows`, `list_delivery_grants` / `get_delivery_grant` / `save_delivery_grant` / `update_delivery_grant`, `deploy_workflow`                        | **project** (grants list/get are org-scoped)    | DPT head + Target `connections/{id}.json` + `connector_id` + `delivery_config`; grant before deploy; list workflows via `list_workflows` |
+| 9    | Deploy project                              | `loxtep_build`     | `deploy_project`                                                                                                                                                                                                                  | **project**                                     | `project_id`, `instance_id`, optional `force_redeploy`                                                                                   |
+| 9b   | Deploy single workflow                      | `loxtep_build`     | `deploy_workflow`                                                                                                                                                                                                                 | **project**                                     | `project_id`, `workflow_id`, `instance_id`, optional `force_redeploy`, `skip_validation`                                                 |
+| 10   | List/get deployments                        | `loxtep_observe`   | `list_deployments`, `get_deployment`                                                                                                                                                                                              | **organization**                                | `deployment_id`, optional filters                                                                                                        |
+| 11   | Runtime mapping                             | `loxtep_build`     | `get_runtime_mapping`                                                                                                                                                                                                             | **project**                                     | `workflow_id`, `project_id`                                                                                                              |
 
 ## Tune node batch size and memory
 
@@ -986,20 +1003,19 @@ schema rejects unknown top-level properties. Use `ingestion_config`.
 
 ## Pitfalls
 
-- **`create_delivery` / `list_deliveries`** — **Removed** (consumptions table
-  dropped). Author a `data-product-trigger` head + Target connection +
-  `workflow_type: "delivery"` in `save_workflow_bundle`, then a delivery grant
-  (Flow D).
+- **Delivery create/list** — `save_workflow_bundle` with a
+  `data-product-trigger` head + Target connection + `workflow_type: "delivery"`,
+  then `deploy_workflow` and a delivery grant (Flow D). List with
+  `list_workflows`.
 - **Target-only delivery bundle** — Save rejects a delivery graph whose head is
   not a `data-product-trigger` (`DELIVERY_FIRST_NODE_NOT_DATA_PRODUCT_TRIGGER`).
 - **Write-policy keys under `configuration`** — refused; use `delivery_config`.
   For Postgres Targets: use `table` or `destination_table` (not `dest_table`).
   Unset `insert_batch_size` defaults to 1000; stream-read `batch_size` is not
-  applied to SQL INSERT chunking. `insert_batch_size` clamp/fallback and
-  `write_mode` coercion are known issues
-  ([issue 3326](https://github.com/LoxtepInc/loxtep/issues/3326),
-  [issue 3327](https://github.com/LoxtepInc/loxtep/issues/3327)) — not intended
-  ranges to rely on. **Known issue (not intended behavior):** on the
+  applied to SQL INSERT chunking. An unrecognized `write_mode` is refused at
+  save and throws at delivery. `insert_batch_size` clamp/fallback is a known
+  issue ([issue 3326](https://github.com/LoxtepInc/loxtep/issues/3326)) — not an
+  intended range to rely on. **Known issue (not intended behavior):** on the
   connector-action push path (org connector `custom_settings`, not delivery
   Target `delivery_config`), the INSERT batch size resolves as
   `options.batch_size || insert_batch_size || custom_settings.batch_size || 1000`.
@@ -1015,7 +1031,7 @@ schema rejects unknown top-level properties. Use `ingestion_config`.
   disk. Write locally first; MCP upload/sync is step two. See Flow B2.
 - **Skipping project setup** — Calling `get_entity_schemas` or
   `save_workflow_bundle` without `project_id` from **Flow B**. Create or select
-  the project before any Organize (bundle/deploy) work.
+  the project before any Products (bundle/deploy) work.
 - **Product storage key** — one identity. `is_primary_key`, `schema.key` (same
   fields, field order), and the primary entity `natural_key` (those names joined
   with commas). Applying a shape writes `schema.key`. The Iceberg writer
@@ -1078,7 +1094,7 @@ story refs, P1/P2 PKO handoffs — routing detail for agents; not user-facing
 labels.
 
 **PKO handoffs:** Connect (`connect-external-system`) ends with `connector_id` +
-samples → Organize bundle authoring here (Trigger at ingest head). P2 = design +
+samples → Products bundle authoring here (Trigger at ingest head). P2 = design +
 deploy ingestion workflow. Delivery = Flow D (Target at tail).
 
 ## Skill attribution (required)

@@ -6,7 +6,7 @@
 
 Because AI agents need more than API access, Loxtep maintains a **semantic layer, ontology, and runtime context** (entity knowledge, decision traces, process graphs) that your Antigravity agent can query and extend.
 
-This directory connects Antigravity to that platform via hosted MCP (through `mcp-remote` for OAuth) and scoped skills.
+This directory connects Antigravity to that platform via hosted MCP (`serverUrl` in `mcp_config.json`) and scoped skills.
 
 This directory lives in the [loxtep-plugins-skills](https://github.com/LoxtepInc/loxtep-plugins-skills) repo under `antigravity/`.
 
@@ -31,7 +31,7 @@ This directory lives in the [loxtep-plugins-skills](https://github.com/LoxtepInc
 
 ## Prerequisites
 
-- **Node.js** 18+ (for `mcp-remote` OAuth bridge)
+- **Antigravity** with remote MCP. The config field is `serverUrl`. Do not install `mcp-remote`.
 - **Loxtep account** with `owner`, `org_admin`, or `developer` role (for MCP tool access)
 - Project-scoped operations require `project_id` (call `get_current_user` first)
 
@@ -39,7 +39,7 @@ This directory lives in the [loxtep-plugins-skills](https://github.com/LoxtepInc
 
 ### 1. Add the Loxtep MCP server
 
-Antigravity does not support hosted MCP OAuth natively — use `mcp-remote` as a local bridge.
+Write a `serverUrl` entry in `mcp_config.json`. Do not use `mcp-remote`, a `command`/`args` stdio bridge, or `@loxtep/customer-mcp-server`. Official page checked 2026-10-27: [Antigravity MCP](https://antigravity.google/docs/mcp).
 
 **IDE:** Agent panel → **⋯ → MCP Servers → Manage MCP Servers → View raw config**
 
@@ -51,14 +51,17 @@ Add the `loxtep` entry from `mcp_config.json` in this repo:
 {
   "mcpServers": {
     "loxtep": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.loxtep.io/ai/mcp/stream"]
+      "serverUrl": "https://mcp.loxtep.io/ai/mcp/stream"
     }
   }
 }
 ```
 
 Save and **Refresh** under **Settings → Customizations → Installed MCP Servers**. For dev: use `https://mcpdev.loxtep.io/ai/mcp/stream`.
+
+Remote servers use Streamable HTTP. The remote field is `serverUrl` (`url` also works). Do not set `httpUrl`, and do not put a bearer token in the file.
+
+Antigravity runs OAuth for servers that support dynamic client registration. Loxtep uses that flow, so no `oauth` client id is required.
 
 ### 2. Install skills
 
@@ -73,7 +76,7 @@ Verify with `/skills` in Antigravity CLI if installed.
 
 ### 3. Authenticate
 
-On first connection, `mcp-remote` opens the browser for OAuth. Tokens cache locally and refresh automatically.
+On first connection, Antigravity opens the browser for OAuth. If it does not start, open Agent settings → Customizations and click **Authenticate** next to `loxtep`. Finish the browser flow and paste the authorization code if asked. Tokens are stored in `~/.gemini/antigravity/mcp_oauth_tokens.json`.
 
 ### 4. Use the tools
 
@@ -81,7 +84,7 @@ The agent sees `loxtep_*` tools; each call sets **`operation`** plus arguments.
 
 ## How it works
 
-`mcp-remote` runs a local OAuth proxy: localhost callback → browser login → stdio bridge to Antigravity. Required until Antigravity supports MCP OAuth 2.1 natively.
+Antigravity calls the hosted MCP server at `serverUrl` over Streamable HTTP and runs OAuth itself. Do not put a local `mcp-remote` process in front of it.
 
 ## Developer workflows
 
@@ -97,7 +100,7 @@ The agent sees `loxtep_*` tools; each call sets **`operation`** plus arguments.
 
 ### Loxtep Customer MCP
 
-**10 MCP job facades** (`loxtep_session`, `loxtep_connect`, `loxtep_workspace`, `loxtep_build`, …) — projects, workflows, connectors, data products, schemas, quality, catalog, semantic layer, ontology, analytics, deployments, workspace/queue ops, process intelligence, agent orchestration.
+**11 hosted MCP tools:** ten job facades (`loxtep_session`, `loxtep_connect`, `loxtep_workspace`, `loxtep_build`, …) plus the MCP Apps-only `loxtep_package_review` review card. Together they cover Connect → Products ↔ Meaning → Use, with Inbox, Observe, and Organization supporting the journey.
 
 ### Skills (26 bundles)
 
@@ -115,10 +118,9 @@ See [AGENTS.md](../AGENTS.md) for the full tool map.
 
 | Issue | Fix |
 | --- | --- |
-| "Unauthorized" on connect | Use `mcp-remote` as shown; native `serverUrl` OAuth is not supported for Loxtep yet. |
+| "Unauthorized" on connect | Confirm `serverUrl` is `https://mcp.loxtep.io/ai/mcp/stream`. Do not use `mcp-remote`. In Agent settings → Customizations, click **Authenticate** and finish the browser flow. |
 | Config not picked up | Confirm `~/.gemini/config/mcp_config.json` (global) or `.agents/mcp_config.json` (workspace); refresh MCP in Settings → Customizations. |
-| Browser doesn't open | Run `npx mcp-remote https://mcp.loxtep.io/ai/mcp/stream` manually first. |
-| `npx` not found | Install Node.js 18+ and ensure `npx` is on PATH. |
+| OAuth does not start | Open Agent settings → Customizations and click **Authenticate** next to `loxtep`. Tokens are stored in `~/.gemini/antigravity/mcp_oauth_tokens.json`. |
 
 ## License
 

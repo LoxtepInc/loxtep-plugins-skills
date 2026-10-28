@@ -1,4 +1,4 @@
-<!-- GENERATED FILE -- edit skills/<slug>/SKILL.md (or rule.mdc.src.md) and run `node scripts/generate-skills.mjs` -- do not edit directly -->
+<!-- GENERATED FILE -- single source: loxtep/scripts/plugins-skills-generate-skills.mjs. From the loxtep root run `PLUGINS_SKILLS_ROOT=<plugins-skills> node scripts/sync-skills-to-plugins-skills.mjs` (or that generator with PLUGINS_SKILLS_ROOT set). Do not edit client copies; do not run sibling scripts/generate-skills.mjs. -->
 
 # Connect external system
 
@@ -7,7 +7,7 @@
 | Step                     | Ends with                          | Do NOT do in this step                |
 | ------------------------ | ---------------------------------- | ------------------------------------- |
 | **Connect**              | `connector_id`, tested credentials | Piecemeal graph patches; ingestion    |
-| **Organize** (next step) | Full workflow saved and deployed   | Piecemeal graph patches for new flows |
+| **Products** (next step) | Full workflow saved and deployed   | Piecemeal graph patches for new flows |
 
 **Prerequisite:** A Loxtep **project** must exist before building the workflow
 (`create_project` or reuse — see **`data-workflows`**). Org connector create and

@@ -4,8 +4,8 @@ description:
   Use when a data product should move along the semantic medallion axis (Raw →
   In Progress → Ready), not when changing lifecycle status (draft/active) or
   promoting CDLC/memory candidates. Runs the readiness checklist, remediates
-  gates, and applies promote_data_product. Final Organize step before trusted
-  cross-domain use.
+  gates, and applies promote_data_product. Final Products readiness step before
+  trusted cross-domain use.
 license: MIT
 metadata:
   platform: loxtep

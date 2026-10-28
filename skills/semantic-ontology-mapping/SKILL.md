@@ -3,7 +3,7 @@ name: semantic-ontology-mapping
 description:
   Use when the user wants to define what business terms mean, map concepts
   across systems, resolve vocabulary conflicts, or build a shared language for
-  their data. This is the meaning-definition work inside the Organize step.
+  their data. This is meaning-definition work in Meaning.
 ---
 
 # Semantic & Ontological Mapping for Business Environments
