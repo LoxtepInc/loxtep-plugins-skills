@@ -55,6 +55,33 @@ without relying on any private repo or source tree.
    parameter names and descriptions live there; there is no separate “capability
    discovery” MCP operation beyond `platform_health_check` for env sanity.
 
+## First useful answer
+
+After identity and platform orientation, call `loxtep_session` → `get_started`.
+Use `_metadata: { skill_name: "data-workflows" }` for this potentially mutating
+operation, or omit attribution so the server uses that operation mapping.
+Do not attribute it to the read-only session skill.
+Use existing authorized products when present. Errors and permission denials
+never mean the org is empty. Do not claim queryability from a catalog listing.
+
+If the response is `empty`, offer the synthetic sample policy product or the
+human's own context. Ask before creating the sample; only then pass
+`create_sample: true`. This creates a labeled example domain, project, and
+catalog knowledge product, not an external connector or warehouse. It needs
+ordinary create permissions. Do not install both native plugins and duplicate
+skills when resuming a setup initiated by `loxtep start`.
+
+For `provisioning`, retry after the returned delay. Reuse the product returned
+on retries. For `ready`, use the suggested question and returned scoped-search
+evidence, cite the sample product, and explicitly label the answer synthetic.
+This verifies stored policy retrieval, not the human's business data. For
+`verification_failed`, diagnose the failure and do not overwrite edited content
+or claim success. Finish with a concrete next step toward the human's own
+context. Keep approvals for connecting sources and promoting business meaning.
+
+`get_started` is not published in ontology-only mode. Use the allowed meaning
+tools there; do not bypass the org's publication policy.
+
 ## Permission denials
 
 - Tools enforce **resource:action**-style RBAC (e.g. create vs read). If a call

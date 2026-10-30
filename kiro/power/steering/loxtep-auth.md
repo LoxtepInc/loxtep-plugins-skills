@@ -50,3 +50,13 @@ permissions: {}
 ```
 
 <!-- END loxtep skill-scope (skill-package-v1) -->
+
+## Onboarding handoff
+
+`loxtep start` installs the client integration and launches an agent with the
+canonical setup prompt. Reuse an existing integration rather than installing
+a native plugin and skills twice. Node.js 22.20+ is required for the starter
+and skills installer. Normal account creation and hosted OAuth remain required;
+there is no anonymous sandbox. After OAuth, verify identity, then use
+`loxtep_session` → `get_started` for existing context or an opt-in synthetic
+policy example. Successful authentication alone is not a completed demo.
