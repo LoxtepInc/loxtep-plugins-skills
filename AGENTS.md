@@ -119,10 +119,14 @@ key parameters.
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
 | `get_current_user` | organization | — | — |
+| `get_started` | organization | — | — |
 | `get_current_organization` | organization | — | — |
 | `get_platform_model` | organization | — | — |
 | `logout` | organization | — | — |
 | `platform_health_check` | organization | — | — |
+| `add_memory` | organization | — | — |
+| `search_memories` | organization | — | — |
+| `forget_memory` | organization | — | — |
 
 ```json
 { "operation": "get_current_user" }
@@ -368,10 +372,11 @@ key parameters.
 | `list_candidates` | organization | — | — |
 | `act_on_candidate` | organization | — | — |
 
-### `loxtep_query` — Use — find and query trusted data. Catalog discovery (search, entry detail, domains, tags), analytics SQL over data products (execute_query, list_tables, get_table_schema, get_query_results), row-embedding semantic search (semantic_search), and COA-shaped graph serve ops backed by DynamoDB SPARQL (translate_sparql, graph_traversal — never Neptune). For trust signals (lineage evidence scores), use loxtep_observe. COA list_metrics/describe_schema are not separate tools — use search_semantic_layer / get_table_schema / list_ontology_concepts.
+### `loxtep_query` — Use — find and query trusted data. Catalog discovery (search_catalog, scoped_search for ask→traverse→search, entry detail, domains, tags), analytics SQL over data products (execute_query, list_tables, get_table_schema, get_query_results), row-embedding semantic search (semantic_search), and COA-shaped graph serve ops backed by DynamoDB SPARQL (translate_sparql, graph_traversal — never Neptune). For trust signals (lineage evidence scores), use loxtep_observe. COA list_metrics/describe_schema are not separate tools — use search_semantic_layer / get_table_schema / list_ontology_concepts.
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
 | `search_catalog` | catalog | `query` | `filters` |
+| `scoped_search` | catalog | — | — |
 | `get_catalog_entry` | catalog | `entry_id` | — |
 | `list_domains` | catalog | — | — |
 | `list_tags` | catalog | — | — |
