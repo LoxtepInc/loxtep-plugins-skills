@@ -143,6 +143,7 @@ for await (const event of reader) {
 // Writer options
 const writer = await client.get_writer('my-data-product', {
   bot_id: 'custom-bot-id', // override resolved bot (advanced)
+  transport_mode: 'default', // durable/recommended; fast may cost more; volume has lag
   batch_size: 100, // events per batch (default: 100)
   max_retries: 3, // retry attempts (default: 3)
 });
@@ -154,6 +155,18 @@ const reader = await client.get_reader('my-data-product', {
   batch_size: 100, // events per batch (default: 100)
 });
 ```
+
+Writer `transport_mode` is available in the Node and Python SDKs:
+
+| Mode      | Use when                                      | Tradeoff                                    |
+| --------- | --------------------------------------------- | ------------------------------------------- |
+| `default` | General ingestion and durable pipeline writes | Durable and balanced; recommended           |
+| `fast`    | Lowest end-to-end publish latency             | Direct publishing may cost more             |
+| `volume`  | Sustained high-throughput ingestion           | Batches for throughput and has delivery lag |
+
+The same setting is available in authored workflow entity JSON at
+`runtime_settings.event_writer.transport_mode` and from the CLI with
+`--transport-mode default|fast|volume`. Omitting it selects `default`.
 
 ### Cache invalidation
 
