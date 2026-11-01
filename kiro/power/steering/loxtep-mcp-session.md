@@ -46,10 +46,10 @@ without relying on any private repo or source tree.
 
 After identity and platform orientation, call `loxtep_session` → `get_started`.
 Use `_metadata: { skill_name: "data-workflows" }` for this potentially mutating
-operation, or omit attribution so the server uses that operation mapping.
-Do not attribute it to the read-only session skill.
-Use existing authorized products when present. Errors and permission denials
-never mean the org is empty. Do not claim queryability from a catalog listing.
+operation, or omit attribution so the server uses that operation mapping. Do not
+attribute it to the read-only session skill. Use existing authorized products
+when present. Errors and permission denials never mean the org is empty. Do not
+claim queryability from a catalog listing.
 
 If the response is `empty`, offer the synthetic sample policy product or the
 human's own context. Ask before creating the sample; only then pass

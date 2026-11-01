@@ -947,20 +947,32 @@ Notes:
 | 10   | List/get deployments                        | `loxtep_observe`   | `list_deployments`, `get_deployment`                                                                                                                                                                                              | **organization**                                | `deployment_id`, optional filters                                                                                                        |
 | 11   | Runtime mapping                             | `loxtep_build`     | `get_runtime_mapping`                                                                                                                                                                                                             | **project**                                     | `workflow_id`, `project_id`                                                                                                              |
 
-## Tune node batch size and memory
+## Tune event transport, batch size, and memory
 
 Set these on the **entity JSON** (bundle file), then `save_workflow_bundle` →
 `deploy_workflow`. `get_entity_schemas` lists the same fields. A set value that
 deploy cannot honor **fails the deploy** — it does not warn and default.
 
-| Field               | Valid values                            | What it controls                                 |
-| ------------------- | --------------------------------------- | ------------------------------------------------ |
-| `batch_size`        | integer **1–10000**                     | Events per handler call (rstreams offload batch) |
-| `runtime_memory_mb` | **256**, **512**, **1024**, or **2048** | Shared runtimes Lambda memory tier               |
+| Field                                          | Valid values                            | What it controls                       |
+| ---------------------------------------------- | --------------------------------------- | -------------------------------------- |
+| `runtime_settings.event_writer.transport_mode` | `default`, `fast`, `volume`             | Event output and error write transport |
+| `batch_size`                                   | integer **1–10000**                     | Events per runtime handler call        |
+| `runtime_memory_mb`                            | **256**, **512**, **1024**, or **2048** | Shared runtimes Lambda memory tier     |
+
+Transport modes have deliberate tradeoffs: `default` is durable, balanced, and
+recommended; `fast` has the lowest latency but may cost more; `volume` is for
+sustained high throughput and introduces delivery lag. The mode applies to the
+entity's normal outputs and native error/quarantine/acknowledgement writes.
+Omitting it selects `default`.
 
 ### Where to put the fields
 
-| Entity         | Location                                                                                                                                                 | Unset `batch_size` | Unset `runtime_memory_mb`                                                             |
+Put `runtime_settings.event_writer.transport_mode` at the top level of
+`connections/{id}.json` or `transformations/{id}.json`. CLI workflow scaffolds
+accept `--transport-mode default|fast|volume`. MCP agents read the accepted
+shape from `get_entity_schemas`, then persist it with `save_workflow_bundle`.
+
+| Entity         | Batch/memory location                                                                                                                                    | Unset `batch_size` | Unset `runtime_memory_mb`                                                             |
 | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------- |
 | Transformation | Top-level on `transformations/{id}.json`                                                                                                                 | 300                | Derived from `transform_type` (see below). Registers on shared `transformers-{mb}`.   |
 | Validation     | Top-level on `validations/{id}.json`                                                                                                                     | 300                | Shared runtimes segment resolvable: `connectors-256`. Otherwise `validation-handler`. |

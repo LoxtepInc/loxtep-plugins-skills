@@ -3,13 +3,13 @@ name: loxtep-instances
 description:
   'Use when the user works with Loxtep runtime instances via Customer MCP -
   list_instances, create_instance, instance provisioning, shared vs managed,
-  starter plan, plan_id, payment_method_id, billing UI (add payment methods in
-  app, not MCP), regions, or "create a Loxtep instance". Self-hosted install
-  flow: get_deployment_urls -> register_infrastructure -> get_infrastructure ->
-  create_instance. BYOL custom Lambda registration: register_custom_bot /
-  list_custom_bots / deregister_custom_bot / reconcile_custom_bots (dedicated
-  instances only). Also inspect whether an instance''s connector runtime is
-  ready for public or customer-VPC (private-network) sources.'
+  starter plan, plan_id, Stripe Checkout, regions, or "create a Loxtep
+  instance". Self-hosted install flow: get_deployment_urls ->
+  register_infrastructure -> get_infrastructure -> create_instance. BYOL custom
+  Lambda registration: register_custom_bot / list_custom_bots /
+  deregister_custom_bot / reconcile_custom_bots (dedicated instances only). Also
+  inspect whether an instance''s connector runtime is ready for public or
+  customer-VPC (private-network) sources.'
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/codex/skills/loxtep-instances/SKILL.md
 ---
@@ -24,16 +24,13 @@ metadata:
 - **Arguments:**
   `{ "operation": "list_instances" | "create_instance" | "update_instance" | "get_deployment_urls" | "register_infrastructure" | "get_infrastructure" | "register_custom_bot" | "list_custom_bots" | "get_custom_bot" | "update_custom_bot" | "deregister_custom_bot" | "reconcile_custom_bots", ...fields }`
 
-### Payment methods — app UI only (read this)
+### Paid provisioning — Stripe Checkout
 
-- **There is no MCP tool** to create, tokenize, or add a payment method. Do not
-  ask the user for card numbers, CVV, or bank account details in chat.
-- For **managed** or **self-hosted** instances, the user must add a payment
-  method in the **Loxtep app** (Billing, Account, or Payments — exact label
-  depends on the product), complete the **payment processor** flow there, then
-  use the saved method's **`payment_method_id` (UUID)** in `create_instance`.
-- If the user has no method yet, **direct them to the dashboard** (e.g. dev or
-  prod app URL for their environment), not to imaginary MCP billing APIs.
+- Never ask for card numbers, CVV, bank details, Stripe Price IDs, or saved
+  payment-method IDs in chat.
+- Paid `create_instance` calls reserve a `payment_pending` instance. Direct the
+  user to the Loxtep billing UI to complete Stripe Checkout. Provisioning starts
+  only after Stripe confirms the subscription.
 
 ## list_instances
 
@@ -57,19 +54,18 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
 
 ### Deployment vs billing (read this)
 
-| `instance_type`   | Meaning                                                                                | Create requirements                                                                                                                                                                                                                                                            |
-| ----------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **`shared`**      | Default **free-tier playground** (multi-tenant).                                       | Omit `plan_id` or send **`free`**. Paid **`starter`** is also shared and needs **`payment_method_id`**. Never `growth` / `scale` / `enterprise`. Do **not** send `observe_api` role or secret coordinates.                                                                     |
-| **`managed`**     | Paid **dedicated** bus (remote account/region — same AWS access model as self-hosted). | **`growth`/`scale`**, **`payment_method_id`**, and **`connection_details.observe_api.cross_account_role_arn`** (IAM role ARN). `rstreams_secret_arn` and `rstreams_auth_arn` are written by provisioning; callers do not send them. Sending `observe_proxy_role_arn` is a 400. |
-| **`self-hosted`** | Customer-operated dedicated bus.                                                       | **`payment_method_id`** + **`connection_details.observe_api.cross_account_role_arn`** (IAM role ARN). `rstreams_secret_arn` and `rstreams_auth_arn` are written by provisioning; callers do not send them. Sending `observe_proxy_role_arn` is a 400.                          |
+| `instance_type`   | Meaning                                          | Create requirements                                                                                                                                       |
+| ----------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`shared`**      | Default **free-tier playground** (multi-tenant). | Omit `plan_id` or send **`free`**. Paid **`starter`** is also shared. Never send managed or self-hosted plan IDs. Do not send role or secret coordinates. |
+| **`managed`**     | Paid **dedicated** bus operated by Loxtep.       | **`growth`/`scale`** and **`connection_details.observe_api.cross_account_role_arn`**. Provisioning writes secret and proxy-role ARNs.                     |
+| **`self-hosted`** | Customer-operated dedicated bus in customer AWS. | **`sh_core`/`sh_production`/`sh_scale`** and **`connection_details.observe_api.cross_account_role_arn`**. Loxtep license pricing excludes AWS charges.    |
 
 ### Field summary
 
 | Field                             | Notes                                                                                                                                                                                                                                                                                                          |
 | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `name`, `region`, `instance_type` | Required.                                                                                                                                                                                                                                                                                                      |
-| `plan_id`                         | Top-level only. Required for **managed** (`growth` or `scale`). Omit or `free` for unpaid **shared**; `starter` is paid shared. Do **not** send plan fields under `metadata`.                                                                                                                                  |
-| `payment_method_id`               | **Required** for **managed** and **self-hosted** (and for paid `starter`). Omit for unpaid **shared**. Value is a UUID for a method **already** saved in the app.                                                                                                                                              |
+| `plan_id`                         | Top-level only. `free`/`starter` for shared; `growth`/`scale` for managed; `sh_core`/`sh_production`/`sh_scale` for self-hosted. Do not send plan fields under `metadata`.                                                                                                                                     |
 | `connection_details`              | **Required for managed and self-hosted** — nested `observe_api` with `cross_account_role_arn`. `rstreams_secret_arn` and `rstreams_auth_arn` are written by provisioning; callers do not send them. Namespace, `api_url`, and `stack_id` are always server-derived. Sending `observe_proxy_role_arn` is a 400. |
 
 ### Correct examples
@@ -94,7 +90,6 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
   "region": "us-east-1",
   "instance_type": "managed",
   "plan_id": "growth",
-  "payment_method_id": "550e8400-e29b-41d4-a716-446655440000",
   "connection_details": {
     "observe_api": {
       "cross_account_role_arn": "arn:aws:iam::123456789012:role/LoxtepCrossAccountDeploymentRole"
@@ -109,7 +104,7 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
 `_core/src/validation/organizations-instances-post.ts`):
 
 - `name`, `region`, `instance_type: "self-hosted"`
-- `payment_method_id` (UUID — saved in the Loxtep app Billing settings)
+- `plan_id`: `sh_core`, `sh_production`, or `sh_scale`
 - `connection_details.observe_api.cross_account_role_arn` — the IAM role ARN
   registered via `register_infrastructure` (see the install flow below)
 - Do **not** send `rstreams_secret_arn` or `rstreams_auth_arn` — they are
@@ -122,7 +117,7 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
   "name": "Customer VPC mesh",
   "region": "us-east-1",
   "instance_type": "self-hosted",
-  "payment_method_id": "550e8400-e29b-41d4-a716-446655440000",
+  "plan_id": "sh_production",
   "connection_details": {
     "observe_api": {
       "cross_account_role_arn": "arn:aws:iam::123456789012:role/LoxtepCrossAccountDeploymentRole"
@@ -149,11 +144,8 @@ the same request are not listed until the unknown keys are removed (for example
 MCP `instance_typo` plus `observe_api.namespace` returns only
 `Unrecognized key: "instance_typo"`).
 
-- `instance_type: "shared"` + `plan_id: "growth"` / `"scale"` / `"enterprise"` —
-  **invalid** (`plan_id` must match the instance type). Paid **`starter`** stays
-  on **shared** and needs `payment_method_id`.
-- **Managed** or **self-hosted** without **`payment_method_id`** — **invalid**
-  at MCP and API.
+- A plan ID paired with the wrong hosting model is invalid.
+- `payment_method_id` and `price_id` are not accepted create arguments.
 - **Managed** or **self-hosted** without
   **`connection_details.observe_api.cross_account_role_arn`** — **invalid**.
 - Platform-owned fields — do **not** send `api_url`, `stack_id`,
@@ -251,9 +243,9 @@ re-registration when the org is already configured:
 
 The final step — see the [self-hosted example](#self-hosted-example-shape)
 above. Pass the role ARN you registered in step 2. `rstreams_secret_arn` and
-`rstreams_auth_arn` are written by provisioning; callers do not send them.
-`payment_method_id` is required (upfront Loxtep billing applies for self-hosted
-too — AWS resources are billed separately to the customer account).
+`rstreams_auth_arn` are written by provisioning; callers do not send them. The
+create returns `payment_pending`; the user completes Stripe Checkout in the app.
+AWS resources remain billed separately to the customer account.
 
 ### Full flow in one agent turn
 
@@ -262,8 +254,9 @@ user:   "Let's set up a self-hosted Loxtep instance in my AWS account."
 agent:  1. get_deployment_urls → presents the one-click URL + CLI + Terraform tabs
         2. instructs user to deploy the role, copy RoleArn from CFN Outputs
         3. register_infrastructure({ cross_account_role_arn, region })
-        4. create_instance({ ..., payment_method_id, connection_details.observe_api.cross_account_role_arn })
-        5. polls list_instances until status="active" (~20–30 minutes)
+        4. create_instance({ ..., plan_id: "sh_production", connection_details.observe_api.cross_account_role_arn })
+        5. directs the user to complete Stripe Checkout in the app
+        6. polls list_instances until status="active" (~20–30 minutes)
 ```
 
 The provisioner assumes the customer role via `sts:AssumeRole` (using the
@@ -308,7 +301,7 @@ At create:
   "name": "<name>",
   "region": "<region>",
   "instance_type": "self-hosted",
-  "payment_method_id": "550e8400-e29b-41d4-a716-446655440000",
+  "plan_id": "sh_production",
   "connection_details": {
     "observe_api": {
       "cross_account_role_arn": "arn:aws:iam::123456789012:role/LoxtepCrossAccountDeploymentRole"
@@ -353,7 +346,7 @@ Same fields on other surfaces (permission `instances:update` /
 
 ```ts
 await client.workspace.instances.create({
-  name, region, instance_type: 'self-hosted', payment_method_id,
+  name, region, instance_type: 'self-hosted', plan_id: 'sh_production',
   connection_details: { observe_api: { cross_account_role_arn }, connector_vpc: { subnet_ids: [...], security_group_id } },
 });
 await client.workspace.instances.update(instanceId, {
@@ -364,7 +357,7 @@ await client.workspace.instances.redeploy_runtimes(instanceId);
 
 ```bash
 loxtep instances create --name <n> --region <region> --type self-hosted \
-  --payment-method-id <uuid> --cross-account-role-arn <arn> \
+  --plan sh_production --cross-account-role-arn <arn> \
   --rstreams-secret-arn <arn> --rstreams-auth-arn <arn> \
   --subnet-id subnet-<az1> --subnet-id-2 subnet-<az2> --security-group-id sg-<id>
 loxtep instances update <instance_id> \
@@ -372,20 +365,18 @@ loxtep instances update <instance_id> \
 loxtep instances redeploy-runtimes <instance_id>
 ```
 
-The HTTP API only requires `cross_account_role_arn` at create. The current CLI
-also requires the two secret ARNs. On loxtep-sdk `main`
+The HTTP API only requires `plan_id` and `cross_account_role_arn` at create. The
+current CLI still implements the retired billing contract. On loxtep-sdk `main`
 (`de6bc7c0e7380f3d1afee9556d5a5b6bd2b0dd4b`), `parseCreateInstanceArgs` L297–302
 throws
 `self-hosted requires --cross-account-role-arn, --rstreams-secret-arn, and --rstreams-auth-arn`
 without `--rstreams-secret-arn` and `--rstreams-auth-arn`. The example includes
-those flags so it runs as the CLI exists today. Provisioning writes the secret
-ARNs; prefer MCP or HTTP create without them. Managed CLI create does not
-require the secret flags. The TypeScript/CLI snippets above use placeholders
-(`name`, `<n>`, `<uuid>`) and were **not** run through the schemas; the JSON
-create bodies in this skill were. Tracked at
+those flags only to document the old CLI limitation. Provisioning writes the
+secret ARNs; prefer MCP or the app for paid creation. The TypeScript/CLI
+snippets above use placeholders (`name`, `<n>`, `<uuid>`) and were **not** run
+through the schemas; the JSON create bodies in this skill were. Tracked at
 https://github.com/LoxtepInc/loxtep-sdk/issues/71 (CLI still requires both
-secret ARNs; `parseCreateInstanceArgs` L286–287 still names
-`starter|pro|enterprise`).
+secret ARNs and retired plan names).
 
 The platform reapplies the per-instance runtimes stack (`force_redeploy`). The
 customer does not run a Loxtep microservice deploy. Shared `connectors-*`
