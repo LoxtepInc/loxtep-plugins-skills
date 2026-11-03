@@ -3,7 +3,8 @@
 > **Canonical customer skill bundles live in `loxtep-plugins-skills`**
 > (`cursor/skills/`, `claude/skills/`, etc.). Files under `.agents/skills/` in
 > this repo are for internal dev only — sync to plugins-skills via
-> `node scripts/sync-skills-to-plugins-skills.mjs`.
+> `PLUGINS_SKILLS_ROOT=/path/to/loxtep-plugins-skills node scripts/sync-skills-to-plugins-skills.mjs`
+> (`PLUGINS_SKILLS_ROOT` is required; there is no default sibling path).
 >
 > **Cross-tool workflow authoring (all MCP clients):**
 > [loxtep-plugins-skills/docs/agent-workflow-authoring.md](../loxtep-plugins-skills/docs/agent-workflow-authoring.md)

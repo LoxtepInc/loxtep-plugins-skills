@@ -82,17 +82,14 @@ Rules inherit live **Data Council → domain ancestors → product**.
 - Empty `applies_to` on a Council-owned rule is org-wide. Empty `applies_to` on
   a domain-owned rule is that domain's subtree, not org-wide. A domain rule
   cannot replace a no-exception Council gate.
-- The `quality-rules` promotion gate normally uses the effective set: each
+- The `quality-rules` promotion gate uses the effective set: each
   `blocks_promotion` rule is checked against **its own** `threshold`. Zero
   blocking rules is satisfied / `not_applicable`. Unmeasured blocking rules pass
   with `awaiting_live_measurement`. Seeded freshness windows: `flexible` = none
   (`freshness_hours` is `null`); `standard` = 48 hours; `strict` = 4 hours.
   Timeliness threshold is 95 on standard and strict.
-- **Known issue:** when the effective-rules lookup fails or
-  `blockingQualityRules` is omitted, `checkQualityRules` falls back to the
-  legacy aggregate (at least 3 active rules and an overall score of at least
-  80%). The swap is silent. That is not a product feature. See
-  [issue 3318](https://github.com/LoxtepInc/loxtep/issues/3318).
+- A failed effective-rules lookup throws. Readiness does not substitute a 3-rule
+  or 80% gate.
 
 ## MCP mapping
 
