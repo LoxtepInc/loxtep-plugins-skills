@@ -361,10 +361,13 @@ loxtep deploy
      under `configuration`. Omitted `write_mode` defaults to `upsert`. An
      unrecognized `write_mode` is refused at save (`invalid_write_mode`, allowed
      values `append`, `upsert`, `replace`) and throws at delivery — it does not
-     write rows. **Known issue (not intended validation):** `insert_batch_size`
-     above 10000 is silently clamped to 10000, and invalid values silently fall
-     back to 1000
-     ([issue 3326](https://github.com/LoxtepInc/loxtep/issues/3326)).
+     write rows. `insert_batch_size` is an integer from 1 to 10000. When it is
+     unset, save writes the documented default **1000**. A value outside that
+     range, including 0, is refused at save (`invalid_insert_batch_size`) and
+     throws at delivery. The same resolver serves the org-connector insert
+     action (`custom_settings.insert_batch_size`) and this Target. A per-call
+     `options.batch_size` is an insert override with the same rules. Stream-read
+     `batch_size` is never the INSERT size.
    - Optional transforms between head and Target. When present, the Target’s
      `upstream_entity_id` / `upstream_entity_type` must point at the last
      transform (not the trigger). Deploy registers source connections, then
@@ -1023,20 +1026,13 @@ schema rejects unknown top-level properties. Use `ingestion_config`.
   not a `data-product-trigger` (`DELIVERY_FIRST_NODE_NOT_DATA_PRODUCT_TRIGGER`).
 - **Write-policy keys under `configuration`** — refused; use `delivery_config`.
   For Postgres Targets: use `table` or `destination_table` (not `dest_table`).
-  Unset `insert_batch_size` defaults to 1000; stream-read `batch_size` is not
-  applied to SQL INSERT chunking. An unrecognized `write_mode` is refused at
-  save and throws at delivery. `insert_batch_size` clamp/fallback is a known
-  issue ([issue 3326](https://github.com/LoxtepInc/loxtep/issues/3326)) — not an
-  intended range to rely on. **Known issue (not intended behavior):** on the
-  connector-action push path (org connector `custom_settings`, not delivery
-  Target `delivery_config`), the INSERT batch size resolves as
-  `options.batch_size || insert_batch_size || custom_settings.batch_size || 1000`.
-  A per-call `options.batch_size` wins over `insert_batch_size`. When
-  `insert_batch_size` is unset, the stream-read `batch_size` is silently used as
-  the INSERT batch size, and with neither set a hidden default of 1000 applies.
-  Because `||` treats `0` as unset, an explicit `0` silently falls through to
-  the next value
-  ([issue 3326](https://github.com/LoxtepInc/loxtep/issues/3326)).
+  Unset `insert_batch_size` is the documented default 1000, written at save and
+  applied by one shared resolver on the org-connector insert action and the
+  delivery Target. Stream-read `batch_size` is not the INSERT size. A per-call
+  `options.batch_size` is an insert override with the same rules. An
+  unrecognized `write_mode` is refused at save and throws at delivery. A value
+  of `insert_batch_size` outside 1–10000, including 0, is refused at save
+  (`invalid_insert_batch_size`) and throws at delivery.
 - **`workflow_type: "consumption"`** — Removed. Use **`delivery`**.
 - **Inline-only bundle authoring** — Composing the `files` map solely inside a
   `save_workflow_bundle` tool call with no `workflows/{workflow_id}/` files on

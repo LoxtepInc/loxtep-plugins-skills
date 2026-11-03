@@ -3,7 +3,8 @@
 > **Canonical customer skill bundles live in `loxtep-plugins-skills`**
 > (`cursor/skills/`, `claude/skills/`, etc.). Files under `.agents/skills/` in
 > this repo are for internal dev only — sync to plugins-skills via
-> `node scripts/sync-skills-to-plugins-skills.mjs`.
+> `PLUGINS_SKILLS_ROOT=/path/to/loxtep-plugins-skills node scripts/sync-skills-to-plugins-skills.mjs`
+> (`PLUGINS_SKILLS_ROOT` is required; there is no default sibling path).
 >
 > **Cross-tool workflow authoring (all MCP clients):**
 > [loxtep-plugins-skills/docs/agent-workflow-authoring.md](../loxtep-plugins-skills/docs/agent-workflow-authoring.md)
@@ -125,6 +126,31 @@ Platform PKO procedures: `platform-backend/graph/platform-pko/` · architecture:
 | **Related**       | S4 (quality), S5 (lineage), **`loxtep-journey-orchestrator`**                                      |
 
 ---
+
+## S18 — Verify a source-to-destination integration
+
+Primary skill: **`loxtep-integration-verification`**. Use the named endpoints,
+declared mapping/identity and complete or explicitly bounded coverage. Report
+missing, extra, different and uncomparable records; retain snapshot limitations.
+Count parity, samples and deployment status do not replace destination evidence.
+
+## S19 — Recover or replay an existing integration
+
+Primary skill: **`loxtep-replay-and-recovery`**. Choose native runner
+resumption, selective repull, intentional rewind or table rebuild. Preserve
+unrelated capture/consumer state, observe accepted jobs without duplicate
+submissions, and verify the authorized destination outcome. Mutations hand off
+explicitly to existing native execution skills.
+
+## S20 — Diagnose stale data or failed materialization
+
+Primary skill: **`loxtep-data-operations`**. Resolve runtime mappings and
+inspect relevant errors and per-node progress. Separate stream delivery, Iceberg
+materialization and endpoint correctness. An incomplete observation stays
+unknown; follow queue pagination and actual native recovery contracts.
+
+For usage, permissions and behavioral evaluation, see
+[Data engineering playbooks](https://github.com/LoxtepInc/loxtep/blob/development/docs/data-engineering-playbooks.md).
 
 ## Skill clusters
 

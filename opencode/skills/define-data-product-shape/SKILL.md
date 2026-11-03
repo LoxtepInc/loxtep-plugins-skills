@@ -69,6 +69,24 @@ separate.
    `schema.key`. Resume with `list_runs` and the stored procedure context
    instead of repeating completed steps.
 
+## Changing an existing published definition
+
+Classify field, type, nullability, key and grain changes for compatibility with
+actual consumers. Use `discover-govern-lineage` and `get_schema_impact` where
+supported to identify affected products, delivery mappings and consumers. Record
+the native Shape/version references, consumer adoption plan and any required
+replay before applying a breaking revision. Do not create a parallel schema
+registry or assume adding a field is always compatible.
+
+Approve and apply the exact revision through the typed path above. Verify the
+catalog snapshot and affected storage key; a changed Shape does not update an
+already deployed validation node's schema copy until redeployment. Keep Shape
+application, semantic approval, storage materialization and promotion separate.
+Use `loxtep-integration-verification` for the requested consumer outcome and
+`loxtep-replay-and-recovery` if historical repair is authorized. Preserve a
+compatible artifact rollback or forward-fix plan; reverting code does not undo
+persisted data or a consumer's adoption of a new contract.
+
 ## Where the shape lives
 
 Iceberg reads the catalog snapshot. The other records are not a second schema.

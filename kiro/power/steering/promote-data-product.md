@@ -61,13 +61,9 @@
 - Definitions must be reviewed before running this — use
   `semantic-ontology-mapping` first
 - Data standards (field descriptions, PII classification, quality rules, data
-  contract) are cleared by `procedure#establish-data-standards`, not here.
-  **Known issue:** the `quality-rules` gate normally uses per-rule thresholds;
-  when the effective-rules lookup fails or `blockingQualityRules` is omitted,
-  `checkQualityRules` falls back to the legacy aggregate (at least 3 active
-  rules and an overall score of at least 80%). The swap is silent. That is not a
-  product feature. See
-  [issue 3318](https://github.com/LoxtepInc/loxtep/issues/3318).
+  contract) are cleared by `procedure#establish-data-standards`, not here. A
+  failed effective-rules lookup throws. Readiness does not substitute a 3-rule
+  or 80% gate.
 - Ready gate `delivery-endpoint` (Consumption methods) is satisfied by the
   baseline data product trigger (`event_stream`). An outbound delivery workflow
   is optional and is **not** required to reach Ready.

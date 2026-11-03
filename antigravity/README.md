@@ -102,7 +102,9 @@ Antigravity calls the hosted MCP server at `serverUrl` over Streamable HTTP and 
 
 **11 hosted MCP tools:** ten job facades (`loxtep_session`, `loxtep_connect`, `loxtep_workspace`, `loxtep_build`, …) plus the MCP Apps-only `loxtep_package_review` review card. Together they cover Connect → Products ↔ Meaning → Use, with Inbox, Observe, and Organization supporting the journey.
 
-### Skills (26 bundles)
+### Skills (29 bundles)
+
+Engineering playbooks: `loxtep-integration-verification`, `loxtep-replay-and-recovery`, `loxtep-data-operations`.
 
 Under `antigravity/skills/<slug>/SKILL.md`. See [docs/skills-user-stories.md](../docs/skills-user-stories.md).
 

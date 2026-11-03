@@ -93,7 +93,9 @@ Hosted at `https://mcp.loxtep.io/ai/mcp/stream` — **11 tools:** ten job facade
 
 `assets/logo.svg` — Loxtep logo for Cursor Marketplace display.
 
-### Skills (26 bundles)
+### Skills (29 bundles)
+
+Engineering playbooks: `loxtep-integration-verification`, `loxtep-replay-and-recovery`, `loxtep-data-operations`.
 
 Scoped skill bundles under `cursor/skills/<slug>/SKILL.md` teach the agent platform concepts and safe operation order. See [docs/skills-user-stories.md](../docs/skills-user-stories.md) for the full user-story catalog.
 

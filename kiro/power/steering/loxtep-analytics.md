@@ -159,17 +159,15 @@ Success `data`:
 ```
 
 `items` are table rows plus `score`. `get_iceberg_health` may also return
-`embedding_rows_total`, `embedding_rows_embedded`, and `embedding_job`.
+`embedding_rows_total`, `embedding_rows_embedded`, and `embedding_job`. The
+app's Storage tab Row embeddings panel uses this same endpoint with `{ query }`
+only, so the server default `top_k` applies, and renders `items`.
 
 **Known issue:** Empty `coverage` or a `partial` warehouse result can look like
 full success. The handler logs a warning and still returns `success: true` with
 empty coverage when the coverage query fails, and a `partial` warehouse result
 returns plain success with no flag. See issue
 [3325](https://github.com/LoxtepInc/loxtep/issues/3325).
-
-**Known issue:** Frontend types and defaults differ from this backend shape
-(`{ items, coverage }`, REST `top_k` default 10). See issue
-[3324](https://github.com/LoxtepInc/loxtep/issues/3324).
 
 **Known issue:** `semantic_search` fails with a knex
 `Undefined binding data_product_id` error on some products. See issue

@@ -65,6 +65,21 @@ All MCP clients share one contract: **[docs/agent-workflow-authoring.md](docs/ag
 - **AI context** — Structured org knowledge (entities, decisions, processes) the platform stores and the MCP exposes.
 - **Governance** — Permissions, PII, quality, and lineage are enforced when you build and access data, not buried in a wiki.
 
+## Data engineering workflows
+
+Use [integration verification](skills/loxtep-integration-verification/SKILL.md)
+to compare the requested source and destination,
+[replay and recovery](skills/loxtep-replay-and-recovery/SKILL.md) to select the
+native historical repair operation, and
+[data operations](skills/loxtep-data-operations/SKILL.md) to diagnose stale data
+or failed materialization. The journey orchestrator routes these requests and
+preserves the existing project contracts and authorization.
+
+These playbooks inspect through their own read-only platform skill definitions;
+authorized mutations hand off to existing execution skills. The deployed AI
+service must include the new definitions. See the
+[usage and evaluation guide](https://github.com/LoxtepInc/loxtep/blob/development/docs/data-engineering-playbooks.md).
+
 ## Keeping plugins & skills updated
 
 The **hosted MCP server** always serves the current tool surface after we deploy.
@@ -122,7 +137,7 @@ Or install from a local clone:
 claude plugin install /path/to/loxtep-plugins-skills/claude
 ```
 
-This gives you hosted MCP, 26 skills, and auth recovery. OAuth runs on first tool call.
+This gives you hosted MCP, 29 skills, and auth recovery. OAuth runs on first tool call.
 
 See [`claude/README.md`](claude/README.md) for details.
 
@@ -277,7 +292,7 @@ Codex, and OpenCode, with Claude Code getting matching entries under
 DISABLE_TELEMETRY=1 npx -y skills@latest add LoxtepInc/loxtep-plugins-skills --list
 ```
 
-**Full set** (all 26 skills — only if you want everything):
+**Full set** (all 29 skills — only if you want everything):
 
 ```bash
 DISABLE_TELEMETRY=1 npx -y skills@latest add LoxtepInc/loxtep-plugins-skills \
@@ -307,11 +322,11 @@ plugin **or** `npx skills` — to avoid duplicate skill copies.
 
 | Plugin | Platform | Path | Description |
 |--------|----------|------|-------------|
-| **Cursor** | Cursor IDE | [cursor/](cursor/) | Marketplace plugin **`loxtep`**. Hosted MCP, 26 skills, auth rule. |
-| **Claude** | Claude Code & Cowork | [claude/](claude/) | Marketplace plugin **`loxtep-claude@loxtep`**. Hosted MCP, 26 skills, auth rule. |
-| **OpenCode** | OpenCode | [opencode/](opencode/) | `opencode.json` (`type: remote`) + 26 skills. Native OAuth. |
-| **Kiro** | Kiro IDE | [kiro/](kiro/) | Kiro Power (`kiro/power/`) or MCP config. 26 skills + 13 steering guides. |
-| **Antigravity** | Google Antigravity | [antigravity/](antigravity/) | Native `serverUrl` MCP + OAuth. 26 skills in `~/.gemini/skills/`. |
+| **Cursor** | Cursor IDE | [cursor/](cursor/) | Marketplace plugin **`loxtep`**. Hosted MCP, 29 skills, auth rule. |
+| **Claude** | Claude Code & Cowork | [claude/](claude/) | Marketplace plugin **`loxtep-claude@loxtep`**. Hosted MCP, 29 skills, auth rule. |
+| **OpenCode** | OpenCode | [opencode/](opencode/) | `opencode.json` (`type: remote`) + 29 skills. Native OAuth. |
+| **Kiro** | Kiro IDE | [kiro/](kiro/) | Kiro Power (`kiro/power/`) or MCP config. 29 skills + 13 steering guides. |
+| **Antigravity** | Google Antigravity | [antigravity/](antigravity/) | Native `serverUrl` MCP + OAuth. 29 skills in `~/.gemini/skills/`. |
 | **Codex** | OpenAI Codex | [codex/](codex/) | `~/.codex/config.toml` + skills in `~/.agents/skills/`. Native OAuth. |
 | **Grok** | Grok | [grok/](grok/) | User-marketplace plugin or generated skill bundles; hosted MCP + OAuth. |
 

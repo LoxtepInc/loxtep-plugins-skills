@@ -89,6 +89,11 @@ visibility and event reading moved to **`loxtep_observe`** — see
 - **`restore_version`** is destructive relative to current state — snapshot
   first.
 - Do not treat hosted MCP as able to `clone` onto disk — use the plan + CLI.
+- `loxtep projects clone` of an unbound project fails (exit 1) when the cloud
+  workspace has no `.loxtep/project.json`. The export API returns 409
+  `project_metadata_unavailable` and the message names the missing S3 key.
+  Retrying will not help. Report the key rather than fabricating a
+  `project.json` locally.
 
 <!-- BEGIN loxtep skill-scope (skill-package-v1) -->
 

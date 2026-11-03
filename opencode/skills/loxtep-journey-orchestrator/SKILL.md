@@ -33,6 +33,35 @@ approval where it matters.
 
 For single-step work, use the focused skill for that step directly.
 
+## Route the engineering task
+
+Before acting, name the requested outcome, source/destination, environment,
+authorized changes and evidence that would satisfy the task. Reuse existing
+contracts, decisions and access; preserve prior authorization across handoffs.
+Do not create a new approval merely because work resumed. Read current artifact
+state and the actual native policy for any decision still required.
+
+- **New integration:** follow Connect below, then `data-workflows`. Establish
+  grain, keys, ordering, delete/partial-update semantics, contract references
+  and destination acceptance before authoring. Keep project-specific decisions
+  in the project's rules/contracts, not shared platform skills.
+- **Verify delivery or reconcile records:** use
+  `loxtep-integration-verification`.
+- **Replay, repull or repair history:** use `loxtep-replay-and-recovery`.
+- **Stale destination, lag or processing incident:** use
+  `loxtep-data-operations`.
+- **Change a published Shape/key/grain:** use `define-data-product-shape` and
+  `discover-govern-lineage` for compatibility and affected consumers.
+- **Release definitions:** use `data-workflows` and `loxtep-deployments`; tie
+  the reviewed revision to saved definitions, runtime readback and the requested
+  destination outcome. Saved, deployed, materialized and published are separate.
+
+Engineering procedures can sequence human work and native review decisions. They
+must not make runtime stream consumers wait on another node's status or
+cross-node reconciliation. Each consumer owns its checkpoint; use existing
+native connectors, runtimes and governance rather than a second lifecycle
+engine.
+
 ## Choose the journey before acting
 
 - **Shared meaning:** maintain vocabulary, concepts, relationships, or reusable
@@ -75,8 +104,12 @@ product.
    only with user authorization to ingest
 7. Deploy — `deploy_project` or `deploy_workflow`, confirm status is `deployed`
 
-**Done when:** credentials tested (`test_connector` passed), and — if the user
-authorized ingest — samples confirmed and deployment status `deployed`.
+**Done when:** the authorized Connect scope is complete: credentials tested
+(`test_connector` passed) and, if ingest was requested, deployment and observed
+delivery at the agreed ingest endpoint are verified. Deployment status and
+samples alone do not establish source completeness or downstream destination
+correctness. For an end-to-end request, continue through the chosen delivery
+channel and `loxtep-integration-verification`.
 
 **Rules:**
 

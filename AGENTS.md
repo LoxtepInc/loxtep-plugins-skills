@@ -473,14 +473,17 @@ rejected, and a check that cannot complete blocks the operation.
 | `loxtep-agent-workspace` | Use when the user wants agent orchestration — issues, goals, agent projects, agents — not data… |
 | `loxtep-analytics` | Use when the user wants SQL analytics over the mesh, SQL queries, list tables, table schema,… |
 | `loxtep-auth` | When Loxtep hosted MCP returns auth errors, reconnect MCP to re-trigger OAuth, then retry the… |
+| `loxtep-data-operations` | Diagnose stale data, delivery errors, processing lag and materialization failures on an existing… |
 | `loxtep-deployments` | Use when the user wants to deploy a project or workflow to a runtime instance, check deployment… |
 | `loxtep-instances` | 'Use when the user works with Loxtep runtime instances via Customer MCP - list_instances,… |
+| `loxtep-integration-verification` | Verify a Loxtep integration at the source and destination the user names. |
 | `loxtep-journey-orchestrator` | Orchestrate the full Connect → Products ↔ Meaning → Use journey. |
 | `loxtep-mcp-session` | Use when the user asks what they can do with Loxtep MCP, hits permission denied / 403, wants to… |
 | `loxtep-ontology` | Manage Loxtep ontology concepts and vocabulary terms via MCP. |
 | `loxtep-procedures` | Use when the user wants to manage business process graphs — list, get, create, update, or delete… |
 | `loxtep-process-intel` | Use when the user wants to read or write entity context, query what Loxtep knows about a business… |
 | `loxtep-queue-tracing` | Trace rstreams bots and queues for deployment or data-flow failures. |
+| `loxtep-replay-and-recovery` | Plan and carry out authorized Loxtep replay or historical repair through existing native operations. |
 | `loxtep-sdk` | Bootstrap @loxtep/sdk in Node (auth, env, REST vs Loxtep streams), map MCP tools to SDK methods,… |
 | `loxtep-semantic-layer` | Use when the user wants to search the semantic layer, retrieve semantic artifacts, check semantic… |
 | `loxtep-workspace` | Workspace versions, snapshots, restore, and compare for Loxtep projects. |

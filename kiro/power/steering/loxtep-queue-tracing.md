@@ -142,8 +142,12 @@ instance).
 
 ### `eid`
 
-Since #3451 (#3436). The check is `queueEidPathTimestampMismatch`. The check
-does not rewrite the path, replace the timestamp, or fall back to another read.
+Since #3451 (#3436) and #3740. The check is `queueEidPathTimestampMismatch`. The
+check does not rewrite the path, replace the timestamp, or fall back to another
+read. A supplied eid must be a full `z/YYYY/MM/DD/HH/mm/<ms>[-<ordinal>]`. `z/`
+is refused here. Botmon `searchQueue` in `rstreams-platform-cdk`
+(`lambda/botmon/searchQueue`) would otherwise call leo-sdk `eventIdToTimestamp`,
+which throws `Unable to get timestamp for Event Id: z/`.
 
 After the check passes, `ReadQueueEventsTool` calls `resolveObserveSearchEid`
 (`platform-backend/_core/src/observe/search-eid.ts`). That normalization is the
@@ -151,13 +155,12 @@ same as before #3451. `normalizeTimelineEidForBotmonSearch` trims the eid and
 appends `-0000000` when the last segment is a bare millisecond of 10 or more
 digits. An omitted or blank eid becomes the default anchor.
 
-Accepted: omitted or blank; `z/` and a path prefix through the minute, trailing
-slash optional (`z/2026/10/17/19/02/`); a full
-`z/YYYY/MM/DD/HH/mm/<n>[-<ordinal>]` whose numeric terminal `n` is `<= 10000` (a
-seconds checkpoint); a millisecond terminal only when the UTC minute of that
-millisecond equals the path.
+Accepted: omitted or blank; a full `z/YYYY/MM/DD/HH/mm/<ms>[-<ordinal>]`
+(trailing slash optional) whose numeric terminal is greater than 10000 and whose
+UTC minute equals the path.
 
-Anything else is refused, including a path/timestamp mismatch and a malformed
+Refused: `z/`; a path prefix (`z/2026/`, `z/2026/10/17/19/02/`); a seconds
+checkpoint whose terminal is `<= 10000`; a path/timestamp mismatch; a malformed
 value (`not-an-eid`, `z/foo`, `z/2026/10/25/00/00/nope`). The message is
 `eid <eid> path and timestamp disagree` (`<eid>` is the trimmed value).
 
@@ -168,8 +171,8 @@ Through `loxtep_observe` the refusal is input validation, before HTTP: 400
 `{ "tool_name": "read_queue_events", "mcp_facade": "loxtep_observe", "code": "invalid_tool_input" }`.
 
 Pass the previous page's `next_cursor` unchanged, or build the eid from one
-timestamp (the path is the UTC minute of the millisecond), or use a path prefix
-such as `z/2026/10/17/19/02/`.
+timestamp (the path is the UTC minute of the millisecond). A path prefix such as
+`z/` or `z/2026/10/17/19/02/` is refused.
 
 Known issues, not fixed here:
 [#3454](https://github.com/LoxtepInc/loxtep/issues/3454) (botmon `searchQueue`
@@ -319,9 +322,9 @@ not live captures.
 ## Pitfalls
 
 - **Do not hand-build a mismatched `eid`.** A path and a millisecond from
-  different instants, or a truncated token, is refused and not rewritten. Pass
-  `next_cursor` unchanged, build both parts from one timestamp, or use a path
-  prefix. See `eid` above.
+  different instants, a prefix such as `z/`, or a truncated token is refused and
+  not rewritten. Pass `next_cursor` unchanged, or build both parts from one
+  timestamp. See `eid` above.
 - **Empty `results` is not "nothing happened":** only `has_more: false` means
   this window has no matching events. A 503 `scan_incomplete`, 502
   `stream_read_failed` or 502 `observe_search_shape_error` is not an empty

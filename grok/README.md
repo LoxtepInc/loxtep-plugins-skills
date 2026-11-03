@@ -16,7 +16,7 @@ OAuth; do not install the retired local `@loxtep/customer-mcp-server`.
 
 - **11 hosted MCP tools:** ten job facades plus the MCP Apps-only
   `loxtep_package_review` review card.
-- **26 skills** under `grok/skills/`.
+- **29 skills** under `grok/skills/`.
 - Guidance aligned to **Connect → Products ↔ Meaning → Use**, with Inbox,
   Observe, and Organization supporting the journey.
 
