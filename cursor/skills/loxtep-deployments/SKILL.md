@@ -39,6 +39,29 @@ and inspect runtime mappings.
 5. `get_runtime_mapping` — inspect how a project/workflow maps to runtime
    resources.
 
+## Revision and outcome evidence
+
+Connect the reviewed local package revision to saved cloud definitions and
+deployed runtime readback. Inspect local/cloud/Git differences before syncing a
+Git-backed project; preserve workflow IDs, bindings, queues and checkpoints.
+`loxtep push` saves definitions; deployment is a separate operation. Project
+GitHub push/pull synchronizes the cloud workspace and GitHub, not definitions
+into the current local checkout. Follow `loxtep-workspace` and the installed CLI
+help for the selected sync direction.
+
+Record the package commit or content revision, relevant SDK/native schema
+version, exact deployed workflow/instance and runtime mapping. Local source
+support does not establish published SDK or deployed service support. Prefer the
+authorized workflow's deployment scope over an unrelated whole-project redeploy.
+Follow existing native reviews and promotion policies; do not add a second
+customer release gate.
+
+Deployment readback establishes deployment. If the user requested working
+delivery, finish with `loxtep-integration-verification` at the named endpoint.
+Diagnose lag or materialization separately through `loxtep-data-operations`.
+Record compatibility limitations for rollback: redeploying an old artifact does
+not reverse persisted schema or data changes.
+
 ## Operations
 
 | Facade           | Operation             | Scope        | Required                                   | Optional                                             |
