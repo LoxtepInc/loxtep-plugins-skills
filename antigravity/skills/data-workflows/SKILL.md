@@ -58,6 +58,13 @@ New flow / ingestion setup / "connect and ingest"?
 User editing open flow in Studio UI (tiny incremental change)?
   → patch_workflow_graph only
 
+User wants a person to decide before the flow continues?
+  → Existing flow: `loxtep approval add --workflow <id> --after <entity-id> --name <n> --channel inbox --timeout-hours 24`
+    or `patch_workflow_graph` `add_node` (`entity_type: "approvals"`) plus `connect_nodes_labeled` label `approved`
+  → New flow: `approvals/{approval_node_id}.json` inside `save_workflow_bundle`, after another node
+  → Decide the waiting event in Inbox: `loxtep approvals list|approve|reject`
+  → `requireApproval` on `defineDataWorkflow` prompts only during `loxtep test`
+
 After connect-external-system (Connect)?
   → Require a passing `test_connector` and **user authorization** before ingest.
     `test_connector` is not ingest. `capture_samples` retrieves source rows.
@@ -134,7 +141,19 @@ workflows/{workflow_id}/
   transformations/{transformation_id}.json
   validations/{validation_id}.json
   data-products/{data_product_id}.json
+  approvals/{approval_node_id}.json
 ```
+
+An approval sits on an existing flow, after another node. The file needs `name`,
+`approval_channel` (a label such as `inbox`), `timeout_hours` (1–168),
+`workflow_id`, and `upstream_entity_id` pointing at the previous node. The next
+node sets `upstream_entity_id` to the approval id, `upstream_entity_type` to
+`approvals`, and `upstream_label` to `"approved"`. One approved edge is enough.
+A rejected edge stays unset until someone adds it. An approval cannot be the
+head of the flow. `remove_files` may list `approvals/{id}.json`. New flows put
+that file in `save_workflow_bundle`. `patch_workflow_graph` is only for a small
+edit on a flow already open in Studio (`add_node` with
+`entity_type: "approvals"` and `connect_nodes_labeled` with label `approved`).
 
 When the project is **GitHub-attached**, the **repo is source of truth**: edit
 locally, commit, then sync to the Loxtep project (`save_workflow_bundle` and/or
@@ -268,7 +287,7 @@ scoped deploy, and read the names back.
 | Label        | Declared in the package                                                                                                                                                                                                                                                                  |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Workflow     | `name` on `workflow.json`                                                                                                                                                                                                                                                                |
-| Bot          | `name` on `connections/{id}.json`, `transformations/{id}.json`, or `validations/{id}.json`                                                                                                                                                                                               |
+| Bot          | `name` on `connections/{id}.json`, `transformations/{id}.json`, `validations/{id}.json`, or `approvals/{id}.json`                                                                                                                                                                        |
 | Product      | `name` on `data-products/{id}.json`                                                                                                                                                                                                                                                      |
 | Output queue | `output_queue_display_name` on the node that owns the queue (`connections`, `transformations`, `validations`, `quality-rules`, `agents`, `approvals`). A data product may set it for its upstream writer's output queue when that writer leaves the field unset. The writer's value wins |
 | Error queue  | `error_queue_display_name` on the same owning node. Approvals use it for the rejected queue. Agents keep `error_queue_name` as the queue id                                                                                                                                              |

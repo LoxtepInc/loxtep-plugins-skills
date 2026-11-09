@@ -184,7 +184,7 @@ key parameters.
 { "operation": "list_versions", "project_id": "proj_…" }
 ```
 
-### `loxtep_build` — Products — design, bundle, and deploy data flows. Workflows (save_workflow_bundle for full JSON, patch_workflow_graph for Studio-only edits), trigger/target connection bindings (list/get/update/delete/test/run), data products (kind source|consumer, lexicon, SDK config, contracts, promotion), delivery grants (list/get/save/update_delivery_grant — Git-backed grants/{id}.json materialized for deploy-time writer embedding), external warehouse bind (list_warehouse_objects, bind_warehouse_table), and deployment writes (deploy_project, deploy_workflow, get_runtime_mapping). New Trigger/Target entities belong in save_workflow_bundle (connections/{id}.json with connector_id).
+### `loxtep_build` — Products — design, bundle, and deploy data flows. Workflows (save_workflow_bundle for full JSON, patch_workflow_graph for Studio-only edits), trigger/target connection bindings (list/get/update/delete/test/run), data products (kind source|consumer, lexicon, SDK config, contracts, promotion), delivery grants (list/get/save/update_delivery_grant — Git-backed grants/{id}.json materialized for deploy-time writer embedding), consumption method suggestions (request/get/decide — which access methods to publish, with reasons), external warehouse bind (list_warehouse_objects, bind_warehouse_table), and deployment writes (deploy_project, deploy_workflow, get_runtime_mapping). New Trigger/Target entities belong in save_workflow_bundle (connections/{id}.json with connector_id).
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
 | `get_entity_schemas` | project | `project_id` | `pattern` |
@@ -229,6 +229,9 @@ key parameters.
 | `get_delivery_grant` | organization | — | — |
 | `save_delivery_grant` | project | — | — |
 | `update_delivery_grant` | project | — | — |
+| `request_consumption_method_suggestions` | organization | — | — |
+| `get_consumption_method_suggestions` | organization | — | — |
+| `decide_consumption_method_suggestion` | organization | — | — |
 | `list_warehouse_objects` | organization | — | — |
 | `bind_warehouse_table` | organization | — | — |
 | `configure_warehouse_sink` | organization | — | — |
@@ -236,7 +239,7 @@ key parameters.
 | `deploy_workflow` | project | `project_id`, `instance_id`, `workflow_id` | `force_redeploy`, `skip_validation` |
 | `get_runtime_mapping` | project | `project_id` | `workflow_id` |
 
-### `loxtep_define` — Meaning and Organization — shape and govern data. Domain canonical schemas (CRUD, versions, apply/unapply to data products, PII tagging, impact analysis, schema packs), agent-authored product definition (evidence, shape and semantic proposals, approval, apply, status, batch, skill), quality rules (CRUD, test), governance policies, and access requests. Aggregate quality scores are read in loxtep_observe. Hosted inference is not required. When the user explicitly asks for it, use loxtep_meaning.
+### `loxtep_define` — Meaning and Organization — shape and govern data. Domain canonical schemas (CRUD, versions, apply/unapply to data products, PII tagging, impact analysis, schema packs), agent-authored product definition (evidence, shape and semantic proposals, approval, apply, status, batch, skill), quality rules (CRUD, test, suggestions
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
 | `create_schema` | organization | `name`, `definition` | `domain_id` |
@@ -274,6 +277,9 @@ key parameters.
 | `list_quality_rules` | organization | — | `domain_id` |
 | `get_quality_rule` | organization | `quality_rule_id` | — |
 | `test_quality_rule` | organization | `quality_rule_id`, `sample` | — |
+| `request_quality_rule_suggestions` | organization | — | — |
+| `get_quality_rule_suggestions` | organization | — | — |
+| `decide_quality_rule_suggestion` | organization | — | — |
 | `list_governance_policies` | organization | — | — |
 | `get_governance_policy` | organization | — | — |
 | `create_governance_policy` | organization | — | — |

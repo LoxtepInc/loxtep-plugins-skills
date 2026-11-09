@@ -254,6 +254,7 @@ UUIDs are stripped of hyphens and truncated to the first 8 characters. Example:
 | connection     | `conn` |
 | transformation | `xfm`  |
 | validation     | `val`  |
+| approval       | `apv`  |
 | data_product   | `dp`   |
 | export         | `exp`  |
 | workflow       | `pipe` |
@@ -274,7 +275,8 @@ Example: `a1b2c3d4-e5f6g7h8-i9j0k1l2-bot-conn-e5f6g7h8-handler`
 {microservice_id}-queue-{container_id}-{direction}
 ```
 
-Where `direction` is `in`, `out`, or `err`.
+Where `direction` is `in`, `out`, or `err`. An approval node uses `in`,
+`approved`, and `rejected`.
 
 Example: `a1b2c3d4-e5f6g7h8-i9j0k1l2-queue-conn-e5f6g7h8-in`
 
@@ -388,6 +390,33 @@ loxtep proposals reject <id>
 Do not accept a `vocabulary_term` without a definition. Confidence on the
 proposal is business-field detection score, not glossary quality. Details:
 **`loxtep-semantic-layer`** (Vocabulary agent proposals).
+
+## An approval step on a flow
+
+An approval step pauses one event until Inbox decides it. It is not
+`requireApproval` on `defineDataWorkflow` (that prompt runs only during
+`loxtep test`) and it is not a journey gate.
+
+On an existing flow:
+
+```bash
+loxtep approval add --workflow <id> --after <entity-id> --name "Order review" --channel inbox --timeout-hours 24
+```
+
+`--after` is the previous step's id. Its children move onto the approved path. A
+rejected path stays unset until you add it. The step cannot be first. Timeout is
+1–168 hours.
+
+A new flow puts `approvals/{approval_node_id}.json` in `save_workflow_bundle`
+(`name`, `approval_channel`, `timeout_hours`, `workflow_id`,
+`upstream_entity_id`). The next node sets `upstream_entity_type` to `approvals`
+and `upstream_label` to `approved`. Python authors that same JSON file. Studio
+inserts the same step from **Approval** on an existing step (name Approval,
+channel `inbox`, timeout 24 hours).
+
+`client.build.workflows.patch_graph` writes the same graph change: `add_node`
+with `entity_type: "approvals"` and `connect_nodes_labeled` with label
+`approved`.
 
 ## Approving pipeline gates from code (`client.review.approvals`)
 
