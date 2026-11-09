@@ -89,8 +89,11 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
 
 - `name`, `region`, `instance_type: "self-hosted"`
 - `plan_id`: `sh_core`, `sh_production`, or `sh_scale`
-- `connection_details.observe_api.cross_account_role_arn` — the IAM role ARN
-  registered via `register_infrastructure` (see the install flow below)
+- `connection_details.observe_api.cross_account_role_arn` — the IAM role ARN for
+  the AWS account this instance runs in. Register that ARN with
+  `register_infrastructure` first. Self-hosted create returns **400**
+  `Register this AWS account before creating the instance.` when the ARN is not
+  on the organization's `cross_account_roles` list.
 - Do **not** send `rstreams_secret_arn` or `rstreams_auth_arn` — they are
   written by provisioning from the deployed stack's outputs. Sending
   `observe_proxy_role_arn` is a 400.
@@ -167,6 +170,37 @@ send `metadata.observe_namespace`, `metadata.observeNamespace`, or
 `metadata.routing.observe_namespace` / `observeNamespace`, and do not send
 `routing: {}` or `routing: null` to wipe it.
 
+After the row is saved, the handler sends `instances-updated`. If that send
+throws, the call returns HTTP **500** with message
+`The instance update was saved but the instances-updated event was not sent.`
+and details `{ instance_id }`. The saved fields stay saved.
+`runtimes-deployment-requested` and the Botmon Lite upgrade request are not
+sent. Send the same update again. Each save sends `instances-updated` again with
+a new timestamp. The handler does not skip that send.
+
+`runtimes-deployment-requested` is sent only after `instances-updated` succeeds,
+and only for `managed` or `self-hosted` when connector networks changed or
+`force_runtimes_redeploy` is `true`. Shared instances do not send it. If that
+send throws, the call returns HTTP **500** with message
+`The instance update was saved but the runtimes-deployment-requested event was not sent.`
+and details `{ instance_id }`. `instances-updated` was already sent. The saved
+fields stay saved. A later call sends `instances-updated` again. It sends
+`runtimes-deployment-requested` again only when the stored networks still differ
+from the body or `force_runtimes_redeploy` is `true`. A network change that was
+already saved does not differ, so repeat that call with
+`force_runtimes_redeploy: true`. The handler does not deduplicate either event.
+The runtimes event sets `metadata.force_redeploy` to `true`, and the runtimes
+bot updates a stack that is already deployed when that flag is set.
+
+If `botmon_lite_allowed_cidrs` changed, both of those send failures put the
+previous allowlist back before the 500. Other fields from the call stay saved.
+If that restore fails, the 500 is
+`Botmon Lite allowlist was saved but not applied, and the automatic rollback failed. The stored allowlist no longer matches the running stack and must be reconciled manually before the next upgrade.`
+with `rollback_failed: true`. Reconcile the stored list by hand before the next
+upgrade. The same restore runs when the allowlist upgrade request itself fails.
+That message is
+`Botmon Lite allowlist was not applied because the upgrade request failed; only the allowlist was reverted and other updated fields remain saved.`
+
 ## Self-hosted install flow (new operations)
 
 Self-hosted instances run the entire rstreams data plane in the customer AWS
@@ -196,11 +230,30 @@ secret at deploy time, so this call is **required** before step 3.
 Returns `roleNameSuffix`, `deploymentRoleName`, and `deploymentStackName` for
 multi-org installs in the same AWS account (one IAM role stack per Loxtep org).
 
-### 2. `register_infrastructure` — step 2
+### 2. `register_infrastructure` — once per remote AWS account
 
-Stores the user-supplied role ARN at the organization level. Required before
-`create_instance` with `instance_type: "self-hosted"` — the provisioner reads
-`organizations.attributes.cross_account_role_arn` at deploy time.
+Adds one cross-account role ARN. Call it again with a different account ARN for
+stage, production, or another account. Earlier roles stay. Sending the same ARN
+again refreshes that entry's `region` and `registered_at`. The external ID stays
+one secret shared by every account. A new role ARN past 32 returns **400**
+`An organization can register at most 32 AWS accounts.` Sending an ARN that is
+already in the list still refreshes that entry.
+
+Each self-hosted instance deploys and upgrades with the role you pass to
+`create_instance` (`connection_details.observe_api.cross_account_role_arn`).
+With several registered roles and no role on the instance, provisioning fails
+with
+`This organization has <count> registered AWS accounts. Choose the role stored on the instance.`
+
+Stage, then production:
+
+```json
+{
+  "operation": "register_infrastructure",
+  "cross_account_role_arn": "arn:aws:iam::123456789012:role/LoxtepCrossAccountDeploymentRole",
+  "region": "us-east-1"
+}
+```
 
 ```json
 {
@@ -210,35 +263,61 @@ Stores the user-supplied role ARN at the organization level. Required before
 }
 ```
 
-`region` is optional (defaults to `us-east-1`). You only do this once per
-organization — subsequent self-hosted instances reuse the registered role.
+`region` is optional. When you omit it, the call uses the organization's current
+preferred region, or `us-east-1`. The response lists every registered role
+(`cross_account_roles`: `arn`, `account_id`, `region`, `registered_at`) plus
+`preferred_region` and `infrastructure_registered_at`. `cross_account_role_arn`
+on the register response is the ARN you just sent. The stored first role stays
+the first ARN in the list.
 
-### 3. `get_infrastructure` — optional check
+### 3. `get_infrastructure` — list registered accounts
 
-No arguments. Returns the registered role ARN + external ID, or null fields when
-the org has not registered infrastructure yet. **Before step 2**, use it to skip
-re-registration when the org is already configured:
+No arguments. Returns `cross_account_roles` and the external ID.
+`cross_account_role_arn` is the first registered role. An empty
+`cross_account_roles` list means no account is registered yet. One listed
+account does not cover a second account. Do not skip `register_infrastructure`
+for stage or production because this call already shows one role.
 
 ```json
 { "operation": "get_infrastructure" }
 ```
 
-### 4. `create_instance` — step 3
+### 4. `create_instance` — pass the chosen role
 
-The final step — see the [self-hosted example](#self-hosted-example-shape)
-above. Pass the role ARN you registered in step 2. `rstreams_secret_arn` and
-`rstreams_auth_arn` are written by provisioning; callers do not send them. The
-create returns `payment_pending`; the user completes Stripe Checkout in the app.
-AWS resources remain billed separately to the customer account.
+See the [self-hosted example](#self-hosted-example-shape) above. Pass the role
+ARN for the account this instance runs in. After the two registrations above, a
+production instance sends the production ARN:
+
+```json
+{
+  "operation": "create_instance",
+  "name": "Production mesh",
+  "region": "us-east-1",
+  "instance_type": "self-hosted",
+  "plan_id": "sh_production",
+  "connection_details": {
+    "observe_api": {
+      "cross_account_role_arn": "arn:aws:iam::987654321098:role/LoxtepCrossAccountDeploymentRole"
+    }
+  }
+}
+```
+
+`rstreams_secret_arn` and `rstreams_auth_arn` are written by provisioning;
+callers do not send them. The create returns `payment_pending`; the user
+completes Stripe Checkout in the app. AWS resources remain billed separately to
+the customer account. An ARN that is not registered returns **400**
+`Register this AWS account before creating the instance.`
 
 ### Full flow in one agent turn
 
 ```text
 user:   "Let's set up a self-hosted Loxtep instance in my AWS account."
 agent:  1. get_deployment_urls → presents the one-click URL + CLI + Terraform tabs
-        2. instructs user to deploy the role, copy RoleArn from CFN Outputs
-        3. register_infrastructure({ cross_account_role_arn, region })
-        4. create_instance({ ..., plan_id: "sh_production", connection_details.observe_api.cross_account_role_arn })
+        2. instructs user to deploy the role in each AWS account and copy each RoleArn
+        3. register_infrastructure once per account (stage ARN, then production ARN)
+        4. create_instance with connection_details.observe_api.cross_account_role_arn
+           set to the ARN for the account this instance runs in
         5. directs the user to complete Stripe Checkout in the app
         6. polls list_instances until status="active" (~20–30 minutes)
 ```
@@ -260,7 +339,9 @@ attaches only to customer private subnets and a connector security group.
 
 1. `list_instances` — confirm `status: active` and record `instance_id`. The
    payload has no VPC IDs, subnet IDs, or ARNs.
-2. `get_infrastructure` — role ARN / external ID for managed and self-hosted.
+2. `get_infrastructure` — `cross_account_roles` and the external ID for managed
+   and self-hosted. An empty list means no account is registered. One listed
+   account does not cover a second account.
 3. `loxtep_observe` → `list_observe_bots` with `instance_id` (permission
    `instances:read`). Look for `connectors-private-512` when the source is
    private.
@@ -273,6 +354,28 @@ attaches only to customer private subnets and a connector security group.
 security group, routing, and source firewall rules. Loxtep packages
 `connectors-private-512` and the instance provisioner attaches it when
 `connection_details.connector_vpc` is set.
+
+Additional networks go on `connection_details.connector_vpcs`: up to 7 entries,
+each `{ "id", "subnet_ids", "security_group_id" }`. `id` is 1–16 characters
+`[a-z0-9]` and `default` is reserved. A subnet or security group belongs to one
+network. Each extra network gets its own copy of the private connector function
+(`BotConnectorsPrivateAtt{Id}`). A connector stays on the primary network unless
+its metadata sets `connector_vpc_id` to an extra id. `connector_vpcs: null`
+clears extras only. `connector_vpc: null` clears the primary network. Shared
+instances reject both. Removing an extra network that a connector still uses
+returns **409** (`Connector network in use`). The message names those connectors
+and says to clear `connector_vpc_id` on them first.
+
+A stored `connector_vpcs` that is absent or null means no extra networks. A
+present value that does not match the list shape throws
+`Invalid connection_details.connector_vpcs` and is not read as an empty list.
+
+If the role can call `ec2:DescribeSubnets`, the provisioner checks that every
+network's subnets exist and share a VPC. The different-Availability-Zone check
+applies only to extra `connector_vpcs` networks. The primary `connector_vpc` is
+checked only for subnet existence and the same VPC. If the role cannot call
+`ec2:DescribeSubnets`, the runtimes deploy fails with
+`DescribeSubnetsDeniedError` and does not skip the check.
 
 Set networking on the **instance** (ask the customer for two private subnet IDs
 in different AZs and one security group ID):
@@ -325,6 +428,13 @@ a new runtimes package):
 }
 ```
 
+If that call returns 500
+`The instance update was saved but the runtimes-deployment-requested event was not sent.`,
+the row is saved and the runtimes event was not queued. `instances-updated` was
+already sent. Call `update_instance` again with `force_runtimes_redeploy: true`
+to queue the runtimes event. That call sends `instances-updated` again. See
+[update_instance](#update_instance).
+
 Same fields on other surfaces (permission `instances:update` /
 `instances:create`):
 
@@ -358,9 +468,10 @@ without `--rstreams-secret-arn` and `--rstreams-auth-arn`. The example includes
 those flags only to document the old CLI limitation. Provisioning writes the
 secret ARNs; prefer MCP or the app for paid creation. The TypeScript/CLI
 snippets above use placeholders (`name`, `<n>`, `<uuid>`) and were **not** run
-through the schemas; the JSON create bodies in this skill were. Tracked at
-https://github.com/LoxtepInc/loxtep-sdk/issues/71 (CLI still requires both
-secret ARNs and retired plan names).
+through the schemas. The JSON create and `register_infrastructure` bodies in
+this skill were **not** re-checked against the schemas for this update
+(unverified). Tracked at https://github.com/LoxtepInc/loxtep-sdk/issues/71 (CLI
+still requires both secret ARNs and retired plan names).
 
 The platform reapplies the per-instance runtimes stack (`force_redeploy`). The
 customer does not run a Loxtep microservice deploy. Shared `connectors-*`

@@ -169,9 +169,11 @@ must not be tested in the connectors API Lambda.
 1. `loxtep_workspace` → `list_instances` — `instance_id`, `name`, `region`,
    `status`, `instance_type`, `plan`. Status must be `active`. This payload does
    not include ARNs or VPC IDs.
-2. `loxtep_workspace` → `get_infrastructure` — registered cross-account role
-   (self-hosted/managed). Null fields mean the org has not registered
-   infrastructure.
+2. `loxtep_workspace` → `get_infrastructure` — registered deploy roles
+   (`cross_account_roles`) for self-hosted and managed. An empty list means no
+   AWS account is registered. One listed account does not cover a second
+   account. Register each account with `register_infrastructure` (see
+   **`loxtep-instances`**).
 3. If more than one instance, **ask for `instance_id`**.
 4. `loxtep_observe` → `list_observe_bots` with `instance_id` — look for a bot
    whose name contains `connectors-private-512` (private) or `connectors-`
@@ -182,13 +184,13 @@ must not be tested in the connectors API Lambda.
 
 Missing networking / permissions / deploy prerequisites:
 
-| Finding                                                  | Likely gap                                                                                                      | Owner                                                          |
-| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| Instance not `active`                                    | Finish instance provisioning                                                                                    | Loxtep + customer billing/role                                 |
-| No `connectors-private-512` bot                          | Runtimes stack missing customer subnet/SG inputs, or not deployed                                               | Loxtep deploy of **runtimes**; customer supplies subnet/SG IDs |
-| `get_infrastructure` empty on self-hosted                | Cross-account role not registered                                                                               | Customer (role) then `register_infrastructure`                 |
-| Connector has no `network_binding` but source is private | Metadata incomplete                                                                                             | Customer + `update_connector`                                  |
-| `PRIVATE_PROBE_FAILED` / cannot resolve private Lambda   | Runtimes stack name `org-{org8}-{inst8}-runtimes` (or `runtimes_stack_identifier`) missing the private function | Loxtep                                                         |
+| Finding                                                  | Likely gap                                                                                                      | Owner                                                                                     |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Instance not `active`                                    | Finish instance provisioning                                                                                    | Loxtep + customer billing/role                                                            |
+| No `connectors-private-512` bot                          | Runtimes stack missing customer subnet/SG inputs, or not deployed                                               | Loxtep deploy of **runtimes**; customer supplies subnet/SG IDs                            |
+| `cross_account_roles` is empty                           | No deploy role is registered                                                                                    | Customer (role), then `register_infrastructure` once per account (**`loxtep-instances`**) |
+| Connector has no `network_binding` but source is private | Metadata incomplete                                                                                             | Customer + `update_connector`                                                             |
+| `PRIVATE_PROBE_FAILED` / cannot resolve private Lambda   | Runtimes stack name `org-{org8}-{inst8}-runtimes` (or `runtimes_stack_identifier`) missing the private function | Loxtep                                                                                    |
 
 Do not change ENIs, security groups, or routes in the AWS console.
 
@@ -211,7 +213,21 @@ reach the source and allow Lambda ENIs. Ask for these values. Do not guess.
 
 1. Put them on the instance as `connection_details.connector_vpc` via
    `create_instance` (new) or `update_instance` / SDK / CLI / the instance
-   settings UI (existing). See **`loxtep-instances`**.
+   settings UI (existing). See **`loxtep-instances`**. When the account has
+   databases in more than one VPC, add `connection_details.connector_vpcs` on
+   that instance with `create_instance`, `update_instance`, or the instance
+   settings UI, and set the connector's `metadata.connector_vpc_id` to that
+   network's `id`. Omit `connector_vpc_id` to stay on the primary network. A
+   connection value wins over the org connector. An unknown id fails the probe
+   and the deploy before the function is invoked. Removing an extra network that
+   a connector still uses returns 409 (`Connector network in use`). A stored
+   `connector_vpcs` value that is present but invalid throws
+   `Invalid connection_details.connector_vpcs` and is not read as an empty list.
+   See **`loxtep-instances`**: a deploy role denied `ec2:DescribeSubnets` fails
+   the runtimes deploy (`DescribeSubnetsDeniedError`) and does not skip the
+   check. The different-Availability-Zone check applies only to extra networks.
+   The primary `connector_vpc` is checked only for subnet existence and the same
+   VPC.
 2. Instance create already provisions the runtimes stack. `update_instance` with
    a `connector_vpc` change, or `force_runtimes_redeploy: true` (SDK
    `redeploy_runtimes` / CLI `loxtep instances redeploy-runtimes`), reapplies
