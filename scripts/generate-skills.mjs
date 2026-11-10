@@ -32,6 +32,34 @@ function fail(msg) {
   problems.push(msg);
 }
 
+// `npx skills add` requires YAML frontmatter at byte 0. A leading
+// `<!-- GENERATED FILE -->` comment makes installers report missing `name`
+// and `description`. Do not strip or move a leading notice — fail instead.
+function assertSkillMdStartsWithFrontmatter(text, label = 'SKILL.md') {
+  if (typeof text !== 'string' || !text.startsWith('---')) {
+    const preview = String(text ?? '').slice(0, 96).replace(/\r/g, '\\r').replace(/\n/g, '\\n');
+    throw new Error(
+      `${label}: YAML frontmatter must start at byte 0 (expected "---"); found: ${JSON.stringify(preview)}`
+    );
+  }
+  if (text.indexOf('\n---', 3) === -1) {
+    throw new Error(`${label}: missing YAML frontmatter closer (---)`);
+  }
+}
+
+// Frontmatter, then the generated-file notice, then the body. Used for
+// client SKILL.md copies and .mdc rules. Steering docs have no frontmatter.
+function composeGeneratedSkillMarkdown(frontmatter, body) {
+  const fm = String(frontmatter);
+  if (!fm.startsWith('---')) {
+    throw new Error('composeGeneratedSkillMarkdown: frontmatter argument must start with "---"');
+  }
+  const bodyText = String(body).replace(/^\n+/, '');
+  const out = `${fm}\n\n${GENERATED_HEADER}\n\n${bodyText}`;
+  assertSkillMdStartsWithFrontmatter(out, 'composeGeneratedSkillMarkdown');
+  return out;
+}
+
 // ---------------------------------------------------------------------------
 // Minimal frontmatter parser/serializer for this repo's bounded YAML dialect:
 // flat scalars, folded multi-line plain scalars (no block indicators), and
@@ -328,7 +356,14 @@ for (const slug of slugs) {
     const frontmatter = emitSkillFrontmatter(fm, tool, slug);
     let renderedBody = renderBody(body, tool);
     renderedBody = injectScopeBlock(renderedBody, slug);
-    const out = `${frontmatter}\n\n${GENERATED_HEADER}\n\n${renderedBody}`;
+    const rel = `${tool}/skills/${slug}/SKILL.md`;
+    let out;
+    try {
+      out = composeGeneratedSkillMarkdown(frontmatter, renderedBody);
+    } catch (e) {
+      fail(`${rel}: ${e.message}`);
+      continue;
+    }
     plannedWrites.set(path.join(ROOT, tool, 'skills', slug, 'SKILL.md'), out);
   }
 
@@ -356,10 +391,29 @@ for (const slug of slugs) {
         if (!fs.existsSync(rulesDir)) continue; // only tools with a rules/ dir today
         const frontmatter = emitRuleFrontmatter(ruleFm, tool);
         const renderedBody = renderBody(ruleBody, tool);
-        const out = `${frontmatter}\n\n${GENERATED_HEADER}\n\n${renderedBody}`;
+        const rel = `${tool}/rules/${ruleFileName}`;
+        let out;
+        try {
+          out = composeGeneratedSkillMarkdown(frontmatter, renderedBody);
+        } catch (e) {
+          fail(`${rel}: ${e.message}`);
+          continue;
+        }
         plannedWrites.set(path.join(rulesDir, ruleFileName), out);
       }
     }
+  }
+}
+
+// Every planned client SKILL.md must open with `---`. Fail here, before
+// write or --check drift, so a header-first regression cannot ship.
+for (const [absPath, content] of plannedWrites) {
+  if (!absPath.endsWith(`${path.sep}SKILL.md`)) continue;
+  const rel = path.relative(ROOT, absPath);
+  try {
+    assertSkillMdStartsWithFrontmatter(content, rel);
+  } catch (e) {
+    fail(e.message);
   }
 }
 

@@ -12,8 +12,11 @@ overwritten the next time someone runs the generator:
 - `kiro/power/steering/**`
 - `claude/rules/*.mdc`, `cursor/rules/*.mdc`
 
-Every one of those files starts with a `<!-- GENERATED FILE -->` comment as a
-reminder. The thing you actually edit is the canonical source:
+Generated `SKILL.md` files and `.mdc` rules start with YAML frontmatter. The
+`<!-- GENERATED FILE -->` comment comes after the closing `---`. Steering docs
+(`kiro/power/steering/**`) have no frontmatter and start with that comment.
+`node scripts/generate-skills.mjs` fails when a generated `SKILL.md` does not
+start with `---`. The thing you actually edit is the canonical source:
 
 ```
 skills/<slug>/SKILL.md            # required — canonical skill content
