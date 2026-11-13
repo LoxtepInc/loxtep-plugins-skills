@@ -394,7 +394,7 @@ key parameters.
 | `translate_sparql` | organization | — | — |
 | `graph_traversal` | organization | — | — |
 
-### `loxtep_observe` — Observe — monitor trust, health, lineage, and runtime. Quality scores, catalog evidence/lineage/governance flags, compounding metrics, live queue inspection (get_queue_info, read_queue_events, replay_events, trigger_bot, list_runtime_queues, list_observe_bots, get_stream_config), runtime-queue catalog reconcile (reconcile_runtime_queues — dry_run first), Iceberg table health/enable/rebuild (get_iceberg_health, enable_iceberg_table — storage identity is schema.key or is_primary_key, omitted backfill_from skips history; rebuild_iceberg_table — confirm required; dry_run first), and deployment status (list_deployments, get_deployment).
+### `loxtep_observe` — Observe — monitor trust, health, lineage, and runtime. Quality scores, catalog evidence/lineage/governance flags, compounding metrics, live queue inspection (get_queue_info, read_queue_events, replay_events, trigger_bot, list_runtime_queues, list_observe_bots, get_stream_config), runtime-queue catalog reconcile (reconcile_runtime_queues — dry_run first), Iceberg table health/enable/rebuild (get_iceberg_health, enable_iceberg_table — storage identity is schema.key or is_primary_key, omitted backfill_from skips history; rebuild_iceberg_table — confirm required; dry_run first), Iceberg event history (set_iceberg_history — append-only <name>.history table; turning off needs confirm) and upstream event traces over it (trace_iceberg_event), and deployment status (list_deployments, get_deployment).
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
 | `get_quality_score` | organization | — | — |
@@ -413,6 +413,8 @@ key parameters.
 | `get_iceberg_health` | organization | `data_product_id` | — |
 | `enable_iceberg_table` | organization | — | — |
 | `rebuild_iceberg_table` | organization | `data_product_id`, `confirm`, `backfill_from` | `start_checkpoint`, `end_checkpoint`, `dry_run` |
+| `set_iceberg_history` | organization | `data_product_id`, `enabled` | `confirm` |
+| `trace_iceberg_event` | organization | `data_product_id`, `eid` | `max_hops`, `max_rows` |
 | `list_deployments` | organization | — | `project_id`, `instance_id`, `workflow_id`, `status`, `orphaned` |
 | `get_deployment` | organization | `deployment_id` | — |
 

@@ -145,9 +145,12 @@ instance).
 Since #3451 (#3436) and #3740. The check is `queueEidPathTimestampMismatch`. The
 check does not rewrite the path, replace the timestamp, or fall back to another
 read. A supplied eid must be a full `z/YYYY/MM/DD/HH/mm/<ms>[-<ordinal>]`. `z/`
-is refused here. Botmon `searchQueue` in `rstreams-platform-cdk`
-(`lambda/botmon/searchQueue`) would otherwise call leo-sdk `eventIdToTimestamp`,
-which throws `Unable to get timestamp for Event Id: z/`.
+is refused here. Botmon `searchQueue` orders and bounds the slice by the eid
+date path; a numeric terminal refines sub-minute time only in that same UTC
+minute, and an eid with no date path or a bound that does not move forward
+returns 500 `slice_bounds_error` with no unbounded start-to-now read. Checked
+against `lambda/botmon/searchQueue/index.js` and
+`lambda/botmon/searchQueue/test/index.test.ts`, not a live call.
 
 After the check passes, `ReadQueueEventsTool` calls `resolveObserveSearchEid`
 (`platform-backend/_core/src/observe/search-eid.ts`). That normalization is the
@@ -175,10 +178,7 @@ timestamp (the path is the UTC minute of the millisecond). A path prefix such as
 `z/` or `z/2026/10/17/19/02/` is refused.
 
 Known issues, not fixed here:
-[#3454](https://github.com/LoxtepInc/loxtep/issues/3454) (botmon `searchQueue`
-builds `slice_end` from the eid milliseconds and orders the cursor by the date
-path; an eid that reaches botmon another way can still 500 `slice_bounds_error`)
-and [#3455](https://github.com/LoxtepInc/loxtep/issues/3455)
+[#3455](https://github.com/LoxtepInc/loxtep/issues/3455)
 (`loadQueueSampleWindow` in `_core/src/observe/load-queue-samples.ts` forwards a
 caller eid to the Observe proxy without this check).
 
@@ -309,12 +309,19 @@ not live captures.
   id/name/region/status/type/plan only. Queue prefixes come from
   `get_runtime_mapping`. Bus physical names: `loxtep instances stream-config`,
   not MCP.
+- **Upstream lineage of one event:** `read_queue_events` shows an event's
+  payload, not which upstream events produced it. For a data product that keeps
+  Iceberg event history, `trace_iceberg_event` (`data_product_id` + the event's
+  `eid`) walks it upstream hop by hop over history tables and says why it
+  stopped (`no_upstream`, `source_history_not_enabled`, …). Retained queue
+  events still need `read_queue_events`; trace only sees events in history.
 
 ## MCP operations used
 
 | Operation             | Facade             | Purpose                                   |
 | --------------------- | ------------------ | ----------------------------------------- |
 | `read_queue_events`   | `loxtep_observe`   | Read actual event payloads from any queue |
+| `trace_iceberg_event` | `loxtep_observe`   | Walk one event upstream over history      |
 | `get_queue_info`      | `loxtep_observe`   | Get queue metadata for a data product     |
 | `get_runtime_mapping` | `loxtep_build`     | Resolve deployed queue/bot names          |
 | `list_instances`      | `loxtep_workspace` | Confirm instance_id / status / type       |

@@ -50,10 +50,23 @@ separate.
    revision. Revising cancels the approval.
 6. `apply_definition_proposal`. The response includes `catalog_snapshot`.
    `schema.key` there is the storage key. Retrying an applied revision rewrites
-   that snapshot and does not create another shape.
+   that snapshot and does not create another shape. A shape apply does not
+   include `field_bindings`.
 7. `submit_semantic_bindings_proposal` separately. Shape approval does not
-   accept ontology mappings. Semantic bindings do not write `schema.key`.
-8. Approve that revision, then apply it.
+   accept ontology mappings. Semantic bindings do not write `schema.key`. Map
+   each field with its full Shape path (`patch_context.account_key`,
+   `items[].sku`), not the last segment. A bare name is accepted only when one
+   field has that leaf. Several matches throw and name each full path.
+8. Approve that revision, then apply it. The apply result includes
+   `field_bindings` next to `catalog_snapshot`. Each row has `accepted_path`
+   (the path you sent, with a `$.` root removed) and `materialized_path` (the
+   full path stored on `metadata.field_glossary_map`). They are equal when you
+   sent the full path. A unique bare name keeps that name as `accepted_path` and
+   stores the full path as `materialized_path`. An apply with no extractable
+   field mapping still returns `field_bindings: []`. Retrying that applied
+   revision returns the stored rows and `idempotent_replay: true`.
+   `POST /semantic-layer/product-definition` with `"action": "apply"` returns
+   the same object in `data`. Approve and get do not add `field_bindings`.
 9. `get_definition_status`. Read `stores`, `blockers`, and `readiness_checks`.
    `identifier_present` means the applied shape marked `is_primary_key`.
    `storage_key_present` means Iceberg can use the catalog snapshot. When

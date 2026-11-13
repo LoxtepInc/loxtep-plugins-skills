@@ -36,6 +36,58 @@ embeddings enabled.
 | Run      | `loxtep_query` | `execute_query`     | organization |
 | Results  | `loxtep_query` | `get_query_results` | organization |
 | Semantic | `loxtep_query` | `semantic_search`   | organization |
+| History  | `loxtep_observe` | `set_iceberg_history` | organization |
+| Trace    | `loxtep_observe` | `trace_iceberg_event` | organization |
+
+## Row lineage, event history and traces
+
+Every Iceberg row carries writer-stamped lineage columns. Select them by name in
+`execute_query`:
+
+| Column          | Current-state table                  | History table   |
+| --------------- | ------------------------------------ | --------------- |
+| `_eid`          | queue eid that **last changed** the row | the event     |
+| `_first_eid`    | queue eid that **created** the row   | not present     |
+| `_corr_source`  | upstream queue of the last change    | the event's     |
+| `_corr_start` / `_corr_end` | upstream eid range that produced the last change | the event's |
+| `_eid_ts` / `_eid_day` | not present                   | event time / UTC day (partition) |
+
+An event whose payload equals the stored row does not change `_eid` or
+`_corr_*`. How far the writer has got is health
+`data_sync.queue_lag.checkpoint_eid`, not a column.
+
+**Event history** is an opt-in, append-only second table: one row per accepted
+event. Iceberg must already be enabled.
+
+1. `loxtep_observe` → `set_iceberg_history` with `enabled: true`. Turning it off
+   needs `confirm: true`: events while it is off are never recorded (rows already
+   written stay). Do not set `storage_indexing_preferences` with
+   `update_data_product` — it is refused there and never reached the instance.
+2. `get_iceberg_health` → `history`: `status` is `not_enabled`,
+   `waiting_for_first_write`, `ok` or `unknown`. Compare `max_eid` with
+   `data_sync.queue_lag.checkpoint_eid`. `gap_after_eid` means history was off
+   for a while after that eid; only a `clean_reset` rebuild from `z/` fills it.
+3. Query it as `"<name>.history"` in `execute_query`; `list_tables` marks it
+   `iceberg_table: "history"`. Same policy and field controls as the product.
+
+```sql
+SELECT _eid_ts, balance FROM "canonical.accounts.published.v1.history"
+WHERE account_id = 'a-1' ORDER BY _eid
+```
+
+**Trace** — "where did this row come from?": `loxtep_observe` →
+`trace_iceberg_event` with `data_product_id` and `eid` (a history row's `_eid`,
+or a current row's `_eid`). Optional `max_hops` (1–10, default 5) and
+`max_rows` (1–200, default 50). Each `steps[]` entry is one hop upstream
+(product, queue, the events with their rows). `stops[].reason` says why the walk
+ended: `no_upstream` is the start of the pipeline; `source_history_not_enabled`
+means the upstream product needs history turned on to go further. 409
+`history_not_enabled` means this product keeps no history; 404
+`event_not_in_history` means the eid is not in its history table.
+
+A normal rebuild keeps the history table. `clean_reset: true` drops and
+rebuilds it from the queue, so history older than queue retention is lost — the
+rebuild dry run's `history_table` check says so.
 
 ## Reading `execute_query` results
 
