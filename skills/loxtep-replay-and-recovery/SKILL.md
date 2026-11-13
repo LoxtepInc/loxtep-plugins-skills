@@ -39,6 +39,17 @@ environment, target, affected scope and requested outcome before mutation.
   snapshots and current job before requesting its native rebuild. A working
   source-to-product stream does not need to be rebuilt merely because table
   materialization fails.
+- **Protect event history:** when the product keeps an event history table
+  (`get_iceberg_health` → `history.status` other than `not_enabled`), a normal
+  rebuild keeps it, but `clean_reset: true` drops and rebuilds it from the queue
+  and loses history older than queue retention. Read the dry run's
+  `history_table` check and disclose that loss before a `clean_reset`. A
+  `history.gap_after_eid` (history was off for a while) is filled only by a
+  `clean_reset` rebuild from `z/`.
+- **Find where bad data came from:** before repairing a downstream product, use
+  `loxtep_observe` → `trace_iceberg_event` on the bad row's `_eid` to walk it
+  upstream (needs event history on each product along the way). Repair at the
+  hop where the data first went wrong, not at the symptom.
 
 If scope is ambiguous, continue read-only inspection and resolve the ambiguity
 before changing state. A recovery request does not authorize deleting retained

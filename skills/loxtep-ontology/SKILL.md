@@ -159,9 +159,63 @@ Requires **`admin:vocabulary`** (or org admin).
 
 Requires **`semantic_gaps:resolve`** (plus override create permissions).
 
+### Flow — Read glossary terms in Vocabulary
+
+`list_terms` (`GET /graph/organizations/{organization_id}/thesaurus`) returns
+system field terms plus the organization's glossary projections.
+
+- An org glossary term with no linked thesaurus row is listed as scheme
+  `custom`. Its `term_id` is the glossary term id. The row includes `synonyms`
+  (strings) and `linked_schema_fields` (objects with `schema_id` and
+  `field_name`). Each synonym is also an alias with `system` `glossary_synonym`.
+- A thesaurus row linked to that glossary term keeps its own `term_id` and
+  carries the glossary `synonyms` and `linked_schema_fields`.
+- `get_term` accepts a thesaurus `term_id` or a glossary term id. For a linked
+  pair, both ids return the thesaurus row, and the row can include
+  `glossary_term_id`, `synonyms`, and `linked_schema_fields`. An unlinked
+  glossary term id returns the scheme `custom` projection above. An id that is
+  neither a visible thesaurus row nor an org glossary term returns 404
+  `Thesaurus term not found`.
+- A `domain` filter, or a `scheme` other than `custom`, omits unlinked glossary
+  projections. Deprecated glossary terms are omitted.
+- An org thesaurus row that shares the glossary term's canonical key and is not
+  linked to it fails the request with **409** when that row is already linked to
+  a different glossary term, or when the definitions differ. The message names
+  both ids and the canonical key:
+  `glossary term <glossary term id> and thesaurus term <thesaurus term id> share canonical_key "<canonical_key>" and are not linked`.
+  When that thesaurus row has no glossary link and its definition is blank or
+  equal to the glossary definition, the read keeps the thesaurus `term_id` and
+  attaches the glossary fields.
+- A blank glossary name, malformed glossary `synonyms` or
+  `linked_schema_fields`, or malformed thesaurus `aliases` fails the request. A
+  glossary term with no `created_at` or `updated_at` fails the request. The
+  error names the glossary or thesaurus term.
+
+Example shape asserted by the glossary projection unit test for an unlinked
+glossary term. These are fixture values from that test, not a live API response:
+
+```json
+{
+  "term_id": "33333333-3333-4333-8333-333333333333",
+  "glossary_term_id": "33333333-3333-4333-8333-333333333333",
+  "canonical_key": "customer lifetime value",
+  "scheme": "custom",
+  "synonyms": ["CLV"],
+  "linked_schema_fields": [
+    {
+      "schema_id": "44444444-4444-4444-8444-444444444444",
+      "field_name": "clv"
+    }
+  ],
+  "aliases": [{ "system": "glossary_synonym", "path": "CLV" }]
+}
+```
+
 ### Flow — Vocabulary sync (bulk)
 
-1. `list_terms` with `domain` filter to see current state.
+1. `list_terms` to see current Vocabulary, including glossary projections. Pass
+   `domain` only when you want thesaurus rows in that domain. That filter omits
+   unlinked glossary projections.
 2. `sync_vocabulary` with `mode: "full_sync"` or `"additive_only"` and
    `dry_run: true` to preview changes.
 3. `sync_vocabulary` with `dry_run: false` to apply.
@@ -172,9 +226,13 @@ Requires **`semantic_gaps:resolve`** (plus override create permissions).
    Allowed schemes are `field`, `entity`, and `custom`. Omit `scheme` and
    MCP/API `create_term` defaults to `field` (a vocabulary key — not an ontology
    concept).
-2. `get_term` by `term_id` to verify.
-3. `update_term` for partial field changes.
-4. `delete_term` to soft-delete (tombstone).
+2. `get_term` by thesaurus `term_id` or by glossary term id to verify. See the
+   read flow above for glossary projections, `glossary_term_id`, and the 409.
+3. `update_term` for a partial change to a thesaurus row. Pass the thesaurus
+   `term_id`, or a `glossary_term_id` that is already stored on that row. An
+   unlinked glossary term id returns 404 `Thesaurus term not found`.
+4. `delete_term` soft-deletes (tombstone) a thesaurus row the same way. An
+   unlinked glossary term id returns 404 `Thesaurus term not found`.
 
 ### Flow — Ontology concept creation
 
@@ -231,26 +289,26 @@ classes, and do not bulk-apply a review set from this operation. See
 
 ## MCP mapping
 
-| `operation`                    | Scope        | Notes                                                                                                                                                                      |
-| ------------------------------ | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `list_terms`                   | organization | Filters: `scheme`, `domain`, `canonical_key_prefix`                                                                                                                        |
-| `get_term`                     | organization | Single term by `term_id`                                                                                                                                                   |
-| `create_term`                  | organization | Conflict error if `canonical_key` exists                                                                                                                                   |
-| `update_term`                  | organization | Partial update by `term_id`                                                                                                                                                |
-| `delete_term`                  | organization | Soft-delete; warns if referenced                                                                                                                                           |
-| `sync_vocabulary`              | organization | Bulk sync with `dry_run` support                                                                                                                                           |
-| `resolve_canonical_key`        | organization | Alias → canonical resolution                                                                                                                                               |
-| `get_ontology_relationships`   | organization | Filters: `source_entity_type`, `target_entity_type`, `relation_type`, `namespace`                                                                                          |
-| `create_ontology_concept`      | organization | Required: `name`, `namespace`, `node_type`; optional: `description`, `uri`, `parent_concepts`. URI uniqueness enforced                                                     |
-| `create_ontology_relationship` | organization | Name path validates both entity types. URI path (`source_uri`, `predicate_uri`, `target_uri`) links a tenant class to an activated system-pack class and does not copy it. |
-| `update_ontology_concept`      | organization | Partial field updates                                                                                                                                                      |
-| `delete_ontology_concept`      | organization | Soft-delete; warns about dependent relationships                                                                                                                           |
-| `register_namespace_mapping`   | organization | Additive merge by default; `overwrite: true` replaces                                                                                                                      |
-| `list_namespace_mappings`      | organization | Includes system-scoped (W3C PKO) + org-scoped                                                                                                                              |
-| `get_namespace_mapping`        | organization | Full mapping table for a prefix                                                                                                                                            |
-| `create_enterprise_override`   | organization | `canonical_key`, `enterprise_definition`, `divergence_reason`; optional `baseline_assumption`, `linked_data_product_ids`, `override_source`                                |
-| `list_enterprise_overrides`    | organization | Filters: `override_status`, `override_source`                                                                                                                              |
-| `resolve_semantic_gap`         | organization | `issue_id` + override fields; marks AO issue done, `override_source=agent_gap`                                                                                             |
+| `operation`                    | Scope        | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ------------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `list_terms`                   | organization | System field terms plus org glossary projections. An unlinked glossary term is scheme `custom` under its glossary term id and includes `synonyms` and `linked_schema_fields`. A linked thesaurus row keeps its `term_id` and carries those fields. Filters: `scheme`, `domain`, `canonical_key_prefix`. A domain filter or a non-`custom` scheme omits unlinked glossary projections. 409 when an unlinked org row shares the glossary canonical key and the definitions differ or the row is linked to another glossary term. A blank glossary name, malformed glossary synonyms or linked_schema_fields, or malformed thesaurus aliases fails the request. |
+| `get_term`                     | organization | Thesaurus `term_id` or glossary term id. A linked pair returns the thesaurus row and can include `glossary_term_id`, `synonyms`, and `linked_schema_fields`. An unlinked glossary id returns the scheme `custom` projection. Same 409 and malformed-glossary failures as `list_terms`. Unknown id: 404 `Thesaurus term not found`.                                                                                                                                                                                                                                                                                                                           |
+| `create_term`                  | organization | Conflict error if `canonical_key` exists                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `update_term`                  | organization | Partial update of a thesaurus row by `term_id` or a linked `glossary_term_id`. An unlinked glossary term id returns 404 `Thesaurus term not found`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `delete_term`                  | organization | Soft-delete of a thesaurus row by `term_id` or a linked `glossary_term_id`. An unlinked glossary term id returns 404 `Thesaurus term not found`. Warns if referenced.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `sync_vocabulary`              | organization | Bulk sync with `dry_run` support                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `resolve_canonical_key`        | organization | Alias → canonical resolution                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `get_ontology_relationships`   | organization | Filters: `source_entity_type`, `target_entity_type`, `relation_type`, `namespace`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `create_ontology_concept`      | organization | Required: `name`, `namespace`, `node_type`; optional: `description`, `uri`, `parent_concepts`. URI uniqueness enforced                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `create_ontology_relationship` | organization | Name path validates both entity types. URI path (`source_uri`, `predicate_uri`, `target_uri`) links a tenant class to an activated system-pack class and does not copy it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `update_ontology_concept`      | organization | Partial field updates                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `delete_ontology_concept`      | organization | Soft-delete; warns about dependent relationships                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `register_namespace_mapping`   | organization | Additive merge by default; `overwrite: true` replaces                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `list_namespace_mappings`      | organization | Includes system-scoped (W3C PKO) + org-scoped                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `get_namespace_mapping`        | organization | Full mapping table for a prefix                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `create_enterprise_override`   | organization | `canonical_key`, `enterprise_definition`, `divergence_reason`; optional `baseline_assumption`, `linked_data_product_ids`, `override_source`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `list_enterprise_overrides`    | organization | Filters: `override_status`, `override_source`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `resolve_semantic_gap`         | organization | `issue_id` + override fields; marks AO issue done, `override_source=agent_gap`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 
 All rows above are MCP `loxtep_meaning` operations (Meaning review path).
 
@@ -332,6 +390,14 @@ is terms, shapes, ontology graph types, namespace mappings, and packs.
   overrides count toward Gold coverage and context injection.
 - **Duplicate canonical_key:** POST returns **409** — update existing term
   instead.
+- **Unlinked glossary id:** `list_terms` and `get_term` return it as scheme
+  `custom`. `update_term` and `delete_term` resolve only thesaurus rows (by
+  `term_id` or a linked `glossary_term_id`) and return 404
+  `Thesaurus term not found` for that id.
+- **Shared canonical key, not linked:** `list_terms` and `get_term` return 409
+  when an org thesaurus row shares the glossary canonical key, is not linked to
+  that glossary term, and either the definitions differ or the row is linked to
+  a different glossary term. The message names both ids and the canonical key.
 - **Field terms are not ontology concepts.** `scheme: field` is for vocabulary /
   correlation keys. Do not expect those terms on the ontology canvas.
 - **High confidence is not enough to auto-accept on connect.** On the semantic

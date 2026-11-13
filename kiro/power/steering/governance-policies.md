@@ -72,7 +72,7 @@ For _inspecting_ governance flags on existing data products, switch to the
   ],
   "scope": {
     "domains": ["<domain_id>"],
-    "dataProducts": ["<dp_id>"],
+    "data_products": ["<dp_id>"],
     "users": ["<user_id>"],
   },
   "metadata": { "enforcement": "block" }, // block | warn | audit (legacy strict → block)
