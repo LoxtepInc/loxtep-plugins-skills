@@ -177,8 +177,9 @@ organization has `no_records_to_models` on — do not retry, tell the user.
 The same operation sets the other Iceberg indexes; send only what changes:
 `analytics_indexes_enabled` (column statistics for DuckDB file pruning) and
 `bloom_filter_columns` (up to 20 scalar fields for point lookups, `[]` clears).
-New settings apply to files written after the config syncs; existing files keep
-their old layout until a rebuild.
+Analytics and bloom settings saved before Iceberg is enabled are sent when it is
+enabled. New settings apply to files written after they reach the instance;
+existing files keep their old layout until a rebuild.
 
 The Iceberg table stores JSON-string columns `lx__embedding` and
 `lx__embedding_hash`. Default warehouse views `SELECT * EXCLUDE` those columns.
