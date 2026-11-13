@@ -209,6 +209,11 @@ reach the source and allow Lambda ENIs. Ask for these values. Do not guess.
    a connector still uses returns 409 (`Connector network in use`). A stored
    `connector_vpcs` value that is present but invalid throws
    `Invalid connection_details.connector_vpcs` and is not read as an empty list.
+   See **`loxtep-instances`**: a deploy role denied `ec2:DescribeSubnets` fails
+   the runtimes deploy (`DescribeSubnetsDeniedError`) and does not skip the
+   check. The different-Availability-Zone check applies only to extra networks.
+   The primary `connector_vpc` is checked only for subnet existence and the same
+   VPC.
 2. Instance create already provisions the runtimes stack. `update_instance` with
    a `connector_vpc` change, or `force_runtimes_redeploy: true` (SDK
    `redeploy_runtimes` / CLI `loxtep instances redeploy-runtimes`), reapplies
