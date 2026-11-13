@@ -40,14 +40,15 @@ embeddings enabled.
 
 ## MCP mapping
 
-| Step     | Tool           | `operation`         | Scope        |
-| -------- | -------------- | ------------------- | ------------ |
-| List     | `loxtep_query` | `list_tables`       | organization |
-| Schema   | `loxtep_query` | `get_table_schema`  | organization |
-| Run      | `loxtep_query` | `execute_query`     | organization |
-| Results  | `loxtep_query` | `get_query_results` | organization |
-| Semantic | `loxtep_query` | `semantic_search`   | organization |
+| Step     | Tool             | `operation`           | Scope        |
+| -------- | ---------------- | --------------------- | ------------ |
+| List     | `loxtep_query`   | `list_tables`         | organization |
+| Schema   | `loxtep_query`   | `get_table_schema`    | organization |
+| Run      | `loxtep_query`   | `execute_query`       | organization |
+| Results  | `loxtep_query`   | `get_query_results`   | organization |
+| Semantic | `loxtep_query`   | `semantic_search`     | organization |
 | History  | `loxtep_observe` | `set_iceberg_history` | organization |
+| Indexes  | `loxtep_observe` | `set_iceberg_indexes` | organization |
 | Trace    | `loxtep_observe` | `trace_iceberg_event` | organization |
 
 ## Row lineage, event history and traces
@@ -55,13 +56,13 @@ embeddings enabled.
 Every Iceberg row carries writer-stamped lineage columns. Select them by name in
 `execute_query`:
 
-| Column          | Current-state table                  | History table   |
-| --------------- | ------------------------------------ | --------------- |
-| `_eid`          | queue eid that **last changed** the row | the event     |
-| `_first_eid`    | queue eid that **created** the row   | not present     |
-| `_corr_source`  | upstream queue of the last change    | the event's     |
-| `_corr_start` / `_corr_end` | upstream eid range that produced the last change | the event's |
-| `_eid_ts` / `_eid_day` | not present                   | event time / UTC day (partition) |
+| Column                      | Current-state table                              | History table                    |
+| --------------------------- | ------------------------------------------------ | -------------------------------- |
+| `_eid`                      | queue eid that **last changed** the row          | the event                        |
+| `_first_eid`                | queue eid that **created** the row               | not present                      |
+| `_corr_source`              | upstream queue of the last change                | the event's                      |
+| `_corr_start` / `_corr_end` | upstream eid range that produced the last change | the event's                      |
+| `_eid_ts` / `_eid_day`      | not present                                      | event time / UTC day (partition) |
 
 An event whose payload equals the stored row does not change `_eid` or
 `_corr_*`. How far the writer has got is health
@@ -71,8 +72,8 @@ An event whose payload equals the stored row does not change `_eid` or
 event. Iceberg must already be enabled.
 
 1. `loxtep_observe` → `set_iceberg_history` with `enabled: true`. Turning it off
-   needs `confirm: true`: events while it is off are never recorded (rows already
-   written stay). Do not set `storage_indexing_preferences` with
+   needs `confirm: true`: events while it is off are never recorded (rows
+   already written stay). Do not set `storage_indexing_preferences` with
    `update_data_product` — it is refused there and never reached the instance.
 2. `get_iceberg_health` → `history`: `status` is `not_enabled`,
    `waiting_for_first_write`, `ok` or `unknown`. Compare `max_eid` with
@@ -88,17 +89,17 @@ WHERE account_id = 'a-1' ORDER BY _eid
 
 **Trace** — "where did this row come from?": `loxtep_observe` →
 `trace_iceberg_event` with `data_product_id` and `eid` (a history row's `_eid`,
-or a current row's `_eid`). Optional `max_hops` (1–10, default 5) and
-`max_rows` (1–200, default 50). Each `steps[]` entry is one hop upstream
-(product, queue, the events with their rows). `stops[].reason` says why the walk
-ended: `no_upstream` is the start of the pipeline; `source_history_not_enabled`
-means the upstream product needs history turned on to go further. 409
+or a current row's `_eid`). Optional `max_hops` (1–10, default 5) and `max_rows`
+(1–200, default 50). Each `steps[]` entry is one hop upstream (product, queue,
+the events with their rows). `stops[].reason` says why the walk ended:
+`no_upstream` is the start of the pipeline; `source_history_not_enabled` means
+the upstream product needs history turned on to go further. 409
 `history_not_enabled` means this product keeps no history; 404
 `event_not_in_history` means the eid is not in its history table.
 
-A normal rebuild keeps the history table. `clean_reset: true` drops and
-rebuilds it from the queue, so history older than queue retention is lost — the
-rebuild dry run's `history_table` check says so.
+A normal rebuild keeps the history table. `clean_reset: true` drops and rebuilds
+it from the queue, so history older than queue retention is lost — the rebuild
+dry run's `history_table` check says so.
 
 ## Reading `execute_query` results
 
@@ -173,14 +174,22 @@ Fields that may appear on the result (only these exist on
 
 ## Row embeddings and `semantic_search`
 
-Opt-in per data product. Iceberg must already be enabled. Configure
-`metadata.storage_indexing_preferences.row_embeddings` on
-`PUT /dataproducts/dataproducts/{data_product_id}`:
+Opt-in per data product. Iceberg must already be enabled. Set it with
+`loxtep_observe` → `set_iceberg_indexes` and `row_embeddings`:
 
 - `fields` — existing string-typed, non-PII schema fields (required, min 1)
 - `dimensions` — `256` | `512` | `1024` (default `256`)
 - `mode` — `live` | `batch` | `hybrid` (default `hybrid`)
-- `null` clears / disables. Omitted leaves the pref unchanged.
+- `null` turns embeddings off. Omitted leaves the setting unchanged.
+
+409 `iceberg_required` means Iceberg is off; 409 `privacy_blocked` means the
+organization has `no_records_to_models` on — do not retry, tell the user.
+
+The same operation sets the other Iceberg indexes; send only what changes:
+`analytics_indexes_enabled` (column statistics for DuckDB file pruning) and
+`bloom_filter_columns` (up to 20 scalar fields for point lookups, `[]` clears).
+New settings apply to files written after the config syncs; existing files keep
+their old layout until a rebuild.
 
 The Iceberg table stores JSON-string columns `lx__embedding` and
 `lx__embedding_hash`. Default warehouse views `SELECT * EXCLUDE` those columns.
@@ -293,9 +302,9 @@ following as a live transcript.
   history replay. The partition field must be on the schema. Empty or “unknown
   table” warehouse errors usually mean Iceberg was never enabled.
 - **`semantic_search` needs row embeddings** — SQL `execute_query` does not
-  imply vectors. Enable Iceberg, then set `row_embeddings`. Hidden
-  `lx__embedding*` columns are not in default views; do not `SELECT` them
-  expecting search. `filters` are equality only.
+  imply vectors. Enable Iceberg, then `set_iceberg_indexes` with
+  `row_embeddings`. Hidden `lx__embedding*` columns are not in default views; do
+  not `SELECT` them expecting search. `filters` are equality only.
 - **Iceberg rebuild** — requires that enablement and the same storage identity.
   Iceberg stores are Amazon S3 Tables (compaction and snapshot cleanup are
   AWS-managed; there is no compact tool). If queries fail with missing data or a
