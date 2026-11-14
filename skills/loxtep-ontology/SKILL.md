@@ -428,9 +428,12 @@ is terms, shapes, ontology graph types, namespace mappings, and packs.
 
 ### Graph serve (COA parity on `loxtep_query`)
 
+- `describe_graph` — authenticated-org observed labels, properties, and
+  relationship shapes with positive counts; no arguments.
 - `translate_sparql` — NL → SPARQL for DynamoDB graph (`execute=true` optional).
 - `graph_traversal` — lineage / related / sparql_neighbors (never Neptune).
-- Attribution: `translate_sparql` → this skill; see also
+- Attribution: `describe_graph` and `graph_traversal` →
+  `discover-govern-lineage`; `translate_sparql` → this skill. See also
   `platform-backend/ai/lib/tools/docs/coa-mcp-serve-parity.md`.
 
 <!-- SCOPE_BLOCK -->

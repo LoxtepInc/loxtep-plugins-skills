@@ -38,8 +38,8 @@ In lineage views:
 ## When to use
 
 - "Search the **catalog**", "**lineage** for this table", "**governance** flags"
-- `search_catalog`, `get_catalog_entry`, `get_evidence`, `get_lineage_impact`,
-  `get_governance_flags`, `list_domains`, `list_tags`
+- `search_catalog`, `describe_graph`, `get_catalog_entry`, `get_evidence`,
+  `get_lineage_impact`, `get_governance_flags`, `list_domains`, `list_tags`
 
 ## Prerequisites
 
@@ -50,9 +50,12 @@ In lineage views:
 
 ### Flow — Search then drill in
 
-1. `loxtep_query` → `search_catalog` (query / filters per API).
-2. `get_catalog_entry` for a chosen asset id.
-3. Optional: `get_lineage_impact`, `get_evidence`, `get_governance_flags`.
+1. Optional orientation: `loxtep_query` → `describe_graph` with no arguments to
+   inspect this organization's observed labels, properties, and relationship
+   shapes before constructing a graph query.
+2. `loxtep_query` → `search_catalog` (query / filters per API).
+3. `get_catalog_entry` for a chosen asset id.
+4. Optional: `get_lineage_impact`, `get_evidence`, `get_governance_flags`.
 
 ### Flow — Domains and tags
 
@@ -63,6 +66,7 @@ In lineage views:
 
 | User intent  | Tool             | `operation`            | Scope       |
 | ------------ | ---------------- | ---------------------- | ----------- |
+| Graph shape  | `loxtep_query`   | `describe_graph`       | organization |
 | Search       | `loxtep_query`   | `search_catalog`       | **catalog** |
 | Entry detail | `loxtep_query`   | `get_catalog_entry`    | **catalog** |
 | Evidence     | `loxtep_observe` | `get_evidence`         | **catalog** |
@@ -78,6 +82,12 @@ In lineage views:
 - **Empty or sparse results** — Discovery/search tools may need
   platform-injected search/evidence services in the AI runtime; behavior can
   differ between local tests and production.
+- **Graph REST search can be partial** — `GET` and `POST /graph/search` return
+  `truncated` plus `truncated_reason` (`scan_budget`, `time_budget`,
+  `semantic_top_k`, or `null`). When `truncated` is true, state that totals or
+  facets may be incomplete; `semantic_top_k` means only the top 100 candidates
+  were considered. These fields belong to graph REST search, not
+  `search_catalog`'s response contract.
 - **`derives_from` / `depends_on` edge direction** — PROV orientation:
   `source_id` = derived product, `target_id` = upstream origin. Do not flip to
   “feeder → consumer”; that breaks Ready promotion lineage and cache
