@@ -55,7 +55,7 @@ Do **not** suggest local stdio MCP servers or `npx @loxtep/customer-mcp-server`.
 | **Meaning**                 | `loxtep_meaning`        | Vocabulary, ontology, semantic layer                                                   |
 | **Inbox**                   | `loxtep_review`         | Lifecycle transitions, approvals, context mining                                       |
 | **Meaning / Inbox**         | `loxtep_package_review` | MCP Apps review card for semantic packages                                             |
-| **Use**                     | `loxtep_query`          | Catalog search, analytics SQL, COA graph serve (`translate_sparql`, `graph_traversal`) |
+| **Use**                     | `loxtep_query`          | Catalog search, analytics SQL, COA graph serve (`describe_graph`, `translate_sparql`, `graph_traversal`) |
 | **Observe**                 | `loxtep_observe`        | Quality scores, lineage, queues, deployment status                                     |
 | **Meaning / Use**           | `loxtep_context`        | Process intel, procedures, agent workspace                                             |
 
@@ -130,8 +130,15 @@ SDK namespace.
 
 | `operation`        | Args (highlights)                                                        | Backend                                                            |
 | ------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `describe_graph`   | none                                                                     | `GET /graph/organizations/{organization_id}/schema-catalog`        |
 | `translate_sparql` | `natural_language`, optional `execute`                                   | `POST /ai/graph-query-translate` (+ optional `POST /graph/sparql`) |
 | `graph_traversal`  | `mode=lineage\|related\|sparql_neighbors`, `node_id` / `data_product_id` | lineage / related / SPARQL neighbors                               |
+
+`describe_graph` returns the authenticated organization's observed labels,
+label properties (`property_name`, `type_tag`, `is_array`), and relationship
+shapes (`source_label`, `edge_type`, `target_label`), each with a positive
+`count`. It accepts no organization argument; the server derives scope from the
+authenticated session.
 
 COA `list_metrics` / `describe_schema` are **not** separate tools — use
 `search_semantic_layer`, `get_compounding_metric`, `get_table_schema`,
