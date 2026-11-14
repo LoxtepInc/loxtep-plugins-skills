@@ -134,8 +134,12 @@ requirement.
 
 ## How to derive a shape
 
-- Nested fields, JSON types, required vs optional, and nullability. Optional is
-  not the same as nullable.
+- Nested fields, JSON types, required vs optional, and nullability. Optionality
+  and nullability are independent: an optional field may be absent, while a
+  nullable field may be present with `null`. A required field that is absent is
+  a `missing` contract violation; a required, non-nullable field that is present
+  with `null` is a `null` violation. Infer types only from valued observations,
+  not absent or null observations.
 - Identifiers: mark those fields `is_primary_key` on the **data-product schema**
   path (`data_products.schema`, including REST/MCP shape `fields[]` that apply
   writes onto that snapshot). JSON Schema snapshots still drop `is_primary_key`
