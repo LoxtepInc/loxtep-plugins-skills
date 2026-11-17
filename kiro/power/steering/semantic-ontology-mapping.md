@@ -210,7 +210,13 @@ through the thesaurus (`term_uri`, then the SKOS canonical key; soft-deleted
 rows are ignored) and must link a glossary term in the same organization.
 Otherwise the call is HTTP 422 `Unresolvable glossary target: <key>`
 (`error.details.term_key`; `WebError.kind` is `unprocessable`) and nothing is
-written. `process-glossary-bindings-requested` uses the same function.
+written. That 422 is raised while resolving targets, before any write. When
+every target resolves, the glossary term create, the annotation insert, and the
+schema cache update commit in one database transaction. A failure in any of
+those three rolls all three back and surfaces a `WebError` (HTTP 500, kind
+`internal`) whose message is the failed step. The trust-mutation audit and the
+`glossary_bindings_completed` event run only after that transaction commits.
+`process-glossary-bindings-requested` uses the same function.
 
 **Define meaning** = terms + shapes. Ontology concepts are graph types /
 relationships — use them after terms/shapes exist when you need typed edges.

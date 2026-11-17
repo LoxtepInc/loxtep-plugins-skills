@@ -116,15 +116,31 @@ Unverified example of the response shape (not captured from a live instance).
 | `last_time`       | Timestamp of the last scanned event, or `null`                                                 |
 
 **Empty `results` does not mean "no events"** unless `has_more` is `false`. A
-budget-cut scan that matched nothing still has `has_more: true` and a
-`next_cursor` — continue. A window with no matching events after `eid` is a 200
-with `results: []`, `has_more: false`, `next_cursor: null`.
+window with no matching events after `eid` is a 200 with `results: []`,
+`has_more: false`, `next_cursor: null`.
 
-`has_more` is `true` when the time budget cut the scan
-(`scan_incomplete: true`), when the page is full (`results.length` equals
-`limit`), or when botmon reports more (for example, its 4 MB per-call response
-budget cut a short page). A short page is not the end of the window unless
-`has_more` is `false`.
+A 0-event `scan_incomplete` page is a 200 with `has_more: true` and botmon's
+`resumptionToken` as `next_cursor` only when that token is not later than the
+request `eid`, or when it is later and botmon reports `slices_completed` as an
+integer greater than 0 and `scanned_through` equal to the token. That later
+cursor is progress through empty slices. Pass it unchanged as the next `eid`.
+The request start is not returned as `next_cursor`.
+
+When the token is later than the start and `slices_completed` or
+`scanned_through` is missing, null, zero, or not the token, the call is **503**
+`scan_incomplete`. The message names the failed check. There is no page and no
+`next_cursor`. A wrong type, an empty `scanned_through`, or camelCase and
+snake_case fields that disagree is **502** `observe_search_shape_error`
+(`ReadQueueEventsContractError` when the tool shapes the page itself). Do not
+treat either error as an empty queue, and do not invent a later eid.
+
+A `scan_incomplete` page that scanned events (`count` > 0) and matched nothing
+is also **503** `scan_incomplete` and does not publish a cursor.
+
+`has_more` is `true` on a returned page when that 0-event cursor was published,
+when the page is full (`results.length` equals `limit`), or when botmon reports
+more (for example, its 4 MB per-call response budget cut a short page). A short
+page is not the end of the window unless `has_more` is `false`.
 
 There is no separate cursor input. Continue with:
 
@@ -186,10 +202,12 @@ Pass the previous page's `next_cursor` unchanged, or build the eid from one
 timestamp (the path is the UTC minute of the millisecond). A path prefix such as
 `z/` or `z/2026/10/17/19/02/` is refused.
 
-Known issues, not fixed here:
-[#3455](https://github.com/LoxtepInc/loxtep/issues/3455)
-(`loadQueueSampleWindow` in `_core/src/observe/load-queue-samples.ts` forwards a
-caller eid to the Observe proxy without this check).
+`loadQueueSampleWindow` in `_core/src/observe/load-queue-samples.ts` runs the
+same `queueEidPathTimestampMismatch` check. A supplied eid that fails throws
+`QueueEidPathTimestampMismatchError` before the Observe proxy. The code is
+`eid_path_timestamp_mismatch` and the message is
+`eid <eid> path and timestamp disagree`. An omitted eid still uses that loader's
+lookback anchor.
 
 ### Errors (non-2xx)
 
@@ -197,12 +215,12 @@ Non-2xx Observe/botmon responses are MCP failures: `error` is
 `Observe search returned HTTP <status>`; `message` carries the downstream body
 (or a stringified `downstream_response`).
 
-| HTTP | `code`                       | What to do                                                                                                              |
-| ---- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| 503  | `scan_incomplete`            | Budget expired **before any event was scanned** — no resume position. Retry; or pass a later `eid` to narrow the window |
-| 502  | `stream_read_failed`         | Stream read failed (e.g. DynamoDB capacity). Retry later; do not treat as an empty queue                                |
-| 502  | `observe_search_shape_error` | Botmon page broke the paging contract (e.g. `has_more` missing). Report it; do not treat as an empty queue              |
-| 400  | `invalid_filter_expression`  | `search_text` was treated as a bad filter expression. Drop or simplify `search_text`                                    |
+| HTTP | `code`                       | What to do                                                                                                                                                                                                                                                                                                                |
+| ---- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 503  | `scan_incomplete`            | No cursor was published: the budget expired before any event was scanned, events were scanned and nothing matched, or a 0-event token later than the start lacks `slices_completed` > 0 with `scanned_through` equal to that token. Retry the same `eid`. Do not treat it as an empty queue and do not invent a later eid |
+| 502  | `stream_read_failed`         | Stream read failed (e.g. DynamoDB capacity). Retry later; do not treat as an empty queue                                                                                                                                                                                                                                  |
+| 502  | `observe_search_shape_error` | Botmon page broke the paging contract (e.g. `has_more` missing). Report it; do not treat as an empty queue                                                                                                                                                                                                                |
+| 400  | `invalid_filter_expression`  | `search_text` was treated as a bad filter expression. Drop or simplify `search_text`                                                                                                                                                                                                                                      |
 
 An eid refusal is not in this table: it fails input validation before HTTP (400
 `invalid_tool_input`). Direct `GET /app/observe/search` callers get 400
@@ -278,7 +296,8 @@ not live captures.
    `events.results: []` alone:
    - `has_more: true` → continue with `eid` = `next_cursor`.
    - MCP error `Observe search returned HTTP 503` with `code: scan_incomplete` →
-     retry, or retry with a later `eid`.
+     retry the same `eid`. The cursor was not published. Do not treat the queue
+     as empty and do not invent a later eid.
    - MCP error `Observe search returned HTTP 502` with
      `code: stream_read_failed` → retry later; the stream was not proven empty.
    - `has_more: false` → this window really has no matching events.
