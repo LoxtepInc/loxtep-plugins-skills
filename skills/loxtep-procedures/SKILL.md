@@ -42,8 +42,12 @@ dependencies** in the process graph. Import/export JSON-LD graphs.
 
 ### Flow — Import JSON-LD graph
 
-1. `import_process_graph` with inline `graph` (≤ 4 MB) or `s3_reference`
-   (`{s3_bucket, s3_key}`) for larger payloads.
+1. `import_process_graph` with inline `graph` (≤ 4 MB), or `s3_reference`
+   (`{s3_bucket, s3_key}`) when that JSON-LD object is already in the platform
+   data-products bucket (`DATA_PRODUCTS_BUCKET_NAME`) under
+   `organizations/{organization_id}/`. Any other bucket or key is **403**
+   `org_graph_s3_location_rejected`. There is no customer upload that writes a
+   graph file onto that prefix.
 2. Response includes `procedure_id`, `action` (created | updated), counts, and
    any `unmapped_terms`.
 3. Optionally pass `procedure_id` for idempotent re-imports (upsert).
@@ -91,17 +95,17 @@ dependencies** in the process graph. Import/export JSON-LD graphs.
 
 ## MCP mapping
 
-| `operation`                  | Facade           | Scope        | Notes                                                              |
-| ---------------------------- | ---------------- | ------------ | ------------------------------------------------------------------ |
-| `list_procedures`            | `loxtep_context` | organization | Filters: `status`, `name`, `domain_id`, …                          |
-| `get_procedure`              | `loxtep_context` | organization | Full step graph with decisions, triggers, dependencies, metadata   |
-| `list_runs`                  | `loxtep_context` | organization | PKO pipeline runs for a `data_product_id` (status, HITL link)      |
-| `create_procedure`           | `loxtep_context` | organization | Required: `organization_id`, `name`; optional graph fields         |
-| `update_procedure`           | `loxtep_context` | organization | Partial updates; arrays use full-replacement semantics             |
-| `delete_procedure`           | `loxtep_context` | organization | Soft-delete (tombstone); warns about downstream dependents         |
-| `import_process_graph`       | `loxtep_context` | organization | Inline JSON-LD (≤ 4 MB) or S3 reference; idempotent upsert         |
-| `export_process_graph`       | `loxtep_context` | organization | Formats: `jsonld`, `yaml`, `summary`; `preserve_namespaces` option |
-| `get_procedure_dependencies` | `loxtep_context` | organization | Direction: upstream/downstream/both; depth 1–10; cycle detection   |
+| `operation`                  | Facade           | Scope        | Notes                                                                                                                                                                                                                    |
+| ---------------------------- | ---------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `list_procedures`            | `loxtep_context` | organization | Filters: `status`, `name`, `domain_id`, …                                                                                                                                                                                |
+| `get_procedure`              | `loxtep_context` | organization | Full step graph with decisions, triggers, dependencies, metadata                                                                                                                                                         |
+| `list_runs`                  | `loxtep_context` | organization | PKO pipeline runs for a `data_product_id` (status, HITL link)                                                                                                                                                            |
+| `create_procedure`           | `loxtep_context` | organization | Required: `organization_id`, `name`; optional graph fields                                                                                                                                                               |
+| `update_procedure`           | `loxtep_context` | organization | Partial updates; arrays use full-replacement semantics                                                                                                                                                                   |
+| `delete_procedure`           | `loxtep_context` | organization | Soft-delete (tombstone); warns about downstream dependents                                                                                                                                                               |
+| `import_process_graph`       | `loxtep_context` | organization | Inline JSON-LD (≤ 4 MB). `s3_reference` only when the object is already under `organizations/{organization_id}/` on the platform data-products bucket; otherwise 403 `org_graph_s3_location_rejected`. Idempotent upsert |
+| `export_process_graph`       | `loxtep_context` | organization | Formats: `jsonld`, `yaml`, `summary`; `preserve_namespaces` option                                                                                                                                                       |
+| `get_procedure_dependencies` | `loxtep_context` | organization | Direction: upstream/downstream/both; depth 1–10; cycle detection                                                                                                                                                         |
 
 ## SDK mapping (`client.context.procedures`, `@loxtep/sdk@0.9.7+`)
 
@@ -153,10 +157,22 @@ and Products surfaces.
   all children are marked with `tombstoned_at` and excluded from queries. A
   background TTL process purges tombstoned records after the retention period.
   There is no hard-delete via MCP.
-- **S3 upload path for large graphs**: For JSON-LD payloads > 4 MB (up to 50
-  MB), upload to S3 first and pass `s3_reference: {s3_bucket, s3_key}` to
-  `import_process_graph`. The inline `graph` field is limited to 4 MB (below API
-  Gateway's 6 MB limit with overhead).
+- **Large graphs (`s3_reference`)**: Inline `graph` is limited to 4 MB (below
+  API Gateway's 6 MB limit with overhead). A body with `s3_reference` can read
+  up to 50 MB, and only when `s3_bucket` is the platform data-products bucket
+  for this environment (`DATA_PRODUCTS_BUCKET_NAME`) and `s3_key` is an object
+  key under `organizations/{organization_id}/` for that same organization. The
+  key must not start with `/`, must not contain `\`, and must not contain an
+  empty, `.`, or `..` segment. Anything else is **403** with
+  `error.details.code` `org_graph_s3_location_rejected`. `error.message` is one
+  of: `s3_bucket is not the platform data-products bucket for this environment`,
+  `s3_key must be an org-prefixed object key`,
+  `s3_key must be under organizations/{organization_id}/ for this organization`,
+  or
+  `DATA_PRODUCTS_BUCKET_NAME is not set; refusing to read a caller-supplied S3 object`.
+  `s3_reference` only accepts an object that is already in that bucket under
+  that prefix. MCP, the SDK, and the UI have no upload that puts a graph file
+  there.
 - **`update_procedure` uses full-replacement semantics** per array field —
   submit the complete desired `steps`/`decisions`/`triggers` array to replace
   all existing entries. Top-level scalars (name, description, status) are
