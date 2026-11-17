@@ -8,18 +8,22 @@ description:
   LoxtepCrossAccountDeploymentRole, register_infrastructure once per remote AWS
   account with that RoleArn as cross_account_role_arn. That call records the
   same ARN as meter_role_arn, bus_lifecycle_role_arn, and
-  workflow_deploy_role_arn, and sets control_plane_attached, when each stored
-  meter and bus ARN is empty or already that RoleArn. A stored meter or bus ARN
-  that differs returns 409 tier_role_conflict and writes nothing. Then
-  create_instance with the same ARN on cross_account_role_arn. Update the
-  existing cross-account role stack before the next bus install.
-  get_infrastructure lists every registered account. Do not skip a second
-  account because one role is already listed. BYOL custom Lambda registration:
-  register_custom_bot / list_custom_bots / deregister_custom_bot /
-  reconcile_custom_bots (dedicated instances only). Also inspect whether an
-  instance''s connector runtime is ready for public or customer-VPC
-  (private-network) sources. Stop managing an instance is REST detach (status
-  detached), not an MCP tool.'
+  workflow_deploy_role_arn on the cross_account_roles entry whose arn equals
+  that RoleArn, and sets control_plane_attached, when that entry's meter and bus
+  ARNs are empty or already that RoleArn. Other entries in the same AWS account
+  keep their tier fields. A stored meter or bus ARN on that entry that differs
+  returns 409 tier_role_conflict and writes nothing. Registration leaves a
+  detached instance unchanged, and leaves an instance unchanged when its stored
+  cross_account_role_arn differs. A later infrastructure PUT does not restore
+  bus or workflow ARNs that detach cleared. Then create_instance with the same
+  ARN on cross_account_role_arn. Update the existing cross-account role stack
+  before the next bus install. get_infrastructure lists every registered
+  account. Do not skip a second account because one role is already listed. BYOL
+  custom Lambda registration: register_custom_bot / list_custom_bots /
+  deregister_custom_bot / reconcile_custom_bots (dedicated instances only). Also
+  inspect whether an instance''s connector runtime is ready for public or
+  customer-VPC (private-network) sources. Stop managing an instance is REST
+  detach (status detached), not an MCP tool.'
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/kiro/skills/loxtep-instances/SKILL.md
 ---
@@ -63,7 +67,10 @@ four. Detach does not delete IAM roles and does not change the organization
 registration. It stores `metadata.cross_account_access`, sets
 `metadata.control_plane` to `detached`, and sets `metadata.deploy_role_use` to
 `stopped`. An already-detached instance returns **200** with `data.idempotent`
-`true` and does not apply the choice again.
+`true` and does not apply the choice again. A later
+`PUT /organizations/organizations/{org_id}/infrastructure` does not restore the
+cleared `bus_lifecycle_role_arn` or `workflow_deploy_role_arn` on a detached
+instance. Registration leaves that instance unchanged.
 
 While `status` is `detached`:
 
@@ -285,6 +292,26 @@ runtimes deploy and do not get this field.
   `bus_lifecycle_role_arn` sets `upgrade_status` to `failed` and `upgrade_error`
   to
   `Missing bus_lifecycle_role_arn for bus lifecycle. Record the deployment role ARN from the cross-account template.`
+  A self-hosted upgrade that needs a workflow role and has neither
+  `workflow_deploy_role_arn` nor `cross_account_role_arn` fails before it writes
+  success, and `metadata.core_version` stays unchanged. It needs that role when
+  `metadata.runtimes_stack_name` is set, or when `control_plane_attached` is
+  true on metadata or `connection_details.observe_api`. With no recorded
+  runtimes stack, the bot resolves the role after infrastructure. It sets
+  `upgrade_status` to `failed`, `upgrade_error` to
+  `Missing workflow_deploy_role_arn for runtimes deployment. Record the deployment role ARN from the cross-account template.`,
+  and `upgrade_failed_at`. It emits `instance.upgrade.failed` and rethrows onto
+  `instances-upgrade-failed`. `upgrade_infra_completed_at` and
+  `upgrade_infra_completed_version` may already be set. Record
+  `workflow_deploy_role_arn` with
+  `PUT /organizations/organizations/{org_id}/infrastructure`
+  (`register_infrastructure`) and retry the upgrade. When the checkpoint is for
+  that target, the retry skips CloudFormation and finalizes. A recorded runtimes
+  stack with both roles empty fails during the import release, before the
+  checkpoint, with
+  `Missing workflow_deploy_role_arn for runtimes import release. Record the deployment role ARN from the cross-account template.`
+  That failure also leaves `core_version` unchanged. Record the role with the
+  same PUT and retry. That retry runs the infrastructure step again.
 - **`force_runtimes_redeploy: true`** (or a connector-network change) on
   `update_instance` sends the same forced runtimes event and records the name on
   submit.
@@ -458,10 +485,12 @@ and `bus_lifecycle_role_arn` (the same ARN). Send `workflow_deploy_role_arn`
 with `attach_control_plane: true` when workflow deploy should store that field.
 Do this before relying on the tier fields. A body that sends only
 `cross_account_role_arn` records that ARN as `meter_role_arn`,
-`bus_lifecycle_role_arn`, and `workflow_deploy_role_arn`, and sets
-`control_plane_attached` to true, when each stored `meter_role_arn` and
-`bus_lifecycle_role_arn` is empty or already that RoleArn. A stored meter or bus
-ARN that differs returns **409** `tier_role_conflict`. `details.fields` lists
+`bus_lifecycle_role_arn`, and `workflow_deploy_role_arn` on the
+`cross_account_roles` entry whose `arn` equals that RoleArn, and sets
+`control_plane_attached` to true, when that entry's `meter_role_arn` and
+`bus_lifecycle_role_arn` are empty or already that RoleArn. Other entries in the
+same AWS account keep their tier fields. A stored meter or bus ARN on that entry
+that differs returns **409** `tier_role_conflict`. `details.fields` lists
 `meter_role_arn` and/or `bus_lifecycle_role_arn`. One field differs with
 `Registered meter_role_arn differs from this RoleArn. Send explicit tier ARNs.`
 Both differ with
@@ -472,8 +501,8 @@ same AWS account. Call again for another account. Earlier accounts stay. A new
 account past 32 returns **400**
 `An organization can register at most 32 AWS accounts.` The Create Instance
 dialog **Register** button sends only `cross_account_role_arn`. That records the
-three tier roles on the same empty-or-equal path, and returns the same **409**
-when a stored meter or bus ARN differs.
+three tier roles on that same entry, and returns the same **409** when a stored
+meter or bus ARN on that entry differs.
 
 A body that also sends `meter_role_arn`, `bus_lifecycle_role_arn`,
 `workflow_deploy_role_arn`, or `attach_control_plane` uses those fields instead
@@ -481,14 +510,22 @@ of writing the single `RoleArn` into every tier. Meter and bus are both
 required. `workflow_deploy_role_arn` is stored on that path only when
 `attach_control_plane` is true.
 
-A successful single `RoleArn` registration copies `meter_role_arn`,
-`bus_lifecycle_role_arn`, and `workflow_deploy_role_arn` onto matching
-instances. The **409** writes nothing and does not copy. When meter and bus ARNs
-are present, the handler copies those stored fields, and copies
-`workflow_deploy_role_arn` when `attach_control_plane` is true. The organization
-row, the instance copies, and the `organization-infrastructure-registered` event
-are one database transaction. Bad `connection_details` JSON or a candidate ARN
-that is not an IAM role ARN returns **500**
+A successful single `RoleArn` registration records `meter_role_arn`,
+`bus_lifecycle_role_arn`, and `workflow_deploy_role_arn` on the
+`cross_account_roles` entry whose `arn` equals that RoleArn, and copies those
+ARNs onto an instance whose candidate ARN is in that AWS account, whose stored
+`cross_account_role_arn` is unset or equals the sent ARN, and whose `status` is
+not `detached`. A detached instance stays unchanged. An instance in that account
+that names a different `cross_account_role_arn` stays unchanged. A later
+infrastructure PUT does not restore bus or workflow ARNs that detach cleared on
+a detached instance. Other entries in the same AWS account keep their tier
+fields. The **409** writes nothing and does not copy. When meter and bus ARNs
+are present, the handler records those fields on that same entry and copies them
+onto those same instances, and copies `workflow_deploy_role_arn` when
+`attach_control_plane` is true. The organization row, the instance copies, and
+the `organization-infrastructure-registered` event are one database transaction.
+Bad `connection_details` JSON or a candidate ARN that is not an IAM role ARN
+returns **500**
 `Cannot copy tier roles onto instance ${instance_id}: ${detail}`.
 `error.details.code` is `instance_tier_copy_failed` and
 `error.details.instance_id` is that instance id. The transaction rolls back. The
@@ -506,9 +543,13 @@ Tier **400** messages:
 On the explicit tier path, send `workflow_deploy_role_arn` with
 `attach_control_plane: true` to store that field. Use the same `RoleArn`. A
 registration that sends meter and bus without `attach_control_plane: true`
-clears `workflow_deploy_role_arn` on the account and on matching instances. A
-single `RoleArn` registration that is accepted stores the workflow role and sets
-`control_plane_attached` to true.
+clears `workflow_deploy_role_arn` on the `cross_account_roles` entry whose `arn`
+equals the sent `cross_account_role_arn`, and on instances that receive that
+copy. Other entries in the same AWS account keep their tier fields. A detached
+instance stays unchanged. An instance whose stored `cross_account_role_arn` is
+set and differs from the sent ARN stays unchanged. A single `RoleArn`
+registration that is accepted stores the workflow role and sets
+`control_plane_attached` to true on that same entry.
 
 ```json
 {
@@ -569,11 +610,13 @@ template, the update removes `LoxtepMeterRole`, `LoxtepBusLifecycleRole`, and
 same ARN). Send `workflow_deploy_role_arn` with `attach_control_plane: true`
 when workflow deploy should store that field. Do this before relying on the tier
 fields. A body that sends only `cross_account_role_arn` records that ARN as
-`meter_role_arn`, `bus_lifecycle_role_arn`, and `workflow_deploy_role_arn`, and
-sets `control_plane_attached` to true, when each stored meter and bus ARN is
-empty or already that RoleArn. A stored meter or bus ARN that differs returns
-**409** `tier_role_conflict` and writes nothing. The Terraform snippet does not
-create `LoxtepMaxPermissionsBoundary`. These commands were not run in a customer
+`meter_role_arn`, `bus_lifecycle_role_arn`, and `workflow_deploy_role_arn` on
+the `cross_account_roles` entry whose `arn` equals that RoleArn, and sets
+`control_plane_attached` to true, when that entry's meter and bus ARNs are empty
+or already that RoleArn. Other entries in the same AWS account keep their tier
+fields. A stored meter or bus ARN on that entry that differs returns **409**
+`tier_role_conflict` and writes nothing. The Terraform snippet does not create
+`LoxtepMaxPermissionsBoundary`. These commands were not run in a customer
 account (unverified).
 
 ### 3. `get_infrastructure` — list registered accounts

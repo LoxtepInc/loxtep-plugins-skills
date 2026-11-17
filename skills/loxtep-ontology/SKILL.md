@@ -269,21 +269,31 @@ used.
 5. Disabling or upgrading the pack later keeps the assertion. Reads mark the
    target `inactive`, `version_drift`, or `unresolved`. Closure omits it until
    it is active again. The stored URI is not rewritten.
-6. A stored class assertion whose `target_system_node_id`, `target_pack_id`, or
-   `target_pack_version` is missing or blank makes ontology reads return HTTP
-   422 `external_closure_target_incomplete`. `error.details.edge_id` identifies
-   the edge. Remove it with
+6. A stored class assertion whose `target_uri`, `target_system_node_id`,
+   `target_pack_id`, or `target_pack_version` is missing, blank,
+   whitespace-only, or not a string makes ontology reads return HTTP 422
+   `external_closure_target_incomplete`. `error.details.missing` lists
+   `target_uri` first when that value fails, then the three ids that fail.
+   `error.details.edge_id` identifies the edge. `error.details.target_uri` is
+   the stored string, including whitespace, or null when the stored value is not
+   a string. The message names the missing fields and both repair routes. Remove
+   the edge with
    `DELETE /graph/organizations/{organization_id}/ontology/relationships/{edge_id}`
    (a second delete is 404; this route does not remove other relationship
-   types). Or send the same `source_uri`, `predicate_uri`, and `target_uri` to
-   `POST /graph/organizations/{organization_id}/ontology/relationships` to
-   re-pin the ids from the activated system pack. There is no MCP operation for
-   that delete. Restoring a published ontology version runs that same check on
-   every target relation before it publishes an undo version or writes the
-   graph. The 422 names those routes and `error.details.edge_id`. A refused
-   restore leaves the working graph unchanged. The stored snapshot is not
-   rewritten, so delete or re-pin the live assertion and publish again before
-   restoring a version that still has the blank ids.
+   types). There is no MCP operation for that delete. Send the same
+   `source_uri`, `predicate_uri`, and `target_uri` to
+   `POST /graph/organizations/{organization_id}/ontology/relationships` only
+   when the stored `target_uri` is that same absolute http(s) IRI and one of the
+   three ids is blank. That POST re-pins the ids from the activated system pack
+   when the content hash matches. A blank, whitespace-only, or non-string
+   `target_uri` cannot be sent as that same value, so the POST does not match
+   the edge. Delete is the repair. Restoring a published ontology version runs
+   that same check on every target relation before it publishes an undo version
+   or writes the graph. The 422 names those routes and `error.details.edge_id`.
+   A refused restore leaves the working graph unchanged. The stored snapshot is
+   not rewritten, so delete the live assertion, or re-pin it when `target_uri`
+   is still an absolute http(s) IRI, and publish again before restoring a
+   version that still has the blank fields.
 
 Do not create local copies of `prov:Entity`, `dcat:Dataset`, or Schema.org
 classes, and do not bulk-apply a review set from this operation. See

@@ -142,7 +142,15 @@ requirement.
 ## How to derive a shape
 
 - Nested fields, JSON types, required vs optional, and nullability. Optional is
-  not the same as nullable.
+  not the same as nullable. Schema inference
+  (`platform-backend/dataproducts/lib/schema-inference.ts`) counts a missing key
+  (`undefined`) against the 90% presence rule for `is_required`. A null value
+  counts as present, sets `nullable` when any sample is null, and does not by
+  itself clear `is_required`. A null-only field's JSON Schema type is
+  `["string","null"]`. Output-contract `ContractField.nullable` is optional.
+  Omitted, a null required value is violation kind `missing`. `false` reports
+  kind `null`. `true` accepts null. An absent required key is kind `missing`. A
+  null on a field with `required: false` is accepted.
 - Identifiers: mark those fields `is_primary_key` on the **data-product schema**
   path (`data_products.schema`, including REST/MCP shape `fields[]` that apply
   writes onto that snapshot). JSON Schema snapshots still drop `is_primary_key`
