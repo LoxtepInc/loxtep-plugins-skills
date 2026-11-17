@@ -79,8 +79,16 @@ event. Iceberg must already be enabled.
    `waiting_for_first_write`, `ok` or `unknown`. Compare `max_eid` with
    `data_sync.queue_lag.checkpoint_eid`. `gap_after_eid` means history was off
    for a while after that eid; only a `clean_reset` rebuild from `z/` fills it.
-3. Query it as `"<name>.history"` in `execute_query`; `list_tables` marks it
-   `iceberg_table: "history"`. Same policy and field controls as the product.
+3. Query it as `"<name>.history"` in `execute_query`. Same policy and field
+   controls as the product. The table is created on the first append of an
+   accepted event with a parsable eid. Enabling history does not create or
+   backfill it. Until that write, `execute_query` fails with
+   `Event history for this product hasn't been written yet` and
+   `iceberg_health_status: history_not_written`. That is not a metadata
+   configuration error. Do not rebuild. `get_iceberg_health` → `history.status`
+   is `waiting_for_first_write` for the same wait. MCP `list_tables` does not
+   run the warehouse listing probe, so do not read `queryable` there as "not
+   created yet".
 
 ```sql
 SELECT _eid_ts, balance FROM "canonical.accounts.published.v1.history"
@@ -138,6 +146,11 @@ recovery, and none are a rebuild signal):
   rebuild.
 - `metadata_config_error` — no transport / other 4xx / unclassified. Fix the
   proxy URL or metadata location. Do not rebuild.
+- `history_not_written` — history is on but `dp_<id>_history` has not been
+  created. The warehouse `error` is
+  `Event history for this product hasn't been written yet`. Wait for the first
+  accepted event with a parsable eid. Do not rebuild. A missing current-state
+  table is not this status.
 - `unknown` — health could not identify or assess the Iceberg table. Do not
   rebuild on this status alone.
 - `unreadable` without `recovery.action === 'rebuild_iceberg'` — not a rebuild
@@ -322,15 +335,15 @@ following as a live transcript.
   (including enabled without S3 Tables identity — `table_bucket_arn`, or stamped
   `s3_tables_namespace` + `s3_tables_table`); it is a warning, not a rebuild
   signal. Do not rebuild on `not_enabled` or `unknown`. Warehouse execute
-  `retryable`, `unauthorized`, `metadata_config_error`, and `unreadable` without
-  `recovery.action === 'rebuild_iceberg'` are also not rebuild signals — see
-  **Reading `execute_query` results**. `managed_s3_tables` is a provisioned
-  Amazon S3 Tables product (AWS-managed maintenance). Warehouse `empty_ok`
-  (`No Iceberg snapshots yet`) is `metadata_load: not_found` (classified missing
-  metadata JSON at a resolved location), not these catalog states. Rebuild
-  permanently deletes the table and recreates it from the queue. Always
-  `dry_run: true` first. Never rebuild without explicit confirmation. Do not
-  treat rebuild or backfill status as a lock — a second request while one is
+  `retryable`, `unauthorized`, `metadata_config_error`, `history_not_written`,
+  and `unreadable` without `recovery.action === 'rebuild_iceberg'` are also not
+  rebuild signals — see **Reading `execute_query` results**. `managed_s3_tables`
+  is a provisioned Amazon S3 Tables product (AWS-managed maintenance). Warehouse
+  `empty_ok` (`No Iceberg snapshots yet`) is `metadata_load: not_found`
+  (classified missing metadata JSON at a resolved location), not these catalog
+  states. Rebuild permanently deletes the table and recreates it from the queue.
+  Always `dry_run: true` first. Never rebuild without explicit confirmation. Do
+  not treat rebuild or backfill status as a lock — a second request while one is
   running is accepted. An unexpected upstream 409 is an error, not "already
   running".
 

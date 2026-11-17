@@ -91,17 +91,17 @@ metadata:
 - A replay of the same request (same data product, `target_tier`, and
   `requested_at`), including two writes at the same time, records one Promotion
   history row for a readiness re-check, an entity-IRI failure, invalid Ready
-  bindings, a lost stage save, an In Progress catalog registration failure, or a
-  named completeness override that can't be used. The request key is
+  bindings, a lost stage save, an In Progress catalog registration failure, a
+  named completeness override that can't be used, a deprecated or archived
+  product, an ontology validation block, or too few defined fields when the
+  request did not name a completeness override. The request key is
   `medallion_promotion:{data_product_id}:{target_tier}:rejected:{requested_at}`.
-  `GET /graph/promotions/{data_product_id}/audit` does not return
-  `rejection_idempotency_key`. That key is visible only as
-  `prerequisites[].details.idempotency_key` on the unusable-override row and the
-  In Progress catalog-registration row. A different `requested_at` is a
-  different request.
-- A deprecated or archived product, an ontology block, or a completeness
-  rejection with no named override can still record a second Promotion history
-  row on replay. That is open bug #4197.
+  `GET /graph/promotions/{data_product_id}/audit` shows that key at
+  `prerequisites[].details.idempotency_key` when the product was deprecated or
+  archived, when ontology validation blocks the promotion, when too few fields
+  are defined and the request did not name a completeness override, when the
+  named override can't be used, or when In Progress catalog registration fails.
+  A different `requested_at` is a different request.
 - Ready gate `lineage-exists` needs an active catalog edge. Deploying a workflow
   with upstream wiring records it (`derives_from`: `source_id` = this product,
   `target_id` = upstream; a connection uses `produces`). Writing JSON into

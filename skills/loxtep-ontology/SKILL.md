@@ -269,21 +269,45 @@ used.
 5. Disabling or upgrading the pack later keeps the assertion. Reads mark the
    target `inactive`, `version_drift`, or `unresolved`. Closure omits it until
    it is active again. The stored URI is not rewritten.
-6. A stored class assertion whose `target_system_node_id`, `target_pack_id`, or
-   `target_pack_version` is missing or blank makes ontology reads return HTTP
-   422 `external_closure_target_incomplete`. `error.details.edge_id` identifies
-   the edge. Remove it with
+6. A stored class assertion is HTTP 422 `external_closure_target_incomplete`
+   only on the paths below. On the read path (`readExternalAssertionFields`:
+   relationships GET, ontology-export, publish, review, semantic bundle export,
+   restore's target-relation scan, and explain's live fetch), a `target_uri`
+   that is not a string (missing, null, number, object) returns null and is
+   listed or skipped as an ordinary edge. `''` and a whitespace-only string
+   throw that 422, as does a non-blank string `target_uri` whose
+   `target_system_node_id`, `target_pack_id`, or `target_pack_version` is not a
+   non-blank string. Explain annotate (`annotateExternalClosureRelations`)
+   passes a relation through when `assertion_kind` is not
+   `ontology_class_assertion` or `target_uri` is falsy (`''`, null, absent, `0`,
+   false). A whitespace-only string is truthy, so annotate throws the 422. A
+   truthy non-string such as `1` also throws there. Live explain fetches the
+   graph first, so `''` and whitespace already throw at fetch. Annotate's
+   pass-through for a falsy `target_uri` applies to stored snapshots that
+   explain annotates directly (`change_plan` restore and `vs_last_published`
+   base), after that live fetch succeeds. `error.details.missing` lists
+   `target_uri` first when that value fails, then the three ids that fail.
+   `error.details.edge_id` identifies the edge. `error.details.target_uri` is
+   the stored string, including whitespace, or null when the stored value is not
+   a string. The message names the missing fields and both repair routes. POST
+   matches a stored edge only by strict equality on `source_uri`,
+   `predicate_uri`, and `target_uri`, and the body `target_uri` must be an
+   absolute http(s) IRI, so a stored blank, whitespace-only, or non-string
+   `target_uri` is not re-pinned. Delete is the repair:
    `DELETE /graph/organizations/{organization_id}/ontology/relationships/{edge_id}`
    (a second delete is 404; this route does not remove other relationship
-   types). Or send the same `source_uri`, `predicate_uri`, and `target_uri` to
-   `POST /graph/organizations/{organization_id}/ontology/relationships` to
-   re-pin the ids from the activated system pack. There is no MCP operation for
-   that delete. Restoring a published ontology version runs that same check on
-   every target relation before it publishes an undo version or writes the
-   graph. The 422 names those routes and `error.details.edge_id`. A refused
-   restore leaves the working graph unchanged. The stored snapshot is not
-   rewritten, so delete or re-pin the live assertion and publish again before
-   restoring a version that still has the blank ids.
+   types). There is no MCP operation for that delete. Send the same three URIs
+   on that POST only when the stored `target_uri` is that absolute http(s) IRI
+   and one of the three ids is blank. That write re-pins the ids when the
+   content hash matches. Restore fetches the live graph, then runs the read path
+   on every target relation before it publishes an undo version or writes the
+   graph. A string `target_uri` that is empty or whitespace-only, or a blank
+   target id after a non-blank string `target_uri`, throws the 422 and writes
+   nothing. A missing, null, or non-string `target_uri` on that scan does not. A
+   refused restore leaves the working graph unchanged. The stored snapshot is
+   not rewritten. Delete the live assertion, or re-pin it when `target_uri` is
+   still an absolute http(s) IRI, and publish again before restoring a version
+   that still has the blank string fields.
 
 Do not create local copies of `prov:Entity`, `dcat:Dataset`, or Schema.org
 classes, and do not bulk-apply a review set from this operation. See
