@@ -4,12 +4,18 @@ description:
   'Use when the user works with Loxtep runtime instances via Customer MCP -
   list_instances, create_instance, instance provisioning, shared vs managed,
   starter plan, plan_id, Stripe Checkout, regions, or "create a Loxtep
-  instance". Self-hosted install flow: get_deployment_urls, then
-  register_infrastructure once per remote AWS account with meter_role_arn and
-  bus_lifecycle_role_arn, then create_instance with that account's bus lifecycle
-  role ARN. get_infrastructure lists every registered account. Do not skip a
-  second account because one role is already listed. BYOL custom Lambda
-  registration: register_custom_bot / list_custom_bots / deregister_custom_bot /
+  instance". Self-hosted install flow: get_deployment_urls, deploy
+  LoxtepCrossAccountDeploymentRole, register_infrastructure once per remote AWS
+  account with that RoleArn as cross_account_role_arn. That call records the
+  same ARN as meter_role_arn, bus_lifecycle_role_arn, and
+  workflow_deploy_role_arn, and sets control_plane_attached, when each stored
+  meter and bus ARN is empty or already that RoleArn. A stored meter or bus ARN
+  that differs returns 409 tier_role_conflict and writes nothing. Then
+  create_instance with the same ARN on cross_account_role_arn. Update the
+  existing cross-account role stack before the next bus install.
+  get_infrastructure lists every registered account. Do not skip a second
+  account because one role is already listed. BYOL custom Lambda registration:
+  register_custom_bot / list_custom_bots / deregister_custom_bot /
   reconcile_custom_bots (dedicated instances only). Also inspect whether an
   instance''s connector runtime is ready for public or customer-VPC
   (private-network) sources. Stop managing an instance is REST detach (status
@@ -106,11 +112,11 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
 
 ### Deployment vs billing (read this)
 
-| `instance_type`   | Meaning                                          | Create requirements                                                                                                                                                                                                   |
-| ----------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`shared`**      | Default **free-tier playground** (multi-tenant). | Omit `plan_id` or send **`free`**. Paid **`starter`** is also shared. Never send managed or self-hosted plan IDs. Do not send role or secret coordinates.                                                             |
-| **`managed`**     | Paid **dedicated** bus operated by Loxtep.       | **`growth`/`scale`** and **`connection_details.observe_api.cross_account_role_arn`**. Managed create does not copy tier ARNs. Provisioning writes secret and proxy-role ARNs.                                         |
-| **`self-hosted`** | Customer-operated dedicated bus in customer AWS. | **`sh_core`/`sh_production`/`sh_scale`** and **`connection_details.observe_api.cross_account_role_arn`** (the bus lifecycle role ARN). Create copies recorded tier ARNs. Loxtep license pricing excludes AWS charges. |
+| `instance_type`   | Meaning                                          | Create requirements                                                                                                                                                                                                                                                                                                                            |
+| ----------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`shared`**      | Default **free-tier playground** (multi-tenant). | Omit `plan_id` or send **`free`**. Paid **`starter`** is also shared. Never send managed or self-hosted plan IDs. Do not send role or secret coordinates.                                                                                                                                                                                      |
+| **`managed`**     | Paid **dedicated** bus operated by Loxtep.       | **`growth`/`scale`** and **`connection_details.observe_api.cross_account_role_arn`**. A customer role ARN (not `ObserveProxyRole`) uses the same registered-account meter and bus check as self-hosted create and copies stored tier ARNs. Same-account managed stays on platform credentials. Provisioning writes secret and proxy-role ARNs. |
+| **`self-hosted`** | Customer-operated dedicated bus in customer AWS. | **`sh_core`/`sh_production`/`sh_scale`** and **`connection_details.observe_api.cross_account_role_arn`** (deployment role `RoleArn`). Create copies recorded meter, bus, and workflow ARNs when both meter and bus are stored. A missing meter or bus role is **400** `missing_tier_role`. Loxtep license pricing excludes AWS charges.        |
 
 ### Field summary
 
@@ -144,7 +150,7 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
   "plan_id": "growth",
   "connection_details": {
     "observe_api": {
-      "cross_account_role_arn": "arn:aws:iam::123456789012:role/LoxtepBusLifecycleRole"
+      "cross_account_role_arn": "arn:aws:iam::123456789012:role/LoxtepCrossAccountDeploymentRole"
     }
   }
 }
@@ -157,13 +163,19 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
 
 - `name`, `region`, `instance_type: "self-hosted"`
 - `plan_id`: `sh_core`, `sh_production`, or `sh_scale`
-- `connection_details.observe_api.cross_account_role_arn` — the bus lifecycle
-  role ARN for the AWS account this instance runs in. Self-hosted create matches
-  a registered account whose `arn` or `bus_lifecycle_role_arn` equals that
-  value, then copies `meter_role_arn`, `bus_lifecycle_role_arn`, and, when
+- `connection_details.observe_api.cross_account_role_arn` — the deployment role
+  `RoleArn` for the AWS account this instance runs in. Self-hosted create
+  matches a registered account whose `arn` or `bus_lifecycle_role_arn` equals
+  that value, then copies `meter_role_arn`, `bus_lifecycle_role_arn`, and, when
   present, `workflow_deploy_role_arn` onto the instance. A miss returns **400**
-  `Register this AWS account before creating the instance.` Do not send the tier
-  fields on create.
+  `Register this AWS account before creating the instance.` A registered account
+  missing `meter_role_arn`, `bus_lifecycle_role_arn`, or both returns **400**
+  `missing_tier_role` before an instance row or a `payment_pending` reservation.
+  `details.missing_tiers` lists `meter` and/or `bus_lifecycle`. `details.field`
+  and `details.tier` name the first missing role. The message names each missing
+  field
+  (`Missing meter_role_arn and bus_lifecycle_role_arn for self-hosted instance create. Record the deployment role ARN from the cross-account template.`
+  when both are missing). Leave meter, bus, and workflow fields off create.
 - Do **not** send `rstreams_secret_arn` or `rstreams_auth_arn` — they are
   written by provisioning from the deployed stack's outputs. Sending
   `observe_proxy_role_arn` is a 400.
@@ -177,7 +189,7 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
   "plan_id": "sh_production",
   "connection_details": {
     "observe_api": {
-      "cross_account_role_arn": "arn:aws:iam::123456789012:role/LoxtepBusLifecycleRole"
+      "cross_account_role_arn": "arn:aws:iam::123456789012:role/LoxtepCrossAccountDeploymentRole"
     }
   }
 }
@@ -242,10 +254,9 @@ Managed and self-hosted runtimes deploys create
 with dashes removed. `account` is that stack's 12-digit account id. The bucket
 uses SSE-S3, blocks public access, and requires TLS. The runtimes role can read
 that bucket only: `s3:GetObject` on its objects, and `s3:ListBucket` and
-`s3:GetBucketLocation` on the bucket. `LoxtepWorkflowDeployRole` allows
-`arn:aws:s3:::org-*`. That role exists when the template parameter
-`AttachControlPlane` is true. `LoxtepBusLifecycleRole` denies `s3:*` on
-`arn:aws:s3:::org-*-code`.
+`s3:GetBucketLocation` on the bucket. The deployment role identity policy allows
+`arn:aws:s3:::org-*`. Code upload assumes `workflow_deploy_role_arn`, or
+`cross_account_role_arn` when that field is empty.
 
 Provisioning writes `connection_details.code_bucket` to that name when it
 submits the runtimes stack. Callers do not send it. A stored value, including
@@ -261,13 +272,19 @@ runtimes deploy and do not get this field.
   runtimes stack or the control plane is recorded, the upgrade bot records the
   name in `sync-runtimes-import-release` when that step runs with a database
   connection, and again when the follow-on runtimes deploy submits. A recorded
-  `workflow_deploy_role_arn` emits `runtimes-deployment-requested`. That event
-  sets `metadata.force_redeploy` to `true`, so an already-deployed runtimes
-  stack is updated. Without that flag the runtimes bot skips an existing stack
-  and does not write `code_bucket`. A bus-only self-hosted upgrade (no runtimes
-  stack, control plane not attached) skips the import release and does not emit
-  that event. A missing `bus_lifecycle_role_arn` sets `upgrade_status` to
-  `failed` and `upgrade_error` to the `MissingTierRoleError` message.
+  runtimes stack, `control_plane_attached`, or a recorded
+  `workflow_deploy_role_arn` emits `runtimes-deployment-requested`. The role is
+  `workflow_deploy_role_arn`, or `cross_account_role_arn` when the workflow
+  field is empty and a runtimes stack or the control plane is recorded. That
+  event sets `metadata.force_redeploy` to `true`, so an already-deployed
+  runtimes stack is updated. Without that flag the runtimes bot skips an
+  existing stack and does not write `code_bucket`. A bus-only self-hosted
+  upgrade (no runtimes stack, control plane not attached, no
+  `workflow_deploy_role_arn`) skips the import release and does not emit that
+  event. An upgrade whose organization registration has no
+  `bus_lifecycle_role_arn` sets `upgrade_status` to `failed` and `upgrade_error`
+  to
+  `Missing bus_lifecycle_role_arn for bus lifecycle. Record the deployment role ARN from the cross-account template.`
 - **`force_runtimes_redeploy: true`** (or a connector-network change) on
   `update_instance` sends the same forced runtimes event and records the name on
   submit.
@@ -290,13 +307,16 @@ fails the request. The index does not fill in for an object that could not be
 read.
 
 A dedicated instance with no `code_bucket` fails these calls with HTTP 500
-(`dedicated_bucket_missing`). A workspace call that does not name an instance
-fails with HTTP 409 (`ambiguous_instance`) when the organization has more than
-one live dedicated instance and the project's deployment rows do not name
-exactly one of them. `POST /workflows/deployments` names the instance first (the
-request `instance_id`, or the organization's oldest instance with status
-`active`) and that instance selects the bucket. An explicit instance that is not
-a live instance of the organization is HTTP 404 (`target_instance_missing`). See
+(`dedicated_bucket_missing`). `POST /workflows/projects` stores
+`projects.instance_id` when the body names a live instance. Omitting it when the
+organization has more than one live dedicated instance returns HTTP 409
+(`ambiguous_instance`) and does not insert the project. A workspace call that
+does not name an instance, and `POST /workflows/deployments` when `instance_id`
+is omitted, uses a deployment pin when the project's deployment rows name
+exactly one live dedicated instance, and otherwise the stored
+`projects.instance_id`. With neither, the same 409 applies. An omitted id does
+not select the oldest instance. An explicit instance that is not a live instance
+of the organization is HTTP 404 (`target_instance_missing`). See
 **`loxtep-deployments`**, Dedicated instance code bucket, for the messages and
 the `code_bucket` fix (upgrade or `force_runtimes_redeploy`).
 
@@ -363,9 +383,10 @@ A changed Botmon Lite allowlist has no compensating restore. A missing
 `metadata.core_version` is still **409** before the update (see below). If the
 upgrade request itself fails, the call returns HTTP **500**
 `Botmon Lite allowlist was not applied because the upgrade request failed. The instance update was not saved.`
-`error.details` is `{ instance_id }` and has no `rollback_failed`. The update is
-not saved. Earlier sends from that call can already be on the bus. Send the same
-update again.
+`error.details.code` is `instance_upgrade_requested_event_not_emitted` and
+`error.details.instance_id` is the instance id. It has no `rollback_failed`. The
+update is not saved. Earlier sends from that call can already be on the bus.
+Send the same update again.
 
 ### Botmon Lite allowlist on a self-hosted upgrade
 
@@ -416,34 +437,63 @@ No arguments (the organization is resolved from the authenticated session).
 { "operation": "get_deployment_urls" }
 ```
 
-Returns bus-only `oneClickUrl`, `cliCommand`, and `terraformCode`
-(`AttachControlPlane` false), plus `controlPlaneConsentUrl` and
-`controlPlaneConsentCli` (`AttachControlPlane` true). Also returns `externalId`,
-`loxtepAccountId`, `roleNameSuffix`, `meterRoleName`, `busLifecycleRoleName`,
-`workflowDeployRoleName`, and `deploymentStackName`. `deploymentRoleName` is the
-bus lifecycle role name. **Present the bus-only options first.** After the stack
-completes, the user copies `MeterRoleArn` and `BusLifecycleRoleArn`.
-Control-plane consent is a later stack update; then copy
-`WorkflowDeployRoleArn`.
+The HTTP body is `{ "success": true, "data": <onboarding package> }`. `data`
+fields from `generateOnboardingPackage` are `organization_id`, `region`,
+`external_id`, `loxtep_account_id`, `role_name_suffix`, `deployment_role_name`,
+`deployment_stack_name`, `deployment_options` (`one_click_url`,
+`template_download_url`, `cli_command`, `terraform_code`), `instructions`, and
+`next_steps`. `deployment_role_name` is `LoxtepCrossAccountDeploymentRole` plus
+`role_name_suffix`. `cli_command` prints stack output `RoleArn`. After the stack
+completes, the user copies `RoleArn`.
 
 This operation also persists `external_id` into `organizations.attributes` and
 Secrets Manager (`loxtep/org/{org_id}/external-id`). Bus install reads that
-secret, so this call is **required** before step 3. `roleNameSuffix` is the
+secret, so this call is **required** before step 3. `role_name_suffix` is the
 first 8 characters of the organization id when the generator supplies one.
 
 ### 2. `register_infrastructure` — once per remote AWS account
 
-`cross_account_role_arn` is the account key. Use the bus lifecycle role ARN.
-Send `meter_role_arn` and `bus_lifecycle_role_arn` on the same call. All ARNs
-must be the same AWS account. Omitting the tier fields stores the account key
-and does not authorize meter, bus, or workflow calls. Call again for another
-account. Earlier accounts stay. A new account past 32 returns **400**
-`An organization can register at most 32 AWS accounts.`
+Send the stack output `RoleArn` as `cross_account_role_arn`, `meter_role_arn`,
+and `bus_lifecycle_role_arn` (the same ARN). Send `workflow_deploy_role_arn`
+with `attach_control_plane: true` when workflow deploy should store that field.
+Do this before relying on the tier fields. A body that sends only
+`cross_account_role_arn` records that ARN as `meter_role_arn`,
+`bus_lifecycle_role_arn`, and `workflow_deploy_role_arn`, and sets
+`control_plane_attached` to true, when each stored `meter_role_arn` and
+`bus_lifecycle_role_arn` is empty or already that RoleArn. A stored meter or bus
+ARN that differs returns **409** `tier_role_conflict`. `details.fields` lists
+`meter_role_arn` and/or `bus_lifecycle_role_arn`. One field differs with
+`Registered meter_role_arn differs from this RoleArn. Send explicit tier ARNs.`
+Both differ with
+`Registered meter_role_arn and bus_lifecycle_role_arn differ from this RoleArn. Send explicit tier ARNs.`
+Nothing is written. Workflow deploy and `control_plane_attached` are not part of
+that check. `cross_account_role_arn` is the account key. All ARNs must be the
+same AWS account. Call again for another account. Earlier accounts stay. A new
+account past 32 returns **400**
+`An organization can register at most 32 AWS accounts.` The Create Instance
+dialog **Register** button sends only `cross_account_role_arn`. That records the
+three tier roles on the same empty-or-equal path, and returns the same **409**
+when a stored meter or bus ARN differs.
 
-When meter and bus ARNs are present, the handler copies them onto matching
-instances. The organization row is saved first. Bad `connection_details` JSON or
-a candidate ARN that is not an IAM role ARN returns **500**
+A body that also sends `meter_role_arn`, `bus_lifecycle_role_arn`,
+`workflow_deploy_role_arn`, or `attach_control_plane` uses those fields instead
+of writing the single `RoleArn` into every tier. Meter and bus are both
+required. `workflow_deploy_role_arn` is stored on that path only when
+`attach_control_plane` is true.
+
+A successful single `RoleArn` registration copies `meter_role_arn`,
+`bus_lifecycle_role_arn`, and `workflow_deploy_role_arn` onto matching
+instances. The **409** writes nothing and does not copy. When meter and bus ARNs
+are present, the handler copies those stored fields, and copies
+`workflow_deploy_role_arn` when `attach_control_plane` is true. The organization
+row, the instance copies, and the `organization-infrastructure-registered` event
+are one database transaction. Bad `connection_details` JSON or a candidate ARN
+that is not an IAM role ARN returns **500**
 `Cannot copy tier roles onto instance ${instance_id}: ${detail}`.
+`error.details.code` is `instance_tier_copy_failed` and
+`error.details.instance_id` is that instance id. The transaction rolls back. The
+organization row and instance rows stay as they were before the call, and the
+event is not sent.
 
 Tier **400** messages:
 
@@ -453,17 +503,17 @@ Tier **400** messages:
 - `attach_control_plane must be true to record workflow_deploy_role_arn`
 - `All role ARNs in one registration must belong to the same AWS account`
 
-Attach the control plane with `attach_control_plane: true` and
-`workflow_deploy_role_arn` after the consent stack update. That sets
-`control_plane_attached` true. A tier registration without that flag deletes the
-workflow ARN on the account and on matching instances.
+On the explicit tier path, send `workflow_deploy_role_arn` with
+`attach_control_plane: true` to store that field. Use the same `RoleArn`. A
+registration that sends meter and bus without `attach_control_plane: true`
+clears `workflow_deploy_role_arn` on the account and on matching instances. A
+single `RoleArn` registration that is accepted stores the workflow role and sets
+`control_plane_attached` to true.
 
 ```json
 {
   "operation": "register_infrastructure",
-  "cross_account_role_arn": "arn:aws:iam::987654321098:role/LoxtepBusLifecycleRole",
-  "meter_role_arn": "arn:aws:iam::987654321098:role/LoxtepMeterRole",
-  "bus_lifecycle_role_arn": "arn:aws:iam::987654321098:role/LoxtepBusLifecycleRole",
+  "cross_account_role_arn": "arn:aws:iam::987654321098:role/LoxtepCrossAccountDeploymentRole",
   "region": "us-east-1"
 }
 ```
@@ -475,16 +525,56 @@ workflow ARN on the account and on matching instances.
 account key just sent. The stored first account key stays the first `arn`. These
 JSON bodies were not run (unverified).
 
-### Upgrading from the single role
+### Update the existing cross-account role stack
 
-Re-apply the current template (`AttachControlPlane` false creates the meter and
-bus roles; the template does not delete `LoxtepCrossAccountDeploymentRole`).
-Then `register_infrastructure` with the meter and bus ARNs so the copy writes
-them onto matching instances. Control-plane consent is a second stack update
-with `AttachControlPlane` true, then the same call with
-`workflow_deploy_role_arn` and `attach_control_plane: true`. Until the instance
-has the tier ARN a call needs, that call throws `MissingTierRoleError`:
-`Missing ${field} for ${operation}. Record the ${tier} role ARN from the cross-account template. LoxtepCrossAccountDeploymentRole will not be used.`
+Before the next bus install, the customer updates the stack that already created
+the role. A new stack does not replace the role the instance uses.
+
+```bash
+aws cloudformation update-stack \
+  --stack-name <existing-cross-account-role-stack> \
+  --template-body file://cross-account-role-template.yaml \
+  --parameters ParameterKey=LoxtepAccountId,UsePreviousValue=true \
+               ParameterKey=ExternalId,UsePreviousValue=true \
+               ParameterKey=RoleNameSuffix,UsePreviousValue=true \
+  --capabilities CAPABILITY_NAMED_IAM
+```
+
+The bus stack attaches managed policy
+`LoxtepDeployObserveApiInvoke-<stack name>`. The boundary allows
+`iam:AttachRolePolicy` and `iam:DetachRolePolicy` on the deployment role only
+when `iam:PolicyARN` is
+`arn:aws:iam::<account>:policy/LoxtepDeployObserveApiInvoke-*`.
+`iam:DeleteRolePolicy` stays denied. Inline policy
+`LoxtepDeploymentRoleObserveApiInvokePolicy` is retained. Its IAM name is
+`<stack name>-deploy-observe-api-invoke`.
+
+A stack in `ROLLBACK_FAILED` or `DELETE_FAILED` because CloudFormation is
+deleting that inline policy needs an administrator who is not the deployment
+role. Use the role name from `RoleArn` when `RoleNameSuffix` is set.
+
+```bash
+aws iam delete-role-policy \
+  --role-name LoxtepCrossAccountDeploymentRole \
+  --policy-name <stack-name>-deploy-observe-api-invoke
+aws cloudformation continue-update-rollback --stack-name <bus-stack-name>
+aws cloudformation delete-stack --stack-name <bus-stack-name>
+```
+
+`continue-update-rollback` is for `UPDATE_ROLLBACK_FAILED`. `delete-stack` is
+for `ROLLBACK_FAILED` and `DELETE_FAILED`. If the stack is still the three-role
+template, the update removes `LoxtepMeterRole`, `LoxtepBusLifecycleRole`, and
+`LoxtepWorkflowDeployRole`. Record the stack output `RoleArn` as
+`cross_account_role_arn`, `meter_role_arn`, and `bus_lifecycle_role_arn` (the
+same ARN). Send `workflow_deploy_role_arn` with `attach_control_plane: true`
+when workflow deploy should store that field. Do this before relying on the tier
+fields. A body that sends only `cross_account_role_arn` records that ARN as
+`meter_role_arn`, `bus_lifecycle_role_arn`, and `workflow_deploy_role_arn`, and
+sets `control_plane_attached` to true, when each stored meter and bus ARN is
+empty or already that RoleArn. A stored meter or bus ARN that differs returns
+**409** `tier_role_conflict` and writes nothing. The Terraform snippet does not
+create `LoxtepMaxPermissionsBoundary`. These commands were not run in a customer
+account (unverified).
 
 ### 3. `get_infrastructure` — list registered accounts
 
@@ -513,7 +603,7 @@ production instance sends the production ARN:
   "plan_id": "sh_production",
   "connection_details": {
     "observe_api": {
-      "cross_account_role_arn": "arn:aws:iam::987654321098:role/LoxtepBusLifecycleRole"
+      "cross_account_role_arn": "arn:aws:iam::987654321098:role/LoxtepCrossAccountDeploymentRole"
     }
   }
 }
@@ -523,24 +613,28 @@ production instance sends the production ARN:
 callers do not send them. The create returns `payment_pending`; the user
 completes Stripe Checkout in the app. AWS resources remain billed separately to
 the customer account. An ARN that is not registered returns **400**
-`Register this AWS account before creating the instance.`
+`Register this AWS account before creating the instance.` A matched account
+missing `meter_role_arn`, `bus_lifecycle_role_arn`, or both returns **400**
+`missing_tier_role` and does not reserve `payment_pending`.
+`details.missing_tiers` lists `meter` and/or `bus_lifecycle`. The message names
+each missing field.
 
 ### Full flow in one agent turn
 
 ```text
 user:   "Let's set up a self-hosted Loxtep instance in my AWS account."
-agent:  1. get_deployment_urls → bus-only one-click, CLI, and Terraform
-        2. user deploys with AttachControlPlane false and copies MeterRoleArn and BusLifecycleRoleArn
-        3. register_infrastructure with the account key plus meter and bus ARNs
-        4. create_instance with observe_api.cross_account_role_arn set to the bus lifecycle role ARN
-        5. directs the user to complete Stripe Checkout in the app
-        6. polls list_instances until status="active" (~20–30 minutes)
-        7. control plane is optional: consent URL, then register workflow_deploy_role_arn with attach_control_plane true
+agent:  1. get_deployment_urls → one_click_url, cli_command, terraform_code
+        2. user deploys the stack and copies RoleArn
+        3. user updates that existing stack before the next bus install
+        4. register_infrastructure with RoleArn as cross_account_role_arn
+        5. create_instance with observe_api.cross_account_role_arn set to that RoleArn
+        6. directs the user to complete Stripe Checkout in the app
+        7. polls list_instances until status="active" (~20–30 minutes)
 ```
 
 Bus install assumes `bus_lifecycle_role_arn` with the external ID from step 1
-and deploys the rstreams stack. Observe assumes `meter_role_arn`. A missing
-meter ARN on a catalog route returns **502** `Observe proxy request failed`.
+and deploys the rstreams stack. Observe signing uses `meter_role_arn`, then
+`cross_account_role_arn`, then `observe_proxy_role_arn`.
 
 ## Connector runtime on an instance (read-only first)
 
@@ -598,7 +692,7 @@ At create:
   "plan_id": "sh_production",
   "connection_details": {
     "observe_api": {
-      "cross_account_role_arn": "arn:aws:iam::123456789012:role/LoxtepBusLifecycleRole"
+      "cross_account_role_arn": "arn:aws:iam::123456789012:role/LoxtepCrossAccountDeploymentRole"
     },
     "connector_vpc": {
       "subnet_ids": ["subnet-0123456789abcdef0", "subnet-0fedcba9876543210"],
@@ -704,10 +798,10 @@ Lambda is **`loxtep-deployments`**.
 ## Bring your own Lambda (BYOL)
 
 Register a customer-deployed Lambda with LeoCron **without** Studio workflow
-deploy. Dedicated instances only. Customer accounts need a recorded
-`workflow_deploy_role_arn` and `external_id`. A missing workflow role returns
-**500** with `MissingTierRoleError`
-(`Missing workflow_deploy_role_arn for bot registration. Record the workflow_deploy role ARN from the cross-account template. LoxtepCrossAccountDeploymentRole will not be used.`).
+deploy. Dedicated instances only. Customer accounts need `external_id` and
+either `workflow_deploy_role_arn` or `cross_account_role_arn`. A recorded
+workflow ARN wins. Both empty returns **500** with `MissingTierRoleError`
+(`Missing workflow_deploy_role_arn for bot registration. Record the deployment role ARN from the cross-account template.`).
 A missing `external_id` returns **400**
 `Instance is missing dedicated BYOL prerequisites: connection_details.observe_api.external_id. Complete self-hosted/managed provisioning (cross-account role + external_id) first.`
 Shared instances are rejected.

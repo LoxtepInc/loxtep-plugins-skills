@@ -269,6 +269,21 @@ used.
 5. Disabling or upgrading the pack later keeps the assertion. Reads mark the
    target `inactive`, `version_drift`, or `unresolved`. Closure omits it until
    it is active again. The stored URI is not rewritten.
+6. A stored class assertion whose `target_system_node_id`, `target_pack_id`, or
+   `target_pack_version` is missing or blank makes ontology reads return HTTP
+   422 `external_closure_target_incomplete`. `error.details.edge_id` identifies
+   the edge. Remove it with
+   `DELETE /graph/organizations/{organization_id}/ontology/relationships/{edge_id}`
+   (a second delete is 404; this route does not remove other relationship
+   types). Or send the same `source_uri`, `predicate_uri`, and `target_uri` to
+   `POST /graph/organizations/{organization_id}/ontology/relationships` to
+   re-pin the ids from the activated system pack. There is no MCP operation for
+   that delete. Restoring a published ontology version runs that same check on
+   every target relation before it publishes an undo version or writes the
+   graph. The 422 names those routes and `error.details.edge_id`. A refused
+   restore leaves the working graph unchanged. The stored snapshot is not
+   rewritten, so delete or re-pin the live assertion and publish again before
+   restoring a version that still has the blank ids.
 
 Do not create local copies of `prov:Entity`, `dcat:Dataset`, or Schema.org
 classes, and do not bulk-apply a review set from this operation. See
@@ -428,12 +443,9 @@ is terms, shapes, ontology graph types, namespace mappings, and packs.
 
 ### Graph serve (COA parity on `loxtep_query`)
 
-- `describe_graph` — authenticated-org observed labels, properties, and
-  relationship shapes with positive counts; no arguments.
 - `translate_sparql` — NL → SPARQL for DynamoDB graph (`execute=true` optional).
 - `graph_traversal` — lineage / related / sparql_neighbors (never Neptune).
-- Attribution: `describe_graph` and `graph_traversal` →
-  `discover-govern-lineage`; `translate_sparql` → this skill. See also
+- Attribution: `translate_sparql` → this skill; see also
   `platform-backend/ai/lib/tools/docs/coa-mcp-serve-parity.md`.
 
 <!-- SCOPE_BLOCK -->

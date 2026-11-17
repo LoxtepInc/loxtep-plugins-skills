@@ -157,11 +157,15 @@ author bundle → deploy → verify with `get_data_product`.**
      (`workflow_type: "delivery"`) then `deploy_workflow`; list with
      `list_workflows`.
    - Graph sync: auto-handled by prior promotion.
-   - Upstream lineage (Ready / gold): create a native catalog edge via
+   - Upstream lineage (Ready / gold): deploying the workflow records the catalog
+     edge from its wiring. When readiness names the missing edge, redeploy the
+     workflow or run the catalog-lineage-backfill migration. If it says the
+     wiring lookup failed, the lookup did not succeed. A manual edge is
      `POST /dataproducts/lineage` (not `update_data_product.lineage` JSON). For
      `derives_from` / `depends_on`, use **PROV orientation**: `source_id` = this
-     (derived) product, `target_id` = upstream product. Then re-check with
-     `get_promotion_readiness` and `target_tier: gold`.
+     (derived) product, `target_id` = upstream product. A connection uses
+     `produces` (`source_id` = the connector, `target_id` = this product). Then
+     re-check with `get_promotion_readiness` and `target_tier: gold`.
 3. `get_promotion_readiness` with `target_tier: gold` again to confirm.
 4. `promote_data_product` to mark delivery-ready (see
    **`promote-data-product`**).
@@ -198,8 +202,10 @@ Customer guide: `/docs/guides/bring-your-own-lambda`.
 
 ### Flow — Lineage Documentation
 
-1. For consumer / derived DPs: create an upstream edge with
-   `POST /dataproducts/lineage` (harvest writes the graph edge).
+1. Deploy the workflow so catalog lineage is recorded from its wiring. For an
+   edge the workflow does not carry, create it with `POST /dataproducts/lineage`
+   (that call emits `lineage-created`; harvest writes the graph edge). A repeat
+   POST of the same active edge is rejected and does not emit again.
 2. **`derives_from` / `depends_on` orientation (PROV):** `source_id` = derived
    product, `target_id` = upstream origin. Do **not** reverse this to “feeder →
    consumer” — that inverts Ready-gate and cache semantics for these

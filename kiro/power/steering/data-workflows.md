@@ -104,12 +104,12 @@ delivery tail.
 products are **project-scoped** — you need `project_id` on all workflow MCP
 calls.
 
-| Step                  | Action                                                                                                                                       |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0a                    | `list_projects` / `get_project` — reuse an existing project when appropriate                                                                 |
-| 0b                    | `create_project` when none exists — `{ "operation": "create_project", "name": "..." }`                                                       |
-| 0c (optional)         | **Attach GitHub** — `update_project` with `github_*` fields (or `github_action` on `create_project`) so the Loxtep project links to the repo |
-| 0d (code-first repos) | CLI bootstrap: `loxtep init` → `loxtep attach` — see **`loxtep-sdk`**                                                                        |
+| Step                  | Action                                                                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 0a                    | `list_projects` / `get_project` — reuse an existing project when appropriate                                                                                             |
+| 0b                    | `create_project` when none exists — `{ "operation": "create_project", "name": "..." }`. Add `instance_id` when the organization has two or more live dedicated instances |
+| 0c (optional)         | **Attach GitHub** — `update_project` with `github_*` fields (or `github_action` on `create_project`) so the Loxtep project links to the repo                             |
+| 0d (code-first repos) | CLI bootstrap: `loxtep init` → `loxtep attach` — see **`loxtep-sdk`**                                                                                                    |
 
 ### Write bundles to disk — do not author inline-only
 
@@ -224,7 +224,13 @@ domain. Never silently choose among multiple domains.
    `loxtep_workspace` → `create_domain`; record `domain_id`.
 4. If no suitable project exists: `create_project` with `name`, `domain_id`, and
    an optional `description`. When multiple domains exist, `domain_id` must
-   reflect the user's explicit choice.
+   reflect the user's explicit choice. When the organization has two or more
+   live dedicated instances, also send `instance_id` for the instance that
+   should own the project workspace. Omitting it returns HTTP 409
+   `ambiguous_instance` and does not create the project. One dedicated instance,
+   or none, does not need `instance_id`. The value is stored once;
+   `update_project` does not change it. An id that is not a live instance of the
+   organization is HTTP 404 `target_instance_missing`.
 5. **Layer status before deep work:** `get_project_workspace_status` (or CLI
    `loxtep projects list` + `loxtep status`). If `next_action` is `clone` /
    `link`, run `plan_project_materialization` / plan `cli_commands` on the agent
@@ -958,7 +964,7 @@ Notes:
 | ---- | ------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | 1    | Who am I?                                   | `loxtep_session`   | `get_current_user`                                                                                                                                                                                                                | organization                                    | —                                                                                                                                        |
 | 2    | Which org?                                  | `loxtep_session`   | `get_current_organization`                                                                                                                                                                                                        | organization                                    | —                                                                                                                                        |
-| 3    | List/create/update/delete projects + status | `loxtep_workspace` | `list_projects`, `get_project`, `create_project`, `update_project`, `delete_project`, `get_project_workspace_status`, `list_project_changes`, `plan_project_materialization`                                                      | organization                                    | `name`, ids, materialization_plan                                                                                                        |
+| 3    | List/create/update/delete projects + status | `loxtep_workspace` | `list_projects`, `get_project`, `create_project`, `update_project`, `delete_project`, `get_project_workspace_status`, `list_project_changes`, `plan_project_materialization`                                                      | organization                                    | `name`, `instance_id` when two or more dedicated instances exist, ids, materialization_plan                                              |
 | 4    | Templates                                   | `loxtep_connect`   | `list_templates`, `get_template`, `apply_template`                                                                                                                                                                                | organization / **project** for `apply_template` | `apply_template`: `project_id`, `template_type`, `template_slug`                                                                         |
 | 5    | Workflows                                   | `loxtep_build`     | `get_entity_schemas`, `save_workflow_bundle`, `list_workflows`, `get_workflow`, `get_workflow_graph`, `preview_transform`, `create_workflow`, `update_workflow`, `delete_workflow`, `patch_workflow_graph` (Studio UI edits only) | **project**                                     | `project_id`                                                                                                                             |
 | 6    | Existing Trigger/Target connections         | `loxtep_build`     | `list_triggers`/`list_targets`, `get_*`, `update_*`, `delete_*`, `test_*`                                                                                                                                                         | **project**                                     | `project_id` — new tails via bundle, not create\_\* ops                                                                                  |
@@ -1052,6 +1058,10 @@ schema rejects unknown top-level properties. Use `ingestion_config`.
 - **Skipping project setup** — Calling `get_entity_schemas` or
   `save_workflow_bundle` without `project_id` from **Flow B**. Create or select
   the project before any Products (bundle/deploy) work.
+- **`create_project` with two or more dedicated instances** — send `instance_id`
+  for the live instance that owns the workspace. Omitting it is HTTP 409
+  `ambiguous_instance` and the project is not created. Do not pick the oldest
+  instance or the platform bucket. `update_project` does not move the stored id.
 - **Product storage key** — one identity. `is_primary_key`, `schema.key` (same
   fields, field order), and the primary entity `natural_key` (those names joined
   with commas). Applying a shape writes `schema.key`. The Iceberg writer

@@ -90,6 +90,11 @@ visibility and event reading moved to **`loxtep_observe`** — see
   `project_metadata_unavailable` and the message names the missing S3 key.
   Retrying will not help. Report the key rather than fabricating a
   `project.json` locally.
+- A project in an organization with two or more live dedicated instances needs
+  `instance_id` on `create_project`. That stored id is how workspace reads,
+  saves, and reindex choose the bucket when deployment rows do not pin one
+  instance. Omitting it is HTTP 409 `ambiguous_instance`. Do not guess the
+  oldest instance or the platform bucket.
 
 <!-- SCOPE_BLOCK -->
 

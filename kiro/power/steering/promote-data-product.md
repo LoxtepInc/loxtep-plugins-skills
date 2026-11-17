@@ -73,10 +73,29 @@
 - Approval routes to the **domain owner**, not a generic admin
 - Never call `list_promotion_candidates` for data-product Ready/In Progress —
   that tool is memory/CDLC only
-- Ready gate `lineage-exists` needs a catalog/graph edge with PROV orientation
-  for `derives_from`: `source_id` = this product, `target_id` = upstream.
-  Writing JSON into `update_data_product.lineage` does **not** satisfy the gate.
-  Re-check with `get_promotion_readiness` + `target_tier: gold`.
+- A replay of the same request (same data product, `target_tier`, and
+  `requested_at`), including two writes at the same time, records one Promotion
+  history row for a readiness re-check, an entity-IRI failure, invalid Ready
+  bindings, a lost stage save, an In Progress catalog registration failure, or a
+  named completeness override that can't be used. The request key is
+  `medallion_promotion:{data_product_id}:{target_tier}:rejected:{requested_at}`.
+  `GET /graph/promotions/{data_product_id}/audit` does not return
+  `rejection_idempotency_key`. That key is visible only as
+  `prerequisites[].details.idempotency_key` on the unusable-override row and the
+  In Progress catalog-registration row. A different `requested_at` is a
+  different request.
+- A deprecated or archived product, an ontology block, or a completeness
+  rejection with no named override can still record a second Promotion history
+  row on replay. That is open bug #4197.
+- Ready gate `lineage-exists` needs an active catalog edge. Deploying a workflow
+  with upstream wiring records it (`derives_from`: `source_id` = this product,
+  `target_id` = upstream; a connection uses `produces`). Writing JSON into
+  `update_data_product.lineage` does **not** satisfy the gate. When readiness
+  names a missing edge (source type, source id, relationship, and data product),
+  redeploy that workflow or run the catalog-lineage-backfill migration. A manual
+  edge is still `POST /dataproducts/lineage`. If the remediation says the wiring
+  lookup failed, the lookup did not succeed. Do not treat that as "there is no
+  wiring". Re-check with `get_promotion_readiness` + `target_tier: gold`.
 
 ## References
 
