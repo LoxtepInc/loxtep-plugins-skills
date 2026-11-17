@@ -103,6 +103,27 @@ Bot <botId> entity_config is not valid JSON: <message>
 Bot <botId> env.<key> disagrees between bot.env and lambda.env (<left> vs <right>)
 ```
 
+`bot.env` and `lambda.env` are written as strings. BusInstall `register.js`
+`fixTypes` then stores a numeric string as a finite number and `true` / `false`
+as a boolean. Other env keys read a non-empty string as itself, a finite number
+as its decimal string, and a boolean as `true` or `false`. An absent env map is
+empty. A present null, empty string, NaN, Infinity, array, or object fails the
+deploy. The scan does not default, skip, or drop that bot.
+
+`LOXTEP_RUNTIME_MEMORY_MB`, when the key is present, must be a positive integer:
+a safe integer greater than zero, or a decimal string of that integer such as
+`512`. Zero, a negative, a fraction, a boolean, and any other type fail. An
+absent key stays absent. The scan does not fill in 256. The same rule is used
+for `lambda.env`.
+
+```text
+Bot <botId> env.<key> must be a non-empty string
+```
+
+```text
+Bot <botId> env.LOXTEP_RUNTIME_MEMORY_MB must be a positive integer
+```
+
 A workspace read that fails:
 
 ```text
@@ -172,6 +193,16 @@ not reverse persisted schema or data changes.
   `pending` or `in_progress`.
 - Always pass full UUIDs to `get_deployment` and other ops — never truncated
   prefixes like `0a9e627d`.
+- Poll only the deployment id returned by that `deploy_workflow` or
+  `deploy_project` call. Do not call `get_deployment` with an id from an earlier
+  run.
+- `not_found` immediately after deploy is not success and not a reason to deploy
+  again. Back off 30s, then 60s, then 120s, the same as pending. If
+  `get_deployment` is still `not_found` after one 120s try, stop and report that
+  id and the error. Do not look up a different id, and do not call
+  `deploy_workflow` again to fix `not_found`.
+- An id that already returned `not_found` on a previous turn is dead. Do not
+  call `get_deployment` on it again.
 
 ## Pitfalls
 
@@ -263,17 +294,30 @@ shown, plus `project_id` or `workflow_id`. The HTTP 400 sets
 `error.details.organization_id` to the organization id.
 
 `deploy_workflow` calls `POST /workflows/deployments` and sends `instance_id`.
-That handler resolves the target before it opens the workspace, and that
-instance selects the bucket. The body's `instance_id` is the target. An omitted
-`instance_id`, an empty string, or the nil UUID
-`00000000-0000-0000-0000-000000000000` selects the organization's oldest
-instance with status `active` (`deleted_at` null, earliest `created_at`). When
-the organization has no such instance, the response is HTTP 400. `error.message`
-is `No active instance found for organization`.
+The body's `instance_id` is the target, and that instance selects the bucket. An
+omitted `instance_id`, an empty string, or the nil UUID
+`00000000-0000-0000-0000-000000000000` uses the same resolver as a Studio
+workspace call. It does not select the oldest instance.
+
+The workspace opens when the organization has one live dedicated instance, or
+when the project's deployment rows name exactly one live dedicated instance.
+That instance is the deploy target. A deployment row names an instance when
+`deployments.instance_id` is set and `deleted_at` is null. Several rows that
+name the same instance are one pin. Rows that name more than one live dedicated
+instance are not a pin, and the handler does not keep the latest row. A stored
+`projects.instance_id` is used only when those rows do not pin one instance and
+the caller did not send `instance_id`. It does not override a pin or an explicit
+deploy target, and a later project update does not change it.
+
+When that resolver finds no dedicated instance, one instance with status
+`active` (`deleted_at` null) is the target and the workspace uses the platform
+bucket. When the organization has no such instance, the response is HTTP 400.
+`error.message` is `No active instance found for organization`. When more than
+one active instance remains, the response is HTTP 409 `ambiguous_instance`. The
+handler does not choose the earliest `created_at`.
 
 A dedicated target uses only that instance's `connection_details.code_bucket`. A
-shared target uses the platform bucket. The resolved instance selects the bucket
-when the organization has other dedicated instances.
+shared target uses the platform bucket.
 
 No `code_bucket` on the dedicated instance. The response is HTTP 500.
 
@@ -304,11 +348,19 @@ Instance <id> is not a live instance for this organization. Refusing to fall bac
 `<id>` is the instance id. `error.details.code` is `target_instance_missing`.
 `error.details.name` is `InstanceWorkspaceBucketError`.
 
-Studio workspace calls and workspace reindex open the bucket without an instance
-id. The workspace opens when the organization has one live dedicated instance,
-or when the project's deployment rows name exactly one live dedicated instance.
-Several live dedicated instances, when those rows do not name exactly one of
-them, return HTTP 409:
+`POST /workflows/projects` stores `instance_id` when the body names a live
+instance of this organization. Omitting it when two or more live dedicated
+instances exist returns HTTP 409 `ambiguous_instance` and does not insert the
+project. One dedicated instance, or none, stores no binding.
+
+`POST /workflows/deployments` with no `instance_id`, Studio workspace calls, and
+workspace reindex open the bucket without an instance id. The workspace opens
+when the organization has one live dedicated instance, or when the project's
+deployment rows name exactly one live dedicated instance. When those rows do not
+pin one instance, the stored `projects.instance_id` is the choice. An explicit
+deploy `instance_id` still selects that target. Several live dedicated
+instances, with no pin and no stored id, return HTTP 409 before
+`POST /workflows/deployments` requests a deployment:
 
 ```text
 Organization has N dedicated instances and the project workspace bucket is ambiguous. Refusing to fall back to the platform bucket.
