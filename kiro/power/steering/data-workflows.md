@@ -100,6 +100,26 @@ Correct DPs carry `managed_by: "design-time"` and
 bundle (`connections/{connection_id}.json`) — Trigger at ingest head, Target at
 delivery tail.
 
+### Quality evaluation node (required for live quality)
+
+Catalog and Data Council quality rules are definitions; they do not execute by
+themselves. Every workflow that produces a data product with effective quality
+rules needs one `quality-rules/{id}.json` evaluation node for that product. That
+single node covers the product's effective inherited and product-owned rules.
+
+The node identifies the product with `data_product_id` and the producing
+workflow with `workflow_id`, `project_id`, and `organization_id`. Set
+`upstream_entity_id` to the node that writes the product's output queue and
+`upstream_entity_type` to its entity folder (`connections`, `transformations`,
+or `validations`). Deploy uses that relationship to subscribe the evaluator bot
+to the live stream. The evaluator writes `quality_metrics`; `get_quality_score`
+reads those measurements.
+
+Without this workflow node, catalog rules may satisfy Ready as configured while
+the Quality tab remains **Never** and no pass rate exists. Adding rules alone is
+not activation: add the node, save the bundle, deploy the workflow, send a
+batch, then confirm `get_quality_score` contains a measured metric.
+
 ## Project and local bundle files (CRITICAL — before building in Products)
 
 **Every flow starts with a Loxtep project.** Workflows, connections, and data
@@ -131,6 +151,7 @@ workflows/{workflow_id}/
   connections/{connection_id}.json
   transformations/{transformation_id}.json
   validations/{validation_id}.json
+  quality-rules/{quality_rule_id}.json
   data-products/{data_product_id}.json
   approvals/{approval_node_id}.json
 ```
@@ -335,9 +356,11 @@ is `scoped redeploy preserves declared labels` in
 2. **Write** workflow bundle files locally under `workflows/{workflow_id}/`.
 3. **`get_entity_schemas`** with `pattern: "ingestion"` (or enrichment/export as
    needed).
-4. Compose / validate the **`files`** map from on-disk JSON and
-   **`save_workflow_bundle`** (`dry_run: true` first, then persist).
-5. `get_data_product` / `get_lexicon` to verify; `update_data_product` as
+4. Compose / validate the **`files`** map from on-disk JSON. For every produced
+   data product with effective quality rules, include one
+   `quality-rules/{id}.json` node pointed at the product's upstream writer.
+5. **`save_workflow_bundle`** (`dry_run: true` first, then persist).
+6. `get_data_product` / `get_lexicon` to verify; `update_data_product` as
    needed.
 
 ### Flow D — Delivery workflow with Target connection (S3)
@@ -529,7 +552,9 @@ Canonical reference:
    `get_runtime_mapping` on the ingestion workflow).
 2. **`get_entity_schemas`** with `pattern: "enrichment"`.
 3. Compose enrichment bundle: `data-product-trigger` connection + transforms +
-   sink `data-products` node; wire `upstream_entity_id` chain.
+   sink `data-products` node; wire `upstream_entity_id` chain. When the sink has
+   effective quality rules, include one `quality-rules/{id}.json` node pointed
+   at the node that writes the sink's output queue.
 4. **`save_workflow_bundle`** (`dry_run: true` then persist).
 5. **Deploy enrichment** (`deploy_workflow`).
 
@@ -737,8 +762,23 @@ those files into the `files` argument — **do not** skip writing to disk.
       "created_at": "2026-01-15T00:00:00.000Z",
       "updated_at": "2026-01-15T00:00:00.000Z"
     },
+    "quality-rules/<quality_rule_id>.json": {
+      "quality_rule_id": "<uuid>",
+      "organization_id": "<org_id>",
+      "project_id": "<project_id>",
+      "workflow_id": "<workflow_uuid>",
+      "data_product_id": "<data_product_uuid>",
+      "name": "Evaluate orders quality",
+      "rule_type": "completeness",
+      "rules": {},
+      "severity": "warning",
+      "upstream_entity_id": "<connection_uuid>",
+      "upstream_entity_type": "connections",
+      "created_at": "2026-01-15T00:00:00.000Z",
+      "updated_at": "2026-01-15T00:00:00.000Z"
+    },
     "data-products/<data_product_id>.json": {
-      "data_product_id": "<uuid>",
+      "data_product_id": "<data_product_uuid>",
       "organization_id": "<org_id>",
       "project_id": "<project_id>",
       "workflow_id": "<workflow_uuid>",
@@ -765,6 +805,11 @@ those files into the `files` argument — **do not** skip writing to disk.
 **Step 4 — Validate then save:** run with `dry_run: true`; fix
 `validation_errors`, `relationship_errors`, or `topology_errors`; then
 `dry_run: false`.
+
+The example's one quality evaluation node covers the `orders` product's
+effective rules. It reads the same connection output queue named by the product
+and records live measurements; do not create one workflow node per inherited
+catalog rule.
 
 **Rules:**
 
@@ -879,7 +924,8 @@ and queue to target:
 **Recommended agent sequence for SDK ingestion:**
 
 1. Complete Flows B/C/E (project + workflow + graph with connection + data
-   product)
+   product). If the product has effective quality rules, include its one
+   `quality-rules/{id}.json` evaluation node before saving.
 2. Ensure user has an instance (`loxtep_workspace` → `list_instances`)
 3. Deploy:
    - **Quick iteration:** `loxtep_build` → `deploy_workflow` with `project_id` +
@@ -891,6 +937,9 @@ and queue to target:
    returns the deployed bot ID and queue names
 6. Use the **`loxtep-sdk`** Agent-Scope Skill to bootstrap the SDK client with
    the resolved `bot_id` and queue, then write events via the stream bus
+7. After the first batch, call `get_quality_score` and confirm at least one
+   metric has a measured pass rate. **Never** means the evaluator is not
+   producing measurements; do not report quality activation as complete.
 
 **Runtime naming convention reference:** See the **`loxtep-sdk`** Agent-Scope
 Skill for the full naming hierarchy and how to resolve queue/bot names from the
@@ -902,17 +951,17 @@ When the user asks to **create**, **provision**, or **stand up** a source (or
 consumer) data product — including demand-driven / output-first design — follow
 this sequence. Do **not** call `create_data_product`.
 
-| Step          | Action                                         | Skill / tool                                                                                  |
-| ------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| 0             | Create or select project                       | **Flow B** — `create_project` / `list_projects`                                               |
-| 0b (optional) | Attach GitHub + local layout                   | **Flow B2** — `update_project` `github_*`; write `workflows/{id}/` locally                    |
-| 1             | Connect external system (if needed)            | `connect-external-system` → `connector_id` + samples                                          |
-| 2             | Design desired output schema + provenance      | `data-product-modeling` (design only — no MCP create)                                         |
-| 3             | Read entity types                              | `get_entity_schemas` (`pattern`: `ingestion` \| `enrichment` \| `delivery`)                   |
-| 4             | Compose full `files` map **from on-disk JSON** | `workflow.json`, Trigger `connections/`, `transformations/`, `data-products/{id}.json`        |
-| 5             | Validate + persist bundle                      | `save_workflow_bundle` (`dry_run: true` → fix → `dry_run: false`)                             |
-| 6             | Deploy to instance                             | `deploy_workflow` or `deploy_project` (Flow H)                                                |
-| 7             | Verify runtime DP                              | `get_data_product` — expect `workflow_id`, `deployment_bindings`, `managed_by: "design-time"` |
+| Step          | Action                                         | Skill / tool                                                                                                                                                                                   |
+| ------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0             | Create or select project                       | **Flow B** — `create_project` / `list_projects`                                                                                                                                                |
+| 0b (optional) | Attach GitHub + local layout                   | **Flow B2** — `update_project` `github_*`; write `workflows/{id}/` locally                                                                                                                     |
+| 1             | Connect external system (if needed)            | `connect-external-system` → `connector_id` + samples                                                                                                                                           |
+| 2             | Design desired output schema + provenance      | `data-product-modeling` (design only — no MCP create)                                                                                                                                          |
+| 3             | Read entity types                              | `get_entity_schemas` (`pattern`: `ingestion` \| `enrichment` \| `delivery`)                                                                                                                    |
+| 4             | Compose full `files` map **from on-disk JSON** | `workflow.json`, Trigger `connections/`, `transformations/`, `data-products/{id}.json`, and one `quality-rules/{id}.json` node when the product has effective rules                            |
+| 5             | Validate + persist bundle                      | `save_workflow_bundle` (`dry_run: true` → fix → `dry_run: false`)                                                                                                                              |
+| 6             | Deploy to instance                             | `deploy_workflow` or `deploy_project` (Flow H)                                                                                                                                                 |
+| 7             | Verify runtime DP and quality                  | `get_data_product` — expect `workflow_id`, `deployment_bindings`, `managed_by: "design-time"`; after the first batch, `get_quality_score` must show a measured metric when rules are effective |
 
 For **outbound** consumer/delivery products, use Flow D
 (`workflow_type: "delivery"` + Target connection) instead of a separate
@@ -932,7 +981,9 @@ runtime bindings; then the SDK resolves everything from the data product
 **name**.
 
 1. **Read schemas** — `get_entity_schemas` with `pattern: "ingestion"`.
-2. **Compose bundle** — SDK connection + data product in `files` (Flow E).
+2. **Compose bundle** — SDK connection + data product in `files` (Flow E), plus
+   one `quality-rules/{id}.json` evaluation node when the product has effective
+   quality rules.
 3. **`save_workflow_bundle`** — dry run then persist.
 4. **Deploy** — `deploy_workflow` (Flow H).
 5. **Write / read via SDK** (see **`loxtep-sdk`**) — resolve by data product
@@ -1166,6 +1217,10 @@ schema rejects unknown top-level properties. Use `ingestion_config`.
   bypasses the workflow graph, queues, bots, and deployment bindings. Always
   embed `data-products/{id}.json` in `save_workflow_bundle`, then deploy. See
   Flow J. Use **`data-product-modeling`** for schema design only.
+- **Catalog or Council quality rules alone never run** — A product can be Ready
+  with `awaiting_live_measurement` while its Quality tab remains **Never**.
+  Include and deploy one `quality-rules/{id}.json` evaluator for the product,
+  then verify `get_quality_score` after the first batch.
 - Missing **`project_id`** on project-scoped workflow/connection ops.
 - **Deployment required before SDK ingestion** — Creating workflows,
   connections, and data products via MCP only defines the graph. Queues and bots

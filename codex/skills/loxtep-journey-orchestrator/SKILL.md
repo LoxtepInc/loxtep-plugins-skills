@@ -138,7 +138,11 @@ rules, and is published as trusted.
    semantic packages use their own stage/review/approve/deploy/verify path; do
    not require a package for every direct vocabulary or shape edit.
 4. Infer and review relationships between entities
-5. Generate and review quality rules
+5. Generate and review quality rules, then add one `quality-rules/{id}.json`
+   evaluation node for the product to its producing workflow using
+   `data-workflows`. Deploy it, send a batch, and confirm `get_quality_score`
+   contains a measured score. Catalog and Data Council rules do not run by
+   themselves.
 6. Establish the required quality, lineage, and delivery interface before
    promotion (use `data-workflows` Flow D for delivery). Then run the **semantic
    medallion** readiness checklist — `get_promotion_readiness` (Raw/In

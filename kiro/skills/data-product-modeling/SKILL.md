@@ -133,7 +133,10 @@ author bundle → deploy → verify with `get_data_product`.**
      `data_product_id`. Add or override with `create_quality_rule` via
      `loxtep_define`. The gate checks each blocking rule's own `threshold`. A
      failed effective-rules lookup throws. Readiness does not substitute a
-     3-rule or 80% gate. Check scores with `get_quality_score` via
+     3-rule or 80% gate. Catalog rules are definitions only: hand off to
+     **`data-workflows` → Quality evaluation node (required for live quality)**
+     to add one `quality-rules/{id}.json` node for this product, deploy it, send
+     a batch, and confirm `get_quality_score` returns a measured score via
      `loxtep_observe`.
    - Glossary terms: `append_synonym` via `loxtep_meaning` for each field.
    - Primary entity: `update_data_product` with

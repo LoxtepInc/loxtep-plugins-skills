@@ -47,6 +47,14 @@ metadata:
    `silver`; Ready / `lineage-exists` only appears for `target_tier: gold`.
 3. Remediate **required** (blocking) gates first — each unsatisfied prerequisite
    carries `guidance` pointing at the PKO step/skill that clears it
+   - If readiness reports `no_quality_evaluator_deployed`, add and deploy one
+     `quality-rules/{id}.json` node for the product in its producing workflow
+     via **`data-workflows`**. If an older response only reports
+     `awaiting_live_measurement: true`, do not call quality done: first verify
+     that evaluator node exists. Report a missing node plainly as **no live
+     quality evaluator yet**, then deploy it and confirm a measured score after
+     the next batch. An existing evaluator with no metrics is deployed and
+     waiting for traffic.
 4. Offer **advisory** gates as suggestions — they never block promotion, but
    they improve AI-readiness
 5. Route to domain owner for approval when HITL applies — MCP `loxtep_review`

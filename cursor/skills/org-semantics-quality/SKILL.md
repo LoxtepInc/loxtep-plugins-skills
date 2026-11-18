@@ -73,6 +73,14 @@ organization level.
    suppressions — parents are not copied onto the product.
 3. `test_quality_rule` before enabling in production.
 
+Catalog rules are definitions, not runtime evaluators. To measure them on live
+data, the workflow that produces the data product must include and deploy one
+`quality-rules/{id}.json` node for that product. The node reads the product's
+output queue and evaluates the effective inherited and product-owned rules;
+without it, `get_quality_score` remains unmeasured and the Quality tab shows
+**Never**. Follow **`data-workflows` → Quality evaluation node (required for
+live quality)**, deploy, send a batch, and confirm a measured score.
+
 ### Flow — Live inheritance and the quality-rules gate
 
 Rules inherit live **Data Council → domain ancestors → product**.
@@ -90,6 +98,9 @@ Rules inherit live **Data Council → domain ancestors → product**.
   Timeliness threshold is 95 on standard and strict.
 - A failed effective-rules lookup throws. Readiness does not substitute a 3-rule
   or 80% gate.
+- `awaiting_live_measurement` does not prove an evaluator is deployed. Check the
+  producing workflow for `quality-rules/{id}.json`; catalog or Council rules
+  alone never run.
 
 ## MCP mapping
 
