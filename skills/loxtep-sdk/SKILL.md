@@ -51,7 +51,7 @@ const probe = await client.connect.connectors.test(created.connector_id);
 `test(connector_id)` takes only the connector id. It does **not** accept
 `instance_id`. For a customer-VPC probe when the org has multiple instances, use
 MCP `test_connector` with `instance_id`. CLI:
-`loxtep connectors list|test|capture-samples` only — there is no
+`loxtep connectors list|test|list-entities|capture-samples` only — there is no
 `loxtep connectors create` / `get`. Full connect/test procedure:
 **`connect-external-system`**. `test` does not start ingestion;
 `capture_samples` retrieves source rows and needs user authorization.

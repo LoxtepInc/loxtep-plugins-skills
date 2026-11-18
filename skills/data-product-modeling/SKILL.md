@@ -176,7 +176,9 @@ author bundle → deploy → verify with `get_data_product`.**
 2. Use `snake_case` naming, business vocabulary (not system names).
 3. Mark PII fields, set governance classification.
 4. Version: additive = minor bump, breaking = major bump.
-5. `update_data_product` with versioned schema in the `schema` field.
+5. Register the version with `loxtep_define` `add_schema_version` (or
+   `create_schema` for a new schema), then `apply_schema` to the data product
+   (optional version pin). `update_data_product` does not accept `schema`.
 
 ### Flow — Bind an existing runtime queue (BYOL)
 
