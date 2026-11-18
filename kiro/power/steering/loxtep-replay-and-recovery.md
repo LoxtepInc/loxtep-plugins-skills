@@ -91,8 +91,10 @@ loxtep data-products iceberg rebuild <product-id> --backfill-from <position> --d
 loxtep data-products iceberg status <product-id> --job-id <accepted-job-id> --wait 30s --json
 ```
 
-Rebuild positions are explicit EIDs, `checkpoint` with a start checkpoint, or
-the literal `start_of_queue`; enable-history windows are a different interface.
+Rebuild `--backfill-from` accepts a `z/` queue eid (`z/` = start of the queue;
+a longer `z/…` eid starts there). Aliases (`checkpoint`, `start_of_queue`, and
+other enable-window tokens) are refused; enable-history windows are a different
+interface.
 An omitted rebuild end bound is evergreen: disclose it rather than calling the
 operation bounded. A real rebuild requires the CLI's confirmation gate. A dry
 run plans the supported operation; it does not prove completed destination data.
