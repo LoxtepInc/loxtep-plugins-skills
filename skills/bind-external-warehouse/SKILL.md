@@ -13,13 +13,13 @@ place**.
 ## Supported
 
 - Discover warehouse objects via Snowflake / Databricks connectors
-- Register bound product (`POST /dataproducts/dataproducts/bind` or MCP
-  `loxtep_build` / `bind_warehouse_table`)
+- Register bound product (MCP `loxtep_build` / `bind_warehouse_table`)
 - Warehouse-SQL reads (aggregates federated; samples into DuckDB) — Snowflake
   and Databricks SQL Warehouse dialects
 - Warehouse quality rules (completeness, uniqueness, validity, range, freshness)
   with dialect-aware SQL pushdown
-- Declared lineage via the existing lineage API
+- Declared lineage (creating lineage edges is not exposed through MCP, CLI, or
+  SDK today)
 
 ## Unsupported
 
@@ -38,8 +38,10 @@ place**.
 
 ## Optional: Unity / Iceberg REST catalog bind
 
-`POST /dataproducts/dataproducts/bind` with `kind: "iceberg_catalog"` and
-`catalog_type: "unity" | "rest"` (read-only). Does **not** replace the warehouse
+A read-only Iceberg catalog bind (`kind: "iceberg_catalog"`, `catalog_type:
+"unity" | "rest"`) exists on the platform, but it is not exposed through MCP,
+CLI, or SDK today (`bind_warehouse_table` binds warehouse tables only). Does
+**not** replace the warehouse
 overlay path. UniForm limits and no-Glue dual-write rules:
 `docs/architecture/unity-iceberg-uniform-bind.md`.
 

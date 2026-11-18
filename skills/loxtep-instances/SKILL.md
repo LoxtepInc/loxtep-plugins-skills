@@ -14,8 +14,8 @@ description:
   account keep their tier fields. A stored meter or bus ARN on that entry that
   differs returns 409 tier_role_conflict and writes nothing. Registration leaves
   a detached instance unchanged, and leaves an instance unchanged when its
-  stored cross_account_role_arn differs. A later infrastructure PUT does not
-  restore bus or workflow ARNs that detach cleared. Then
+  stored cross_account_role_arn differs. A later register_infrastructure call
+  does not restore bus or workflow ARNs that detach cleared. Then
   create_instance with the same ARN on cross_account_role_arn. Update the
   existing cross-account role stack before the next bus install.
   get_infrastructure lists every registered account. Do not skip a second
@@ -23,8 +23,8 @@ description:
   register_custom_bot / list_custom_bots / deregister_custom_bot /
   reconcile_custom_bots (dedicated instances only). Also inspect whether an
   instance''s connector runtime is ready for public or customer-VPC
-  (private-network) sources. Stop managing an instance is REST detach (status
-  detached), not an MCP tool.'
+  (private-network) sources. Stop managing an instance (status detached) is
+  not an MCP tool.'
 ---
 
 # Loxtep instances (Customer MCP)
@@ -36,9 +36,9 @@ description:
   `{ "operation": "list_instances" | "create_instance" | "update_instance" | "get_deployment_urls" | "register_infrastructure" | "get_infrastructure" | "register_custom_bot" | "list_custom_bots" | "get_custom_bot" | "update_custom_bot" | "deregister_custom_bot" | "reconcile_custom_bots", ...fields }`
 
 There is no MCP operation to detach an instance or to delete an instance. Do not
-invent one. Use the REST calls in
-[Stop managing an instance](#stop-managing-an-instance), or **Stop managing** /
-**Delete** on the organization Instances page.
+invent one. Neither is exposed through the CLI or SDK today. Use **Stop
+managing** / **Delete** on the organization Instances page. See
+[Stop managing an instance](#stop-managing-an-instance).
 
 ### Paid provisioning — Stripe Checkout
 
@@ -52,10 +52,10 @@ invent one. Use the REST calls in
 
 `list_instances` can return `status` `detached`.
 
-**Stop managing** calls `POST /organizations/instances/{instance_id}/detach`
-(permission `instances:delete`). `bots` is `leave` (default) or `pause`. When
-the instance is self-hosted, or `observe_api` holds a customer role ARN (a value
-that is not `ObserveProxyRole`), the body also needs `cross_account_access`:
+**Stop managing** (organization Instances page; permission `instances:delete`).
+`bots` is `leave` (default) or `pause`. When the instance is self-hosted, or
+`observe_api` holds a customer role ARN (a value that is not `ObserveProxyRole`),
+the request also needs `cross_account_access`:
 `meter` or `none`. Omitting it returns **400**
 `Choose cross_account_access meter or none before detaching this instance.`
 `meter` keeps `meter_role_arn` and `cross_account_role_arn` and removes
@@ -64,35 +64,32 @@ four. Detach does not delete IAM roles and does not change the organization
 registration. It stores `metadata.cross_account_access`, sets
 `metadata.control_plane` to `detached`, and sets `metadata.deploy_role_use` to
 `stopped`. An already-detached instance returns **200** with `data.idempotent`
-`true` and does not apply the choice again. A later
-`PUT /organizations/organizations/{org_id}/infrastructure` does not restore the
+`true` and does not apply the choice again. A later `register_infrastructure` call does not restore the
 cleared `bus_lifecycle_role_arn` or `workflow_deploy_role_arn` on a detached
 instance. Registration leaves that instance unchanged.
 
 While `status` is `detached`:
 
-- `update_instance` and `PUT /organizations/instances/{instance_id}` return
-  **409** `INSTANCE_DETACHED`:
+- `update_instance` (MCP, SDK `client.workspace.instances.update`, CLI
+  `loxtep instances update`) returns **409** `INSTANCE_DETACHED`:
   `This instance is not managed. Deploy a project to attach it again.`
-- `POST /organizations/instances/{instance_id}/upgrade` returns **409**
-  `INSTANCE_DETACHED`:
+- An instance upgrade returns **409** `INSTANCE_DETACHED`:
   `This instance is not managed. Deploy a project to attach it again before upgrading.`
-- `POST /organizations/instances/{instance_id}/context-refresh` returns **409**
-  `INSTANCE_DETACHED`:
+- A context refresh request returns **409** `INSTANCE_DETACHED`:
   `This instance is not managed. Deploy a project to attach it again before requesting a context refresh.`
 - Health is degraded: `Loxtep is not managing this instance. It keeps running.`
-  Deep health (`GET /organizations/instances/{instance_id}/health?deep=true`)
-  does not poll the instance.
+  Deep health does not poll the instance.
 
 Deploying a project or a workflow to that instance attaches it again (`status`
 returns to `active`).
 
-`DELETE /organizations/instances/{instance_id}` returns **400**
-`STACK_TEARDOWN_CONFIRMATION_REQUIRED` when the instance is self-hosted
-(`metadata.instance_type` or `connection_details.type`) and metadata has a
-non-empty `stack_name`, `rstreams_stack_prefix`, or `runtimes_stack_name`,
-unless the body is `{ "confirm_stack_teardown": true }`. `stack_id` alone does
-not require that flag.
+Deleting an instance returns **400** `STACK_TEARDOWN_CONFIRMATION_REQUIRED`
+when the instance is self-hosted (`metadata.instance_type` or
+`connection_details.type`) and metadata has a non-empty `stack_name`,
+`rstreams_stack_prefix`, or `runtimes_stack_name`, unless the request confirms
+stack teardown (`confirm_stack_teardown: true`). `stack_id` alone does not
+require that flag. Upgrade, context refresh, deep health, and delete are not
+exposed through MCP, CLI, or SDK today.
 
 ## list_instances
 
@@ -106,9 +103,10 @@ URLs, or rstreams physical resource names — those must not land in chat
 transcripts. Role + external id: `get_infrastructure` / `get_deployment_urls`.
 Bus table names for engineers: Node CLI
 `loxtep instances stream-config [<instance_id>]`, SDK
-`client.workspace.instances.get_stream_config` (Node or Python), or REST
-`GET /organizations/instances/{instance_id}/stream-config` (`instances:read`),
-not MCP.
+`client.workspace.instances.get_stream_config` (Node or Python)
+(`instances:read`), not MCP. Do not call `loxtep_observe` `get_stream_config`
+to show them in chat either: the names are not secrets, but they are
+infrastructure details and stay out of transcripts.
 
 ## create_instance
 
@@ -271,7 +269,7 @@ runtimes deploy and do not get this field.
 - **Create.** The HTTP create handler does not write the field. After the core
   stack finishes, `runtimes-deployment-requested` submits the runtimes stack and
   records the name immediately before that submit.
-- **Upgrade.** `POST /organizations/instances/{instance_id}/upgrade` only queues
+- **Upgrade.** An instance upgrade only queues
   `instances-upgrade-requested`. For managed, and for self-hosted when a
   runtimes stack or the control plane is recorded, the upgrade bot records the
   name in `sync-runtimes-import-release` when that step runs with a database
@@ -313,9 +311,8 @@ runtimes deploy and do not get this field.
   `Missing workflow_deploy_role_arn for runtimes deployment. Record the deployment role ARN from the cross-account template.`,
   and `upgrade_failed_at`. It emits `instance.upgrade.failed`.
   `upgrade_infra_completed_at` and `upgrade_infra_completed_version` may already
-  be set, and the failed record keeps them. Record `workflow_deploy_role_arn`
-  with `PUT /organizations/organizations/{org_id}/infrastructure`
-  (`register_infrastructure`) and retry the upgrade. When the checkpoint is for
+  be set, and the failed record keeps them.   Record `workflow_deploy_role_arn`
+  with `register_infrastructure` and retry the upgrade. When the checkpoint is for
   that target, the retry skips CloudFormation and finalizes. A recorded runtimes
   stack with both roles empty fails during the import release, before the
   checkpoint, with
@@ -323,7 +320,8 @@ runtimes deploy and do not get this field.
   `process-instances-upgrade-requested` throws that as `upgradeAttemptError` and
   does not record the failed upgrade. `process-instances-upgrade-failed` records
   the same failed fields, emits `instance.upgrade.failed`, and leaves
-  `core_version` unchanged. Record the role with the same PUT and retry. That
+  `core_version` unchanged. Record the role with the same
+  `register_infrastructure` call and retry. That
   retry runs the infrastructure step again.
 - **`force_runtimes_redeploy: true`** (or a connector-network change) on
   `update_instance` sends the same forced runtimes event and records the name on
@@ -347,11 +345,11 @@ fails the request. The index does not fill in for an object that could not be
 read.
 
 A dedicated instance with no `code_bucket` fails these calls with HTTP 500
-(`dedicated_bucket_missing`). `POST /workflows/projects` stores
+(`dedicated_bucket_missing`). `create_project` stores
 `projects.instance_id` when the body names a live instance. Omitting it when the
 organization has more than one live dedicated instance returns HTTP 409
 (`ambiguous_instance`) and does not insert the project. A workspace call that
-does not name an instance, and `POST /workflows/deployments` when `instance_id`
+does not name an instance, and `deploy_workflow` when `instance_id`
 is omitted, uses a deployment pin when the project's deployment rows name
 exactly one live dedicated instance, and otherwise the stored
 `projects.instance_id`. With neither, the same 409 applies. An omitted id does
@@ -378,8 +376,7 @@ A detached instance returns **409** `INSTANCE_DETACHED`
 (`This instance is not managed. Deploy a project to attach it again.`) before
 any save. See [Stop managing an instance](#stop-managing-an-instance).
 
-Observe namespace is set at instance creation. `update_instance` (PUT
-`/organizations/instances/{instance_id}`, SDK
+Observe namespace is set at instance creation. `update_instance` (MCP, SDK
 `client.workspace.instances.update`, CLI `loxtep instances update`) rejects any
 attempt to set, change, or remove it with **400** (`ValidationFailed`:
 `Observe namespace is set at account creation and cannot be changed`). Do not
@@ -435,9 +432,8 @@ A detached instance returns **409** `INSTANCE_DETACHED`
 and does not queue the upgrade. See
 [Stop managing an instance](#stop-managing-an-instance).
 
-`POST /organizations/instances/{instance_id}/upgrade` queues
-`instances-upgrade-requested` and returns `upgrade_status` `accepted`. The
-allowlist check runs in the upgrade bot.
+An instance upgrade queues `instances-upgrade-requested` and returns
+`upgrade_status` `accepted`. The allowlist check runs in the upgrade bot.
 
 On a self-hosted upgrade, a stored `metadata.botmon_lite_allowed_cidrs` is sent
 as `BotmonLiteAllowedCidrs`. A missing list and an explicit empty list are
@@ -447,7 +443,9 @@ list fails before the stack update. `process-instances-upgrade-requested` throws
 `process-instances-upgrade-failed` sets `metadata.upgrade_status` to `failed`,
 `metadata.upgrade_error` to the message, and `metadata.upgrade_failed_at`. It
 emits `instance.upgrade.failed`. `metadata.core_version` stays unchanged. Read
-those fields on `GET /organizations/instances/{instance_id}`. Messages:
+those fields with SDK `client.workspace.instances.get` or CLI
+`loxtep instances get <instance_id>` (`list_instances` does not return metadata).
+Messages:
 
 - `Invalid allowed IP '<value>': expected an IPv4 address or CIDR like 203.0.113.7 or 10.0.0.0/8`
 - `Invalid allowed IP '<value>': octet or prefix out of range`
@@ -467,8 +465,8 @@ instance first. Observe Lite stays closed until the list is saved.
 ## Self-hosted install flow (new operations)
 
 Self-hosted instances run the entire rstreams data plane in the customer AWS
-account. Three operations drive the install end-to-end from MCP — no raw REST or
-AWS console needed (though the user must still deploy the IAM role in their AWS
+account. Three operations drive the install end-to-end from MCP — no AWS
+console needed (though the user must still deploy the IAM role in their AWS
 account, which they do via the one-click URL the operation gives them).
 
 ### 1. `get_deployment_urls` — step 1
@@ -893,9 +891,10 @@ which**).
 
 1. `list_instances` — confirm instance type is not `shared`.
 2. Ensure the Lambda is in the **same AWS account/region** as the instance bus.
-3. `loxtep instances stream-config` / REST stream-config for bus resource names
-   (not over MCP). Tell the customer to set `RSTREAMS_CONFIG_SECRET` and
-   `LEOAUTH_CONFIG_SECRET` on the function.
+3. CLI `loxtep instances stream-config` or SDK
+   `client.workspace.instances.get_stream_config` for bus resource names (not
+   over MCP). Tell the customer to set
+   `RSTREAMS_CONFIG_SECRET` and `LEOAUTH_CONFIG_SECRET` on the function.
 4. Register (leave queues default):
 
 ```json
@@ -913,8 +912,7 @@ which**).
 5. Return `iam_policy` + checklist from the response; customer attaches IAM to
    the Lambda role.
 6. **Bind a data product to `{bot_id}-out`** (not `-in` / `-errors`):
-   - Prefer dry-run then run
-     `POST /dataproducts/dataproducts/runtime-queue-reconciliation`
+   - Prefer dry-run then run `loxtep_observe` `reconcile_runtime_queues`
      (`instance_id`, `dry_run`). Needs `system:admin` | `data_products:admin` |
      `instances:update` (skill **data-product-modeling**). Do not instruct
      customers to set internal storage queue fields — bindings come from
@@ -922,7 +920,6 @@ which**).
    - Stub insert needs an active org project (placeholder deployment/workflow is
      DB-only). If there is no project, say stub insert will skip until one
      exists — still do not invent a Studio graph for the Lambda.
-   - List stubs: `GET /dataproducts?synthetic_visibility=include`.
 7. Unpause in Observe (LeoCron `paused` is runtime SoT after first register).
 8. Optional: `reconcile_custom_bots` for catalog ↔ LeoCron drift.
 

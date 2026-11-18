@@ -221,15 +221,13 @@ Refused:
   `privacy_blocked`
 - PII / missing / non-string `fields` → `400` `invalid_fields`
 
-MCP `loxtep_query` → `semantic_search` proxies
-`POST /dataproducts/dataproducts/{data_product_id}/semantic-search`. Permission:
-`data_products:read` (REST authorizer also accepts `analytics:execute`).
+MCP `loxtep_query` → `semantic_search`. Permission: `data_products:read`.
 
 | Field             | Required | Notes                                                              |
 | ----------------- | -------- | ------------------------------------------------------------------ |
 | `data_product_id` | yes      | UUID                                                               |
-| `query`           | yes      | Non-empty. REST max 8000 characters.                               |
-| `top_k`           | no       | Integer 1–100. REST default `10`.                                  |
+| `query`           | yes      | Non-empty. Queries over 8000 characters are refused.               |
+| `top_k`           | no       | Integer 1–100. Default `10` when omitted.                          |
 | `filters`         | no       | Equality only (`col = value`). Values: string, number, or boolean. |
 
 Success `data`:
@@ -297,8 +295,9 @@ following as a live transcript.
   `Query execution failed`). Distinguish them from `message`: timeout text is
   like `Query exceeded timeout of 60 seconds` (default 60s); OOM text contains
   `memory limit exceeded`. This tool does **not** return HTTP `error_code`
-  values (`query_timeout` / `query_error` / `query_cancelled`). Those are on
-  `POST /dataproducts/warehouse/execute`. Do not describe an OOM as a timeout.
+  values (`query_timeout` / `query_error` / `query_cancelled`). Those come back
+  from Node SDK `client.query.data_products.query_receipt(id, sql)`
+  (`error_code`). Do not describe an OOM as a timeout.
 - **`get_query_results` vs `partial`** — today a `partial` poll looks pending.
   Trust `execute_query`'s `data.status` until they match.
 - Large result sets — use limits / pagination per platform.

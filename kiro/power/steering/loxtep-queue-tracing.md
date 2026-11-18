@@ -19,7 +19,7 @@ happened at the system level.
 - MCP auth (`loxtep-auth`)
 - Access to `read_queue_events` on **`loxtep_observe`**
 - Knowledge of the instance **namespace** — ask the user, or derive from CLI
-  `loxtep instances stream-config` / REST stream-config / SDK
+  `loxtep instances stream-config` / SDK
   `client.workspace.instances.get_stream_config`, not from MCP `list_instances`
 
 ## Queue naming conventions
@@ -59,12 +59,12 @@ container_id:
 
 ## `read_queue_events` response (do this first)
 
-`loxtep_observe` `read_queue_events` calls `GET /app/observe/search` and returns
-the botmon search body under **`events`**, with paging fields added
-(`next_cursor`, `has_more`, `limit`). The tool also repeats `next_cursor`,
-`has_more` and `limit` at the top level. The scan walks the stream **forward**
-from `eid` (default: about 60 minutes before now). Matching events are appended
-in that scan order — not reverse chronological, and not "most recent first."
+`loxtep_observe` `read_queue_events` returns the botmon search body under
+**`events`**, with paging fields added (`next_cursor`, `has_more`, `limit`). The
+tool also repeats `next_cursor`, `has_more` and `limit` at the top level. The
+scan walks the stream **forward** from `eid` (default: about 60 minutes before
+now). Matching events are appended in that scan order — not reverse
+chronological, and not "most recent first."
 
 On success the tool data looks like:
 
@@ -214,8 +214,7 @@ Non-2xx Observe/botmon responses are MCP failures: `error` is
 | 400  | `invalid_filter_expression`  | `search_text` was treated as a bad filter expression. Drop or simplify `search_text`                                                                                                                                                                                                                                      |
 
 An eid refusal is not in this table: it fails input validation before HTTP (400
-`invalid_tool_input`). Direct `GET /app/observe/search` callers get 400
-`eid_path_timestamp_mismatch`.
+`invalid_tool_input`).
 
 For `observe_search_shape_error`, the MCP `message` is the contract error text
 (for example `Missing required field: has_more`), not the code. If the MCP

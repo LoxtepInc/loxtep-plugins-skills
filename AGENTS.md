@@ -495,7 +495,7 @@ rejected, and a check that cannot complete blocks the operation.
 | `loxtep-process-intel` | Use when the user wants to read or write entity context, query what Loxtep knows about a business… |
 | `loxtep-queue-tracing` | Trace rstreams bots and queues for deployment or data-flow failures. |
 | `loxtep-replay-and-recovery` | Plan and carry out authorized Loxtep replay or historical repair through existing native operations. |
-| `loxtep-sdk` | Bootstrap @loxtep/sdk in Node (auth, env, REST vs Loxtep streams), map MCP tools to SDK methods,… |
+| `loxtep-sdk` | Bootstrap @loxtep/sdk in Node (auth, env, typed client vs Loxtep streams), map MCP tools to SDK… |
 | `loxtep-semantic-layer` | Use when the user wants to search the semantic layer, retrieve semantic artifacts, check semantic… |
 | `loxtep-workspace` | Workspace versions, snapshots, restore, and compare for Loxtep projects. |
 | `mcp-integration` | Configure and validate Loxtep hosted MCP access for agents — OAuth to mcp.loxtep.io, map the ten… |

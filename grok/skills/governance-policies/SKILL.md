@@ -41,7 +41,7 @@ backwards (the deploy is the fix).
 
 ## Where policies live
 
-Use **`loxtep_define`**. Do not call the governance REST API.
+Use **`loxtep_define`** for all policy reads and writes.
 
 | Op     | `operation`                |
 | ------ | -------------------------- |

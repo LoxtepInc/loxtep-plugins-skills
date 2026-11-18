@@ -436,7 +436,7 @@ loxtep deploy
    `access_method` (e.g. `export`), and destination `connection_id`. Save
    materializes into `data_product_subscribers`. Prefer MCP
    `list_delivery_grants` / `get_delivery_grant` / `save_delivery_grant` /
-   `update_delivery_grant` over direct REST grant calls.
+   `update_delivery_grant`.
 7. `deploy_workflow` (Flow H) — embeds the active grant into outbound Target
    writers (D6). Grant changes need a redeploy to refresh the writer snapshot.
 
@@ -604,12 +604,11 @@ stamped key. It is refused only when it disagrees. All of those refusals, plus
 mismatched lengths, missing/non-array fields, an empty index, null or duplicate
 index values, mixed-type index values (`INDEX_MIXED_TYPES`), and a
 present-but-null carry field (`CARRY_FIELD_NULL`), go to the error queue — no
-silent drop. Preview (`loxtep_build` `preview_transform` and
-`POST /workflows/projects/{project_id}/preview/transformation`) returns those
-labelled refusals as `transformed_event: null` and
-`errors: [{ message, code, field }]` (REST HTTP 200) instead of a generic
-failure or 500. `explode_array` cannot zip parallel arrays: it splits one array
-field and copies the others whole.
+silent drop. Preview (`loxtep_build` `preview_transform`) reports those
+labelled refusals as a failed result carrying the first refusal's message
+(`Transform preview failed: <message>`) instead of a generic failure or 500.
+`explode_array` cannot zip parallel arrays: it splits one array field and copies
+the others whole.
 
 **`explode_array`** — one event per element of a single array field. Set
 `operation_config.on_empty` (`drop` | `keep_original` | `error`); it is required
@@ -621,10 +620,10 @@ and has no default. Missing or unknown `on_empty` is refused at validation
 `keep_original`: the source event passes through unchanged. `error`: refused
 with `EMPTY_ARRAY` (event goes to the error path). A non-array `field` fails the
 event (`INVALID_TYPE`); it does not pass through with `errors[]`.
-`preview_transform` (same REST preview route): `drop` on empty →
+`preview_transform`: `drop` on empty →
 `transformed_events: []`, `event_count: 0`; `keep_original` → the source event
 as the one `transformed_events` item; `error`, `INVALID_TYPE`, and missing
-`on_empty` throw (`success: false`; REST 422). `TransformService` wraps those
+`on_empty` fail (`success: false`). `TransformService` wraps those
 runtime `ExplodeArrayError` codes as `EXECUTION_ERROR`. Minimal config:
 
 ```json
@@ -634,8 +633,7 @@ runtime `ExplodeArrayError` codes as `EXECUTION_ERROR`. Minimal config:
 }
 ```
 
-See `get_entity_schemas` → transformation `transform_type` enum and GET
-`/workflows/transforms/types`.
+See `get_entity_schemas` → transformation `transform_type` enum.
 
 Scenario 2 runbook (transform derivation → queryable sink):
 [`docs/runbooks/transform-enrichment-scenario-2.md`](../../docs/runbooks/transform-enrichment-scenario-2.md).
