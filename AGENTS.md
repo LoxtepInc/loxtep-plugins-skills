@@ -340,6 +340,7 @@ key parameters.
 | `verify_semantic_package` | organization | — | — |
 | `get_semantic_package_status` | organization | — | — |
 | `import_external_semantic_package` | organization | — | — |
+| `create_semantic_proposal` | organization | — | — |
 | `list_semantic_proposals` | organization | — | — |
 | `infer_proposal_definitions` | organization | — | — |
 | `accept_semantic_proposal` | organization | — | — |
@@ -378,7 +379,7 @@ key parameters.
 | `list_candidates` | organization | — | — |
 | `act_on_candidate` | organization | — | — |
 
-### `loxtep_query` — Use — find and query trusted data. Catalog discovery (search_catalog, scoped_search for ask→traverse→search, entry detail, domains, tags), analytics SQL over data products (execute_query, list_tables, get_table_schema, get_query_results), row-embedding semantic search (semantic_search), and COA-shaped graph serve ops backed by DynamoDB SPARQL (describe_graph, translate_sparql, graph_traversal — never Neptune). For trust signals (lineage evidence scores), use loxtep_observe. COA list_metrics/describe_schema are not separate tools — use search_semantic_layer / get_table_schema / list_ontology_concepts.
+### `loxtep_query` — Use — find and query trusted data. Catalog discovery starts with search_catalog on the user question (field paths, definitions, terms, discovery_index, hybrid_degraded). scoped_search is follow-up traversal after an anchor. Entry detail, domains, tags, analytics SQL over data products (execute_query, list_tables, get_table_schema, get_query_results), row-embedding semantic search (semantic_search), and COA-shaped graph serve ops backed by DynamoDB SPARQL (describe_graph, translate_sparql, graph_traversal — never Neptune). For trust signals (lineage evidence scores), use loxtep_observe. COA list_metrics/describe_schema are not separate tools — use search_semantic_layer / get_table_schema / list_ontology_concepts.
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
 | `search_catalog` | catalog | `query` | `filters` |
