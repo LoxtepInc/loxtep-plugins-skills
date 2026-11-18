@@ -115,8 +115,10 @@ channel and `loxtep-integration-verification`.
 
 - Connection test and ingestion activation are separate; do not deploy just to
   get samples
-- Private sources need `network_binding: customer_vpc` and
-  `connectors-private-512` on the instance (**`loxtep-instances`**)
+- Private sources need `network_binding: customer_vpc`. Test and unset ingest
+  use `connectors-private-512` on the instance (**`loxtep-instances`**). A set
+  `runtime_memory_mb` selects `connectors-private-256`, `512`, `1024`, `2048`,
+  or `custom` (**`data-workflows`**, Tune)
 - Create the project before any workflow or bundle calls
 - Embed data product definitions inside the workflow bundle — do not call
   `create_data_product` directly; deployment provisions it

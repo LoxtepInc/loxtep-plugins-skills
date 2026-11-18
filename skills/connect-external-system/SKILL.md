@@ -154,12 +154,13 @@ Ask whether the source is reachable from the public internet.
 | Connector metadata `require_private_network: true`                                  | Private      |
 | Otherwise, and the catalog type is a public SaaS/API                                | Public       |
 
-`mongodb-source` / `mongodb` **workflow deploy** routes to the customer-VPC
-runtime (`connectors-private-512`) even without `network_binding`. The
+`mongodb-source` / `mongodb` **workflow deploy** routes to `connectors-private`
+even without `network_binding`. Unset ingest stays `connectors-private-512`.
+`256`, `512`, `1024`, `2048`, and `custom` select that private size. The
 **org-connector test probe** uses the private worker only when `network_binding`
-is `customer_vpc`/`private` or `require_private_network` is true. Set
-`network_binding: "customer_vpc"` when the source is private so test and ingest
-use the same path.
+is `customer_vpc`/`private` or `require_private_network` is true, and that probe
+resolves `connectors-private-512`. Set `network_binding: "customer_vpc"` when
+the source is private so test and ingest use the same path.
 
 Shared `connectors-{256,512,1024,2048}` Lambdas stay off-VPC. Private sources
 must not be tested in the connectors API Lambda.
@@ -204,8 +205,14 @@ Do not change ENIs, security groups, or routes in the AWS console.
 | VPC, private subnets, security groups, routing, NACLs, source firewall           | Customer                                                            |
 | Cross-account deploy role (`get_deployment_urls` → CloudFormation/CLI/Terraform) | Customer deploys; Loxtep registers                                  |
 | Instance bus (rstreams) and per-instance **runtimes** stack                      | Loxtep instance provisioner (`create_instance` / `update_instance`) |
-| `connectors-private-512` bot (512 MB, customer subnets/SG only)                  | Loxtep packaging                                                    |
+| Private connector functions (customer subnets and security group only)           | Loxtep packaging                                                    |
 | Shared `connectors-*` workers                                                    | Loxtep (stay off customer VPC)                                      |
+
+Private connector functions attach only to customer subnets and the connector
+security group: `connectors-private-256`, `connectors-private-512`,
+`connectors-private-1024`, `connectors-private-2048`, and the custom private
+clone. Probe, sample, and unset ingest use `connectors-private-512`. The primary
+resolver still matches `connectorsprivate512`.
 
 Instance configuration (mutating; ask first). Customer provides **two private
 subnet IDs** (different AZs) and **one connector security group ID** that can
@@ -587,10 +594,12 @@ Sanitize every error string before showing it (redact URI userinfo and PEMs).
 - Do not clear `credential_parameter_store_refs`. Resubmitting `[REDACTED]`
   keeps the existing SSM parameter.
 - `deploy_workflow` / `force_redeploy` does not change VPC attachment. Private
-  connections re-register on `connectors-private-512` when `network_binding` /
-  mongodb-source routing still applies.
+  connections re-register on the private tier that matches `runtime_memory_mb`
+  (`connectors-private-256`, `512`, `1024`, `2048`, or `custom`). Unset memory
+  stays `connectors-private-512`.
 - Keep `connection_details.connector_vpc` on the instance. Clearing it and
-  saving detaches `connectors-private-512` from the customer VPC.
+  saving removes `VpcConfig` from every private connector function, including
+  `connectors-private-512`.
 - Shared `connectors-*` workers must remain `vpc.enabled: false`.
 
 ## Generic example (discovery → successful test)
@@ -851,8 +860,10 @@ unverified against a live environment.
   app UI (Observe → Catalog → select the bot → Actions → Pause Bots) before
   `reset_backfill`.
 - SDK `test` cannot pass `instance_id`.
-- Shared `connectors-*` workers stay off-VPC; only `connectors-private-512`
-  receives `connector_vpc`.
+- Shared `connectors-*` workers stay off-VPC. Every private connector function
+  (`connectors-private-256`, `512`, `1024`, `2048`, and the custom private
+  clone) receives `connector_vpc`. The primary resolver still matches
+  `connectorsprivate512`. Probe and sample still use `connectors-private-512`.
 - Customer-VPC **test** workers are implemented for:
   - `mongodb-source` (`mongodb-source-private-probe/1`)
   - `postgres` / `postgresql` / `postgres-source` (`postgres-private-probe/1`)
