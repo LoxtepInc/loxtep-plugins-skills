@@ -28,7 +28,10 @@ place**.
 ## Unsupported
 
 - Outbound `database_sync` / copying Loxtep data into the warehouse
-- Writing into customer warehouse tables
+- Writing into customer warehouse tables except the warehouse-primary sink
+  (`configure_warehouse_sink`), which is in code for Snowflake and Databricks.
+  Databricks upsert writes are MERGE on the primary key. Live verification on a
+  customer workspace is not done
 - Dual-write Unity Catalog ↔ Loxtep Glue
 - BigQuery, Redshift
 - Automatic observed lineage from `QUERY_HISTORY`

@@ -698,8 +698,10 @@ and deploys the rstreams stack. Observe signing uses `meter_role_arn`, then
 
 Public SaaS connectors run on shared `connectors-{256,512,1024,2048}` Lambdas
 (`vpc.enabled: false` on the runtimes microservice). Sources that are not
-internet-reachable need the dedicated `connectors-private-512` bot, which
-attaches only to customer private subnets and a connector security group.
+internet-reachable need a private connector function, which attaches only to
+customer private subnets and a connector security group. Unset ingest and the
+connectivity probe use `connectors-private-512`. Sizes `256`, `1024`, `2048`,
+and `custom` also attach only to those subnets.
 
 **Inspect (do not mutate):**
 
@@ -710,22 +712,28 @@ attaches only to customer private subnets and a connector security group.
    account does not cover a second account.
 3. `loxtep_observe` → `list_observe_bots` with `instance_id` (permission
    `instances:read`). Look for `connectors-private-512` when the source is
-   private.
+   private. That name is the primary and probe function. Other private sizes
+   attach to the same subnets.
 
 ```json
 { "operation": "list_observe_bots", "instance_id": "<uuid>" }
 ```
 
 **Ownership:** the customer owns the VPC, two private subnet IDs, the connector
-security group, routing, and source firewall rules. Loxtep packages
-`connectors-private-512` and the instance provisioner attaches it when
-`connection_details.connector_vpc` is set.
+security group, routing, and source firewall rules. Loxtep packages the private
+connector functions. The instance provisioner attaches every private tier when
+`connection_details.connector_vpc` is set. Unset ingest and the probe use
+`connectors-private-512`.
 
 Additional networks go on `connection_details.connector_vpcs`: up to 7 entries,
 each `{ "id", "subnet_ids", "security_group_id" }`. `id` is 1–16 characters
 `[a-z0-9]` and `default` is reserved. A subnet or security group belongs to one
-network. Each extra network gets its own copy of the private connector function
-(`BotConnectorsPrivateAtt{Id}`). A connector stays on the primary network unless
+network. Each extra network gets its own copy of each private connector
+function. The 512 copy, and unset, is `BotConnectorsPrivateAtt{Id}`. Other sizes
+append the megabytes (`BotConnectorsPrivateAtt{Id}256`, `1024`, `2048`).
+`custom` appends `Custom` (`BotConnectorsPrivateAtt{Id}Custom`). That attachment
+logical id must not contain `connectorsprivate512`, because the primary 512
+resolver matches that substring. A connector stays on the primary network unless
 its metadata sets `connector_vpc_id` to an extra id. `connector_vpcs: null`
 clears extras only. `connector_vpc: null` clears the primary network. Shared
 instances reject both. Removing an extra network that a connector still uses
@@ -840,10 +848,12 @@ customer does not run a Loxtep microservice deploy. Shared `connectors-*`
 workers stay off the customer VPC.
 
 CloudFormation `UPDATE_COMPLETE` is not proof that VPC attached. Confirm the
-private connector Lambda (`botconnectorsprivate512…`) `VpcConfig` SubnetIds and
-SecurityGroupIds match `connection_details.connector_vpc`. If a stack completed
-without `VpcConfig`, retry after the organizations runtimes provisioner includes
-the logical-ID template patch:
+primary private connector Lambda (`botconnectorsprivate512…`) `VpcConfig`
+SubnetIds and SecurityGroupIds match `connection_details.connector_vpc`. The
+other private logical IDs (`connectors-private-256`, `1024`, `2048`, and the
+custom private clone) receive the same `VpcConfig`. If a stack completed without
+`VpcConfig`, retry after the organizations runtimes provisioner includes the
+logical-ID template patch:
 
 ```bash
 loxtep instances redeploy-runtimes <instance_id>
@@ -939,4 +949,4 @@ re-trigger OAuth (Agent-Scope Skill **loxtep-auth**).
 
 - [User story catalog](../../../docs/skills-user-stories.md) (story **S11**)
 - Private connector path: **`connect-external-system`**
-- Workflow deploy onto `connectors-private-512`: **`loxtep-deployments`**
+- Workflow deploy onto `connectors-private`: **`loxtep-deployments`**

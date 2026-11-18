@@ -69,8 +69,10 @@ After connect-external-system (Connect)?
     get_entity_schemas, compose bundle
   → Other types: connector_id + samples — start at get_entity_schemas, compose bundle
   → Put the connector on a Trigger connection at the ingest head
-  → Private-network connections keep `network_binding` on the org connector;
-    deploy registers them on `connectors-private-512` (**`loxtep-deployments`**)
+  → Private-network connections keep `network_binding` on the org connector.
+    Unset ingest stays on `connectors-private-512`. A set `runtime_memory_mb`
+    selects `connectors-private-256`, `512`, `1024`, `2048`, or `custom`
+    (**`loxtep-deployments`**, and Tune below)
 
 User asks to "create a source/consumer data product"?
   → Design schema first (data-product-modeling) — NO create_data_product MCP call
@@ -981,11 +983,11 @@ Set these on the **entity JSON** (bundle file), then `save_workflow_bundle` →
 `deploy_workflow`. `get_entity_schemas` lists the same fields. A set value that
 deploy cannot honor **fails the deploy** — it does not warn and default.
 
-| Field                                          | Valid values                            | What it controls                       |
-| ---------------------------------------------- | --------------------------------------- | -------------------------------------- |
-| `runtime_settings.event_writer.transport_mode` | `default`, `fast`, `volume`             | Event output and error write transport |
-| `batch_size`                                   | integer **1–10000**                     | Events per runtime handler call        |
-| `runtime_memory_mb`                            | **256**, **512**, **1024**, or **2048** | Shared runtimes Lambda memory tier     |
+| Field                                          | Valid values                                          | What it controls                       |
+| ---------------------------------------------- | ----------------------------------------------------- | -------------------------------------- |
+| `runtime_settings.event_writer.transport_mode` | `default`, `fast`, `volume`                           | Event output and error write transport |
+| `batch_size`                                   | integer **1–10000**                                   | Events per runtime handler call        |
+| `runtime_memory_mb`                            | **256**, **512**, **1024**, **2048**, or **`custom`** | Runtime memory tier                    |
 
 Transport modes have deliberate tradeoffs: `default` is durable, balanced, and
 recommended; `fast` has the lowest latency but may cost more; `volume` is for
@@ -1000,12 +1002,12 @@ Put `runtime_settings.event_writer.transport_mode` at the top level of
 accept `--transport-mode default|fast|volume`. MCP agents read the accepted
 shape from `get_entity_schemas`, then persist it with `save_workflow_bundle`.
 
-| Entity         | Batch/memory location                                                                                                                                    | Unset `batch_size` | Unset `runtime_memory_mb`                                                             |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------- |
-| Transformation | Top-level on `transformations/{id}.json`                                                                                                                 | 300                | Derived from `transform_type` (see below). Registers on shared `transformers-{mb}`.   |
-| Validation     | Top-level on `validations/{id}.json`                                                                                                                     | 300                | Shared runtimes segment resolvable: `connectors-256`. Otherwise `validation-handler`. |
-| Quality rule   | Top-level on `quality-rules/{id}.json`                                                                                                                   | 300                | Same as validation, except the legacy Lambda is `quality-rule-handler`.               |
-| Connection     | `ingestion_config.batch_size` / `ingestion_config.runtime_memory_mb` (same keys on `configuration` also work; `ingestion_config` wins when both are set) | 100                | Shared runtimes segment resolvable: `connectors-256`. Otherwise `connection-handler`. |
+| Entity         | Batch/memory location                                                                                                                                    | Unset `batch_size` | Unset `runtime_memory_mb`                                                                                                                 |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Transformation | Top-level on `transformations/{id}.json`                                                                                                                 | 300                | Derived from `transform_type` (see below). Registers on shared `transformers-{mb}`.                                                       |
+| Validation     | Top-level on `validations/{id}.json`                                                                                                                     | 300                | Shared runtimes segment resolvable: `connectors-256`. Otherwise `validation-handler`.                                                     |
+| Quality rule   | Top-level on `quality-rules/{id}.json`                                                                                                                   | 300                | Same as validation, except the legacy Lambda is `quality-rule-handler`.                                                                   |
+| Connection     | `ingestion_config.batch_size` / `ingestion_config.runtime_memory_mb` (same keys on `configuration` also work; `ingestion_config` wins when both are set) | 100                | Public: `connectors-256` when a shared segment is available; otherwise `connection-handler`. Customer VPC stays `connectors-private-512`. |
 
 Unset transformation memory is 1024 for `execute_code_function`,
 `derived_columns`, `concatenate_columns`, `explode_array`, `zip_arrays`,
@@ -1013,23 +1015,110 @@ Unset transformation memory is 1024 for `execute_code_function`,
 `xml_to_json`, `extract_json_path`, `regex_extractor`, `flatten`, and `filter`;
 otherwise 256. Derived unset never selects 2048.
 
-A **set** `runtime_memory_mb` (including explicit **256**) registers on
-`connectors-{mb}` (connections, validations, quality rules) or
-`transformers-{mb}` (transformations). Shared runtimes resolve when the instance
-has `connection_details.runtimes_stack_identifier` **or** deploy can derive
+A **set** numbered `runtime_memory_mb` (**256**, **512**, **1024**, or **2048**,
+including explicit **256**) registers on `connectors-{mb}` (public connections,
+validations, quality rules) or `transformers-{mb}` (transformations). A shared
+runtimes Lambda is available when the instance has
+`connection_details.runtimes_stack_identifier` **or** deploy can derive
 `organization_id` + `instance_id`.
 
-A connection that requires a customer VPC (`network_binding: customer_vpc` /
-`private`, `require_private_network: true`, or `mongodb-source` / `mongodb`)
-registers on `connectors-private` at **512 MB** regardless of the requested
-`runtime_memory_mb`.
+`"custom"` is valid on those same fields. Deploy forwards it when the instance
+already has an operator-configured memory override for that family
+(`connectors`, `connectors_private`, or `transformers`): an integer from 256
+to 10240. Shared and multitenant instances skip the runtimes template patch
+(`Shared instance — runtimes already deployed on platform stack, skipping`), so
+they do not apply overrides and `"custom"` fails on them. There is no separate
+shared-instance error name.
+
+With no override, deploy throws `NodeRuntimeTuningUnavailableError`. `{who}` is
+`{entity_type} {entity_id}` when the entity id is present, otherwise
+`{entity_type}`:
+
+```text
+{who}: runtime_memory_mb "custom" requires connection_details.runtime_memory_overrides.{family} set to an integer from 256 to 10240; refusing silent fallback to a legacy handler
+```
+
+When an override is stored and the runtimes stack has no matching custom
+function, Lambda lookup throws:
+
+```text
+Could not resolve a deployed Lambda for {surface}/{typeSlug}/custom in runtimes stack '{stackName}'.
+```
+
+The same lookup for a numbered tier uses `{mb}MB` in place of `custom`. A
+customer-VPC connector network miss is:
+
+```text
+Could not resolve connector network '{id}' at connectors-private-{memoryMb} ({wantedLogicalId}) in runtimes stack '{stackName}'.
+```
+
+A connection that requires a customer VPC (`network_binding` `customer_vpc` or
+`private`, `require_private_network: true`, or connector type `mongodb` /
+`mongodb-source`) registers on `connectors-private`. Unset stays **512 MB**
+(`connectors-private-512`). **256**, **512**, **1024**, and **2048** select that
+private tier. `"custom"` uses the `connectors_private` override and is not
+replaced with 512. Any other value throws:
+
+```text
+Customer-VPC connectors-private supports runtime_memory_mb 256, 512, 1024, 2048, or custom; requested {requested}
+```
+
+Probe and sample stay on `connectors-private-512`.
+
+A query trigger (`trigger.query_trigger`) stays on `sql-materialize-1024` when
+`runtime_memory_mb` is unset or **1024**. `"custom"` needs the operator
+`sql_materialize` override. With no override the same
+`NodeRuntimeTuningUnavailableError` is thrown and `{who}` is `query_trigger`.
+Any other number throws `InvalidNodeRuntimeTuningError`:
+
+```text
+query_trigger: invalid runtime_memory_mb {json}; expected unset or 1024 (sql-materialize-1024). This runtime has no per-node tier; "custom" uses the instance sql_materialize override
+```
+
+Studio shows a Memory field with batch size. On ingestion it sits under Batch
+size and writes `ingestion_config.runtime_memory_mb`. Connection,
+transformation, validation, and quality-rule panels put Memory in Advanced.
+Transformation, validation, and quality rule write top-level
+`runtime_memory_mb`. The family is `connectors_private` when the connection
+requires a customer VPC, `connectors` for other connections and for validations
+and quality rules, and `transformers` for transformations. Standard choices are
+256, 512, 1024, and 2048. Custom appears only when that family's override is a
+number. The help text is
+`Memory for this step. Default leaves the size unchanged.` Default writes null.
+Custom writes `"custom"`. Studio does not offer Memory on the query trigger.
 
 ### Deploy errors
 
-| Error                               | When                                                                                                       | Fix                                                                                                                                  |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `InvalidNodeRuntimeTuningError`     | A field is **set** but not a valid value (e.g. `batch_size` 0 / 10001 / `"lots"`, `runtime_memory_mb` 999) | Omit the field or set a value from the table above. Connection `batch_size` is the same 1–10000 rule.                                |
-| `NodeRuntimeTuningUnavailableError` | `runtime_memory_mb` is **set** (including 256) and no shared runtimes segment resolves                     | Deploy to an instance that supplies `organization_id` + `instance_id` (or `runtimes_stack_identifier`), or omit `runtime_memory_mb`. |
+| Error                               | When                                                                                                       | Fix                                                                                                                                                      |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `InvalidNodeRuntimeTuningError`     | A field is **set** but not a valid value (e.g. `batch_size` 0 / 10001 / `"lots"`, `runtime_memory_mb` 999) | Omit the field or set a value from the table above. Connection `batch_size` is the same 1–10000 rule.                                                    |
+| `NodeRuntimeTuningUnavailableError` | `runtime_memory_mb` is **set** (including 256 and `"custom"`) and the required runtime is absent           | Supply `organization_id` + `instance_id` (or `runtimes_stack_identifier`), or omit `runtime_memory_mb`. `"custom"` also needs the family override above. |
+
+A connection throws `InvalidNodeRuntimeTuningError` for a set
+`runtime_memory_mb` that is not 256, 512, 1024, or 2048. `"custom"` is not this
+error:
+
+```text
+{who}: invalid runtime_memory_mb {json}; expected one of 256, 512, 1024, 2048
+```
+
+A transformation, validation, or quality rule throws
+`InvalidNodeRuntimeTuningError` for a set value that is not 256, 512, 1024,
+2048, or `"custom"`:
+
+```text
+{who}: invalid runtime_memory_mb {json}; expected one of 256, 512, 1024, 2048, or "custom"
+```
+
+`batch_size` outside 1–10000 throws that class with
+`expected an integer from 1 to 10000`.
+
+A set memory value, including explicit 256 and `"custom"`, with no shared
+runtimes Lambda throws `NodeRuntimeTuningUnavailableError`:
+
+```text
+{who}: runtime_memory_mb {json} requires a shared runtimes Lambda (runtimes_stack_identifier or derivable organization_id + instance_id); refusing silent fallback to a legacy handler
+```
 
 Do not put `runtime_memory_mb` on the connection entity root — the connection
 schema rejects unknown top-level properties. Use `ingestion_config`.

@@ -20,7 +20,8 @@ and inspect runtime mappings.
 - "What's the **deployment status**?", "list deployments"
 - "Show **runtime mapping**" for a project/workflow
 - "**Redeploy**", "force redeploy"
-- Private-network connections registering on `connectors-private-512`
+- Private-network connections registering on `connectors-private` (unset ingest
+  stays `connectors-private-512`)
 
 ## Prerequisites
 
@@ -112,7 +113,10 @@ deploy. The scan does not default, skip, or drop that bot.
 a safe integer greater than zero, or a decimal string of that integer such as
 `512`. Zero, a negative, a fraction, a boolean, and any other type fail. An
 absent key stays absent. The scan does not fill in 256. The same rule is used
-for `lambda.env`.
+for `lambda.env`. A workflow deploy that requests `"custom"` writes the
+operator-configured override integer for that family (`connectors_private` when
+the connection requires a customer VPC, otherwise `connectors`), not the token
+`custom`. The token is not stored on this env key.
 
 ```text
 Bot <botId> env.<key> must be a non-empty string
@@ -241,17 +245,23 @@ not reverse persisted schema or data changes.
   `deployed`.
 - **Customer-VPC connections** (`network_binding: customer_vpc` / `private`,
   `require_private_network: true`, or `mongodb-source` / `mongodb`) register on
-  `connectors-private-512` only. Shared `connectors-*` workers stay off the
-  customer VPC. If deploy cannot resolve that Lambda, inspect the instance
-  runtimes stack first (**`loxtep-instances`**) — do not attach shared workers
-  to the VPC.
+  `connectors-private`. Unset memory stays `connectors-private-512`. `256`,
+  `512`, `1024`, `2048`, and `custom` select that private size. Shared
+  `connectors-*` workers stay off the customer VPC. Probe and sample still
+  resolve `connectors-private-512`. If deploy cannot find the private Lambda,
+  inspect the instance runtimes stack first (**`loxtep-instances`**). Leave
+  shared workers off the VPC. Memory values and the `"custom"` errors are in
+  **`data-workflows`**, Tune event transport, batch size, and memory.
 - **Preserve networking on upgrade:** workflow `force_redeploy` re-reads org
   connector metadata (`network_binding`, `credential_parameter_store_refs`) and
   does not change subnet or security-group attachment. Instance runtimes
-  upgrades re-read `connection_details.connector_vpc` and patch
-  `connectors-private-512` VpcConfig. Change subnets/SG with `update_instance`
-  or the instance settings UI. Connector test vs ingest remains
-  **`connect-external-system`** — deploy is not a connectivity probe.
+  upgrades re-read `connection_details.connector_vpc` and patch `VpcConfig` on
+  every private connector function (`connectors-private-256`, `512`, `1024`,
+  `2048`, and the custom private clone). The primary resolver still matches
+  `connectorsprivate512`. Clearing `connector_vpc` removes `VpcConfig` from
+  every private tier. Change subnets/SG with `update_instance` or the instance
+  settings UI. Connector test vs ingest remains **`connect-external-system`** —
+  deploy is not a connectivity probe.
 
 ## Dedicated instance code bucket
 
