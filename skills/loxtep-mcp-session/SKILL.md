@@ -134,9 +134,7 @@ skills lag is almost always “refresh the plugin,” not auth.
 - **PKO procedure runs:** to verify enqueue / HITL provenance for a data
   product, use **`loxtep_context` → `list_runs`** with `data_product_id` (not
   approval-row scraping). `start_run` is not an MCP operation — runs are started
-  by the PKO engine. Pre-deploy / operators:
-  `GET /agent-orchestration/procedure-runs/{data_product_id}` or table
-  `procedure_runs`.
+  by the PKO engine.
 
 <!-- SCOPE_BLOCK -->
 

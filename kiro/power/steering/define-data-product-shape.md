@@ -58,15 +58,17 @@ separate.
    stores the full path as `materialized_path`. An apply with no extractable
    field mapping still returns `field_bindings: []`. Retrying that applied
    revision returns the stored rows and `idempotent_replay: true`.
-   `POST /semantic-layer/product-definition` with `"action": "apply"` returns
-   the same object in `data`. Approve and get do not add `field_bindings`.
+   SDK `client.define.product_definition.apply_definition_proposal` and CLI
+   `loxtep define apply` return the same object. Approve and get do not add
+   `field_bindings`.
 9. `get_definition_status`. Read `stores`, `blockers`, and `readiness_checks`.
    `identifier_present` means the applied shape marked `is_primary_key`.
    `storage_key_present` means Iceberg can use the catalog snapshot. When
    `blockers` include `storage_key_conflict`, a shape is applied:
    `apply_definition_proposal` or `apply_schema` with matching keys. When no
-   shape is applied, `PUT /dataproducts/{id}` with a matching `schema.key` is
-   the only fix; MCP `update_data_product` does not. `catalog_refresh` rewrites
+   shape is applied, setting a matching `schema.key` is the only fix, and it is
+   not exposed through MCP, CLI, or SDK today (MCP `update_data_product` does
+   not accept `schema`). `catalog_refresh` rewrites
    a stale snapshot from an already-applied shape; it does not repair
    `DeclaredKeyConflictError`. Do not submit another shape for a missing
    `schema.key`. Resume with `list_runs` and the stored procedure context
@@ -145,7 +147,7 @@ requirement.
   kind `null`. `true` accepts null. An absent required key is kind `missing`. A
   null on a field with `required: false` is accepted.
 - Identifiers: mark those fields `is_primary_key` on the **data-product schema**
-  path (`data_products.schema`, including REST/MCP shape `fields[]` that apply
+  path (`data_products.schema`, including MCP shape `fields[]` that apply
   writes onto that snapshot). JSON Schema snapshots still drop `is_primary_key`
   and `schema.key`. Postgres and MySQL source catalog field lists (`postgres`,
   `postgresql`, `mysql`, `mysql-source`) keep `is_primary_key` (from the PRIMARY
@@ -156,7 +158,7 @@ requirement.
   Snowflake, Redshift, BigQuery, and Athena still infer from samples. MongoDB,
   REST, and other connectors are unchanged. Declare a reference with
   `references_shape` (non-empty string: target shape name or canonical key).
-  REST ShapeFieldSchema, MCP SchemaFieldSchema, proposal accept,
+  MCP shape fields (`SchemaFieldSchema`), proposal accept,
   apply_definition_proposal, data-product schema normalize, and schema cache
   sync keep it. An object, array, or empty string is HTTP 400. The target shape
   does not need to exist. The SDK still has no `references_shape` or
@@ -171,8 +173,9 @@ requirement.
   Recovery: (a) if a shape is applied, `get_definition_status` reports a
   `storage_key_conflict` blocker, and `apply_definition_proposal` or
   `apply_schema` with matching keys fixes it; (b) if no shape is applied, the
-  only fix is `PUT /dataproducts/{id}` with a matching `schema.key`. MCP
-  `update_data_product` does not accept `schema` and does not fix it.
+  only fix is a matching `schema.key`, which is not exposed through MCP, CLI,
+  or SDK today. MCP `update_data_product` does not
+  accept `schema` and does not fix it.
   `catalog_refresh` does not repair `DeclaredKeyConflictError`. Tombstones and
   delete markers are their own record variants, not missing fields.
 - Descriptions and sensitive-data classifications only when evidence supports

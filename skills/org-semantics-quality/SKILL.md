@@ -41,8 +41,9 @@ organization level.
    Recovery: (a) if a shape is applied, `get_definition_status` reports a
    `storage_key_conflict` blocker, and `apply_schema` or
    `apply_definition_proposal` with matching keys fixes it; (b) if no shape is
-   applied, the only fix is `PUT /dataproducts/{id}` with a matching
-   `schema.key`. MCP `update_data_product` does not. `catalog_refresh` does not
+   applied, the only fix is a matching `schema.key`, which is not exposed
+   through MCP, CLI, or SDK today. MCP
+   `update_data_product` does not accept `schema`. `catalog_refresh` does not
    repair that. See
    [shape, application, and catalog snapshot](../../../docs/concepts/shape-application-catalog-snapshot.md).
 3. Align the shape to a concept URI via `patch_schema` /

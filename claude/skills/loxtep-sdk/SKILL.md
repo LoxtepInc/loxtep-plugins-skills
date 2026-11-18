@@ -1,10 +1,10 @@
 ---
 name: loxtep-sdk
 description:
-  Bootstrap @loxtep/sdk in Node (auth, env, REST vs Loxtep streams), map MCP
-  tools to SDK methods, including client.connect.connectors, and avoid mixing
-  JWT with IAM. Use when adding Loxtep SDK usage, queue readers/writers, or
-  pairing MCP with runtime code.
+  Bootstrap @loxtep/sdk in Node (auth, env, typed client vs Loxtep streams), map
+  MCP tools to SDK methods, including client.connect.connectors, and avoid
+  mixing JWT with IAM. Use when adding Loxtep SDK usage, queue readers/writers,
+  or pairing MCP with runtime code.
 metadata:
   documentation: https://github.com/LoxtepInc/loxtep-plugins-skills/blob/main/claude/skills/loxtep-sdk/SKILL.md
 ---
@@ -38,8 +38,8 @@ connections via `save_workflow_bundle`, then `deploy_workflow`. List with
 
 ## Connectors (org credentials — not ingest)
 
-SDK namespace: `client.connect.connectors` (Node and Python). REST base
-`/connectors/connectors`. Methods that exist: `list`, `get`, `create`, `update`,
+SDK namespace: `client.connect.connectors` (Node and Python). Methods that
+exist: `list`, `get`, `create`, `update`,
 `delete`, `test`, `capture_samples`, `get_oauth_url`. There is no
 `list_connector_types` on the SDK — use MCP `loxtep_connect` /
 `list_connector_types`.
@@ -52,10 +52,9 @@ const created = await client.connect.connectors.create({
 const probe = await client.connect.connectors.test(created.connector_id);
 ```
 
-`test(connector_id)` POSTs an empty body. It does **not** accept `instance_id`.
-For a customer-VPC probe when the org has multiple instances, use MCP
-`test_connector` with `instance_id` or REST
-`POST /connectors/connectors/{id}/test`. CLI:
+`test(connector_id)` takes only the connector id. It does **not** accept
+`instance_id`. For a customer-VPC probe when the org has multiple instances, use
+MCP `test_connector` with `instance_id`. CLI:
 `loxtep connectors list|test|capture-samples` only — there is no
 `loxtep connectors create` / `get`. Full connect/test procedure:
 **`connect-external-system`**. `test` does not start ingestion;
@@ -64,8 +63,7 @@ For a customer-VPC probe when the org has multiple instances, use MCP
 MongoDB source backfill restart is a workflow connection, not an org connector.
 Pause the runner bot first. Hosted MCP has no pause operation for that runner.
 In the Loxtep app, open Observe → Catalog, select the bot, then Actions → Pause
-Bots. Then MCP `loxtep_build` operation `reset_backfill` (`workflows:update`) or
-`POST /workflows/projects/{project_id}/connections/{connection_id}/reset-backfill`,
+Bots. Then MCP `loxtep_build` operation `reset_backfill` (`workflows:update`),
 CLI
 `loxtep triggers reset-backfill <connection_id> [--rebaseline-config-hash] [--project-id] [--instance-id]`,
 or SDK `client.build.triggers.reset_backfill` (`@loxtep/sdk` 0.9.33, Python
@@ -293,10 +291,11 @@ Example: `a1b2c3d4-e5f6g7h8-i9j0k1l2-queue-conn-e5f6g7h8-in`
 
 ### 5. Resolving names at runtime (don't hardcode)
 
-**Never hardcode queue or bot names.** Use the runtime-mapping API:
+**Never hardcode queue or bot names.** Use MCP `loxtep_build` operation
+`get_runtime_mapping` with `workflow_id` and `project_id`:
 
-```
-GET /workflows/{workflow_id}/runtime-mapping?project_id={project_id}
+```json
+{ "operation": "get_runtime_mapping", "workflow_id": "...", "project_id": "..." }
 ```
 
 Response:
@@ -362,7 +361,7 @@ automatically.
 
 | Facade           | `operation`                                                                                                        | Permission | Notes                                                                                              |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------ | ---------- | -------------------------------------------------------------------------------------------------- |
-| `loxtep_build`   | `get_sdk_config`                                                                                                   | read       | Writer identity + snippet. Bus physical names: REST stream-config, not this op                     |
+| `loxtep_build`   | `get_sdk_config`                                                                                                   | read       | Writer identity + snippet. Bus physical names: CLI/SDK stream-config, not this op                  |
 | `loxtep_build`   | `get_entity_schemas` / `save_workflow_bundle` / `save_delivery_grant` / `deploy_workflow` / `list_workflows`       | write/read | Delivery: DPT head + Target + grant (`workflow_type: "delivery"`); grant operations are MCP-only.  |
 | `loxtep_build`   | `deploy_workflow`                                                                                                  | write      | Deploy a single workflow to an instance                                                            |
 | `loxtep_observe` | `list_deployments`                                                                                                 | read       | List deployment records (poll for status)                                                          |
@@ -453,8 +452,7 @@ per-call to override
 `bus_config_path`. It does **not** return Leo/S3/Kinesis/Firehose names.
 Engineers who need those run `loxtep instances stream-config [<instance_id>]`
 (Node CLI), `client.workspace.instances.get_stream_config(id)` (Node or Python
-SDK), or REST `GET /organizations/instances/{instance_id}/stream-config`
-(permission `instances:read`). Do not fetch them over MCP.
+SDK); both need permission `instances:read`. Do not fetch them over MCP.
 
 ## BYOL custom Lambda bots
 
@@ -628,7 +626,7 @@ loxtep config export --from-data-product "<name_or_uuid>" --format json
 ## MCP vs SDK
 
 - **MCP:** provisioning, catalog, agent tool calls over HTTP.
-- **SDK:** typed REST + **Loxtep streams** (live queues / bus).
+- **SDK:** typed platform client + **Loxtep streams** (live queues / bus).
 - See shipped docs in `@loxtep/sdk`: `docs/sdk-pairing.md`,
   `docs/sdk-mcp-mapping.md`.
 

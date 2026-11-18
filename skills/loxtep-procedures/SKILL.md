@@ -89,9 +89,8 @@ dependencies** in the process graph. Import/export JSON-LD graphs.
 3. Use this to answer “did enqueue happen?” — do **not** scrape HITL rows for
    run ids.
 4. **`start_run` is not on customer MCP.** Enqueue is event-driven (`pko-engine`
-   / `process-pko-run-start-requested`). Operators can still read the same rows
-   via REST `GET /agent-orchestration/procedure-runs/{data_product_id}` or SQL
-   table `procedure_runs` (org-scoped).
+   / `process-pko-run-start-requested`). Read runs with `loxtep_context` →
+   `list_runs` (`data_product_id`).
 
 ## MCP mapping
 
