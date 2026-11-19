@@ -116,10 +116,10 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
 
 ### Deployment vs billing (read this)
 
-| `instance_type`   | Meaning                                          | Create requirements                                                                                                                                                                                                                                                                                                                            |
-| ----------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`shared`**      | Default **free-tier playground** (multi-tenant). | Omit `plan_id` or send **`free`**. Paid **`starter`** is also shared. Never send managed or self-hosted plan IDs. Do not send role or secret coordinates.                                                                                                                                                                                      |
-| **`managed`**     | Paid **dedicated** bus operated by Loxtep.       | **`growth`/`scale`** and **`connection_details.observe_api.cross_account_role_arn`**. A customer role ARN (not `ObserveProxyRole`) uses the same registered-account meter and bus check as self-hosted create (empty meter and bus fall back to the entry `arn`; a one-sided gap is **400** `missing_tier_role`; both stored copies them). Same-account managed stays on platform credentials. Provisioning writes secret and proxy-role ARNs. |
+| `instance_type`   | Meaning                                          | Create requirements                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ----------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`shared`**      | Default **free-tier playground** (multi-tenant). | Omit `plan_id` or send **`free`**. Paid **`starter`** is also shared. Never send managed or self-hosted plan IDs. Do not send role or secret coordinates.                                                                                                                                                                                                                                                                                                                    |
+| **`managed`**     | Paid **dedicated** bus operated by Loxtep.       | **`growth`/`scale`** and **`connection_details.observe_api.cross_account_role_arn`**. A customer role ARN (not `ObserveProxyRole`) uses the same registered-account meter and bus check as self-hosted create (empty meter and bus fall back to the entry `arn`; a one-sided gap is **400** `missing_tier_role`; both stored copies them). Same-account managed stays on platform credentials. Provisioning writes secret and proxy-role ARNs.                               |
 | **`self-hosted`** | Customer-operated dedicated bus in customer AWS. | **`sh_core`/`sh_production`/`sh_scale`** and **`connection_details.observe_api.cross_account_role_arn`** (deployment role `RoleArn`). Create copies recorded meter, bus, and workflow ARNs when both meter and bus are stored. When both are empty, create uses the entry `arn` for meter, bus, and workflow (stored `workflow_deploy_role_arn` if present). Exactly one of meter or bus stored is **400** `missing_tier_role`. Loxtep license pricing excludes AWS charges. |
 
 ### Field summary
@@ -176,11 +176,11 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
   `bus_lifecycle_role_arn`, and `workflow_deploy_role_arn` on the instance to
   the entry's `arn` (workflow uses the stored `workflow_deploy_role_arn` when
   present). When both meter and bus are stored, create copies them and, when
-  stored, `workflow_deploy_role_arn`. Exactly one of meter or bus stored and
-  the other empty returns **400** `missing_tier_role` before an instance row or
-  a `payment_pending` reservation. `details.missing_tiers` names the missing
-  tier (`meter` or `bus_lifecycle`). `details.field` and `details.tier` name
-  that role. The message names the missing field
+  stored, `workflow_deploy_role_arn`. Exactly one of meter or bus stored and the
+  other empty returns **400** `missing_tier_role` before an instance row or a
+  `payment_pending` reservation. `details.missing_tiers` names the missing tier
+  (`meter` or `bus_lifecycle`). `details.field` and `details.tier` name that
+  role. The message names the missing field
   (`Missing bus_lifecycle_role_arn for self-hosted instance create. Record the deployment role ARN from the cross-account template.`
   when bus is missing). Leave meter, bus, and workflow fields off create.
 - Do **not** send `rstreams_secret_arn` or `rstreams_auth_arn` — they are
@@ -274,7 +274,12 @@ runtimes deploy and do not get this field.
 - **Create.** The HTTP create handler does not write the field. After the core
   stack finishes, `runtimes-deployment-requested` submits the runtimes stack and
   records the name immediately before that submit.
-- **Upgrade.** `POST /organizations/instances/{instance_id}/upgrade` only queues
+- **Upgrade.** Run, schedule, and cancel upgrade, and changing `upgrade_mode`,
+  need `instances:admin` (Admin role). Engineers with `instances:update` get
+  **403**. Set a schedule with
+  `POST /organizations/instances/{instance_id}/upgrade/schedule`, not
+  `metadata.upgrade_scheduled_at` (**400**).
+  `POST /organizations/instances/{instance_id}/upgrade` only queues
   `instances-upgrade-requested`. For managed, and for self-hosted when a
   runtimes stack or the control plane is recorded, the upgrade bot records the
   name in `sync-runtimes-import-release` when that step runs with a database
@@ -519,8 +524,14 @@ same AWS account. Call again for another account. Earlier accounts stay. A new
 account past 32 returns **400**
 `An organization can register at most 32 AWS accounts.` The Create Instance
 dialog **Register** button sends only `cross_account_role_arn`. That records the
-three tier roles on that same entry, and returns the same **409** when a stored
-meter or bus ARN on that entry differs.
+three tier roles on that same entry. Entering an ARN that is already registered
+with both `meter_role_arn` and `bus_lifecycle_role_arn` set selects that account
+without a PUT even when `workflow_deploy_role_arn` is empty (toast:
+`This instance will use that AWS account.`). Entering a registered pre-tier ARN
+(no meter or bus) registers it again, which fills its tier roles. Entering a
+registered ARN with only one of meter or bus set also registers it again (PUT).
+That PUT returns **409** `tier_role_conflict` if the stored meter or bus ARN
+differs from the RoleArn.
 
 A body that also sends `meter_role_arn`, `bus_lifecycle_role_arn`,
 `workflow_deploy_role_arn`, or `attach_control_plane` uses those fields instead
