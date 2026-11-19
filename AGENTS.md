@@ -396,7 +396,7 @@ key parameters.
 | `translate_sparql` | organization | — | — |
 | `graph_traversal` | organization | — | — |
 
-### `loxtep_observe` — Observe — monitor trust, health, lineage, and runtime. Quality scores, catalog evidence/lineage/governance flags, compounding metrics, live queue inspection (get_queue_info, read_queue_events, replay_events, trigger_bot, list_runtime_queues, list_observe_bots, get_stream_config), runtime-queue catalog reconcile (reconcile_runtime_queues — dry_run first), Iceberg table health/enable/rebuild (get_iceberg_health, enable_iceberg_table — storage identity is schema.key or is_primary_key, omitted backfill_from skips history; rebuild_iceberg_table — confirm required; dry_run first), Iceberg event history (set_iceberg_history — append-only <name>.history table; turning off needs confirm), Iceberg indexes (set_iceberg_indexes — column stats, bloom columns, row embeddings for semantic_search) and upstream event traces over history (trace_iceberg_event), and deployment status (list_deployments, get_deployment).
+### `loxtep_observe` — Observe — monitor trust, health, lineage, and runtime. Quality scores, catalog evidence/lineage/governance flags, compounding metrics, live queue inspection (get_queue_info, read_queue_events, replay_events, trigger_bot, list_runtime_queues, list_observe_bots, get_stream_config), runtime-queue catalog reconcile (reconcile_runtime_queues — dry_run first), Iceberg table health/enable/rebuild (get_iceberg_health, enable_iceberg_table — storage identity is schema.key or is_primary_key, omitted backfill_from skips history; rebuild_iceberg_table — confirm required; dry_run first), Iceberg event history (set_iceberg_history — append-only <name>.history table; turning off needs confirm), Iceberg indexes (set_iceberg_indexes — column stats, bloom columns, row embeddings for semantic_search) and upstream event traces over history (trace_iceberg_event), policy-respecting checksum comparison for restricted-field Iceberg fidelity (create_data_comparison, request_data_comparison_run, get_data_comparison_run, list_data_comparison_findings — managed sides and optional reference_digests for external MongoDB/PostgreSQL snapshots; digests only; never returns compare-field values), and deployment status (list_deployments, get_deployment).
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
 | `get_quality_score` | organization | — | — |
@@ -418,6 +418,11 @@ key parameters.
 | `set_iceberg_history` | organization | `data_product_id`, `enabled` | `confirm` |
 | `set_iceberg_indexes` | organization | `data_product_id` | `analytics_indexes_enabled`, `bloom_filter_columns`, `row_embeddings` |
 | `trace_iceberg_event` | organization | `data_product_id`, `eid` | `max_hops`, `max_rows` |
+| `create_data_comparison` | organization | — | — |
+| `get_data_comparison` | organization | — | — |
+| `request_data_comparison_run` | organization | — | — |
+| `get_data_comparison_run` | organization | — | — |
+| `list_data_comparison_findings` | organization | — | — |
 | `list_deployments` | organization | — | `project_id`, `instance_id`, `workflow_id`, `status`, `orphaned` |
 | `get_deployment` | organization | `deployment_id` | — |
 
@@ -495,7 +500,7 @@ rejected, and a check that cannot complete blocks the operation.
 | `loxtep-process-intel` | Use when the user wants to read or write entity context, query what Loxtep knows about a business… |
 | `loxtep-queue-tracing` | Trace rstreams bots and queues for deployment or data-flow failures. |
 | `loxtep-replay-and-recovery` | Plan and carry out authorized Loxtep replay or historical repair through existing native operations. |
-| `loxtep-sdk` | Bootstrap @loxtep/sdk in Node (auth, env, typed client vs Loxtep streams), map MCP tools to SDK… |
+| `loxtep-sdk` | Bootstrap @loxtep/sdk in Node (auth, env, REST vs Loxtep streams), map MCP tools to SDK methods,… |
 | `loxtep-semantic-layer` | Use when the user wants to search the semantic layer, retrieve semantic artifacts, check semantic… |
 | `loxtep-workspace` | Workspace versions, snapshots, restore, and compare for Loxtep projects. |
 | `mcp-integration` | Configure and validate Loxtep hosted MCP access for agents — OAuth to mcp.loxtep.io, map the ten… |

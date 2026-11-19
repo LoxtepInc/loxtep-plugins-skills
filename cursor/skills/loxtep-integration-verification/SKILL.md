@@ -52,6 +52,17 @@ bots, products or queues just to copy records for comparison.
 2. Compare the declared projection at its actual grain. Counts describe volume;
    key-set checks identify missing/extra records; field comparisons or canonical
    row digests establish mapped value agreement. Choose what the outcome needs.
+   **Restricted / query-redacted fields:** do not use `execute_query` cleartext
+   (policy redacts those columns). Use `loxtep_observe` →
+   `create_data_comparison` + `request_data_comparison_run` +
+   `get_data_comparison_run` / `list_data_comparison_findings`. Digests are
+   server-side (`privacy.digest_mode: server_side_row_hash` or
+   `external_reference_digests`); findings return differing field _names_ only.
+   Requires `data_products:pipeline_read`. At least one side must be
+   Loxtep-managed warehouse storage. For MongoDB/PostgreSQL fidelity, put
+   precomputed digests on a `reference_digests` side (`key_values`,
+   `field_digests`, `row_hash`) — never upload restricted cleartext; API
+   responses redact row payloads.
 3. Preserve value types, array order and declared normalization in any digest.
    Record the projection revision. A projection failure is an uncomparable
    source record, not a successful match or an extra destination row.
@@ -62,6 +73,116 @@ bots, products or queues just to copy records for comparison.
    Report the original comparison and later observations separately. Advancing
    timestamps or equal counts do not erase a remaining value mismatch. Do not
    remove volatile fields or invent a tolerance merely to obtain a pass.
+
+## Compare against an external MongoDB/PostgreSQL snapshot
+
+When the named endpoint is an external store, do not upload restricted
+cleartext. Hash the snapshot offline and put it on a `reference_digests` side.
+The other side must be a Loxtep-managed `data_product` or `query`.
+
+**Side** (`kind: "reference_digests"`):
+
+- `source_label` (required): operator label, 1–200 characters after trim (for
+  example `mongodb:accounts`).
+- `captured_at` (required): ISO-8601 datetime with offset (`Z` or `±HH:MM`).
+- `coverage_note` (optional): at most 2000 characters.
+- `rows`: 1–100000 reference rows.
+
+**Row** (identity keys plus digests; never restricted compare-field values):
+
+- `key_values`: already-canonical key tuple, same order as `key_fields`. Length
+  must equal `key_fields` (1–8). Nulls allowed.
+- `field_digests`: one entry per `compare_fields`, same order. Length must equal
+  `compare_fields` (0–200). Each value is 32-character lowercase md5 hex, or
+  `null` when the canonical value is null.
+- `row_hash`: 32-character lowercase md5 hex (not null).
+
+**Compute digests offline.** Canonicalize each mapped field to the same VARCHAR
+(or NULL) the warehouse side would (`canonicalFieldSql` in `encoding.ts`). There
+is no JS canonicalizer — `encodeTuple` / `md5Hex` take already-canonical
+strings.
+
+Per `type`:
+
+- `string`: CAST VARCHAR, then optional `trim`, then optional `lower` / `upper`
+  (`case`).
+- `integer`: integral value as HUGEINT VARCHAR. A non-integral source fails the
+  run; it does not become NULL.
+- `decimal`: CAST DECIMAL(38, `scale`) VARCHAR (`scale` is required).
+- `boolean`: `true` / `false` (integer 1 / 0 map to those).
+- `timestamp`: UTC, `date_trunc` to `timestamp_precision` (default
+  `microsecond`), then `strftime` `%Y-%m-%dT%H:%M:%S.%fZ`.
+- `date`: `%Y-%m-%d`.
+
+Tuple encoding of already-canonical values (`encodeTuple`): NULL → `"N"`; a
+value → `"V"` + utf8 byte length + `":"` + value. Concatenate tokens with no
+separator.
+
+Then: field digest = `md5Hex(canonical)` (`null` stays `null`); `row_hash` =
+`md5Hex(encodeTuple(key_values) + encodeTuple(canonical compare values))`.
+
+**Constraints:**
+
+- At least one side must be managed (`data_product` or `query`).
+- `watermark` is not supported with `reference_digests`; filter the snapshot to
+  the same scope offline.
+- GET / API responses replace `rows` with `row_count` (payloads are not
+  returned).
+- `privacy.digest_mode` becomes `external_reference_digests` with
+  `privacy.reference`:
+  `{ side, source_label, captured_at, row_count, coverage_note }`
+  (`coverage_note` omitted when unset).
+- Refreshing row payloads does not bump `rule_version`. The rule hash ignores
+  `key_values`, `field_digests`, and `row_hash`; identity is `source_label`,
+  `captured_at`, `coverage_note`, and `row_count`.
+- Findings return differing field names only — never compare-field values.
+
+Worked example (digests verified against `encodeTuple` / `md5Hex` /
+`fieldValueDigest` / `referenceRowHash` / `ComparisonSpecSchema`):
+
+```json
+{
+  "left": {
+    "kind": "reference_digests",
+    "source_label": "mongodb:accounts",
+    "captured_at": "2026-11-18T00:00:00.000Z",
+    "coverage_note": "restricted fields only",
+    "rows": [
+      {
+        "key_values": ["1"],
+        "field_digests": ["bb6cb5c68df4652941caf652a366f2d8", null],
+        "row_hash": "c16ce64e3bf7a017065c8c8fce710ffd"
+      }
+    ]
+  },
+  "right": {
+    "kind": "data_product",
+    "data_product_id": "11111111-1111-4111-8111-111111111111"
+  },
+  "key_fields": [
+    { "name": "id", "left": "id", "right": "id", "type": "string" }
+  ],
+  "compare_fields": [
+    {
+      "name": "settings",
+      "left": "settings",
+      "right": "settings",
+      "type": "string"
+    },
+    {
+      "name": "billing",
+      "left": "billing",
+      "right": "billing",
+      "type": "string"
+    }
+  ]
+}
+```
+
+That row is key `1`, canonical `settings` `{"a":1}`, canonical `billing` null:
+`encodeTuple(["1"])` is `V1:1`; `encodeTuple(['{"a":1}', null])` is
+`V7:{"a":1}N`; field digest is `md5Hex('{"a":1}')`; `row_hash` is
+`md5Hex("V1:1" + "V7:{\"a\":1}N")`.
 
 Use `loxtep-data-operations` for a concrete discrepancy's runtime diagnosis.
 Distinguish observed differences from their cause; a checksum difference alone

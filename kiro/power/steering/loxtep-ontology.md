@@ -68,10 +68,10 @@ A field becomes an identifier property when it is a declared key
 `is_declared_key` in induction (tier B). JSON Schema snapshots still drop
 `is_primary_key` and `schema.key`. MongoDB, REST, and other connectors do not
 emit catalog keys. A shape field declares a reference with `references_shape`, a
-non-empty string (target shape name or canonical key). MCP `SchemaFieldSchema`,
-proposal accept, `apply_definition_proposal`, data-product schema normalize,
-and schema cache sync keep it. An object, array, or empty string is HTTP 400,
-not dropped. The target shape does not have to
+non-empty string (target shape name or canonical key). REST `ShapeFieldSchema`,
+MCP `SchemaFieldSchema`, proposal accept, `apply_definition_proposal`,
+data-product schema normalize, and schema cache sync keep it. An object, array,
+or empty string is HTTP 400, not dropped. The target shape does not have to
 exist. The SDK still has no `references_shape` or `is_primary_key` field. Studio
 has no picker. Graph sync reads `references_shape` as the target node scope and
 does not resolve it to a data product. Postgres and MySQL source foreign keys
@@ -154,8 +154,8 @@ Requires **`semantic_gaps:resolve`** (plus override create permissions).
 
 ### Flow — Read glossary terms in Vocabulary
 
-`list_terms` returns system field terms plus the organization's glossary
-projections.
+`list_terms` (`GET /graph/organizations/{organization_id}/thesaurus`) returns
+system field terms plus the organization's glossary projections.
 
 - An org glossary term with no linked thesaurus row is listed as scheme
   `custom`. Its `term_id` is the glossary term id. The row includes `synonyms`
@@ -217,7 +217,7 @@ glossary term. These are fixture values from that test, not a live API response:
 
 1. `create_term` with `canonical_key` and `aliases`. `scheme` is optional.
    Allowed schemes are `field`, `entity`, and `custom`. Omit `scheme` and
-   MCP `create_term` defaults to `field` (a vocabulary key — not an ontology
+   MCP/API `create_term` defaults to `field` (a vocabulary key — not an ontology
    concept).
 2. `get_term` by thesaurus `term_id` or by glossary term id to verify. See the
    read flow above for glossary projections, `glossary_term_id`, and the 409.
@@ -239,7 +239,7 @@ glossary term. These are fixture values from that test, not a live API response:
 
 The Meaning canvas and concept list show only thesaurus schemes `entity` and
 `custom`. `field` terms stay in Vocabulary. Scheme is not required on write:
-MCP `create_term` with no scheme becomes `field`; a new canvas concept with
+MCP/API `create_term` with no scheme becomes `field`; a new canvas concept with
 no scheme saves as `custom`. Existing terms that already have a missing or
 unknown scheme show a red **Thesaurus terms need scheme review** alert instead
 of becoming a concept. The canvas zero state appears when there are no ontology

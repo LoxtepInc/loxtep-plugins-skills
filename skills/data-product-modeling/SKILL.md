@@ -159,9 +159,8 @@ author bundle → deploy → verify with `get_data_product`.**
    - Upstream lineage (Ready / gold): deploying the workflow records the catalog
      edge from its wiring. When readiness names the missing edge, redeploy the
      workflow or run the catalog-lineage-backfill migration. If it says the
-     wiring lookup failed, the lookup did not succeed. Creating a manual catalog
-     edge is not exposed through MCP, CLI, or SDK today (not
-     `update_data_product.lineage` JSON). For
+     wiring lookup failed, the lookup did not succeed. A manual edge is
+     `POST /dataproducts/lineage` (not `update_data_product.lineage` JSON). For
      `derives_from` / `depends_on`, use **PROV orientation**: `source_id` = this
      (derived) product, `target_id` = upstream product. A connection uses
      `produces` (`source_id` = the connector, `target_id` = this product). Then
@@ -176,9 +175,7 @@ author bundle → deploy → verify with `get_data_product`.**
 2. Use `snake_case` naming, business vocabulary (not system names).
 3. Mark PII fields, set governance classification.
 4. Version: additive = minor bump, breaking = major bump.
-5. Register the version with `loxtep_define` `add_schema_version` (or
-   `create_schema` for a new schema), then `apply_schema` to the data product
-   (optional version pin). `update_data_product` does not accept `schema`.
+5. `update_data_product` with versioned schema in the `schema` field.
 
 ### Flow — Bind an existing runtime queue (BYOL)
 
@@ -191,9 +188,9 @@ use which**).
 
 1. Confirm the publish queue name: `{bot_id}-out` (default custom-bot
    destination). Leave `-in` / `-errors` unbound as the product stream.
-2. Bind via `loxtep_observe` → `reconcile_runtime_queues` with `instance_id`
-   and `dry_run: true`, then `false` (needs `system:admin` |
-   `data_products:admin` | `instances:update`). Confirm
+2. Bind via `POST /dataproducts/dataproducts/runtime-queue-reconciliation` with
+   `dry_run: true`, then `false` (needs `system:admin` | `data_products:admin` |
+   `instances:update`). List stubs with `synthetic_visibility=include`. Confirm
    `deployment_bindings.queue_name` on the product matches `{bot_id}-out`.
 3. Retire duplicate synthetic stubs after the canonical product is correct.
 4. SDK: `data_products.get_writer` / `get_reader` with optional `bot_id` = the
@@ -205,8 +202,9 @@ Customer guide: `/docs/guides/bring-your-own-lambda`.
 ### Flow — Lineage Documentation
 
 1. Deploy the workflow so catalog lineage is recorded from its wiring. For an
-   edge the workflow does not carry, creating it is not exposed through MCP,
-   CLI, or SDK today.
+   edge the workflow does not carry, create it with `POST /dataproducts/lineage`
+   (that call emits `lineage-created`; harvest writes the graph edge). A repeat
+   POST of the same active edge is rejected and does not emit again.
 2. **`derives_from` / `depends_on` orientation (PROV):** `source_id` = derived
    product, `target_id` = upstream origin. Do **not** reverse this to “feeder →
    consumer” — that inverts Ready-gate and cache semantics for these
