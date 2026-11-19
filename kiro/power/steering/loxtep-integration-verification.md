@@ -200,7 +200,9 @@ provenance. Keep credentials, resume tokens and customer payloads out of shared
 receipts. If the user requests private row-level differences, use the approved
 private destination and keep the shared report payload-free.
 
-Verification is read-only. A discrepancy does not authorize repairs, backfills,
+Verification may create and run checksum comparisons (`create_data_comparison`,
+`request_data_comparison_run`) and read findings. A discrepancy does not
+authorize repairs, backfills, Iceberg rebuilds, deploys, workflow saves,
 checkpoint resets or broader platform tests. For an authorized correction, hand
 off its exact scope to `data-workflows` or `loxtep-replay-and-recovery`.
 
@@ -211,6 +213,8 @@ the deployed path; `get_data_product` identifies the exact product. Follow
 `loxtep-queue-tracing` for diagnostic queue reads and `loxtep-analytics` for
 SQL. Attribute calls made under this playbook with
 `_metadata: { "skill_name": "loxtep-integration-verification" }`. The platform
-definition grants scoped-resource reads; RBAC and project/org overrides still
-apply. If the deployed server does not resolve this skill, report the version
-mismatch; do not change attribution to bypass a denial.
+definition grants scoped-resource reads plus `data_products` create for
+comparison definitions and runs; it does not grant `data_products` write
+(rebuild/product update) or workflow/deploy mutations. RBAC and project/org
+overrides still apply. If the deployed server does not resolve this skill,
+report the version mismatch; do not change attribution to bypass a denial.
