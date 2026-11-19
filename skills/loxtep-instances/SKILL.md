@@ -274,11 +274,19 @@ runtimes deploy and do not get this field.
 - **Create.** The HTTP create handler does not write the field. After the core
   stack finishes, `runtimes-deployment-requested` submits the runtimes stack and
   records the name immediately before that submit.
-- **Upgrade.** Run, schedule, and cancel upgrade, and changing `upgrade_mode`,
-  need `instances:admin` (Admin role). Engineers with `instances:update` get
-  **403**. Set a schedule with
-  `POST /organizations/instances/{instance_id}/upgrade/schedule`, not
-  `metadata.upgrade_scheduled_at` (**400**).
+- **Upgrade.** Intended policy: Engineers edit non-upgrade instance fields with
+  `instances:update` alone. Changing `upgrade_mode` needs `instances:admin` (or
+  `system:admin`). Run, schedule, and cancel upgrade need `instances:admin`. The
+  Admin role is granted both `instances:admin` and `instances:update`. Engineers
+  with only `instances:update` get **403** on upgrade POST and schedule
+  POST/DELETE, and on PUT when the body changes `upgrade_mode`. Set a schedule
+  with `POST /organizations/instances/{instance_id}/upgrade/schedule`, not
+  `metadata.upgrade_scheduled_at` (**400**). **Known issue:** Today that PUT
+  also requires `organizations:write`, so Engineer-role users currently get
+  **403** on any instance PUT. Admin is unaffected because `ADMIN_PERMISSIONS`
+  also includes `organizations:write` (`20260621120000_rbac_consolidation.js`).
+  `instances:admin` plus `instances:update` alone would still 403. Tracked in
+  #4747. Do not treat that extra permission as policy.
   `POST /organizations/instances/{instance_id}/upgrade` only queues
   `instances-upgrade-requested`. For managed, and for self-hosted when a
   runtimes stack or the control plane is recorded, the upgrade bot records the
@@ -381,6 +389,18 @@ set and the runtimes stack update has finished, deploy each workflow again
 (**`loxtep-deployments`**).
 
 ## update_instance
+
+Intended policy: `update_instance` / **PUT**
+`/organizations/instances/{instance_id}` needs `instances:update` alone for
+non-upgrade fields. Changing `upgrade_mode` needs `instances:admin` (or
+`system:admin`). The Admin role is granted both.
+
+> **Known issue:** Today that PUT also requires `organizations:write`, so
+> Engineer-role users currently get **403** on any instance PUT. Admin is
+> unaffected because `ADMIN_PERMISSIONS` also includes `organizations:write`
+> (`20260621120000_rbac_consolidation.js`). `instances:admin` plus
+> `instances:update` alone would still 403. This is a bug tracked in #4747. Do
+> not treat the extra `organizations:write` check as policy.
 
 A detached instance returns **409** `INSTANCE_DETACHED`
 (`This instance is not managed. Deploy a project to attach it again.`) before
