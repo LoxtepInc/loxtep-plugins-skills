@@ -28,8 +28,8 @@ When exploring lineage, keep this distinction clear:
   holds the derived data. This is the "what" — the catalog-visible product with
   its own schema, governance, and delivery interfaces.
 - **Delivery interface** — How a data product (source or consumer) makes its
-  data available externally (webhook, API, export, database sync, event
-  stream).
+  data available externally (webhook, API, export, database sync, BI connect,
+  event stream).
 
 In lineage views:
 
@@ -82,10 +82,6 @@ In lineage views:
 - **Empty or sparse results** — Discovery/search tools may need
   platform-injected search/evidence services in the AI runtime; behavior can
   differ between local tests and production.
-- **Search truncation is not reported** — `search_catalog` and `scoped_search`
-  return no `truncated` / `truncated_reason` fields. Graph search truncation is
-  not exposed through MCP, CLI, or SDK today, so do not claim totals or facets
-  are complete or incomplete on that basis.
 - **`derives_from` / `depends_on` edge direction** — PROV orientation:
   `source_id` = derived product, `target_id` = upstream origin. Do not flip to
   “feeder → consumer”; that breaks Ready promotion lineage and cache

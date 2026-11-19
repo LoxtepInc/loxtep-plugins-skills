@@ -101,14 +101,14 @@ loxtep data-products iceberg rebuild <product-id> --backfill-from <position> --d
 loxtep data-products iceberg status <product-id> --job-id <accepted-job-id> --wait 30s --json
 ```
 
-Rebuild `--backfill-from` accepts a `z/` queue eid (`z/` = start of the queue;
-a longer `z/…` eid starts there). Aliases (`checkpoint`, `start_of_queue`, and
+Rebuild `--backfill-from` accepts a `z/` queue eid (`z/` = start of the queue; a
+longer `z/…` eid starts there). Aliases (`checkpoint`, `start_of_queue`, and
 other enable-window tokens) are refused; enable-history windows are a different
-interface.
-An omitted rebuild end bound is evergreen: disclose it rather than calling the
-operation bounded. A real rebuild requires the CLI's confirmation gate. A dry
-run plans the supported operation; it does not prove completed destination data.
-Check published SDK and deployed service support separately from local source.
+interface. An omitted rebuild end bound is evergreen: disclose it rather than
+calling the operation bounded. A real rebuild requires the CLI's confirmation
+gate. A dry run plans the supported operation; it does not prove completed
+destination data. Check published SDK and deployed service support separately
+from local source.
 
 Persist the accepted job ID and poll that job. A timeout does not cancel the job
 and does not justify another POST. A different current job, unsupported cancel

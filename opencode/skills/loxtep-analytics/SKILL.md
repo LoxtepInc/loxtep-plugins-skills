@@ -66,7 +66,12 @@ Every Iceberg row carries writer-stamped lineage columns. Select them by name in
 
 An event whose payload equals the stored row does not change `_eid` or
 `_corr_*`. How far the writer has got is health
-`data_sync.queue_lag.checkpoint_eid`, not a column.
+`data_sync.queue_lag.checkpoint_eid`, not a column. Managed `iceberg-writer-*`
+bots are intentionally hidden from `list_observe_bots` / Observe cron /
+`trigger_bot` (404). Inspect with `get_iceberg_health` → `data_sync.queue_lag`
+(`writer_bot_id`, checkpoints; optional `error_count` / `paused` / `archived` /
+`last_error`). Recover with product-scoped `rebuild_iceberg_table` (clears that
+writer's error gate) — do not force-run the writer from Observe.
 
 **Event history** is an opt-in, append-only second table: one row per accepted
 event. Iceberg must already be enabled.
@@ -123,9 +128,9 @@ always a complete answer. The tool returns the full warehouse result in `data`
   `sampled` is true. Never present counts or aggregates as complete. `error` may
   carry the warehouse reason (for example an Iceberg parquet fallback truncation
   message). `engine` and `applied_caps` may also be set.
-- `failed` — failed tool response (`error`: `Query execution failed`). The
-  warehouse `error` string is passed through as `message` as-is (no
-  `'Unknown error'` default).
+- `failed` — failed tool response. `message` is the warehouse `error` string
+  (sanitized). `data.error_type` is the warehouse `error_type`;
+  `data.error_code` is `classifyWarehouseError` (same mapping as HTTP execute).
 - any other status — failed tool response
   `Unhandled warehouse query status: <status>`.
 
@@ -153,6 +158,8 @@ recovery, and none are a rebuild signal):
   table is not this status.
 - `unknown` — health could not identify or assess the Iceberg table. Do not
   rebuild on this status alone.
+- `not_enabled` — Iceberg storage is disabled on a managed S3 Tables product the
+  query named. Enable Iceberg; do not rebuild. See Pitfalls.
 - `unreadable` without `recovery.action === 'rebuild_iceberg'` — not a rebuild
   signal. Do not rebuild.
 
@@ -221,13 +228,15 @@ Refused:
   `privacy_blocked`
 - PII / missing / non-string `fields` → `400` `invalid_fields`
 
-MCP `loxtep_query` → `semantic_search`. Permission: `data_products:read`.
+MCP `loxtep_query` → `semantic_search` proxies
+`POST /dataproducts/dataproducts/{data_product_id}/semantic-search`. Permission:
+`data_products:read` (REST authorizer also accepts `analytics:execute`).
 
 | Field             | Required | Notes                                                              |
 | ----------------- | -------- | ------------------------------------------------------------------ |
 | `data_product_id` | yes      | UUID                                                               |
-| `query`           | yes      | Non-empty. Queries over 8000 characters are refused.               |
-| `top_k`           | no       | Integer 1–100. Default `10` when omitted.                          |
+| `query`           | yes      | Non-empty. REST max 8000 characters.                               |
+| `top_k`           | no       | Integer 1–100. REST default `10`.                                  |
 | `filters`         | no       | Equality only (`col = value`). Values: string, number, or boolean. |
 
 Success `data`:
@@ -291,19 +300,28 @@ following as a live transcript.
   Catalog SQL with no metadata location reports
   `Failed to register Iceberg view(s): <table>: LeoS3 Iceberg tables are readable only inside the instance runtime; run this query on the server warehouse`.
 - **Timeout vs memory-limit** — a statement timeout and a DuckDB
-  `memory limit exceeded` both come back as failed (`error`:
-  `Query execution failed`). Distinguish them from `message`: timeout text is
-  like `Query exceeded timeout of 60 seconds` (default 60s); OOM text contains
-  `memory limit exceeded`. This tool does **not** return HTTP `error_code`
-  values (`query_timeout` / `query_error` / `query_cancelled`). Those come back
-  from Node SDK `client.query.data_products.query_receipt(id, sql)`
-  (`error_code`). Do not describe an OOM as a timeout.
+  `memory limit exceeded` both come back as failed. Distinguish them from
+  `message`: timeout text is like `Query exceeded timeout of 60 seconds`
+  (default 60s); OOM text contains `memory limit exceeded`. Failed `data`
+  includes `error_code` from `classifyWarehouseError` (same mapping as HTTP
+  execute: `query_timeout` / `query_error` / `query_cancelled` /
+  `configuration_error`). Do not describe an OOM as a timeout.
 - **`get_query_results` vs `partial`** — today a `partial` poll looks pending.
   Trust `execute_query`'s `data.status` until they match.
 - Large result sets — use limits / pagination per platform.
 - Wrong **org** or missing permissions show as auth or empty results.
 - **Execution environment** — Analytics runs against governed mesh tables via
   `loxtep_query`, not an arbitrary external database URL.
+- **Managed product with Iceberg off** — `loxtep_query` → `execute_query` uses
+  the same `executeWarehouseSql` as HTTP execute. A query that names a managed
+  S3 Tables product whose Iceberg storage is disabled fails (`success: false`).
+  `message` is
+  `Iceberg storage is disabled for … The catalog schema is discoverable, but there is no queryable Iceberg table. Enable Iceberg for this product to materialize storage — queue samples are not a substitute for the declared schema.`
+  `data.error_type` is `storage_disabled`; `data.error_code` is
+  `configuration_error`. The executor also sets
+  `iceberg_health_status: not_enabled` on the warehouse result (MCP failed
+  `data` currently omits that field). Enable Iceberg (`loxtep_observe` →
+  `enable_iceberg_table`); do not rebuild.
 - **Iceberg is deliberate opt-in** — workflow deploy does not enable Iceberg.
   Enable with `loxtep_observe` → `enable_iceberg_table` after the product has a
   storage identity: `schema.key`, or the same fields marked `is_primary_key`.

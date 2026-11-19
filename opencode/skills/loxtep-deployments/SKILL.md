@@ -42,8 +42,8 @@ and inspect runtime mappings.
 
 ## Bots already on the instance
 
-`deploy_project` and `deploy_workflow` read that instance's bot list (LeoCron,
-through the Observe proxy) before they archive bots.
+`deploy_project` and `deploy_workflow` read that instance's bot list
+(`GET /api/cron` through the Observe proxy) before they archive bots.
 
 A bot is adopted when `LOXTEP_PROJECT_ID` and `LOXTEP_WORKFLOW_ID` are both set,
 this organization has that project's workspace, and the workflow id is in the
@@ -276,15 +276,16 @@ not send it. See **`loxtep-instances`**, Workflow code bucket.
 
 The project workspace for a managed or self-hosted instance is the objects in
 that same bucket: entity JSON, project export, GitHub pull and push, workspace
-reindex, deployment manifests, templates, transformations, workspace save, and
-workflow graph read and save. Postgres stores a derived index of those objects.
-A missing object is `NoSuchKey`, `NotFound`, or a bare 404
-(`$metadata.httpStatusCode` is 404 and there is no `name`, `code`, or `Code`). A
-non-object error is not absence. `NoSuchBucket`, `AccessDenied`,
-`AllAccessDisabled`, `InvalidBucketName`, `PermanentRedirect`, and
-`SignatureDoesNotMatch` on `name`, `code`, or `Code` are not absence. Any other
-read, parse, or bucket failure is not absence and fails the request. The index
-does not fill in for an object that could not be read.
+reindex, deployment manifests, templates, transformations, workspace save
+(`PUT /workflows/projects/{project_id}/workspace`), and workflow graph read and
+save. Postgres stores a derived index of those objects. A missing object is
+`NoSuchKey`, `NotFound`, or a bare 404 (`$metadata.httpStatusCode` is 404 and
+there is no `name`, `code`, or `Code`). A non-object error is not absence.
+`NoSuchBucket`, `AccessDenied`, `AllAccessDisabled`, `InvalidBucketName`,
+`PermanentRedirect`, and `SignatureDoesNotMatch` on `name`, `code`, or `Code`
+are not absence. Any other read, parse, or bucket failure is not absence and
+fails the request. The index does not fill in for an object that could not be
+read.
 
 Studio and deploy open the bucket with the instance's deployment role. A managed
 instance with no deployment role uses the platform credentials, and the bucket
@@ -302,7 +303,7 @@ For the bucket errors, `error.details.code` and `error.details.name` are set as
 shown, plus `project_id` or `workflow_id`. The HTTP 400 sets
 `error.details.organization_id` to the organization id.
 
-`deploy_workflow` sends `instance_id`.
+`deploy_workflow` calls `POST /workflows/deployments` and sends `instance_id`.
 The body's `instance_id` is the target, and that instance selects the bucket. An
 omitted `instance_id`, an empty string, or the nil UUID
 `00000000-0000-0000-0000-000000000000` uses the same resolver as a Studio
@@ -339,11 +340,12 @@ in lower case, such as `managed` or `self-hosted`. `error.details.code` is
 `dedicated_bucket_missing`. `error.details.name` is
 `InstanceWorkspaceBucketError`.
 
-Fix: upgrade the instance (not exposed through MCP, CLI, or SDK today) or
-`update_instance` with `force_runtimes_redeploy: true`, wait until the runtimes
-stack update finishes and `connection_details.code_bucket` is set, then retry.
-An already-deployed runtimes stack is updated only when that runtimes request
-sets `force_redeploy`.
+Fix: upgrade the instance
+(`POST /organizations/instances/{instance_id}/upgrade`) or `update_instance`
+with `force_runtimes_redeploy: true`, wait until the runtimes stack update
+finishes and `connection_details.code_bucket` is set, then retry. An
+already-deployed runtimes stack is updated only when that runtimes request sets
+`force_redeploy`.
 
 The request names an instance that is not a live instance of this organization.
 A live instance has `deleted_at` null and a status other than `deleted` or
@@ -356,19 +358,19 @@ Instance <id> is not a live instance for this organization. Refusing to fall bac
 `<id>` is the instance id. `error.details.code` is `target_instance_missing`.
 `error.details.name` is `InstanceWorkspaceBucketError`.
 
-`create_project` stores `instance_id` when the request names a live
+`POST /workflows/projects` stores `instance_id` when the body names a live
 instance of this organization. Omitting it when two or more live dedicated
 instances exist returns HTTP 409 `ambiguous_instance` and does not insert the
 project. One dedicated instance, or none, stores no binding.
 
-`deploy_workflow` with no `instance_id`, Studio workspace calls, and
+`POST /workflows/deployments` with no `instance_id`, Studio workspace calls, and
 workspace reindex open the bucket without an instance id. The workspace opens
 when the organization has one live dedicated instance, or when the project's
 deployment rows name exactly one live dedicated instance. When those rows do not
 pin one instance, the stored `projects.instance_id` is the choice. An explicit
 deploy `instance_id` still selects that target. Several live dedicated
 instances, with no pin and no stored id, return HTTP 409 before
-`deploy_workflow` requests a deployment:
+`POST /workflows/deployments` requests a deployment:
 
 ```text
 Organization has N dedicated instances and the project workspace bucket is ambiguous. Refusing to fall back to the platform bucket.

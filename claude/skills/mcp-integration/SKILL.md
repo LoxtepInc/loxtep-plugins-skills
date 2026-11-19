@@ -132,10 +132,10 @@ SDK namespace.
 
 ### COA serve ops on `loxtep_query` (DynamoDB — never Neptune)
 
-| `operation`        | Args (highlights)                                                        |
-| ------------------ | ------------------------------------------------------------------------ |
-| `translate_sparql` | `natural_language`, optional `execute`                                   |
-| `graph_traversal`  | `mode=lineage\|related\|sparql_neighbors`, `node_id` / `data_product_id` |
+| `operation`        | Args (highlights)                                                        | Backend                                                            |
+| ------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `translate_sparql` | `natural_language`, optional `execute`                                   | `POST /ai/graph-query-translate` (+ optional `POST /graph/sparql`) |
+| `graph_traversal`  | `mode=lineage\|related\|sparql_neighbors`, `node_id` / `data_product_id` | lineage / related / SPARQL neighbors                               |
 
 COA `list_metrics` / `describe_schema` are **not** separate tools — use
 `search_semantic_layer`, `get_compounding_metric`, `get_table_schema`,
