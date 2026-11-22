@@ -36,7 +36,11 @@ without relying on any private repo or source tree.
    The model describes Loxtep. It is not a vocabulary pack and not the
    customer's business ontology (`loxtep_meaning`).
 3. **`loxtep_session`** → **`get_current_organization`** — confirm org scope
-   matches expectations.
+   matches expectations. Multi-org users may belong to several orgs; API/MCP
+   work is scoped to the **active** organization. Prefer header
+   `x-loxtep-active-organization-id` (cookie `loxtep_active_organization_id` in
+   browsers). Soft-deleted orgs cannot be activated; there is no silent fallback
+   to home. See `docs/multi-org-membership.md`.
 4. **`loxtep_session`** → **`platform_health_check`** (optional but recommended
    on cold start) — ~5s Semantica-style doctor for auth, instance Observe
    namespace (same classifier as the proxy 409) plus public-instance deny-list,

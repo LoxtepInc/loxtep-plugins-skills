@@ -1,5 +1,6 @@
 ---
 name: loxtep-workspace
+version: 1.0.0
 description:
   Workspace versions, snapshots, restore, and compare for Loxtep projects. Use
   when the user wants snapshot history, restore a version, or diff workspace
@@ -95,6 +96,25 @@ visibility and event reading moved to **`loxtep_observe`** — see
   saves, and reindex choose the bucket when deployment rows do not pin one
   instance. Omitting it is HTTP 409 `ambiguous_instance`. Do not guess the
   oldest instance or the platform bucket.
+
+## `eid` for `read_queue_events` (hard rules)
+
+Legacy routing may still attribute `read_queue_events` to this skill. When you
+call it (or when another skill routes through workspace), these rules are
+mandatory — not tips:
+
+- **Refuse invented eids.** Do not fabricate a cursor. Do not invent a
+  millisecond. Do not pad with zeros.
+- **Refuse zero-ms terminals** such as
+  `z/2026/11/17/00/55/0000000000000-0000000`.
+- **Refuse path-only prefixes** such as `z/2026/11/17/03/20/` (missing
+  millisecond / ordinal).
+- **Path UTC minute must match the millisecond.** A path and a terminal from
+  different instants fail with `eid … path and timestamp disagree`. Do not retry
+  a rewritten guess.
+- **Prefer `next_cursor` unchanged** as the next `eid`. Do not rebuild or
+  truncate it.
+- Full paging contract, errors, and examples: **`loxtep-queue-tracing`**.
 
 <!-- SCOPE_BLOCK -->
 

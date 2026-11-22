@@ -5,8 +5,8 @@ description:
   databases, files, SDK, or a system on a private network. Covers type
   discovery, public vs private connectivity, runtime inspection, secret storage,
   TLS/auth matching, and connection testing without starting ingestion. After
-  Test on rest-api or file-transfer, continue to a templated ingest workflow (do
-  not pull without a workflow and user authorization).
+  Test on rest-api, mcp-http, or file-transfer, continue to a templated ingest
+  workflow (do not pull without a workflow and user authorization).
 license: MIT
 compatibility: opencode
 metadata:
@@ -70,7 +70,8 @@ Ask before any mutating step. Do not treat inspection as permission to write.
 ## When to use
 
 - "Connect **Shopify** / **Salesforce** / **Postgres** / **MongoDB** / …"
-- "**OAuth**", "**API key**", "**SDK connector**", or private-network source
+- "**OAuth**", "**API key**", "**SDK connector**", "**hosted MCP**", or
+  private-network source
 - Discover types, inspect an instance's connector runtime, test connectivity
 - `list_connector_types`, `create_connector`, `update_connector`,
   `get_oauth_url`, `test_connector`, `capture_samples`,
@@ -79,6 +80,19 @@ Ask before any mutating step. Do not treat inspection as permission to write.
 **Not this skill:** inventing a new connector type (see
 `platform-backend/connectors/docs/ADDING_A_NEW_CONNECTOR_TYPE.md`), ad hoc cloud
 console changes, or workflow graph authoring (**`data-workflows`**).
+
+### MCP relay vs first-party vs action-only
+
+| Kind                                      | Use                                                                                                                                                                   |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **First-party** (`shopify`, `github`, …)  | Known SaaS maps — dedicated OAuth/catalog types.                                                                                                                      |
+| **`mcp-http`**                            | Hosted MCP (Streamable HTTP / SSE) with org credentials. Relay to a customer MCP URL — not REST path/query. See `platform-backend/connectors/docs/MCP_HTTP_RELAY.md`. |
+| **Action-only**                           | Write/action MCP toolsets — do not create a Connect ingest connector.                                                                                                 |
+| **Loxtep outbound MCP** (`mcp.loxtep.io`) | Loxtep serving tools to agents — opposite of `mcp-http`.                                                                                                              |
+| **`rest-api` / `sdk`**                    | Do **not** map MCP → `rest-api`. `sdk` is client→Loxtep ingest/export.                                                                                                |
+| **Stdio MCP**                             | Local-only; out of scope for org cloud Connect.                                                                                                                       |
+
+Connect ≠ ingest for `mcp-http` the same as other types.
 
 ## Prerequisites and missing inputs
 
