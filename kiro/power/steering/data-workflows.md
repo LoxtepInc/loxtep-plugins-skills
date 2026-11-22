@@ -96,9 +96,15 @@ design-time records without `workflow_id`, queues, or `deployment_bindings`.
 Correct DPs carry `managed_by: "design-time"` and
 `deployed_by: "workflow-deployment"` after deploy.
 
-**Connection nodes** reference org **connectors** via `connector_id` inside the
-bundle (`connections/{connection_id}.json`) — Trigger at ingest head, Target at
-delivery tail.
+**Connection nodes** are slots (`key`, type, sync). Bind credentials per
+environment with `bindings[]` (prefer `environment_key`; optional `instance_id`
+for geo) and/or project `.loxtep/connection-bindings.json` — not two connectors
+in one scalar `connector_id`. Legacy `connector_id` is the home-instance default
+only. See ADR 0013 §5 / #4876.
+
+**Connection nodes** reference org **connectors** via `connector_id` (legacy) or
+`bindings[]` inside the bundle (`connections/{connection_id}.json`) — Trigger at
+ingest head, Target at delivery tail.
 
 ### Quality evaluation node (required for live quality)
 
