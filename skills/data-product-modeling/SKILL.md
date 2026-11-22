@@ -17,11 +17,11 @@ pipeline via **`data-workflows`** (bundle + deploy).
 **Do not call `create_data_product` to provision new source or consumer data
 products.**
 
-| Phase   | This skill (`data-product-modeling`)                                                                                                                | **`data-workflows`**                                |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| Design  | Output schema, provenance, transforms, trust plan                                                                                                   | —                                                   |
-| Create  | **Never** — no standalone MCP create                                                                                                                | `data-products/{id}.json` in `save_workflow_bundle` |
-| Runtime | Promotion and delivery. Product **display name** is `name` in the checked-in `data-products/{id}.json`, then lint → push → scoped `deploy_workflow` | `deploy_workflow` → queues + `deployment_bindings`  |
+| Phase   | This skill (`data-product-modeling`)                                                                                                                                  | **`data-workflows`**                                                                                                                                                |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Design  | Output schema, provenance, transforms, trust plan                                                                                                                     | —                                                                                                                                                                   |
+| Create  | **Never** — no standalone MCP create                                                                                                                                  | `data-products/{id}.json` in `save_workflow_bundle`                                                                                                                 |
+| Runtime | Trust promotion (medallion) and delivery. Product **display name** is `name` in the checked-in `data-products/{id}.json`, then lint → push → scoped `deploy_workflow` | `deploy_workflow` → **per-instance** runtime bindings (queues/bots). Legacy `deployment_bindings` is a primary-instance mirror — not a global singleton (ADR 0013). |
 
 Do not set a product, bot, or queue display name with `update_data_product`.
 That leaves the runtime label out of the package. Declare a queue label with
@@ -32,8 +32,14 @@ names). If that field is missing from the schema the platform is running, report
 the gap. Do not rename the queue through an API.
 
 A correctly provisioned DP has `workflow_id`, `managed_by: "design-time"`,
-`deployed_by: "workflow-deployment"`, and `deployment_bindings` after deploy —
-not a standalone `create_data_product` response.
+`deployed_by: "workflow-deployment"`, and per-instance runtime bindings after
+deploy (see `GET …/runtime-bindings` / primary mirror on `deployment_bindings`)
+— not a standalone `create_data_product` response.
+
+**Promote the flow** to another environment by deploying design-time to that
+instance with rebinding (sibling products + connection instance bindings). Do
+**not** treat “deploy the same project to prod” as identity promotion across
+stage and prod.
 
 When the user says "**create** a data product", treat it as: **design here →
 author bundle → deploy → verify with `get_data_product`.**
