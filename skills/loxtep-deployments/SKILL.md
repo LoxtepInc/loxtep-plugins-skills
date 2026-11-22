@@ -1,6 +1,6 @@
 ---
 name: loxtep-deployments
-version: 1.2.4
+version: 1.2.6
 scope: organization
 description:
   Use when the user wants to deploy a project or workflow to a runtime instance,
@@ -14,9 +14,34 @@ description:
 Deploy projects and workflows to runtime instances, monitor deployment status,
 and inspect runtime mappings.
 
+## Design-time / runtime / global (ADR 0013)
+
+| Layer            | What lives there                                         |
+| ---------------- | -------------------------------------------------------- |
+| **Global (org)** | Meaning, RBAC, billing, connector catalog                |
+| **Design-time**  | Project / workflow graph + stable Connection and DP keys |
+| **Runtime**      | Per-instance bindings (connector, queues/storage/bots)   |
+
+**Promote the flow** with rebinding: author/test on stage, deploy the
+design-time artifact to a prod instance with prod connection bindings and
+sibling catalog products (`logical_key` + `environment_key`). Never comingle
+stage and prod product identity; never treat “same product runtime across stage
+and prod” as the model. **Environment ≠ instance** — geo is same-env
+multi-instance.
+
+Deploy **requires** `instance_id` for the environment you are targeting (no soft
+`prefer_instance_id`, no silent “primary” / prior-deploy pin). Omit is allowed
+only when the organization has exactly one unambiguous active target. Deploy
+**fails closed** when `instance_id` is omitted under ambiguity (HTTP 409
+`ambiguous_instance`), when `expected_environment_key` disagrees with the
+instance’s `metadata.environment_key` (HTTP 409 `environment_key_mismatch`),
+when required connection bindings are missing for the target instance, or when
+product / binding `environment_key` disagrees with the instance.
+
 ## When to use
 
 - "**Deploy** this project", "deploy workflow to instance"
+- "**Promote** this flow to prod" (rebinding — not identity copy)
 - "What's the **deployment status**?", "list deployments"
 - "Show **runtime mapping**" for a project/workflow
 - "**Redeploy**", "force redeploy"
@@ -27,6 +52,8 @@ and inspect runtime mappings.
 
 - MCP auth. Project-scoped operations require `project_id`.
 - Target `instance_id` must exist (see **`loxtep-workspace`** for provisioning).
+- Cross-env deploy: connection instance bindings set for the target instance
+  (`list_connection_instance_bindings` / `set_connection_instance_binding`).
 
 ## Happy-path flow
 
@@ -187,24 +214,26 @@ not reverse persisted schema or data changes.
 
 ## Deployment status polling rules
 
-- After `deploy_workflow`, check status once (`get_deployment` or a filtered
-  `list_deployments`).
+- Only `get_deployment` the `deployment_id` returned by **this turn's**
+  `deploy_workflow` or `deploy_project`. Never probe guessed, historical, or
+  listed ids that this turn did not just return.
+- Parallel `get_deployment` of multiple ids in one turn is forbidden unless
+  **each** id was returned by a deploy call in that same turn.
+- After a deploy in this turn, check that id once with `get_deployment` (or a
+  filtered `list_deployments` that names that same id). Do not fan out across a
+  candidate list.
 - If status is still `pending` or `in_progress`, back off **30s**, then **60s**,
-  then **120s**, and repeat at the **120s** cap until terminal status.
+  then **120s**, and repeat at the **120s** cap until terminal status — still
+  only for that same just-returned id.
+- On the first `not_found` for that just-returned id: back off **30s**, then
+  **60s**, then **120s**, then **stop**. Report the id and the error. Do not
+  call `get_deployment` for that id again on a later turn. Do not look up a
+  different id. Do not call `deploy_workflow` / `deploy_project` again to "fix"
+  `not_found`.
 - Never call `deploy_workflow` again for a workflow while a deployment for it is
   `pending` or `in_progress`.
 - Always pass full UUIDs to `get_deployment` and other ops — never truncated
   prefixes like `0a9e627d`.
-- Poll only the deployment id returned by that `deploy_workflow` or
-  `deploy_project` call. Do not call `get_deployment` with an id from an earlier
-  run.
-- `not_found` immediately after deploy is not success and not a reason to deploy
-  again. Back off 30s, then 60s, then 120s, the same as pending. If
-  `get_deployment` is still `not_found` after one 120s try, stop and report that
-  id and the error. Do not look up a different id, and do not call
-  `deploy_workflow` again to fix `not_found`.
-- An id that already returned `not_found` on a previous turn is dead. Do not
-  call `get_deployment` on it again.
 
 ## Pitfalls
 
@@ -302,27 +331,26 @@ shown, plus `project_id` or `workflow_id`. The HTTP 400 sets
 `error.details.organization_id` to the organization id.
 
 `deploy_workflow` calls `POST /workflows/deployments` and sends `instance_id`.
-The body's `instance_id` is the target, and that instance selects the bucket. An
-omitted `instance_id`, an empty string, or the nil UUID
-`00000000-0000-0000-0000-000000000000` uses the same resolver as a Studio
-workspace call. It does not select the oldest instance.
+The body's `instance_id` is the deploy target, and that instance selects the
+bucket. Pass the instance for the environment you are deploying to.
 
-The workspace opens when the organization has one live dedicated instance, or
-when the project's deployment rows name exactly one live dedicated instance.
-That instance is the deploy target. A deployment row names an instance when
-`deployments.instance_id` is set and `deleted_at` is null. Several rows that
-name the same instance are one pin. Rows that name more than one live dedicated
-instance are not a pin, and the handler does not keep the latest row. A stored
-`projects.instance_id` is used only when those rows do not pin one instance and
-the caller did not send `instance_id`. It does not override a pin or an explicit
-deploy target, and a later project update does not change it.
+An omitted `instance_id`, an empty string, or the nil UUID
+`00000000-0000-0000-0000-000000000000` is allowed only when the organization has
+exactly one unambiguous live target: one live dedicated instance, or (when none
+are dedicated) one active instance. Soft prefer is forbidden: prior
+`deployments.instance_id` pins and stored `projects.instance_id` are **not**
+used to choose a deploy target when several instances exist.
 
-When that resolver finds no dedicated instance, one instance with status
-`active` (`deleted_at` null) is the target and the workspace uses the platform
-bucket. When the organization has no such instance, the response is HTTP 400.
-`error.message` is `No active instance found for organization`. When more than
-one active instance remains, the response is HTTP 409 `ambiguous_instance`. The
-handler does not choose the earliest `created_at`.
+When the organization has no active instance, the response is HTTP 400
+(`no_active_instance` / `No active instance found for organization`). When more
+than one dedicated (or more than one active with no dedicated) remains and
+`instance_id` is omitted, the response is HTTP 409 `ambiguous_instance`. The
+handler does not choose the earliest `created_at`, a prior deploy pin, or a
+“preferred” instance.
+
+Optional `expected_environment_key` on deploy fails closed with HTTP 409
+`environment_key_mismatch` when the target instance’s `metadata.environment_key`
+disagrees (aliases: staging→stage, production→prod).
 
 A dedicated target uses only that instance's `connection_details.code_bucket`. A
 shared target uses the platform bucket.
@@ -361,14 +389,14 @@ instance of this organization. Omitting it when two or more live dedicated
 instances exist returns HTTP 409 `ambiguous_instance` and does not insert the
 project. One dedicated instance, or none, stores no binding.
 
-`POST /workflows/deployments` with no `instance_id`, Studio workspace calls, and
-workspace reindex open the bucket without an instance id. The workspace opens
-when the organization has one live dedicated instance, or when the project's
-deployment rows name exactly one live dedicated instance. When those rows do not
-pin one instance, the stored `projects.instance_id` is the choice. An explicit
-deploy `instance_id` still selects that target. Several live dedicated
-instances, with no pin and no stored id, return HTTP 409 before
-`POST /workflows/deployments` requests a deployment:
+Studio workspace reads and workspace reindex may still open the bucket via
+deployment-row pins or `projects.instance_id` when `instance_id` is omitted —
+that is workspace resolution, not deploy targeting. **Deploy**
+(`POST /workflows/deployments`, `POST /workflows/projects/{id}/deploy`,
+`deploy_project` / `deploy_workflow`, `loxtep deploy`) requires an explicit
+instance for the target environment when more than one live target exists.
+Several live dedicated instances with no `instance_id` on deploy return HTTP 409
+before a deployment is requested:
 
 ```text
 Organization has N dedicated instances and the project workspace bucket is ambiguous. Refusing to fall back to the platform bucket.

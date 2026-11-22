@@ -841,12 +841,27 @@ first.
 
 **Choosing `deploy_project` vs `deploy_workflow`:**
 
-| Use case                          | Operation         | Why                                                                                                                      |
-| --------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| First deploy / production release | `deploy_project`  | Snapshots entire workspace (all workflows, connections, schemas) and deploys atomically. Creates a version for rollback. |
-| Iterating on a single workflow    | `deploy_workflow` | Faster — targets one workflow without snapshotting the full project. Ideal during development.                           |
-| After changing multiple workflows | `deploy_project`  | Ensures all changes deploy together with a consistent snapshot.                                                          |
-| Redeploying after a graph change  | `deploy_workflow` | Quick redeploy of just the affected workflow.                                                                            |
+| Use case                          | Operation                                                   | Why                                                                                                                                                                                                                              |
+| --------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| First deploy to an instance       | `deploy_project`                                            | Snapshots entire workspace and deploys atomically with a version for rollback.                                                                                                                                                   |
+| Promote stage → prod              | `deploy_project` / `deploy_workflow` to a **prod** instance | **Promote the flow with rebinding** — sibling products (`logical_key` + `environment_key`) and per-instance connection bindings. Never treat “deploy the same product runtime across stage and prod” as promotion. See ADR 0013. |
+| Iterating on a single workflow    | `deploy_workflow`                                           | Faster — targets one workflow without snapshotting the full project. Ideal during development.                                                                                                                                   |
+| After changing multiple workflows | `deploy_project`                                            | Ensures all changes deploy together with a consistent snapshot.                                                                                                                                                                  |
+| Redeploying after a graph change  | `deploy_workflow`                                           | Quick redeploy of just the affected workflow.                                                                                                                                                                                    |
+
+**Design-time vs runtime vs global (ADR 0013):**
+
+| Layer            | What lives there                                                               |
+| ---------------- | ------------------------------------------------------------------------------ |
+| **Global (org)** | Meaning, RBAC, billing, connector catalog                                      |
+| **Design-time**  | Project / workflow graph and stable Connection / DP keys                       |
+| **Runtime**      | Per-instance bindings (connector, queues/storage). Results are instance-scoped |
+
+**Environment ≠ instance:** `environment_key` (`stage` \| `prod` \| `dev`)
+segregates product identity. Geo / HA is same-env multi-instance (one logical
+product, N runtime binding rows). Deploy fails closed when connection bindings
+or product `environment_key` disagree with the target instance’s
+`environment_key`.
 
 **Example — deploy_project (full project):**
 

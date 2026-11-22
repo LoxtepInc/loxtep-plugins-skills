@@ -234,8 +234,10 @@ ingestion) for the full sequence.
 **BYOL exception:** customer-registered custom bots create their own queues on
 register. Bind `{bot_id}-out` via runtime queue reconciliation (or workflow
 deploy), then use `get_writer` / `get_reader` with that product. Queue handle:
-`deployment_bindings.queue_name`. Do not require a Studio workflow deploy solely
-to create those queue names.
+primary mirror `deployment_bindings.queue_name` (or per-instance
+`data_product_runtime_bindings` with an explicit `instance_id` when
+multi-instance). Do not require a Studio workflow deploy solely to create those
+queue names.
 
 ## Runtime naming convention (how queues and bots are named)
 
