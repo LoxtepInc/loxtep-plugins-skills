@@ -127,11 +127,11 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
 
 ### Field summary
 
-| Field                             | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`, `region`, `instance_type` | Required.                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `plan_id`                         | Top-level only. `free`/`starter` for shared; `growth`/`scale` for managed; `sh_core`/`sh_production`/`sh_scale` for self-hosted. Do not send plan fields under `metadata`.                                                                                                                                                                                                                                                                                          |
-| `connection_details`              | **Required for managed and self-hosted** — nested `observe_api` with `cross_account_role_arn` only. Do not send `meter_role_arn`, `bus_lifecycle_role_arn`, or `workflow_deploy_role_arn` on create (`observe_api` is `.strict()`). `rstreams_secret_arn`, `rstreams_auth_arn`, and `code_bucket` are written by provisioning; callers do not send them. Namespace, `api_url`, and `stack_id` are always server-derived. Sending `observe_proxy_role_arn` is a 400. |
+| Field                             | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`, `region`, `instance_type` | Required.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `plan_id`                         | Top-level only. `free`/`starter` for shared; `growth`/`scale` for managed; `sh_core`/`sh_production`/`sh_scale` for self-hosted. Do not send plan fields under `metadata`.                                                                                                                                                                                                                                                                                                                                                                  |
+| `connection_details`              | **Self-hosted:** nested `observe_api` with `cross_account_role_arn` required. **Managed:** omit for same-account; send a customer role ARN only for remote-account managed. Do not send `meter_role_arn`, `bus_lifecycle_role_arn`, or `workflow_deploy_role_arn` on create (`observe_api` is `.strict()`). `rstreams_secret_arn`, `rstreams_auth_arn`, and `code_bucket` are written by provisioning; callers do not send them. Namespace, `api_url`, and `stack_id` are always server-derived. Sending `observe_proxy_role_arn` is a 400. |
 
 ### Correct examples
 
@@ -146,7 +146,21 @@ Pass **flat** fields (not nested `instance_config`) — the platform maps them.
 }
 ```
 
-**Paid Growth (managed)** — same observe_api remote-access shape as self-hosted:
+**Paid Growth (managed, same-account)** — omit `cross_account_role_arn`; the bus
+runs in the Loxtep control-plane account:
+
+```json
+{
+  "operation": "create_instance",
+  "name": "Production mesh",
+  "region": "us-east-1",
+  "instance_type": "managed",
+  "plan_id": "growth"
+}
+```
+
+**Paid Growth (managed, remote customer account)** — same observe_api role shape
+as self-hosted after `register_infrastructure`:
 
 ```json
 {
@@ -226,8 +240,9 @@ MCP `instance_typo` plus `observe_api.namespace` returns only
 
 - A plan ID paired with the wrong hosting model is invalid.
 - `payment_method_id` and `price_id` are not accepted create arguments.
-- **Managed** or **self-hosted** without
+- **Self-hosted** without
   **`connection_details.observe_api.cross_account_role_arn`** — **invalid**.
+  Same-account managed may omit it.
 - Platform-owned fields — do **not** send `api_url`, `stack_id`,
   `metadata.routing`, `observe_api.namespace`, or
   `observe_api.observe_proxy_role_arn`. Messages:

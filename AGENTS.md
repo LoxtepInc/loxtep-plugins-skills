@@ -184,7 +184,7 @@ key parameters.
 { "operation": "list_versions", "project_id": "proj_…" }
 ```
 
-### `loxtep_build` — Products — design, bundle, and deploy data flows. Workflows (save_workflow_bundle for full JSON, patch_workflow_graph for Studio-only edits), trigger/target connection bindings (list/get/update/delete/test/run), data products (kind source|consumer, lexicon, SDK config, contracts, promotion), delivery grants (list/get/save/update_delivery_grant — Git-backed grants/{id}.json materialized for deploy-time writer embedding), consumption method suggestions (request/get/decide — which access methods to publish, with reasons), external warehouse bind (list_warehouse_objects, bind_warehouse_table), and deployment writes (deploy_project, deploy_workflow, get_runtime_mapping). New Trigger/Target entities belong in save_workflow_bundle (connections/{id}.json with connector_id).
+### `loxtep_build` — Products — design, bundle, and deploy data flows. Workflows (save_workflow_bundle for full JSON, patch_workflow_graph for Studio-only edits), trigger/target connections (list/get/update/delete/test/run), per-instance connector bindings (list_connection_instance_bindings / set_connection_instance_binding), data products (kind source|consumer, lexicon, SDK config, contracts, promotion), delivery grants (list/get/save/update_delivery_grant — Git-backed grants/{id}.json materialized for deploy-time writer embedding), consumption method suggestions (request/get/decide — which access methods to publish, with reasons), external warehouse bind (list_warehouse_objects, bind_warehouse_table), and deployment writes (deploy_project, deploy_workflow, get_runtime_mapping). New Trigger/Target entities belong in save_workflow_bundle (connections/{id}.json with connector_id).
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
 | `get_entity_schemas` | project | `project_id` | `pattern` |
@@ -207,6 +207,8 @@ key parameters.
 | `test_trigger` | project | — | — |
 | `run_trigger` | project | — | — |
 | `reset_backfill` | organization | — | — |
+| `list_connection_instance_bindings` | organization | — | — |
+| `set_connection_instance_binding` | organization | — | — |
 | `list_targets` | project | — | — |
 | `get_target` | project | — | — |
 | `update_target` | project | — | — |
@@ -235,8 +237,8 @@ key parameters.
 | `list_warehouse_objects` | organization | — | — |
 | `bind_warehouse_table` | organization | — | — |
 | `configure_warehouse_sink` | organization | — | — |
-| `deploy_project` | organization | `project_id`, `instance_id` | `force_redeploy` |
-| `deploy_workflow` | project | `project_id`, `instance_id`, `workflow_id` | `force_redeploy`, `skip_validation` |
+| `deploy_project` | organization | `project_id`, `instance_id` | `force_redeploy`, `expected_environment_key` |
+| `deploy_workflow` | project | `project_id`, `instance_id`, `workflow_id` | `force_redeploy`, `skip_validation`, `expected_environment_key` |
 | `get_runtime_mapping` | project | `project_id` | `workflow_id` |
 
 ### `loxtep_define` — Meaning and Organization — shape and govern data. Domain canonical schemas (CRUD, versions, apply/unapply to data products, PII tagging, impact analysis, schema packs), agent-authored product definition (evidence, shape and semantic proposals, approval, apply, status, batch, skill), quality rules (CRUD, test, suggestions
@@ -289,7 +291,7 @@ key parameters.
 | `list_access_requests` | organization | — | — |
 | `decide_access_request` | organization | — | — |
 
-### `loxtep_meaning` — Meaning — define what terms mean. Vocabulary/thesaurus (terms, synonyms, enterprise overrides, semantic gaps), ontology concepts and relationships, namespace mappings, org semantic layer (search, completeness, packs, canonical knowledge), and agent proposal review (list/infer/accept/reject vocabulary_term proposals — confidence is business-field score, not definition quality). Hosted inference, glossary binding apply, and relationship discover/accept run only when the user explicitly asks. They do not write schema.key. The supported definition path remains shape and semantic proposals.
+### `loxtep_meaning` — Meaning — define what terms mean. Vocabulary/thesaurus (terms, synonyms, enterprise overrides, semantic gaps), ontology concepts and relationships, namespace mappings, org semantic layer (search, completeness, packs, canonical knowledge), and agent proposal review (list/infer/accept/reject vocabulary_term proposals — confidence is business-field score, not definition quality). Hosted inference, glossary binding apply, and relationship discover/accept run only when the user explicitly asks. They do not write schema.key. The supported definition path remains shape and semantic proposals. Agents propose, people publish
 | Operation | Scope | Required | Optional |
 | --- | --- | --- | --- |
 | `list_terms` | organization | — | — |

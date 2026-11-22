@@ -171,6 +171,10 @@ instance).
 
 ### `eid`
 
+**MUST:** Never invent an `eid` — no zero-ms pads (`…/0000000000000-0000000`),
+no path-only `z/YYYY/MM/DD/HH/mm/`, and the path UTC minute must match the
+millisecond (mismatches fail loud; do not rewrite).
+
 Since #3451 (#3436) and #3740. The check is `queueEidPathTimestampMismatch`. The
 check does not rewrite the path, replace the timestamp, or fall back to another
 read. A supplied eid must be a full `z/YYYY/MM/DD/HH/mm/<ms>[-<ordinal>]`. `z/`

@@ -10,8 +10,8 @@ and inspect runtime mappings.
 | Layer            | What lives there                                         |
 | ---------------- | -------------------------------------------------------- |
 | **Global (org)** | Meaning, RBAC, billing, connector catalog                |
-| **Design-time**  | Project / workflow graph + stable Connection and DP keys |
-| **Runtime**      | Per-instance bindings (connector, queues/storage/bots)   |
+| **Design-time**  | Project / workflow graph + stable Connection and DP keys + **declared** connection bindings in the package |
+| **Runtime**      | Per-instance bindings in DB (connector, queues/storage/bots) — applied from package on deploy |
 
 **Promote the flow** with rebinding: author/test on stage, deploy the
 design-time artifact to a prod instance with prod connection bindings and
@@ -19,6 +19,15 @@ sibling catalog products (`logical_key` + `environment_key`). Never comingle
 stage and prod product identity; never treat “same product runtime across stage
 and prod” as the model. **Environment ≠ instance** — geo is same-env
 multi-instance.
+
+**Composable bindings (#4876):** Declare stage/prod connectors in the project
+package — `bindings[]` on each connection (prefer `environment_key`; optional
+`instance_id` for geo) and/or `.loxtep/connection-bindings.json`. Do not stuff
+two connectors into one scalar `connector_id`. `loxtep lint` validates the
+declaration; deploy upserts `connection_instance_bindings` for the target
+env/instance and still **fails closed** if prod is undeclared. Legacy
+`connector_id` seeds the home instance only.
+`set_connection_instance_binding` syncs into the package by default.
 
 Deploy **requires** `instance_id` for the environment you are targeting (no soft
 `prefer_instance_id`, no silent “primary” / prior-deploy pin). Omit is allowed
@@ -43,8 +52,10 @@ product / binding `environment_key` disagrees with the instance.
 
 - MCP auth. Project-scoped operations require `project_id`.
 - Target `instance_id` must exist (see **`loxtep-workspace`** for provisioning).
-- Cross-env deploy: connection instance bindings set for the target instance
-  (`list_connection_instance_bindings` / `set_connection_instance_binding`).
+- Cross-env deploy: declare prod bindings in the package (or set them via
+  `set_connection_instance_binding`, which syncs into `bindings[]`) before
+  deploy. Preflight:
+  `list_connection_instance_bindings` with `preflight=true&instance_id=…`.
 
 ## Happy-path flow
 
