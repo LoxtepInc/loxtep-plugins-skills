@@ -1,6 +1,6 @@
 ---
 name: loxtep-deployments
-version: 1.2.7
+version: 1.2.8
 scope: organization
 description:
   Use when the user wants to deploy a project or workflow to a runtime instance,
@@ -16,11 +16,11 @@ and inspect runtime mappings.
 
 ## Design-time / runtime / global (ADR 0013)
 
-| Layer            | What lives there                                         |
-| ---------------- | -------------------------------------------------------- |
-| **Global (org)** | Meaning, RBAC, billing, connector catalog                |
-| **Design-time**  | Project / workflow graph + stable Connection and DP keys + **declared** connection bindings in the package |
-| **Runtime**      | Per-instance bindings in DB (connector, queues/storage/bots) — applied from package on deploy |
+| Layer            | What lives there                                                                                                                      |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Global (org)** | Meaning, RBAC, billing, connector catalog                                                                                             |
+| **Design-time**  | Project / workflow graph + stable Connection and DP keys + **declared** connection bindings and data-product runtime slots in package |
+| **Runtime**      | Per-instance bindings in DB (connector, queues/storage/bots) — applied from package on deploy                                         |
 
 **Promote the flow** with rebinding: author/test on stage, deploy the
 design-time artifact to a prod instance with prod connection bindings and
@@ -35,8 +35,17 @@ package — `bindings[]` on each connection (prefer `environment_key`; optional
 two connectors into one scalar `connector_id`. `loxtep lint` validates the
 declaration; deploy upserts `connection_instance_bindings` for the target
 env/instance and still **fails closed** if prod is undeclared. Legacy
-`connector_id` seeds the home instance only.
-`set_connection_instance_binding` syncs into the package by default.
+`connector_id` seeds the home instance only. `set_connection_instance_binding`
+syncs into the package by default.
+
+**Composable data-product runtime slots (#4877):** Declare expected
+queues/bots/storage per env as `runtime_slots[]` on each data product (prefer
+`environment_key`; optional `instance_id` for geo) and/or
+`.loxtep/data-product-runtime-slots.json`. Optional `queue_name` / `bot_id` /
+`storage` pin known handles; omit them when deploy resolves from topology. Lint
+validates the declaration; deploy matches the target env and upserts
+`data_product_runtime_bindings` — **fails closed** if a product declares slots
+but omits the target env (no silent stage→prod copy).
 
 Deploy **requires** `instance_id` for the environment you are targeting (no soft
 `prefer_instance_id`, no silent “primary” / prior-deploy pin). Omit is allowed
@@ -44,8 +53,9 @@ only when the organization has exactly one unambiguous active target. Deploy
 **fails closed** when `instance_id` is omitted under ambiguity (HTTP 409
 `ambiguous_instance`), when `expected_environment_key` disagrees with the
 instance’s `metadata.environment_key` (HTTP 409 `environment_key_mismatch`),
-when required connection bindings are missing for the target instance, or when
-product / binding `environment_key` disagrees with the instance.
+when required connection bindings or data-product runtime slots are missing for
+the target instance, or when product / binding `environment_key` disagrees with
+the instance.
 
 ## When to use
 
@@ -63,8 +73,8 @@ product / binding `environment_key` disagrees with the instance.
 - Target `instance_id` must exist (see **`loxtep-workspace`** for provisioning).
 - Cross-env deploy: declare prod bindings in the package (or set them via
   `set_connection_instance_binding`, which syncs into `bindings[]`) before
-  deploy. Preflight:
-  `list_connection_instance_bindings` with `preflight=true&instance_id=…`.
+  deploy. Preflight: `list_connection_instance_bindings` with
+  `preflight=true&instance_id=…`.
 
 ## Happy-path flow
 

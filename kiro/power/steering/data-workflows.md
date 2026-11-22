@@ -99,13 +99,19 @@ Correct DPs carry `managed_by: "design-time"` and
 **Connection nodes** are slots (`key`, type, sync). Bind credentials per
 environment with `bindings[]` (prefer `environment_key`; optional `instance_id`
 for geo) and/or project `.loxtep/connection-bindings.json` — not two connectors
-in one scalar `connector_id`. Legacy `connector_id` is the home-instance
-default only. See ADR 0013 §5 / #4876.
+in one scalar `connector_id`. Legacy `connector_id` is the home-instance default
+only. See ADR 0013 §5 / #4876.
+
+**Data-product runtime slots** declare expected queues/bots/storage per env as
+`runtime_slots[]` on the data-product entity (prefer `environment_key`; optional
+`instance_id` for geo) and/or `.loxtep/data-product-runtime-slots.json`. Deploy
+upserts `data_product_runtime_bindings` from those declarations and **fails
+closed** if the target env is undeclared — do not treat DB-only bindings as the
+package. See ADR 0013 §5 / #4877.
 
 **Connection nodes** reference org **connectors** via `connector_id` (legacy) or
-`bindings[]` inside the
-bundle (`connections/{connection_id}.json`) — Trigger at ingest head, Target at
-delivery tail.
+`bindings[]` inside the bundle (`connections/{connection_id}.json`) — Trigger at
+ingest head, Target at delivery tail.
 
 ### Quality evaluation node (required for live quality)
 
