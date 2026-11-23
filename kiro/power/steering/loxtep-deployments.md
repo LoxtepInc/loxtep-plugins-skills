@@ -402,18 +402,20 @@ instances exist returns HTTP 409 `ambiguous_instance` and does not insert the
 project. One dedicated instance, or none, stores no binding.
 
 Studio workspace reads, saves, graph, and reindex accept optional `instance_id`.
-Studio sends the selected instance. An explicit id skips the deployment pin and
-stored `projects.instance_id` (a live shared instance opens the platform
-bucket). When omitted, the bucket still opens via a deployment-row pin of
-exactly one live dedicated instance, then `projects.instance_id` — that is
-workspace resolution, not deploy targeting. Hosted MCP `reindex_workspace`, CLI
-`push` reindex, and SDK `projects.reindex` do not pass `instance_id`, so an
-unbound project in a multi-instance org still hits 409 `ambiguous_instance` (in
-the indexer bot for reindex). **Deploy** (`POST /workflows/deployments`,
-`POST /workflows/projects/{id}/deploy`, `deploy_project` / `deploy_workflow`,
-`loxtep deploy`) requires an explicit instance for the target environment when
-more than one live target exists. Several live dedicated instances with no
-`instance_id` on deploy return HTTP 409 before a deployment is requested:
+Studio sends the selected instance. An explicit id must match the project's
+unique deployment pin or stored `projects.instance_id` when either is set (HTTP
+409 `instance_id_mismatch` on conflict); it does not silently open another
+instance bucket or the platform bucket. When omitted, the bucket still opens via
+a deployment-row pin of exactly one live dedicated instance, then
+`projects.instance_id` — that is workspace resolution, not deploy targeting.
+Hosted MCP `reindex_workspace`, CLI `push` reindex, and SDK `projects.reindex`
+do not pass `instance_id`, so an unbound project in a multi-instance org still
+hits 409 `ambiguous_instance` (in the indexer bot for reindex). **Deploy**
+(`POST /workflows/deployments`, `POST /workflows/projects/{id}/deploy`,
+`deploy_project` / `deploy_workflow`, `loxtep deploy`) requires an explicit
+instance for the target environment when more than one live target exists.
+Several live dedicated instances with no `instance_id` on deploy return HTTP 409
+before a deployment is requested:
 
 ```text
 Organization has N dedicated instances and the project workspace bucket is ambiguous. Refusing to fall back to the platform bucket.

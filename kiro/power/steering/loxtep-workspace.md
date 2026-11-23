@@ -88,12 +88,13 @@ visibility and event reading moved to **`loxtep_observe`** — see
   workspace open omits `instance_id` and deployment rows do not pin exactly one
   live dedicated instance. Studio workspace calls (entities, save, graph,
   reindex) accept optional `instance_id` and Studio sends the selected instance.
-  An explicit id skips the pin and the stored id. A live shared instance opens
-  the platform bucket. Hosted MCP `reindex_workspace`, CLI `push` reindex, and
-  SDK `projects.reindex` do not take `instance_id`. On an unbound project (no
-  stored id, no single deploy pin) in a multi-instance org, omitting
-  `instance_id` is HTTP 409 `ambiguous_instance`. Do not guess the oldest
-  instance or the platform bucket.
+  An explicit id must match the project's unique deploy pin or stored binding
+  when either is set (HTTP 409 `instance_id_mismatch` on conflict). Do not open
+  another instance bucket or the platform bucket on mismatch. Hosted MCP
+  `reindex_workspace`, CLI `push` reindex, and SDK `projects.reindex` do not
+  take `instance_id`. On an unbound project (no stored id, no single deploy pin)
+  in a multi-instance org, omitting `instance_id` is HTTP 409
+  `ambiguous_instance`. Do not guess the oldest instance or the platform bucket.
 
 ## `eid` for `read_queue_events` (hard rules)
 
