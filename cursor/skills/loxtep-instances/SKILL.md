@@ -384,13 +384,19 @@ A dedicated instance with no `code_bucket` fails these calls with HTTP 500
 (`dedicated_bucket_missing`). `POST /workflows/projects` stores
 `projects.instance_id` when the body names a live instance. Omitting it when the
 organization has more than one live dedicated instance returns HTTP 409
-(`ambiguous_instance`) and does not insert the project. A workspace call that
-does not name an instance, and `POST /workflows/deployments` when `instance_id`
-is omitted, uses a deployment pin when the project's deployment rows name
-exactly one live dedicated instance, and otherwise the stored
-`projects.instance_id`. With neither, the same 409 applies. An omitted id does
-not select the oldest instance. An explicit instance that is not a live instance
-of the organization is HTTP 404 (`target_instance_missing`). See
+(`ambiguous_instance`) and does not insert the project. Studio workspace calls
+(entities GET, workspace PUT, single-entity GET/PUT/DELETE, workflow graph
+GET/PUT, reindex POST) accept optional `instance_id` (query; reindex also JSON
+body). Studio sends the selected instance. An explicit id skips the deployment
+pin and stored `projects.instance_id`. A live shared (non-dedicated) instance
+opens the platform bucket. When `instance_id` is omitted, a workspace call, and
+`POST /workflows/deployments` when `instance_id` is omitted, uses a deployment
+pin when the project's deployment rows name exactly one live dedicated instance,
+and otherwise the stored `projects.instance_id`. With neither, the same 409
+applies. Hosted MCP `reindex_workspace`, CLI `push` reindex, and SDK
+`projects.reindex` do not pass `instance_id`. An omitted id does not select the
+oldest instance. An explicit instance that is not a live instance of the
+organization is HTTP 404 (`target_instance_missing`). See
 **`loxtep-deployments`**, Dedicated instance code bucket, for the messages and
 the `code_bucket` fix (upgrade or `force_runtimes_redeploy`).
 

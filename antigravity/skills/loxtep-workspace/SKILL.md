@@ -75,7 +75,10 @@ visibility and event reading moved to **`loxtep_observe`** — see
 
 ### Flow — Reindex after bulk import
 
-1. `reindex_workspace` with `project_id` (and params per API).
+1. `reindex_workspace` with `project_id`. The hosted MCP operation does not take
+   `instance_id`. Studio reindex sends the selected instance on the HTTP API. On
+   an unbound project in an org with two or more live dedicated instances, MCP
+   reindex still hits 409 `ambiguous_instance` in the indexer bot.
 
 ## MCP mapping
 
@@ -95,10 +98,16 @@ visibility and event reading moved to **`loxtep_observe`** — see
   Retrying will not help. Report the key rather than fabricating a
   `project.json` locally.
 - A project in an organization with two or more live dedicated instances needs
-  `instance_id` on `create_project`. That stored id is how workspace reads,
-  saves, and reindex choose the bucket when deployment rows do not pin one
-  instance. Omitting it is HTTP 409 `ambiguous_instance`. Do not guess the
-  oldest instance or the platform bucket.
+  `instance_id` on `create_project`. The stored id is used when a later
+  workspace open omits `instance_id` and deployment rows do not pin exactly one
+  live dedicated instance. Studio workspace calls (entities, save, graph,
+  reindex) accept optional `instance_id` and Studio sends the selected instance.
+  An explicit id skips the pin and the stored id. A live shared instance opens
+  the platform bucket. Hosted MCP `reindex_workspace`, CLI `push` reindex, and
+  SDK `projects.reindex` do not take `instance_id`. On an unbound project (no
+  stored id, no single deploy pin) in a multi-instance org, omitting
+  `instance_id` is HTTP 409 `ambiguous_instance`. Do not guess the oldest
+  instance or the platform bucket.
 
 ## `eid` for `read_queue_events` (hard rules)
 

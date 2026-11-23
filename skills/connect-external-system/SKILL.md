@@ -460,8 +460,9 @@ optional `instance_id` (uuid). 400 if the connector is not MongoDB or not
 
 Success `data`: `job_id`, `run_type` `"mongodb_discovery"`, `status`
 `"pending"`, `probe_scope`, `connector_id`, `poll_path`, `message`. `poll_path`
-is `/connectors/{connector_id}/discovery-jobs/{job_id}` (no service prefix).
-Call `GET /connectors/connectors/{connector_id}/discovery-jobs/{job_id}`.
+is the public path
+`/connectors/connectors/{connector_id}/discovery-jobs/{job_id}`. Call it as
+returned (`GET https://api.loxtep.io` + `poll_path`).
 
 Poll `data` also includes `organization_id`, `requested_at`, `started_at`,
 `completed_at`, `error_code`, `error_message`, `authorized_collections`,

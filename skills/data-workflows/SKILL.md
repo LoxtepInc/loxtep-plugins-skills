@@ -1242,6 +1242,14 @@ schema rejects unknown top-level properties. Use `ingestion_config`.
   for the live instance that owns the workspace. Omitting it is HTTP 409
   `ambiguous_instance` and the project is not created. Do not pick the oldest
   instance or the platform bucket. `update_project` does not move the stored id.
+- **Opening an existing workspace / `reindex_workspace`** — hosted MCP
+  `reindex_workspace`, `get_workflow_graph`, and `patch_workflow_graph` do not
+  take `instance_id`. Studio sends the selected instance on workspace HTTP
+  calls. On an unbound project in an org with two or more live dedicated
+  instances, MCP `reindex_workspace` still hits 409 `ambiguous_instance` in the
+  indexer bot. `get_workflow_graph` / `patch_workflow_graph` use the platform
+  bucket via CustomerWorkspaceService, not `openProjectWorkspaceStorage`. CLI
+  `push` reindex and SDK `projects.reindex` also omit `instance_id`.
 - **Product storage key** — one identity. `is_primary_key`, `schema.key` (same
   fields, field order), and the primary entity `natural_key` (those names joined
   with commas). Applying a shape writes `schema.key`. The Iceberg writer
