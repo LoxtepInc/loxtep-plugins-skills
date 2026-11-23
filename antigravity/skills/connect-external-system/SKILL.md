@@ -57,6 +57,8 @@ Ask before any mutating step. Do not treat inspection as permission to write.
 | `list_observe_bots`                           | no                                                                                                                                                                                   | `instances:read`              | MCP `loxtep_observe`                                         |
 | `get_runtime_mapping`                         | no                                                                                                                                                                                   | project read                  | MCP `loxtep_build`                                           |
 | `test_connector`                              | no ingest; public path may persist `last_tested_at` / `last_test_sample` when the caller also has `connectors:write`; customer-VPC path may persist `last_tested_at` without samples | `connectors:read`             | MCP / CLI / SDK / REST                                       |
+| `POST /connectors/connectors/{id}/discovery`  | yes (creates an async_runs MongoDB discovery job; does not start ingest)                                                                                                             | `connectors:read`             | REST only (no MCP operation)                                 |
+| `GET .../discovery-jobs/{job_id}`             | no                                                                                                                                                                                   | `connectors:read`             | REST only                                                    |
 | `create_connector` / `update_connector`       | yes (credentials, metadata)                                                                                                                                                          | `connectors:write`            | MCP / SDK / REST                                             |
 | `get_oauth_url` without `connector_id`        | yes (creates connector)                                                                                                                                                              | `connectors:read`             | MCP                                                          |
 | `capture_samples`                             | yes (bounded source rows into metadata)                                                                                                                                              | `connectors:read`             | MCP / CLI / SDK / REST                                       |
@@ -410,7 +412,12 @@ probe `details.account_info` includes topology, TLS, `probe_scope`, `phases_ms`,
 `permissions.outside_allowlist` and `allowlist_match` (those appear only when
 the probe returns them, e.g. discovery). Never URI, password, CA PEM, or
 document payloads. Test connection does not verify collection permissions for
-MongoDB; Loxtep has no user-facing permission check for it today.
+MongoDB. For customer-VPC MongoDB,
+`POST /connectors/connectors/{connector_id}/discovery` with default
+`probe_scope` `"discovery"` (then poll
+`GET /connectors/connectors/{connector_id}/discovery-jobs/{job_id}`) returns
+`permissions.find` and `permissions.change_stream` on a completed job. There is
+no MCP operation for this path.
 
 Postgres / MySQL (`postgres`, `postgresql`, `mysql`, `mysql-source`): after
 connectivity succeeds, Test **reads the SQL catalog**. A column whose FOREIGN
@@ -441,8 +448,40 @@ read for those four types. A successful public test may persist `last_tested_at`
 probe does not persist samples (`sample_payloads` / `last_test_sample`). On a
 passing probe with write access it does persist `last_tested_at` (and
 `account_info`). It does not register LeoCron and does not write checkpoints or
-data products. MongoDB Test connection does not verify collection permissions,
-and Loxtep has no user-facing permission check for MongoDB today.
+data products. MongoDB Test connection does not verify collection permissions.
+Use REST async discovery (`probe_scope: "discovery"`) for find / changeStream
+results on customer-VPC MongoDB (see below).
+
+**Async MongoDB discovery** (customer-VPC MongoDB only; REST; permission
+`connectors:read`). Starts a job; does not start ingest. Optional body:
+`probe_scope` `"discovery"` (default; find / changeStream probes) or
+`"list_collections"` (listCollections only, same work as GET `.../entities`);
+optional `instance_id` (uuid). 400 if the connector is not MongoDB or not
+`customer_vpc` / private. 400 `error.details.code` `VALIDATION_ERROR` /
+`INVALID_JSON` on bad input (WebError message `"Validation Error"`). 404
+`"Connector not found"` without read access.
+
+Success `data`: `job_id`, `run_type` `"mongodb_discovery"`, `status`
+`"pending"`, `probe_scope`, `connector_id`, `poll_path`, `message`. `poll_path`
+is `/connectors/{connector_id}/discovery-jobs/{job_id}` (no service prefix).
+Call `GET /connectors/connectors/{connector_id}/discovery-jobs/{job_id}`.
+
+Poll `data` also includes `organization_id`, `requested_at`, `started_at`,
+`completed_at`, `error_code`, `error_message`, `authorized_collections`,
+`allowlist_match`, `permissions`, `topology`, `timing`. Status is `pending` |
+`in_progress` | `completed` | `failed`. Missing job or a job for another
+connector: 404 `"Discovery job not found"`.
+
+Sync GET `.../entities` (`list_connector_entities`) still refuses >500
+collections with `DISCOVERY_TOO_MANY_COLLECTIONS` (HTTP 422) and does **not**
+start a job. The 422 message tells the client to POST discovery with
+`probe_scope=list_collections` and poll discovery-jobs.
+
+**Known issue:** a job can stay `"pending"` with no server timeout if the
+connector is deleted after POST (bot fails before claiming the row) or if
+enqueue/flush fails after POST returned. A job can stay `"in_progress"` with no
+server timeout if the worker crashes after claiming the row. Set a client
+polling deadline. #4988
 
 **Samples** (separate, retrieves source rows; ask first):
 
@@ -587,9 +626,13 @@ only when save and deploy both succeed.
 | Missing credentials message                                                                                                         | authentication       | Customer (supply on manage / `update_connector`)                                                                                                                                                |
 | OAuth used with `create_connector`                                                                                                  | authentication       | Agent: use `get_oauth_url`                                                                                                                                                                      |
 | `TLS_POLICY_VIOLATION` / `TLS_FAILURE`                                                                                              | authentication / TLS | Customer cert/hostname/CA                                                                                                                                                                       |
-| `MISSING_COLLECTION_ACCESS`                                                                                                         | authentication       | Unauthorized during MongoDB connect / `hello`. Test does not probe collection find/changeStream grants. Loxtep has no user-facing MongoDB permission check today.                               |
-| `PROBE_DEADLINE_EXCEEDED`                                                                                                           | runtime              | MongoDB Test wall clock exceeded 20000 ms                                                                                                                                                       |
+| `MISSING_COLLECTION_ACCESS`                                                                                                         | authentication       | Unauthorized during MongoDB connect / `hello`. Test does not probe collection find/changeStream grants. Use REST POST `.../discovery` (`probe_scope: discovery`) for those grants.              |
+| `PROBE_DEADLINE_EXCEEDED`                                                                                                           | runtime              | MongoDB Test wall clock exceeded 20000 ms. Async discovery uses 110000 ms (`MONGODB_PRIVATE_ASYNC_DISCOVERY_DEADLINE_MS`) on the bot path (`async_mode`)                                        |
 | `UNSUPPORTED_STANDALONE`                                                                                                            | source topology      | Customer (replica set / mongos for CDC types)                                                                                                                                                   |
+| `DISCOVERY_TOO_MANY_COLLECTIONS`                                                                                                    | source catalog       | Sync GET `.../entities` refuses >500 collections (HTTP 422). Does not auto-start a job. POST `.../discovery` with `probe_scope=list_collections` and poll discovery-jobs                        |
+| `DISCOVERY_ENQUEUE_FAILED`                                                                                                          | control plane        | POST discovery enqueue threw; POST also errors and the job row is `failed`                                                                                                                      |
+| `DISCOVERY_INVOKE_FAILED`                                                                                                           | runtime              | Discovery bot could not invoke the private probe                                                                                                                                                |
+| `DISCOVERY_FAILED`                                                                                                                  | runtime              | Probe failed with no `error.code`. Other failed jobs copy the probe code (e.g. `UNSUPPORTED_STANDALONE`, `MISSING_DISCOVERY_PERMISSION`)                                                        |
 | `PRIVATE_PROBE_FAILED` / cannot resolve `connectors-private-512`                                                                    | runtime / network    | Loxtep runtimes deploy; customer if subnet/SG IDs never supplied                                                                                                                                |
 | `AMBIGUOUS_CATALOG_FK` (`table_name`, `column_name`, `referenced_tables`)                                                           | source catalog       | Customer DBA: drop or fix the duplicate FOREIGN KEY so the column points at one table                                                                                                           |
 | `CATALOG_READ_FAILED`                                                                                                               | source catalog       | Customer: restore `information_schema` / catalog grants, then Test again                                                                                                                        |
@@ -738,19 +781,20 @@ probe is a no-op pass) → **`data-workflows`**. Post-deploy bootstrap:
 
 ## MCP mapping
 
-| User intent                            | Tool             | `operation`                          | Scope        |
-| -------------------------------------- | ---------------- | ------------------------------------ | ------------ |
-| List types                             | `loxtep_connect` | `list_connector_types`               | global       |
-| List org connectors                    | `loxtep_connect` | `list_connectors`                    | organization |
-| Create connector                       | `loxtep_connect` | `create_connector`                   | organization |
-| Update connector                       | `loxtep_connect` | `update_connector`                   | organization |
-| OAuth URL                              | `loxtep_connect` | `get_oauth_url`                      | organization |
-| Test connectivity                      | `loxtep_connect` | `test_connector`                     | organization |
-| Capture samples                        | `loxtep_connect` | `capture_samples`                    | organization |
-| List entities                          | `loxtep_connect` | `list_connector_entities`            | organization |
-| Confirm entity selection (PKO fan-out) | `loxtep_connect` | `confirm_connector_entity_selection` | organization |
-| Apply template                         | `loxtep_connect` | `apply_template`                     | **project**  |
-| Reset a paused MongoDB backfill        | `loxtep_build`   | `reset_backfill`                     | **project**  |
+| User intent                            | Tool             | `operation`                                                                         | Scope        |
+| -------------------------------------- | ---------------- | ----------------------------------------------------------------------------------- | ------------ |
+| List types                             | `loxtep_connect` | `list_connector_types`                                                              | global       |
+| List org connectors                    | `loxtep_connect` | `list_connectors`                                                                   | organization |
+| Create connector                       | `loxtep_connect` | `create_connector`                                                                  | organization |
+| Update connector                       | `loxtep_connect` | `update_connector`                                                                  | organization |
+| OAuth URL                              | `loxtep_connect` | `get_oauth_url`                                                                     | organization |
+| Test connectivity                      | `loxtep_connect` | `test_connector`                                                                    | organization |
+| Capture samples                        | `loxtep_connect` | `capture_samples`                                                                   | organization |
+| List entities                          | `loxtep_connect` | `list_connector_entities`                                                           | organization |
+| Async MongoDB discovery (customer-VPC) | REST only        | `POST /connectors/connectors/{id}/discovery` then `GET .../discovery-jobs/{job_id}` | organization |
+| Confirm entity selection (PKO fan-out) | `loxtep_connect` | `confirm_connector_entity_selection`                                                | organization |
+| Apply template                         | `loxtep_connect` | `apply_template`                                                                    | **project**  |
+| Reset a paused MongoDB backfill        | `loxtep_build`   | `reset_backfill`                                                                    | **project**  |
 
 ## SDK and CLI (actual methods)
 
@@ -816,6 +860,12 @@ unverified against a live environment.
 
 ## Pitfalls
 
+- **MongoDB sync list over 500 collections:** Customer-VPC GET `.../entities` /
+  `list_connector_entities` returns HTTP 422 `DISCOVERY_TOO_MANY_COLLECTIONS`
+  and does **not** start a job. REST
+  `POST /connectors/connectors/{connector_id}/discovery` with
+  `probe_scope=list_collections`, then poll `discovery-jobs` (no MCP operation).
+  For find / changeStream grants use `probe_scope=discovery`.
 - **Ambiguous source foreign keys (Postgres / MySQL):** If one column has
   FOREIGN KEY constraints to two different tables, Test, entity listing, and SQL
   sync all refuse that column. Do not pick a target. Drop or fix the duplicate
