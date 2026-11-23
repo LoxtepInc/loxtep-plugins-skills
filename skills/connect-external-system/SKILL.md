@@ -349,7 +349,7 @@ Type-specific contracts (do not copy their field names into other types):
   version `postgres-private-probe/1`)
 - MongoDB source private probe:
   `platform-backend/connectors/providers/mongodb-source/PATCH_PRIVATE_TEST.md`
-  (minimum version `mongodb-source-private-probe/1`)
+  (minimum version `mongodb-source-private-probe/2`)
 - MongoDB operator notes:
   `platform-backend/connectors/providers/mongodb-source/README.md`
 
@@ -400,9 +400,14 @@ For a multi-instance private probe use MCP or REST.
 
 Expected REST success payload (inside `data`):
 `{ "passed": true, "tested_at": "<iso>", "details": { … } }`. Private MongoDB
-probe `details.account_info` includes topology, collection names, TLS/permission
-flags, `runtime_function`, `runtime_version`, `contract_version`,
-`network_binding` — never URI, password, CA PEM, or document payloads.
+probe `details.account_info` includes topology, TLS, `probe_scope`, `phases_ms`,
+`deadline_ms`, `runtime_function`, `runtime_version`, `contract_version`,
+`network_binding`. `collections` is `[]`. `permissions.find` and
+`permissions.change_stream` are empty. Connectivity omits
+`permissions.outside_allowlist` and `allowlist_match` (those appear only when
+the probe returns them, e.g. discovery). Never URI, password, CA PEM, or
+document payloads. Test connection does not verify collection permissions for
+MongoDB; Loxtep has no user-facing permission check for it today.
 
 Postgres / MySQL (`postgres`, `postgresql`, `mysql`, `mysql-source`): after
 connectivity succeeds, Test **reads the SQL catalog**. A column whose FOREIGN
@@ -433,8 +438,8 @@ read for those four types. A successful public test may persist `last_tested_at`
 probe does not persist samples (`sample_payloads` / `last_test_sample`). On a
 passing probe with write access it does persist `last_tested_at` (and
 `account_info`). It does not register LeoCron and does not write checkpoints or
-data products. It may perform a bounded permission `find`/`watch().close()` on
-allowlisted names.
+data products. MongoDB Test connection does not verify collection permissions,
+and Loxtep has no user-facing permission check for MongoDB today.
 
 **Samples** (separate, retrieves source rows; ask first):
 
@@ -579,7 +584,8 @@ only when save and deploy both succeed.
 | Missing credentials message                                                                                                         | authentication       | Customer (supply on manage / `update_connector`)                                                                                                                                                |
 | OAuth used with `create_connector`                                                                                                  | authentication       | Agent: use `get_oauth_url`                                                                                                                                                                      |
 | `TLS_POLICY_VIOLATION` / `TLS_FAILURE`                                                                                              | authentication / TLS | Customer cert/hostname/CA                                                                                                                                                                       |
-| `MISSING_DISCOVERY_PERMISSION` / `MISSING_FIND_PERMISSION` / `MISSING_COLLECTION_ACCESS` / `MISSING_CHANGE_STREAM_PERMISSION`       | authentication       | Customer source grants                                                                                                                                                                          |
+| `MISSING_COLLECTION_ACCESS`                                                                                                         | authentication       | Unauthorized during MongoDB connect / `hello`. Test does not probe collection find/changeStream grants. Loxtep has no user-facing MongoDB permission check today.                               |
+| `PROBE_DEADLINE_EXCEEDED`                                                                                                           | runtime              | MongoDB Test wall clock exceeded 20000 ms                                                                                                                                                       |
 | `UNSUPPORTED_STANDALONE`                                                                                                            | source topology      | Customer (replica set / mongos for CDC types)                                                                                                                                                   |
 | `PRIVATE_PROBE_FAILED` / cannot resolve `connectors-private-512`                                                                    | runtime / network    | Loxtep runtimes deploy; customer if subnet/SG IDs never supplied                                                                                                                                |
 | `AMBIGUOUS_CATALOG_FK` (`table_name`, `column_name`, `referenced_tables`)                                                           | source catalog       | Customer DBA: drop or fix the duplicate FOREIGN KEY so the column points at one table                                                                                                           |
@@ -879,7 +885,7 @@ unverified against a live environment.
   clone) receives `connector_vpc`. The primary resolver still matches
   `connectorsprivate512`. Probe and sample still use `connectors-private-512`.
 - Customer-VPC **test** workers are implemented for:
-  - `mongodb-source` (`mongodb-source-private-probe/1`)
+  - `mongodb-source` (`mongodb-source-private-probe/2`)
   - `postgres` / `postgresql` / `postgres-source` (`postgres-private-probe/1`)
     Private probes report discovery + capability (for Postgres: `wal_level`,
     `logical_replication_ready`, supported ingest modes, and additive
