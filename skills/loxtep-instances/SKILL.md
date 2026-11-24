@@ -406,17 +406,17 @@ missing on that bucket, readers fail closed with HTTP 409
 `project_metadata_unavailable`, including when the platform bucket still has the
 file. Materialize with pull from git / Studio on that instance. Pull and restore
 must send that instance's `instance_id`. Studio Pull requires a selected
-instance and never omits `instance_id`. Omitting `instance_id` on Pull is not a
-supported user path. `PostInputSchema` still marks the field optional, so a
-missing `instance_id` is not HTTP 400 from validation until #5060. CLI/SDK Pull
-require `instance_id` (fail closed; loxtep-sdk#125). MCP `restore_version` still
-omits it. Do not use those callers to choose an environment. Export and unbound
-clone return that 409 when the opened dedicated bucket lacks the file. Calls
-that omit `instance_id` on export, unbound clone, GitHub push, workflow-bundle /
-CLI `loxtep push`, hosted MCP `reindex_workspace`, and SDK `projects.reindex`
-open the resolved instance bucket and do not copy from the platform bucket.
-Reindex POST returns enqueued; the indexer bot opens the bucket named by
-`instance_id` on the event and does not copy from the platform bucket. A missing
+instance and never omits `instance_id`. Pull `PostInputSchema` requires
+`instance_id` (UUID). A missing, blank, or non-UUID `instance_id` is HTTP 400
+from validation. CLI/SDK Pull require `instance_id` (fail closed;
+loxtep-sdk#125). MCP `restore_version` posts `{ commit_sha }` only, so every
+call returns HTTP 400 until #5066. Restore in Studio. Export and unbound clone
+return that 409 when the opened dedicated bucket lacks the file. Calls that omit
+`instance_id` on export, unbound clone, GitHub push, workflow-bundle / CLI
+`loxtep push`, hosted MCP `reindex_workspace`, and SDK `projects.reindex` open
+the resolved instance bucket and do not copy from the platform bucket. Reindex
+POST returns enqueued; the indexer bot opens the bucket named by `instance_id`
+on the event and does not copy from the platform bucket. A missing
 `.loxtep/project.json` there is `RuntimeError` `Indexing failed` with the
 reader's message. `POST /workflows/deployments` passes the resolved target id
 into the same open and reads that bucket only, including when the body omitted
@@ -492,13 +492,11 @@ refusals under [update_instance](#update_instance).
 `platform-backend/_core/src/validation/organizations-instances-put.ts`. On this
 tree the object allows `instance_id`, `name`, `connection_details`, and
 `force_runtimes_redeploy` only. `metadata` and `environment_key` are
-`Unrecognized key`. There is no open product pull request that adds either
-field. Local `fix/issue-5068` does not change this schema. Do not send a
-metadata argument on MCP. Set and clear with the REST PUT above. MCP parity for
-this key is product work for #5068 and is not an argument on this tree. A live
-MCP call was not made (unverified). `create_instance`
-(`CreateInstanceMcpFlatInputSchema`) is also strict and has no metadata field.
-HTTP create still accepts `instance_config.metadata.environment_key`.
+`Unrecognized key`. Do not send a metadata argument on MCP. Set and clear with
+the REST PUT above or Configure Instance. A live MCP call was not made
+(unverified). `create_instance` (`CreateInstanceMcpFlatInputSchema`) is also
+strict and has no metadata field. HTTP create still accepts
+`instance_config.metadata.environment_key`.
 
 ### CLI / SDK
 
@@ -523,11 +521,13 @@ when both are present. These calls were not run (unverified).
 
 ### Studio
 
-Instance settings have no environment field in this tree
-(`instance-edit-dialog.tsx` does not send `environment_key`). The free-text
-field is product work for #5068. Do not describe UI steps for it. Until that
-field is in the tree, use the REST PUT above, or the CLI / SDK once #127 is
-published.
+Configure Instance on the organization Instances page has a free-text field
+labeled Environment key. Placeholder examples are `stage`, `prod`, and
+`franchise-austin`. The help text says leaving it blank clears the key so the
+switcher shows **env missing**. A changed field saves `metadata.environment_key`
+through the same PUT. The dialog trims, lowercases, and applies
+`staging`→`stage` and `production`→`prod` (`normalizeAdrEnvironmentKey`). A
+blank field sends `""`.
 
 ## update_instance
 

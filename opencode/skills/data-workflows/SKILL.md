@@ -898,10 +898,10 @@ clear environment_key). Hosted MCP `update_instance` on this tree rejects
 `loxtep instances update <id> --environment-key <slug>` (empty clears) and SDK
 `instances.update` `environment_key` are
 [loxtep-sdk#127](https://github.com/LoxtepInc/loxtep-sdk/pull/127) (open;
-published npm not checked — unverified). Instance settings have no environment
-field in this tree; the free-text field is product work for #5068. HTTP create
-stores `dev` when the key is omitted. That default is a convenience, not a
-closed vocabulary.
+published npm not checked — unverified). Configure Instance has a free-text
+Environment key field. Blank clears (stores `""`). The dialog lowercases and
+applies the two aliases before the PUT. HTTP create stores `dev` when the key is
+omitted. That default is a convenience, not a closed vocabulary.
 
 **Example — deploy_project (full project):**
 

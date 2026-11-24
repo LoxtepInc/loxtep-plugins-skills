@@ -35,9 +35,10 @@ shows **env missing**. Do not invent `prod` or invent peers. Aliases only:
 `metadata` and `environment_key`. CLI `--environment-key` (empty clears) and SDK
 `instances.update` `environment_key` are
 [loxtep-sdk#127](https://github.com/LoxtepInc/loxtep-sdk/pull/127) (open;
-published npm not checked — unverified). Instance settings have no environment
-field in this tree. HTTP create stores `dev` when the key is omitted. That
-default is a convenience, not a closed vocabulary.
+published npm not checked — unverified). Configure Instance has a free-text
+Environment key field. Blank clears (stores `""`). The dialog lowercases and
+applies the two aliases before the PUT. HTTP create stores `dev` when the key is
+omitted. That default is a convenience, not a closed vocabulary.
 
 ## Limitations
 
@@ -79,11 +80,12 @@ default is a convenience, not a closed vocabulary.
    `Select an instance before pulling from GitHub. Pull writes into that instance's workspace.`
    and does not POST. With an instance selected, restore sends `instance_id` and
    `commit_sha` and writes that instance's workspace. Omitting `instance_id` is
-   not a supported user path. `PostInputSchema` still marks `instance_id`
-   optional, so a missing field is not HTTP 400 from validation. Hosted MCP
-   `restore_version` still omits `instance_id` (`McpRestoreVersionInputSchema`
-   has `version_id` only). That MCP path is not a supported way to choose an
-   environment. CLI/SDK Pull require `instance_id` (loxtep-sdk#125).
+   not a supported user path. Hosted MCP `restore_version` still omits
+   `instance_id` (`McpRestoreVersionInputSchema` has `version_id` only) and
+   posts `{ commit_sha }` only, so every call returns HTTP 400 until #5066.
+   Restore in Studio. Pull `PostInputSchema` requires `instance_id`; a missing,
+   blank, or non-UUID value on Pull is HTTP 400 from validation. CLI/SDK Pull
+   require `instance_id` (loxtep-sdk#125).
 
 ### Flow — Reindex after bulk import
 
@@ -112,19 +114,22 @@ default is a convenience, not a closed vocabulary.
   and does not POST. With an instance selected, restore sends `instance_id` and
   `commit_sha` and writes that instance's workspace. Checked against
   `restoreVersion-instance.test.ts` and `useProjectVersions.test.ts`. Omitting
-  `instance_id` is not a supported user path. `PostInputSchema` still marks
-  `instance_id` optional, so a missing field is not HTTP 400 from validation.
-  Hosted MCP `restore_version` still omits `instance_id`. That MCP path is not a
-  supported way to choose an environment. CLI/SDK Pull require `instance_id`
-  (loxtep-sdk#125).
+  `instance_id` is not a supported user path. Hosted MCP `restore_version` still
+  omits `instance_id` (`McpRestoreVersionInputSchema` has `version_id` only) and
+  posts `{ commit_sha }` only, so every call returns HTTP 400 until #5066.
+  Restore in Studio. Pull `PostInputSchema` requires `instance_id`; a missing,
+  blank, or non-UUID value on Pull is HTTP 400 from validation. CLI/SDK Pull
+  require `instance_id` (loxtep-sdk#125).
 - **Studio Pull** requires a selected instance. Pull is disabled when none is
   selected (tooltip `Select an instance before pulling from GitHub`; the project
   page command menu uses subtitle `Select an instance first`). The Pull confirm
   button is also disabled. If Pull runs anyway, Studio throws
   `Select an instance before pulling from GitHub. Pull writes into that instance's workspace.`
-  and does not POST. Callers must send `instance_id`. Studio never omits it. CLI
-  `loxtep projects pull` and SDK `github_pull` require `instance_id` (fail
-  closed; loxtep-sdk#125). Hosted MCP `restore_version` still omits it.
+  and does not POST. Callers must send `instance_id`. Studio never omits it.
+  Pull `PostInputSchema` requires `instance_id`; a missing, blank, or non-UUID
+  value is HTTP 400 from validation. CLI `loxtep projects pull` and SDK
+  `github_pull` require `instance_id` (fail closed; loxtep-sdk#125). Hosted MCP
+  `restore_version` currently returns HTTP 400 on every call until #5066.
 - Do not treat hosted MCP as able to `clone` onto disk — use the plan + CLI.
 - `loxtep projects clone` of an unbound project fails (exit 1) when the opened
   workspace has no `.loxtep/project.json`. The export API returns 409
@@ -152,9 +157,10 @@ default is a convenience, not a closed vocabulary.
   closed with HTTP 409 `project_metadata_unavailable`, including when the
   platform bucket still has the file. Materialize with pull from git / Studio on
   that instance. Pull and restore must send that instance's `instance_id`.
-  Studio Pull never omits it. Omitting `instance_id` on Pull is not a supported
-  user path. CLI/SDK Pull require `instance_id` (loxtep-sdk#125). MCP
-  `restore_version` still omits it. The entities GET message is
+  Studio Pull never omits it. Pull `PostInputSchema` requires `instance_id`; a
+  missing, blank, or non-UUID value is HTTP 400 from validation. CLI/SDK Pull
+  require `instance_id` (loxtep-sdk#125). MCP `restore_version` currently
+  returns HTTP 400 on every call until #5066. The entities GET message is
   `Project metadata is unavailable at <key>`.
 - Reindex POST returns `{ project_id, enqueued, correlation_id }`. When
   `instance_id` is present, the indexer bot opens that instance's bucket only. A
