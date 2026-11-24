@@ -18,7 +18,22 @@ design-time artifact to a prod instance with prod connection bindings and
 sibling catalog products (`logical_key` + `environment_key`). Never comingle
 stage and prod product identity; never treat “same product runtime across stage
 and prod” as the model. **Environment ≠ instance** — geo is same-env
-multi-instance.
+multi-instance. `environment_key` is an open string (franchise, location,
+`stage`, `prod`, `dev`, or any other lowercase slug), not a closed set.
+
+## Set / clear environment_key
+
+Same `logical_key` + different `environment_key` are sibling products. Unset or
+blank is **env missing** (empty Products peer list; do not invent `prod` or
+invent peers). Aliases only: `staging`→`stage`, `production`→`prod`. Set or
+clear the instance key with the REST PUT in **`loxtep-instances`**. Hosted MCP
+`update_instance` on this tree rejects `metadata` and `environment_key`. CLI
+`--environment-key` and SDK `instances.update` `environment_key` are
+[loxtep-sdk#127](https://github.com/LoxtepInc/loxtep-sdk/pull/127) (open;
+published npm not checked — unverified). Configure Instance has a free-text
+Environment key field. Blank clears (stores `""`). The dialog lowercases and
+applies the two aliases before the PUT. HTTP create stores `dev` when the key is
+omitted. That default is a convenience, not a closed vocabulary.
 
 **Composable bindings (#4876):** Declare stage/prod connectors in the project
 package — `bindings[]` on each connection (prefer `environment_key`; optional
@@ -385,12 +400,13 @@ finishes and `connection_details.code_bucket` is set, then retry. An
 already-deployed runtimes stack is updated only when that runtimes request sets
 `force_redeploy`.
 
-The request names an instance that is not a live instance of this organization.
-A live instance has `deleted_at` null and a status other than `deleted` or
-`deleting`. The response is HTTP 404.
+An explicit `instance_id` that is not an active instance of this organization
+returns HTTP 404 before the workspace opens. An active instance has `deleted_at`
+null and status `active` (a blank status counts). Status `deleted`, `deleting`,
+and `detached` are not deploy targets.
 
 ```text
-Instance <id> is not a live instance for this organization. Refusing to fall back to the platform bucket.
+Instance <id> is not an active instance for this organization. Refusing to fall back to another instance for deploy.
 ```
 
 `<id>` is the instance id. `error.details.code` is `target_instance_missing`.
@@ -401,23 +417,61 @@ instance of this organization. Omitting it when two or more live dedicated
 instances exist returns HTTP 409 `ambiguous_instance` and does not insert the
 project. One dedicated instance, or none, stores no binding.
 
-Studio workspace reads and workspace reindex may still open the bucket via
-deployment-row pins or `projects.instance_id` when `instance_id` is omitted —
-that is workspace resolution, not deploy targeting. **Deploy**
-(`POST /workflows/deployments`, `POST /workflows/projects/{id}/deploy`,
-`deploy_project` / `deploy_workflow`, `loxtep deploy`) requires an explicit
-instance for the target environment when more than one live target exists.
-Several live dedicated instances with no `instance_id` on deploy return HTTP 409
-before a deployment is requested:
+Studio workspace reads, saves, graph, and reindex accept optional `instance_id`.
+Studio sends the selected instance. An explicit id must match the project's
+unique deployment pin or stored `projects.instance_id` when either is set (HTTP
+409 `instance_id_mismatch` on conflict); it does not silently open another
+instance bucket or the platform bucket. When omitted, the bucket still opens via
+a deployment-row pin of exactly one live dedicated instance, then
+`projects.instance_id` — that is workspace resolution, not deploy targeting.
+Hosted MCP `reindex_workspace`, CLI `push` reindex, and SDK `projects.reindex`
+do not pass `instance_id`, so an unbound project in a multi-instance org still
+hits 409 `ambiguous_instance` (in the indexer bot for reindex).
+
+Workspace storage is always the selected instance's bucket. Open never copies
+from the platform bucket onto a dedicated `code_bucket`. When
+`.loxtep/project.json` is missing on the opened instance bucket, readers fail
+closed with HTTP 409 `project_metadata_unavailable`, including when the platform
+bucket still has a copy. Materialize with pull from git / Studio on that
+instance. Pull and restore must send that instance's `instance_id`. Studio Pull
+requires a selected instance and never omits `instance_id`. Pull
+`PostInputSchema` requires `instance_id` (UUID). A missing, blank, or non-UUID
+`instance_id` is HTTP 400 from validation. CLI/SDK Pull require `instance_id`
+(fail closed; loxtep-sdk#125). MCP `restore_version` posts `{ commit_sha }`
+only, so every call returns HTTP 400 until #5066. Restore in Studio. The
+entities GET message is `Project metadata is unavailable at <key>`.
+`migratePlatformWorkspaceToDedicatedInstance` throws if called
+(`Platform→dedicated migrate-on-open is deprecated (#5024).`).
+
+`POST /workflows/deployments` passes the resolved target instance id into this
+open, including when the body omitted `instance_id` and the organization has one
+dedicated instance (or, with no dedicated instance, one active instance). That
+open reads that instance bucket only. A missing `code_bucket` is still HTTP 500
+`dedicated_bucket_missing`. Reindex POST returns
+`{ project_id, enqueued, correlation_id }`. When the event includes
+`instance_id`, the indexer bot opens that instance bucket only. A missing
+`.loxtep/project.json` there is `RuntimeError` `Indexing failed`, with the
+reader's message on the error payload.
+
+Export and unbound clone return 409 `project_metadata_unavailable` when the
+opened dedicated bucket lacks `.loxtep/project.json`.
+
+**Deploy** (`POST /workflows/deployments`,
+`POST /workflows/projects/{id}/deploy`, `deploy_project` / `deploy_workflow`,
+`loxtep deploy`) requires an explicit instance for the target environment when
+more than one live target exists. Several live dedicated instances with no
+`instance_id` on deploy return HTTP 409 before a deployment is requested:
 
 ```text
-Organization has N dedicated instances and the project workspace bucket is ambiguous. Refusing to fall back to the platform bucket.
+Organization has N dedicated instances and the deployment target is ambiguous. Pass instance_id for the environment you are deploying to. Refusing soft prefer.
 ```
 
-`N` is the count of dedicated instances whose status is not `deleted` or
-`deleting`. `error.details.code` is `ambiguous_instance`. `error.details.name`
-is `InstanceWorkspaceBucketError`. Instances with status `deleted` or `deleting`
-are left out of the count. A detached instance stays in the count.
+`N` is the count of dedicated instances with `deleted_at` null and status
+`active` (a blank status counts). `error.details.code` is `ambiguous_instance`.
+`error.details.name` is `InstanceWorkspaceBucketError`. Status `deleted`,
+`deleting`, and `detached` are left out of that count. When no dedicated
+instance remains and more than one active instance remains, the message is
+`Organization has N active instances and the deployment target is ambiguous. Pass instance_id for the environment you are deploying to. Refusing soft prefer.`
 
 `copyCodeKeysToInstanceBucket` leaves an object that is already in the instance
 bucket in place. The source `GetObject` and the instance `HeadObject` both use
@@ -444,8 +498,9 @@ A check of the instance object that fails for a reason other than that absence:
 Could not check instance bucket object s3://<instance-bucket>/<key> (<message>). Refusing to copy the platform object over it.
 ```
 
-There is no job that moves an existing dedicated project's workspace from the
-platform bucket into the instance bucket.
+The code-bundle copy above leaves an object already in the instance bucket in
+place. It copies workflow `code_key` objects during deploy. A workspace open
+does not copy a project prefix from the platform bucket.
 
 If `code_bucket` is missing, the workflow deploy fails before upload:
 

@@ -27,7 +27,22 @@ design-time artifact to a prod instance with prod connection bindings and
 sibling catalog products (`logical_key` + `environment_key`). Never comingle
 stage and prod product identity; never treat “same product runtime across stage
 and prod” as the model. **Environment ≠ instance** — geo is same-env
-multi-instance.
+multi-instance. `environment_key` is an open string (franchise, location,
+`stage`, `prod`, `dev`, or any other lowercase slug), not a closed set.
+
+## Set / clear environment_key
+
+Same `logical_key` + different `environment_key` are sibling products. Unset or
+blank is **env missing** (empty Products peer list; do not invent `prod` or
+invent peers). Aliases only: `staging`→`stage`, `production`→`prod`. Set or
+clear the instance key with the REST PUT in **`loxtep-instances`**. Hosted MCP
+`update_instance` on this tree rejects `metadata` and `environment_key`. CLI
+`--environment-key` and SDK `instances.update` `environment_key` are
+[loxtep-sdk#127](https://github.com/LoxtepInc/loxtep-sdk/pull/127) (open;
+published npm not checked — unverified). Configure Instance has a free-text
+Environment key field. Blank clears (stores `""`). The dialog lowercases and
+applies the two aliases before the PUT. HTTP create stores `dev` when the key is
+omitted. That default is a convenience, not a closed vocabulary.
 
 **Composable bindings (#4876):** Declare stage/prod connectors in the project
 package — `bindings[]` on each connection (prefer `environment_key`; optional
@@ -428,13 +443,12 @@ from the platform bucket onto a dedicated `code_bucket`. When
 closed with HTTP 409 `project_metadata_unavailable`, including when the platform
 bucket still has a copy. Materialize with pull from git / Studio on that
 instance. Pull and restore must send that instance's `instance_id`. Studio Pull
-requires a selected instance and never omits `instance_id`. Omitting
-`instance_id` on Pull is not a supported user path. `PostInputSchema` still
-marks the field optional, so a missing `instance_id` is not HTTP 400 from
-validation. CLI/SDK Pull require `instance_id` (fail closed; loxtep-sdk#125).
-MCP `restore_version` still omits it. Do not use those callers to choose an
-environment. The entities GET message is
-`Project metadata is unavailable at <key>`.
+requires a selected instance and never omits `instance_id`. Pull
+`PostInputSchema` requires `instance_id` (UUID). A missing, blank, or non-UUID
+`instance_id` is HTTP 400 from validation. CLI/SDK Pull require `instance_id`
+(fail closed; loxtep-sdk#125). MCP `restore_version` posts `{ commit_sha }`
+only, so every call returns HTTP 400 until #5066. Restore in Studio. The
+entities GET message is `Project metadata is unavailable at <key>`.
 `migratePlatformWorkspaceToDedicatedInstance` throws if called
 (`Platform→dedicated migrate-on-open is deprecated (#5024).`).
 

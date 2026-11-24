@@ -384,15 +384,47 @@ A dedicated instance with no `code_bucket` fails these calls with HTTP 500
 (`dedicated_bucket_missing`). `POST /workflows/projects` stores
 `projects.instance_id` when the body names a live instance. Omitting it when the
 organization has more than one live dedicated instance returns HTTP 409
-(`ambiguous_instance`) and does not insert the project. A workspace call that
-does not name an instance, and `POST /workflows/deployments` when `instance_id`
-is omitted, uses a deployment pin when the project's deployment rows name
-exactly one live dedicated instance, and otherwise the stored
-`projects.instance_id`. With neither, the same 409 applies. An omitted id does
-not select the oldest instance. An explicit instance that is not a live instance
-of the organization is HTTP 404 (`target_instance_missing`). See
+(`ambiguous_instance`) and does not insert the project. Studio workspace calls
+(entities GET, workspace PUT, single-entity GET/PUT/DELETE, workflow graph
+GET/PUT, reindex POST) accept optional `instance_id` (query; reindex also JSON
+body). Studio sends the selected instance. An explicit id must match the
+project's unique deployment pin or stored `projects.instance_id` when either is
+set (HTTP 409 `instance_id_mismatch` on conflict); it does not silently open
+another instance bucket or the platform bucket. When `instance_id` is omitted on
+a workspace call, a deployment pin of exactly one live dedicated instance
+selects the bucket, and otherwise the stored `projects.instance_id`. With
+neither, the same 409 applies. `POST /workflows/deployments` does not use that
+pin or the stored id: an omitted `instance_id` is one dedicated instance, or one
+active instance when none are dedicated, and several targets return HTTP 409
+`ambiguous_instance` before the workspace opens. Hosted MCP `reindex_workspace`,
+CLI `push` reindex, and SDK `projects.reindex` do not pass `instance_id`. An
+omitted id does not select the oldest instance. An explicit instance that is not
+a live instance of the organization is HTTP 404 (`target_instance_missing`). See
 **`loxtep-deployments`**, Dedicated instance code bucket, for the messages and
 the `code_bucket` fix (upgrade or `force_runtimes_redeploy`).
+
+A workspace open uses only the selected instance's `code_bucket`. It does not
+copy the project prefix from the platform bucket. When `.loxtep/project.json` is
+missing on that bucket, readers fail closed with HTTP 409
+`project_metadata_unavailable`, including when the platform bucket still has the
+file. Materialize with pull from git / Studio on that instance. Pull and restore
+must send that instance's `instance_id`. Studio Pull requires a selected
+instance and never omits `instance_id`. Pull `PostInputSchema` requires
+`instance_id` (UUID). A missing, blank, or non-UUID `instance_id` is HTTP 400
+from validation. CLI/SDK Pull require `instance_id` (fail closed;
+loxtep-sdk#125). MCP `restore_version` posts `{ commit_sha }` only, so every
+call returns HTTP 400 until #5066. Restore in Studio. Export and unbound clone
+return that 409 when the opened dedicated bucket lacks the file. Calls that omit
+`instance_id` on export, unbound clone, GitHub push, workflow-bundle / CLI
+`loxtep push`, hosted MCP `reindex_workspace`, and SDK `projects.reindex` open
+the resolved instance bucket and do not copy from the platform bucket. Reindex
+POST returns enqueued; the indexer bot opens the bucket named by `instance_id`
+on the event and does not copy from the platform bucket. A missing
+`.loxtep/project.json` there is `RuntimeError` `Indexing failed` with the
+reader's message. `POST /workflows/deployments` passes the resolved target id
+into the same open and reads that bucket only, including when the body omitted
+`instance_id` and the organization has one dedicated instance. Full messages are
+in **`loxtep-workspace`** and **`loxtep-deployments`**.
 
 A workflow deploy copies code into the bucket and leaves an object that is
 already there in place. The platform read and the instance-bucket check both
@@ -401,10 +433,104 @@ treat the object as absent for `NoSuchKey`, `NotFound`, or a bare 404
 non-object error is not absence. `NoSuchBucket`, `AccessDenied`,
 `AllAccessDisabled`, `InvalidBucketName`, `PermanentRedirect`, and
 `SignatureDoesNotMatch` on `name`, `code`, or `Code` are not absence. Any other
-read or bucket failure is not absence. There is no job that moves an existing
-dedicated project's workspace into the instance bucket. After `code_bucket` is
-set and the runtimes stack update has finished, deploy each workflow again
-(**`loxtep-deployments`**).
+read or bucket failure is not absence. That copy moves workflow `code_key`
+objects into the instance bucket. It does not copy the project workspace from
+the platform bucket. After `code_bucket` is set and the runtimes stack update
+has finished, deploy each workflow again (**`loxtep-deployments`**).
+
+## Set / clear environment_key
+
+`metadata.environment_key` is an open string segregation key. `stage`, `prod`,
+and `dev` are examples. A franchise or location slug such as `franchise-austin`
+is its own environment. The set is not closed. Products peers and the catalog
+match on equality after trim and lowercase. Same `logical_key` + a different key
+are sibling products. Aliases only: `staging`→`stage`, `production`→`prod`.
+Unset, blank, or JSON null shows **env missing**. Do not invent unset as `prod`
+and do not invent peers. A missing key yields an empty Products list for that
+instance. HTTP create stores `dev` when
+`instance_config.metadata.environment_key` is omitted. That default is a
+convenience, not a closed vocabulary. Create lowercases a value you send and
+does not map `staging`→`stage` on write.
+
+### API
+
+`PUT /organizations/instances/{instance_id}` shallow-merges `metadata`
+(`PutInputSchema.metadata` is `z.record(z.string(), z.unknown())` in
+`organizations/api/instances/[instance_id]/PUT/types.ts`). The handler spreads
+`body.metadata` onto the stored object
+(`organizations/api/instances/[instance_id]/PUT/index.ts`). It does not
+lowercase or alias on write. Permission is the same PUT as
+[update_instance](#update_instance), including the known extra
+`organizations:write` check (#4747). A detached instance returns **409**
+`INSTANCE_DETACHED` before any save.
+
+Set:
+
+```json
+{ "metadata": { "environment_key": "franchise-austin" } }
+```
+
+Clear. Empty string or JSON null stays on the merged object. Studio
+`normalizeAdrEnvironmentKey`
+(`platform-frontend/src/lib/adr-environment-key.ts`) returns null for a
+non-string, `""`, or whitespace, and the switcher shows **env missing**.
+
+```json
+{ "metadata": { "environment_key": "" } }
+```
+
+```json
+{ "metadata": { "environment_key": null } }
+```
+
+These JSON bodies were not run against a live instance (unverified). Do not send
+`metadata.observe_namespace`, `metadata.routing`, `upgrade_mode`, or
+`botmon_lite_allowed_cidrs` through this merge. Those fields have their own
+refusals under [update_instance](#update_instance).
+
+### MCP
+
+`loxtep_workspace` `update_instance` uses `UpdateInstanceMcpInputSchema`
+(`.strict()`) in
+`platform-backend/_core/src/validation/organizations-instances-put.ts`. On this
+tree the object allows `instance_id`, `name`, `connection_details`, and
+`force_runtimes_redeploy` only. `metadata` and `environment_key` are
+`Unrecognized key`. Do not send a metadata argument on MCP. Set and clear with
+the REST PUT above or Configure Instance. A live MCP call was not made
+(unverified). `create_instance` (`CreateInstanceMcpFlatInputSchema`) is also
+strict and has no metadata field. HTTP create still accepts
+`instance_config.metadata.environment_key`.
+
+### CLI / SDK
+
+[loxtep-sdk#127](https://github.com/LoxtepInc/loxtep-sdk/pull/127) (open branch
+`burleyb/sdk-set-environment-key`; published npm was not installed to confirm
+the flag — unverified) maps a first-class `environment_key` to PUT
+`metadata.environment_key`.
+
+```bash
+loxtep instances update <instance_id> --environment-key franchise-austin
+loxtep instances update <instance_id> --environment-key ""
+```
+
+An empty value, a bare `--environment-key`, or null becomes PUT
+`metadata.environment_key: null` after trim and lowercase. Aliases:
+`staging`→`stage`, `production`→`prod`. Other slugs pass through lowercased.
+
+Node: `client.workspace.instances.update(instanceId, { environment_key })`.
+`null` or `""` clears. Python `InstancesApi.update` is the same (`None` clears).
+`metadata.environment_key` is also accepted. Top-level `environment_key` wins
+when both are present. These calls were not run (unverified).
+
+### Studio
+
+Configure Instance on the organization Instances page has a free-text field
+labeled Environment key. Placeholder examples are `stage`, `prod`, and
+`franchise-austin`. The help text says leaving it blank clears the key so the
+switcher shows **env missing**. A changed field saves `metadata.environment_key`
+through the same PUT. The dialog trims, lowercases, and applies
+`staging`→`stage` and `production`→`prod` (`normalizeAdrEnvironmentKey`). A
+blank field sends `""`.
 
 ## update_instance
 
