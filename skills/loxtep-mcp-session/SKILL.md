@@ -50,10 +50,22 @@ without relying on any private repo or source tree.
    `org-` prefix) **fails** `instance_observe_api`; it cannot be fixed with
    `update_instance`.
 5. For **project-scoped** facades (`loxtep_build`, …), include **`project_id`**
-   on every call that needs it.
+   on every call that needs it. Prefer also passing **`instance_id`** when the
+   org has multiple instances (deploy, reindex, Observe). Read
+   `loxtep://workspace_context?project_id=…&instance_id=…` first for a
+   design-time inventory projection — hosted MCP does **not** auto-inject those
+   ids into tools/call.
 6. Open your MCP client’s **ListTools** (or schema) for **`loxtep_*`** tools —
    parameter names and descriptions live there; there is no separate “capability
    discovery” MCP operation beyond `platform_health_check` for env sanity.
+
+**Multi-org:** OAuth MCP clients often omit `x-loxtep-active-organization-id`.
+If the JWT home org is wrong for the task, send that header (or re-auth in the
+intended org). Do not assume Studio’s cookie applies to the MCP client.
+
+**“Global” has two meanings:** ADR global layer = org-wide control plane
+(meaning, RBAC, billing, connector catalog). MCP tool `scope: global` = catalog
+ops such as `list_connector_types` — not a separate Environment entity.
 
 ## First useful answer
 

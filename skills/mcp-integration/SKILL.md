@@ -73,7 +73,15 @@ arguments. Example:
 **Scope:** `project`-scoped operations require `project_id` in the same payload;
 `organization`-scoped operations may accept optional `domain_id`. Orient first
 with `loxtep_session` → `get_current_user`, then `get_platform_model`, before
-passing a `project_id`.
+passing a `project_id`. Prefer `instance_id` when the org has multiple
+instances. Read MCP resource
+`loxtep://workspace_context?project_id=…&instance_id=…` for a design-time
+inventory — tools do **not** inherit those ids automatically.
+
+**Scope vocabulary:** MCP `scope: global` means catalog tools (e.g.
+`list_connector_types`). ADR “global” means the org control plane. Runtime
+boundary = **Instance**; `environment_key` is a stage/prod label — not an
+Environment entity.
 
 ## Happy path
 

@@ -211,6 +211,7 @@ Missing networking / permissions / deploy prerequisites:
 | `cross_account_roles` is empty                           | No deploy role is registered                                                                                    | Customer (role), then `register_infrastructure` once per account (**`loxtep-instances`**) |
 | Connector has no `network_binding` but source is private | Metadata incomplete                                                                                             | Customer + `update_connector`                                                             |
 | `PRIVATE_PROBE_FAILED` / cannot resolve private Lambda   | Runtimes stack name `org-{org8}-{inst8}-runtimes` (or `runtimes_stack_identifier`) missing the private function | Loxtep                                                                                    |
+| `SSM_PARAMETER_TOO_LARGE` (HTTP 400)                     | A connector secret replicated for the private-network test is longer than 8192 characters                       | Customer: shorten the secret value                                                        |
 
 Do not change ENIs, security groups, or routes in the AWS console.
 
@@ -389,8 +390,9 @@ prefix). HTTP **200** `{ success: true, data }` only when `passed: true`. When
 `{ success: false, error: { message, details } }` (`errorResponse`): `details`
 is the failed test result (`details.passed`, `details.error.code`). Statuses
 from `connectionTestActionStatus`: **401** `CONNECTOR_NOT_AUTHENTICATED`
-("Connector not authenticated..."), **400** `CONNECTOR_NOT_CONFIGURED`, **422**
-`AMBIGUOUS_CATALOG_FK`, **502** every other failure.
+("Connector not authenticated..."), **400** `CONNECTOR_NOT_CONFIGURED` or
+`SSM_PARAMETER_TOO_LARGE` (private-network secret longer than 8192 characters),
+**422** `AMBIGUOUS_CATALOG_FK`, **502** every other failure.
 
 MCP `test_connector` POSTs that REST path. A non-2xx body with that envelope
 returns `success: false` and `error: { message, details }` (the failed test
@@ -638,6 +640,7 @@ only when save and deploy both succeed.
 | `DISCOVERY_INVOKE_FAILED`                                                                                                           | runtime              | Discovery bot could not invoke the private probe                                                                                                                                                |
 | `DISCOVERY_FAILED`                                                                                                                  | runtime              | Probe failed with no `error.code`. Other failed jobs copy the probe code (e.g. `UNSUPPORTED_STANDALONE`, `MISSING_DISCOVERY_PERMISSION`)                                                        |
 | `PRIVATE_PROBE_FAILED` / cannot resolve `connectors-private-512`                                                                    | runtime / network    | Loxtep runtimes deploy; customer if subnet/SG IDs never supplied                                                                                                                                |
+| `SSM_PARAMETER_TOO_LARGE` (HTTP 400)                                                                                                | secrets              | Customer: shorten the secret value (for example an `ssl_ca` PEM over 8192 characters)                                                                                                           |
 | `AMBIGUOUS_CATALOG_FK` (`table_name`, `column_name`, `referenced_tables`)                                                           | source catalog       | Customer DBA: drop or fix the duplicate FOREIGN KEY so the column points at one table                                                                                                           |
 | `CATALOG_READ_FAILED`                                                                                                               | source catalog       | Customer: restore `information_schema` / catalog grants, then Test again                                                                                                                        |
 | `SQL_CATALOG_CACHE_FAILED`                                                                                                          | control plane        | Loxtep: catalog was readable; writing `entity_field_schemas` failed. Re-test; if it persists, platform                                                                                          |
