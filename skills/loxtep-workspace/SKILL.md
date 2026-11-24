@@ -91,22 +91,29 @@ omitted. That default is a convenience, not a closed vocabulary.
    `Select an instance before pulling from GitHub. Pull writes into that instance's workspace.`
    and does not POST. With an instance selected, restore sends `instance_id` and
    `commit_sha` and writes that instance's workspace. Omitting `instance_id` is
-   not a supported user path. Hosted MCP `restore_version` still omits
-   `instance_id` (`McpRestoreVersionInputSchema` has `version_id` only) and
-   posts `{ commit_sha }` only, so every call returns HTTP 400 until #5066.
-   Restore in Studio. Pull `PostInputSchema` requires `instance_id`; a missing,
-   blank, or non-UUID value on Pull is HTTP 400 from validation. CLI/SDK Pull
-   require `instance_id` (loxtep-sdk#125).
+   not a supported user path. Hosted MCP `restore_version` requires `version_id`
+   and `instance_id` (UUID of the target instance). It forwards both to Pull
+   (`commit_sha` + `instance_id`) and restores into that instance's workspace
+   bucket. A missing, blank, or non-UUID `instance_id` fails validation. Pull
+   `PostInputSchema` requires `instance_id`; a missing, blank, or non-UUID value
+   on Pull is HTTP 400 from validation. CLI/SDK Pull require `instance_id`
+   (loxtep-sdk#125).
 
 ### Flow — Reindex after bulk import
 
 1. `reindex_workspace` with `project_id`. The hosted MCP operation does not take
-   `instance_id`. Studio reindex sends the selected instance. The indexer bot
-   opens that instance's bucket only. It does not copy a project prefix from the
-   platform bucket. When `.loxtep/project.json` is missing on the opened bucket,
-   the index fails (`Indexing failed`) with the reader's message. On an unbound
-   project in an org with two or more live dedicated instances, MCP reindex
-   still hits 409 `ambiguous_instance` in the indexer bot.
+   `instance_id`. `requestWorkspaceReindex` resolves the workspace instance (pin
+   or binding, then live dedicated instances) before it emits. On success the
+   event includes that resolved dedicated `instance_id`. Studio reindex sends
+   the selected instance on reindex POST, which runs the same resolve before
+   enqueue. The indexer bot opens that instance's bucket only. It does not copy
+   a project prefix from the platform bucket. When `.loxtep/project.json` is
+   missing on the opened bucket, the index fails (`Indexing failed`) with the
+   reader's message. On an unbound project in an org with two or more live
+   dedicated instances, the tool call fails before enqueue. The error text is
+   `Organization has N dedicated instances and the project workspace bucket is ambiguous. Refusing to fall back to the platform bucket.`
+   Hosted MCP classifies that wording as execution, so the tools/call response
+   is HTTP 500 `tool_failed`. Nothing is emitted.
 
 ## MCP mapping
 
@@ -125,12 +132,13 @@ omitted. That default is a convenience, not a closed vocabulary.
   and does not POST. With an instance selected, restore sends `instance_id` and
   `commit_sha` and writes that instance's workspace. Checked against
   `restoreVersion-instance.test.ts` and `useProjectVersions.test.ts`. Omitting
-  `instance_id` is not a supported user path. Hosted MCP `restore_version` still
-  omits `instance_id` (`McpRestoreVersionInputSchema` has `version_id` only) and
-  posts `{ commit_sha }` only, so every call returns HTTP 400 until #5066.
-  Restore in Studio. Pull `PostInputSchema` requires `instance_id`; a missing,
-  blank, or non-UUID value on Pull is HTTP 400 from validation. CLI/SDK Pull
-  require `instance_id` (loxtep-sdk#125).
+  `instance_id` is not a supported user path. Hosted MCP `restore_version`
+  requires `version_id` and `instance_id` (UUID of the target instance). It
+  forwards both to Pull (`commit_sha` + `instance_id`) and restores into that
+  instance's workspace bucket. A missing, blank, or non-UUID `instance_id` fails
+  validation. Pull `PostInputSchema` requires `instance_id`; a missing, blank,
+  or non-UUID value on Pull is HTTP 400 from validation. CLI/SDK Pull require
+  `instance_id` (loxtep-sdk#125).
 - **Studio Pull** requires a selected instance. Pull is disabled when none is
   selected (tooltip `Select an instance before pulling from GitHub`; the project
   page command menu uses subtitle `Select an instance first`). The Pull confirm
@@ -140,7 +148,9 @@ omitted. That default is a convenience, not a closed vocabulary.
   Pull `PostInputSchema` requires `instance_id`; a missing, blank, or non-UUID
   value is HTTP 400 from validation. CLI `loxtep projects pull` and SDK
   `github_pull` require `instance_id` (fail closed; loxtep-sdk#125). Hosted MCP
-  `restore_version` currently returns HTTP 400 on every call until #5066.
+  `restore_version` requires `version_id` and `instance_id` (UUID of the target
+  instance), forwards both to Pull, and restores into that instance's workspace
+  bucket. A missing, blank, or non-UUID `instance_id` fails validation.
 - Do not treat hosted MCP as able to `clone` onto disk — use the plan + CLI.
 - `loxtep projects clone` of an unbound project fails (exit 1) when the opened
   workspace has no `.loxtep/project.json`. The export API returns 409
@@ -160,8 +170,9 @@ omitted. That default is a convenience, not a closed vocabulary.
   optional `instance_id` (query; reindex also JSON body) and Studio sends the
   selected instance. An explicit id must match the project's unique deploy pin
   or stored binding when either is set (HTTP 409 `instance_id_mismatch` on
-  conflict). The open uses neither another instance bucket nor the platform
-  bucket on mismatch.
+  conflict). Workspace open uses neither another instance bucket nor the
+  platform bucket on mismatch. Reindex POST runs the full selection (pin or
+  binding, then live dedicated instances) before enqueue and does not open S3.
 - Workspace storage is always the selected instance's bucket. Open never copies
   from the platform bucket onto a dedicated `code_bucket`. When
   `.loxtep/project.json` is missing on the opened instance bucket, readers fail
@@ -170,22 +181,40 @@ omitted. That default is a convenience, not a closed vocabulary.
   that instance. Pull and restore must send that instance's `instance_id`.
   Studio Pull never omits it. Pull `PostInputSchema` requires `instance_id`; a
   missing, blank, or non-UUID value is HTTP 400 from validation. CLI/SDK Pull
-  require `instance_id` (loxtep-sdk#125). MCP `restore_version` currently
-  returns HTTP 400 on every call until #5066. The entities GET message is
+  require `instance_id` (loxtep-sdk#125). MCP `restore_version` requires
+  `version_id` and `instance_id` (UUID of the target instance), forwards both to
+  Pull, and restores into that instance's workspace bucket. A missing, blank, or
+  non-UUID `instance_id` fails validation. The entities GET message is
   `Project metadata is unavailable at <key>`.
-- Reindex POST returns `{ project_id, enqueued, correlation_id }`. When
-  `instance_id` is present, the indexer bot opens that instance's bucket only. A
+- Reindex POST runs the full workspace instance selection before enqueue and
+  does not open S3. A pin or binding conflict is HTTP 409 `instance_id_mismatch`
+  and nothing is enqueued. An explicit `instance_id` that is not a live instance
+  of the organization is HTTP 404 `target_instance_missing`
+  (`Instance <id> is not a live instance for this organization. Refusing to fall back to the platform bucket.`)
+  and nothing is enqueued. An omitted `instance_id` on an unbound project in an
+  org with two or more live dedicated instances is HTTP 409 `ambiguous_instance`
+  (`Organization has N dedicated instances and the project workspace bucket is ambiguous. Refusing to fall back to the platform bucket.`)
+  and nothing is enqueued. `error.details` has `code`, `name`
+  `InstanceWorkspaceBucketError`, and `project_id`. Success returns
+  `{ project_id, enqueued, correlation_id }`. The event includes the resolved
+  dedicated `instance_id` even when the caller omitted it. When `instance_id` is
+  present on the event, the indexer bot opens that instance's bucket only. A
   missing `.loxtep/project.json` there is `RuntimeError` `Indexing failed`, with
   the reader's message on the error payload. The bot does not copy from the
   platform bucket.
-- Hosted MCP `reindex_workspace`, CLI `loxtep push` (saves the workflow bundle,
-  then `projects.reindex`), and SDK `projects.reindex` omit `instance_id`. On an
-  unbound project in a multi-instance org, omitting `instance_id` is HTTP 409
-  `ambiguous_instance` in the indexer bot for reindex. Do not guess the oldest
-  instance or the platform bucket. `POST /workflows/deployments` passes the
-  resolved target instance id into the same open, including when the body
-  omitted `instance_id` and the organization has one dedicated instance. That
-  open reads that instance bucket only. See **`loxtep-deployments`**.
+- Hosted MCP `reindex_workspace` omits `instance_id`. `requestWorkspaceReindex`
+  uses the same resolve and fails the tool call before enqueue on that unbound
+  multi-dedicated case. The tool error text is the `ambiguous_instance` message.
+  Hosted MCP classifies it as execution (HTTP 500 `tool_failed`). On success the
+  event includes the resolved dedicated `instance_id`. CLI `loxtep push` (saves
+  the workflow bundle, then `projects.reindex`) and SDK `projects.reindex` POST
+  reindex with `{}` (no `instance_id`; SDK source read, call not sent). On that
+  unbound project the POST returns HTTP 409 `ambiguous_instance` and nothing is
+  enqueued. Do not guess the oldest instance or the platform bucket.
+  `POST /workflows/deployments` passes the resolved target instance id into the
+  same open, including when the body omitted `instance_id` and the organization
+  has one dedicated instance. That open reads that instance bucket only. See
+  **`loxtep-deployments`**.
 
 ## `eid` for `read_queue_events` (hard rules)
 

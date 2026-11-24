@@ -835,6 +835,10 @@ catalog rule.
 
 - Pre-assign all UUIDs; wire nodes with **`upstream_entity_id`** (not separate
   connect steps).
+- `workflow_id` must be a fresh UUID or one this project already owns. Copying
+  another project's `workflow.json` (and its `workflow_id`) is refused
+  (`WORKFLOW_ID_OWNED_BY_OTHER_PROJECT`), including on `dry_run: true`. Generate
+  a new `workflow_id` and new entity ids when copying.
 - File keys use workflow-scoped paths: `connections/{id}.json`,
   `transformations/{id}.json`, etc.
 - **`patch_workflow_graph`** is for **Studio UI incremental edits only**.
@@ -1248,6 +1252,9 @@ schema rejects unknown top-level properties. Use `ingestion_config`.
   of `insert_batch_size` outside 1–10000, including 0, is refused at save
   (`invalid_insert_batch_size`) and throws at delivery.
 - **`workflow_type: "consumption"`** — Removed. Use **`delivery`**.
+- **Copied `workflow_id` from another project** —
+  `WORKFLOW_ID_OWNED_BY_OTHER_PROJECT`. Assign a new `workflow_id` and new
+  entity ids, then save again.
 - **Inline-only bundle authoring** — Composing the `files` map solely inside a
   `save_workflow_bundle` tool call with no `workflows/{workflow_id}/` files on
   disk. Write locally first; MCP upload/sync is step two. See Flow B2.
@@ -1262,10 +1269,14 @@ schema rejects unknown top-level properties. Use `ingestion_config`.
   `reindex_workspace`, `get_workflow_graph`, and `patch_workflow_graph` do not
   take `instance_id`. Studio sends the selected instance on workspace HTTP
   calls. On an unbound project in an org with two or more live dedicated
-  instances, MCP `reindex_workspace` still hits 409 `ambiguous_instance` in the
-  indexer bot. `get_workflow_graph` / `patch_workflow_graph` use the platform
-  bucket via CustomerWorkspaceService, not `openProjectWorkspaceStorage`. CLI
-  `push` reindex and SDK `projects.reindex` also omit `instance_id`.
+  instances, MCP `reindex_workspace` fails the tool call before enqueue.
+  `requestWorkspaceReindex` throws before emit. The tool error text is
+  `Organization has N dedicated instances and the project workspace bucket is ambiguous. Refusing to fall back to the platform bucket.`
+  Hosted MCP classifies that wording as execution (HTTP 500 `tool_failed`).
+  `get_workflow_graph` / `patch_workflow_graph` use the platform bucket via
+  CustomerWorkspaceService, not `openProjectWorkspaceStorage`. CLI `push`
+  reindex and SDK `projects.reindex` POST reindex with no `instance_id` and
+  receive HTTP 409 `ambiguous_instance` from the POST. Nothing is enqueued.
 - **Product storage key** — one identity. `is_primary_key`, `schema.key` (same
   fields, field order), and the primary entity `natural_key` (those names joined
   with commas). Applying a shape writes `schema.key`. The Iceberg writer
