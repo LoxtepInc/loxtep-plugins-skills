@@ -435,6 +435,100 @@ objects into the instance bucket. It does not copy the project workspace from
 the platform bucket. After `code_bucket` is set and the runtimes stack update
 has finished, deploy each workflow again (**`loxtep-deployments`**).
 
+## Set / clear environment_key
+
+`metadata.environment_key` is an open string segregation key. `stage`, `prod`,
+and `dev` are examples. A franchise or location slug such as `franchise-austin`
+is its own environment. The set is not closed. Products peers and the catalog
+match on equality after trim and lowercase. Same `logical_key` + a different key
+are sibling products. Aliases only: `staging`→`stage`, `production`→`prod`.
+Unset, blank, or JSON null shows **env missing**. Do not invent unset as `prod`
+and do not invent peers. A missing key yields an empty Products list for that
+instance. HTTP create stores `dev` when
+`instance_config.metadata.environment_key` is omitted. That default is a
+convenience, not a closed vocabulary. Create lowercases a value you send and
+does not map `staging`→`stage` on write.
+
+### API
+
+`PUT /organizations/instances/{instance_id}` shallow-merges `metadata`
+(`PutInputSchema.metadata` is `z.record(z.string(), z.unknown())` in
+`organizations/api/instances/[instance_id]/PUT/types.ts`). The handler spreads
+`body.metadata` onto the stored object
+(`organizations/api/instances/[instance_id]/PUT/index.ts`). It does not
+lowercase or alias on write. Permission is the same PUT as
+[update_instance](#update_instance), including the known extra
+`organizations:write` check (#4747). A detached instance returns **409**
+`INSTANCE_DETACHED` before any save.
+
+Set:
+
+```json
+{ "metadata": { "environment_key": "franchise-austin" } }
+```
+
+Clear. Empty string or JSON null stays on the merged object. Studio
+`normalizeAdrEnvironmentKey`
+(`platform-frontend/src/lib/adr-environment-key.ts`) returns null for a
+non-string, `""`, or whitespace, and the switcher shows **env missing**.
+
+```json
+{ "metadata": { "environment_key": "" } }
+```
+
+```json
+{ "metadata": { "environment_key": null } }
+```
+
+These JSON bodies were not run against a live instance (unverified). Do not send
+`metadata.observe_namespace`, `metadata.routing`, `upgrade_mode`, or
+`botmon_lite_allowed_cidrs` through this merge. Those fields have their own
+refusals under [update_instance](#update_instance).
+
+### MCP
+
+`loxtep_workspace` `update_instance` uses `UpdateInstanceMcpInputSchema`
+(`.strict()`) in
+`platform-backend/_core/src/validation/organizations-instances-put.ts`. On this
+tree the object allows `instance_id`, `name`, `connection_details`, and
+`force_runtimes_redeploy` only. `metadata` and `environment_key` are
+`Unrecognized key`. There is no open product pull request that adds either
+field. Local `fix/issue-5068` does not change this schema. Do not send a
+metadata argument on MCP. Set and clear with the REST PUT above. MCP parity for
+this key is product work for #5068 and is not an argument on this tree. A live
+MCP call was not made (unverified). `create_instance`
+(`CreateInstanceMcpFlatInputSchema`) is also strict and has no metadata field.
+HTTP create still accepts `instance_config.metadata.environment_key`.
+
+### CLI / SDK
+
+[loxtep-sdk#127](https://github.com/LoxtepInc/loxtep-sdk/pull/127) (open branch
+`burleyb/sdk-set-environment-key`; published npm was not installed to confirm
+the flag — unverified) maps a first-class `environment_key` to PUT
+`metadata.environment_key`.
+
+```bash
+loxtep instances update <instance_id> --environment-key franchise-austin
+loxtep instances update <instance_id> --environment-key ""
+```
+
+An empty value, a bare `--environment-key`, or null becomes PUT
+`metadata.environment_key: null` after trim and lowercase. Aliases:
+`staging`→`stage`, `production`→`prod`. Other slugs pass through lowercased.
+
+Node: `client.workspace.instances.update(instanceId, { environment_key })`.
+`null` or `""` clears. Python `InstancesApi.update` is the same (`None` clears).
+`metadata.environment_key` is also accepted. Top-level `environment_key` wins
+when both are present. These calls were not run (unverified).
+
+### Studio
+
+Instance settings have no environment field in this tree
+(`instance-edit-dialog.tsx` does not send `environment_key`). The free-text
+field is product work for #5068. Do not describe UI steps for it. Until that
+field is in the tree, use the REST PUT above, or the CLI / SDK once #127 is
+published.
+
 ## update_instance
 
 Intended policy: `update_instance` / **PUT**

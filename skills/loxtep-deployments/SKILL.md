@@ -27,7 +27,21 @@ design-time artifact to a prod instance with prod connection bindings and
 sibling catalog products (`logical_key` + `environment_key`). Never comingle
 stage and prod product identity; never treat “same product runtime across stage
 and prod” as the model. **Environment ≠ instance** — geo is same-env
-multi-instance.
+multi-instance. `environment_key` is an open string (franchise, location,
+`stage`, `prod`, `dev`, or any other lowercase slug), not a closed set.
+
+## Set / clear environment_key
+
+Same `logical_key` + different `environment_key` are sibling products. Unset or
+blank is **env missing** (empty Products peer list; do not invent `prod` or
+invent peers). Aliases only: `staging`→`stage`, `production`→`prod`. Set or
+clear the instance key with the REST PUT in **`loxtep-instances`**. Hosted MCP
+`update_instance` on this tree rejects `metadata` and `environment_key`. CLI
+`--environment-key` and SDK `instances.update` `environment_key` are
+[loxtep-sdk#127](https://github.com/LoxtepInc/loxtep-sdk/pull/127) (open;
+published npm not checked — unverified). Instance settings have no environment
+field in this tree. HTTP create stores `dev` when the key is omitted. That
+default is a convenience, not a closed vocabulary.
 
 **Composable bindings (#4876):** Declare stage/prod connectors in the project
 package — `bindings[]` on each connection (prefer `environment_key`; optional

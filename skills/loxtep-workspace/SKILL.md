@@ -35,6 +35,21 @@ visibility and event reading moved to **`loxtep_observe`** — see
   `list_project_changes`, `plan_project_materialization` — pass **`project_id`**
   per tool contract.
 
+## Set / clear environment_key
+
+`metadata.environment_key` is an open string segregation key (franchise,
+location, `stage`, `prod`, `dev`, or any other lowercase slug), not a closed
+set. Same `logical_key` + a different key are sibling products. Unset or blank
+shows **env missing**. Do not invent `prod` or invent peers. Aliases only:
+`staging`→`stage`, `production`→`prod`. Set or clear it with the REST PUT in
+**`loxtep-instances`**. Hosted MCP `update_instance` on this tree rejects
+`metadata` and `environment_key`. CLI `--environment-key` (empty clears) and SDK
+`instances.update` `environment_key` are
+[loxtep-sdk#127](https://github.com/LoxtepInc/loxtep-sdk/pull/127) (open;
+published npm not checked — unverified). Instance settings have no environment
+field in this tree. HTTP create stores `dev` when the key is omitted. That
+default is a convenience, not a closed vocabulary.
+
 ## Limitations
 
 - Version restore is destructive relative to current state — snapshot first.

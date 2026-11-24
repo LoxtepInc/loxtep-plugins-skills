@@ -881,11 +881,27 @@ first.
 | **Design-time**  | Project / workflow graph and stable Connection / DP keys                       |
 | **Runtime**      | Per-instance bindings (connector, queues/storage). Results are instance-scoped |
 
-**Environment ≠ instance:** `environment_key` (`stage` \| `prod` \| `dev`)
-segregates product identity. Geo / HA is same-env multi-instance (one logical
-product, N runtime binding rows). Deploy fails closed when connection bindings
-or product `environment_key` disagree with the target instance’s
-`environment_key`.
+**Environment ≠ instance:** `environment_key` is an open string (franchise,
+location, `stage`, `prod`, `dev`, or any other lowercase slug), not a closed
+set. Same `logical_key` + different `environment_key` are sibling products. Geo
+/ HA is the same key on multiple instances (one logical product, N runtime
+binding rows). Unset or blank on the instance is **env missing** (empty Products
+peer list; do not invent `prod`). Aliases only: `staging`→`stage`,
+`production`→`prod`. Deploy fails closed when connection bindings or product
+`environment_key` disagree with the target instance’s `environment_key`.
+
+### Set / clear environment_key
+
+Set or clear the instance key with the REST PUT in **`loxtep-instances`** (Set /
+clear environment_key). Hosted MCP `update_instance` on this tree rejects
+`metadata` and `environment_key`. Do not invent an MCP argument. CLI
+`loxtep instances update <id> --environment-key <slug>` (empty clears) and SDK
+`instances.update` `environment_key` are
+[loxtep-sdk#127](https://github.com/LoxtepInc/loxtep-sdk/pull/127) (open;
+published npm not checked — unverified). Instance settings have no environment
+field in this tree; the free-text field is product work for #5068. HTTP create
+stores `dev` when the key is omitted. That default is a convenience, not a
+closed vocabulary.
 
 **Example — deploy_project (full project):**
 
@@ -1246,6 +1262,14 @@ schema rejects unknown top-level properties. Use `ingestion_config`.
   for the live instance that owns the workspace. Omitting it is HTTP 409
   `ambiguous_instance` and the project is not created. Do not pick the oldest
   instance or the platform bucket. `update_project` does not move the stored id.
+- **Opening an existing workspace / `reindex_workspace`** — hosted MCP
+  `reindex_workspace`, `get_workflow_graph`, and `patch_workflow_graph` do not
+  take `instance_id`. Studio sends the selected instance on workspace HTTP
+  calls. On an unbound project in an org with two or more live dedicated
+  instances, MCP `reindex_workspace` still hits 409 `ambiguous_instance` in the
+  indexer bot. `get_workflow_graph` / `patch_workflow_graph` use the platform
+  bucket via CustomerWorkspaceService, not `openProjectWorkspaceStorage`. CLI
+  `push` reindex and SDK `projects.reindex` also omit `instance_id`.
 - **Product storage key** — one identity. `is_primary_key`, `schema.key` (same
   fields, field order), and the primary entity `natural_key` (those names joined
   with commas). Applying a shape writes `schema.key`. The Iceberg writer
