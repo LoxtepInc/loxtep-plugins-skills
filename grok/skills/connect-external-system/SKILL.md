@@ -478,11 +478,10 @@ collections with `DISCOVERY_TOO_MANY_COLLECTIONS` (HTTP 422) and does **not**
 start a job. The 422 message tells the client to POST discovery with
 `probe_scope=list_collections` and poll discovery-jobs.
 
-**Known issue:** a job can stay `"pending"` with no server timeout if the
-connector is deleted after POST (bot fails before claiming the row) or if
-enqueue/flush fails after POST returned. A job can stay `"in_progress"` with no
-server timeout if the worker crashes after claiming the row. Set a client
-polling deadline. #4988
+Jobs that cannot complete (connector deleted before claim, enqueue/`putAsync`
+failure, or abandoned past the 15-minute poll reaper) are marked `failed` with a
+poller-visible `error_code` (`DISCOVERY_CONNECTOR_NOT_FOUND`,
+`DISCOVERY_ENQUEUE_FAILED`, `DISCOVERY_TIMEOUT`, …).
 
 **Samples** (separate, retrieves source rows; ask first):
 
@@ -631,7 +630,11 @@ only when save and deploy both succeed.
 | `PROBE_DEADLINE_EXCEEDED`                                                                                                           | runtime              | MongoDB Test wall clock exceeded 20000 ms. Async discovery uses 110000 ms (`MONGODB_PRIVATE_ASYNC_DISCOVERY_DEADLINE_MS`) on the bot path (`async_mode`)                                        |
 | `UNSUPPORTED_STANDALONE`                                                                                                            | source topology      | Customer (replica set / mongos for CDC types)                                                                                                                                                   |
 | `DISCOVERY_TOO_MANY_COLLECTIONS`                                                                                                    | source catalog       | Sync GET `.../entities` refuses >500 collections (HTTP 422). Does not auto-start a job. POST `.../discovery` with `probe_scope=list_collections` and poll discovery-jobs                        |
-| `DISCOVERY_ENQUEUE_FAILED`                                                                                                          | control plane        | POST discovery enqueue threw; POST also errors and the job row is `failed`                                                                                                                      |
+| `DISCOVERY_ENQUEUE_FAILED`                                                                                                          | control plane        | POST discovery `putAsync` threw; POST also errors and the job row is `failed`                                                                                                                   |
+| `DISCOVERY_CONNECTOR_NOT_FOUND`                                                                                                     | control plane        | Bot could not find the connector before claim (e.g. deleted after POST); row is `failed`; bot still throws to the error queue                                                                   |
+| `DISCOVERY_INVALID_PAYLOAD`                                                                                                         | control plane        | Bot rejected the queue payload before claim (when `run_id` was present)                                                                                                                         |
+| `DISCOVERY_TIMEOUT`                                                                                                                 | control plane        | Poll reaper: job stayed `pending`/`in_progress` past the 15-minute wall deadline                                                                                                                |
+| `DISCOVERY_INVALID_TIMESTAMPS`                                                                                                      | control plane        | Poll reaper: `pending`/`in_progress` row has missing or unparseable `requested_at`/`started_at` (cannot compute age)                                                                            |
 | `DISCOVERY_INVOKE_FAILED`                                                                                                           | runtime              | Discovery bot could not invoke the private probe                                                                                                                                                |
 | `DISCOVERY_FAILED`                                                                                                                  | runtime              | Probe failed with no `error.code`. Other failed jobs copy the probe code (e.g. `UNSUPPORTED_STANDALONE`, `MISSING_DISCOVERY_PERMISSION`)                                                        |
 | `PRIVATE_PROBE_FAILED` / cannot resolve `connectors-private-512`                                                                    | runtime / network    | Loxtep runtimes deploy; customer if subnet/SG IDs never supplied                                                                                                                                |
