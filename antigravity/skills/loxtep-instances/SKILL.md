@@ -390,16 +390,35 @@ GET/PUT, reindex POST) accept optional `instance_id` (query; reindex also JSON
 body). Studio sends the selected instance. An explicit id must match the
 project's unique deployment pin or stored `projects.instance_id` when either is
 set (HTTP 409 `instance_id_mismatch` on conflict); it does not silently open
-another instance bucket or the platform bucket. When `instance_id` is omitted, a
-workspace call, and `POST /workflows/deployments` when `instance_id` is omitted,
-uses a deployment pin when the project's deployment rows name exactly one live
-dedicated instance, and otherwise the stored `projects.instance_id`. With
-neither, the same 409 applies. Hosted MCP `reindex_workspace`, CLI `push`
-reindex, and SDK `projects.reindex` do not pass `instance_id`. An omitted id
-does not select the oldest instance. An explicit instance that is not a live
-instance of the organization is HTTP 404 (`target_instance_missing`). See
+another instance bucket or the platform bucket. When `instance_id` is omitted on
+a workspace call, a deployment pin of exactly one live dedicated instance
+selects the bucket, and otherwise the stored `projects.instance_id`. With
+neither, the same 409 applies. `POST /workflows/deployments` does not use that
+pin or the stored id: an omitted `instance_id` is one dedicated instance, or one
+active instance when none are dedicated, and several targets return HTTP 409
+`ambiguous_instance` before the workspace opens. Hosted MCP `reindex_workspace`,
+CLI `push` reindex, and SDK `projects.reindex` do not pass `instance_id`. An
+omitted id does not select the oldest instance. An explicit instance that is not
+a live instance of the organization is HTTP 404 (`target_instance_missing`). See
 **`loxtep-deployments`**, Dedicated instance code bucket, for the messages and
 the `code_bucket` fix (upgrade or `force_runtimes_redeploy`).
+
+A workspace open uses only the selected instance's `code_bucket`. It does not
+copy the project prefix from the platform bucket. When `.loxtep/project.json` is
+missing on that bucket, readers fail closed with HTTP 409
+`project_metadata_unavailable`, including when the platform bucket still has the
+file. Materialize with pull from git / Studio on that instance. Export and
+unbound clone return that 409 when the opened dedicated bucket lacks the file.
+Calls that omit `instance_id` (export, unbound clone, GitHub push and pull,
+workflow-bundle / CLI `loxtep push`, hosted MCP `reindex_workspace`, SDK
+`projects.reindex`) open the resolved instance bucket and do not copy from the
+platform bucket. Reindex POST returns enqueued; the indexer bot opens the bucket
+named by `instance_id` on the event and does not copy from the platform bucket.
+A missing `.loxtep/project.json` there is `RuntimeError` `Indexing failed` with
+the reader's message. `POST /workflows/deployments` passes the resolved target
+id into the same open and reads that bucket only, including when the body
+omitted `instance_id` and the organization has one dedicated instance. Full
+messages are in **`loxtep-workspace`** and **`loxtep-deployments`**.
 
 A workflow deploy copies code into the bucket and leaves an object that is
 already there in place. The platform read and the instance-bucket check both
@@ -408,10 +427,10 @@ treat the object as absent for `NoSuchKey`, `NotFound`, or a bare 404
 non-object error is not absence. `NoSuchBucket`, `AccessDenied`,
 `AllAccessDisabled`, `InvalidBucketName`, `PermanentRedirect`, and
 `SignatureDoesNotMatch` on `name`, `code`, or `Code` are not absence. Any other
-read or bucket failure is not absence. There is no job that moves an existing
-dedicated project's workspace into the instance bucket. After `code_bucket` is
-set and the runtimes stack update has finished, deploy each workflow again
-(**`loxtep-deployments`**).
+read or bucket failure is not absence. That copy moves workflow `code_key`
+objects into the instance bucket. It does not copy the project workspace from
+the platform bucket. After `code_bucket` is set and the runtimes stack update
+has finished, deploy each workflow again (**`loxtep-deployments`**).
 
 ## update_instance
 

@@ -62,9 +62,12 @@ visibility and event reading moved to **`loxtep_observe`** — see
 ### Flow — Reindex after bulk import
 
 1. `reindex_workspace` with `project_id`. The hosted MCP operation does not take
-   `instance_id`. Studio reindex sends the selected instance on the HTTP API. On
-   an unbound project in an org with two or more live dedicated instances, MCP
-   reindex still hits 409 `ambiguous_instance` in the indexer bot.
+   `instance_id`. Studio reindex sends the selected instance. The indexer bot
+   opens that instance's bucket only. It does not copy a project prefix from the
+   platform bucket. When `.loxtep/project.json` is missing on the opened bucket,
+   the index fails (`Indexing failed`) with the reader's message. On an unbound
+   project in an org with two or more live dedicated instances, MCP reindex
+   still hits 409 `ambiguous_instance` in the indexer bot.
 
 ## MCP mapping
 
@@ -78,23 +81,46 @@ visibility and event reading moved to **`loxtep_observe`** — see
 - **`restore_version`** is destructive relative to current state — snapshot
   first.
 - Do not treat hosted MCP as able to `clone` onto disk — use the plan + CLI.
-- `loxtep projects clone` of an unbound project fails (exit 1) when the cloud
+- `loxtep projects clone` of an unbound project fails (exit 1) when the opened
   workspace has no `.loxtep/project.json`. The export API returns 409
   `project_metadata_unavailable` and the message names the missing S3 key.
   Retrying will not help. Report the key rather than fabricating a
-  `project.json` locally.
+  `project.json` locally. Clone and export omit `instance_id`. When the open
+  resolves one dedicated instance (one dedicated instance, a unique deploy pin,
+  or stored `projects.instance_id`) and that bucket lacks the file, this 409
+  still applies while another bucket has the file. Several live dedicated
+  instances with no pin and no stored id return 409 `ambiguous_instance` before
+  the missing-file check.
 - A project in an organization with two or more live dedicated instances needs
   `instance_id` on `create_project`. The stored id is used when a later
   workspace open omits `instance_id` and deployment rows do not pin exactly one
-  live dedicated instance. Studio workspace calls (entities, save, graph,
-  reindex) accept optional `instance_id` and Studio sends the selected instance.
-  An explicit id must match the project's unique deploy pin or stored binding
-  when either is set (HTTP 409 `instance_id_mismatch` on conflict). Do not open
-  another instance bucket or the platform bucket on mismatch. Hosted MCP
-  `reindex_workspace`, CLI `push` reindex, and SDK `projects.reindex` do not
-  take `instance_id`. On an unbound project (no stored id, no single deploy pin)
-  in a multi-instance org, omitting `instance_id` is HTTP 409
-  `ambiguous_instance`. Do not guess the oldest instance or the platform bucket.
+  live dedicated instance. Studio workspace calls (entities GET, workspace PUT,
+  single-entity GET/PUT/DELETE, workflow graph GET/PUT, reindex POST) accept
+  optional `instance_id` (query; reindex also JSON body) and Studio sends the
+  selected instance. An explicit id must match the project's unique deploy pin
+  or stored binding when either is set (HTTP 409 `instance_id_mismatch` on
+  conflict). The open uses neither another instance bucket nor the platform
+  bucket on mismatch.
+- Workspace storage is always the selected instance's bucket. Open never copies
+  from the platform bucket onto a dedicated `code_bucket`. When
+  `.loxtep/project.json` is missing on the opened instance bucket, readers fail
+  closed with HTTP 409 `project_metadata_unavailable`, including when the
+  platform bucket still has the file. Materialize with pull from git / Studio on
+  that instance. The entities GET message is
+  `Project metadata is unavailable at <key>`.
+- Reindex POST returns `{ project_id, enqueued, correlation_id }`. When
+  `instance_id` is present, the indexer bot opens that instance's bucket only. A
+  missing `.loxtep/project.json` there is `RuntimeError` `Indexing failed`, with
+  the reader's message on the error payload. The bot does not copy from the
+  platform bucket.
+- Hosted MCP `reindex_workspace`, CLI `loxtep push` (saves the workflow bundle,
+  then `projects.reindex`), and SDK `projects.reindex` omit `instance_id`. On an
+  unbound project in a multi-instance org, omitting `instance_id` is HTTP 409
+  `ambiguous_instance` in the indexer bot for reindex. Do not guess the oldest
+  instance or the platform bucket. `POST /workflows/deployments` passes the
+  resolved target instance id into the same open, including when the body
+  omitted `instance_id` and the organization has one dedicated instance. That
+  open reads that instance bucket only. See **`loxtep-deployments`**.
 
 ## `eid` for `read_queue_events` (hard rules)
 
