@@ -59,8 +59,11 @@ visibility and event reading moved to **`loxtep_observe`** — see
 3. `create_snapshot` before destructive change.
 4. `restore_version` when approved. Hosted MCP `restore_version` omits
    `instance_id` and takes the API home-workspace path. Studio Restore version
-   uses Studio Pull and requires a selected instance; it does not omit
-   `instance_id`.
+   disables the Restore menu item and Restore confirm when no instance is
+   selected. If restore runs anyway, Studio shows
+   `Select an instance before pulling from GitHub. Pull writes into that instance's workspace.`
+   and does not POST. With an instance selected, restore sends `instance_id` and
+   `commit_sha` and writes that instance's workspace.
 
 ### Flow — Reindex after bulk import
 
@@ -83,8 +86,13 @@ visibility and event reading moved to **`loxtep_observe`** — see
 
 - **`restore_version`** is destructive relative to current state — snapshot
   first. Hosted MCP `restore_version` omits `instance_id` (home-workspace path).
-  Studio Restore version calls the same helper as Studio Pull and refuses
-  without a selected instance.
+  Studio Restore version disables the Restore menu item and Restore confirm when
+  no instance is selected. If restore runs anyway, Studio shows
+  `Select an instance before pulling from GitHub. Pull writes into that instance's workspace.`
+  and does not POST. With an instance selected, restore sends `instance_id` and
+  `commit_sha` and writes that instance's workspace. Checked against
+  `restoreVersion-instance.test.ts` and `useProjectVersions.test.ts`. CLI
+  `loxtep projects pull` and SDK `github_pull` still omit `instance_id`.
 - **Studio Pull** requires a selected instance. Pull is disabled when none is
   selected (tooltip `Select an instance before pulling from GitHub`; the project
   page command menu uses subtitle `Select an instance first`). The Pull confirm
