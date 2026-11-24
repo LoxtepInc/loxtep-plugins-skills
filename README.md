@@ -163,10 +163,11 @@ Merge into your project `opencode.json` (or copy `opencode/opencode.json`):
 {
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
-    "loxtep": {
-      "type": "remote",
-      "url": "https://mcp.loxtep.io/ai/mcp/stream",
-      "enabled": true
+    "servers": {
+      "loxtep": {
+        "type": "remote",
+        "url": "https://mcp.loxtep.io/ai/mcp/stream"
+      }
     }
   }
 }

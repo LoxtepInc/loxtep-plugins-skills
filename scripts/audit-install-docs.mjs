@@ -131,10 +131,41 @@ grepFiles(/\b20 skills\b|\b19 scoped\b|\b19 bundles\b/, docFiles);
 grepFiles(/create-connector/, docFiles);
 grepFiles(/Install from Git/i, ['README.md', 'cursor/README.md']);
 
+const opencodeConfigFiles = ['opencode/opencode.json', 'opencode/README.md', 'README.md'];
+// V1 placed the server name directly under mcp. V2 requires mcp.servers.<name>.
+grepFiles(/"mcp"\s*:\s*\{\s*"loxtep"\s*:/, opencodeConfigFiles);
+grepFiles(/"enabled"\s*:/, opencodeConfigFiles);
+
 try {
   const opencode = JSON.parse(read('opencode/opencode.json'));
-  if (opencode?.mcp?.loxtep?.type !== 'remote') {
-    add('error', 'opencode/opencode.json', 'loxtep MCP type must be "remote"');
+  const mcp = opencode?.mcp;
+  if (!mcp || typeof mcp !== 'object' || Array.isArray(mcp)) {
+    add('error', 'opencode/opencode.json', 'mcp must be an object with a servers wrapper');
+  } else {
+    if (Object.prototype.hasOwnProperty.call(mcp, 'loxtep')) {
+      add(
+        'error',
+        'opencode/opencode.json',
+        'V1 mcp.loxtep is present; put the server under mcp.servers.loxtep'
+      );
+    }
+    const servers = mcp.servers;
+    if (!servers || typeof servers !== 'object' || Array.isArray(servers)) {
+      add('error', 'opencode/opencode.json', 'missing mcp.servers wrapper');
+    } else if (!servers.loxtep || typeof servers.loxtep !== 'object' || Array.isArray(servers.loxtep)) {
+      add('error', 'opencode/opencode.json', 'missing mcp.servers.loxtep');
+    } else {
+      if (servers.loxtep.type !== 'remote') {
+        add('error', 'opencode/opencode.json', 'mcp.servers.loxtep.type must be "remote"');
+      }
+      if (Object.prototype.hasOwnProperty.call(servers.loxtep, 'enabled')) {
+        add(
+          'error',
+          'opencode/opencode.json',
+          'enabled is present; omit it (V2 uses disabled only when the server is intentionally off)'
+        );
+      }
+    }
   }
 } catch (err) {
   add('error', 'opencode/opencode.json', `invalid JSON: ${err.message}`);
