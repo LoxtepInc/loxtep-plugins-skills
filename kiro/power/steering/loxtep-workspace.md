@@ -57,7 +57,10 @@ visibility and event reading moved to **`loxtep_observe`** — see
    (required, UUID) and `version_b` (optional, UUID or the literal `"current"`;
    defaults to `"current"`).
 3. `create_snapshot` before destructive change.
-4. `restore_version` when approved.
+4. `restore_version` when approved. Hosted MCP `restore_version` omits
+   `instance_id` and takes the API home-workspace path. Studio Restore version
+   uses Studio Pull and requires a selected instance; it does not omit
+   `instance_id`.
 
 ### Flow — Reindex after bulk import
 
@@ -79,7 +82,17 @@ visibility and event reading moved to **`loxtep_observe`** — see
 ## Pitfalls
 
 - **`restore_version`** is destructive relative to current state — snapshot
-  first.
+  first. Hosted MCP `restore_version` omits `instance_id` (home-workspace path).
+  Studio Restore version calls the same helper as Studio Pull and refuses
+  without a selected instance.
+- **Studio Pull** requires a selected instance. Pull is disabled when none is
+  selected (tooltip `Select an instance before pulling from GitHub`; the project
+  page command menu uses subtitle `Select an instance first`). The Pull confirm
+  button is also disabled. If Pull runs anyway, Studio throws
+  `Select an instance before pulling from GitHub. Pull writes into that instance's workspace.`
+  and does not POST. Studio never omits `instance_id` on Pull and never falls
+  back to the home workspace. CLI `loxtep projects pull`, SDK `github_pull`, and
+  MCP `restore_version` still omit `instance_id`.
 - Do not treat hosted MCP as able to `clone` onto disk — use the plan + CLI.
 - `loxtep projects clone` of an unbound project fails (exit 1) when the opened
   workspace has no `.loxtep/project.json`. The export API returns 409
@@ -106,7 +119,9 @@ visibility and event reading moved to **`loxtep_observe`** — see
   `.loxtep/project.json` is missing on the opened instance bucket, readers fail
   closed with HTTP 409 `project_metadata_unavailable`, including when the
   platform bucket still has the file. Materialize with pull from git / Studio on
-  that instance. The entities GET message is
+  that instance. Studio Pull requires a selected instance and never omits
+  `instance_id`. CLI `loxtep projects pull`, SDK `github_pull`, and MCP
+  `restore_version` still may omit it. The entities GET message is
   `Project metadata is unavailable at <key>`.
 - Reindex POST returns `{ project_id, enqueued, correlation_id }`. When
   `instance_id` is present, the indexer bot opens that instance's bucket only. A
