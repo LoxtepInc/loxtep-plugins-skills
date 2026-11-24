@@ -406,17 +406,17 @@ missing on that bucket, readers fail closed with HTTP 409
 `project_metadata_unavailable`, including when the platform bucket still has the
 file. Materialize with pull from git / Studio on that instance. Pull and restore
 must send that instance's `instance_id`. Studio Pull requires a selected
-instance and never omits `instance_id`. Omitting `instance_id` on Pull is not a
-supported user path. `PostInputSchema` still marks the field optional, so a
-missing `instance_id` is not HTTP 400 from validation until #5060. CLI/SDK Pull
-require `instance_id` (fail closed; loxtep-sdk#125). MCP `restore_version` still
-omits it. Do not use those callers to choose an environment. Export and unbound
-clone return that 409 when the opened dedicated bucket lacks the file. Calls
-that omit `instance_id` on export, unbound clone, GitHub push, workflow-bundle /
-CLI `loxtep push`, hosted MCP `reindex_workspace`, and SDK `projects.reindex`
-open the resolved instance bucket and do not copy from the platform bucket.
-Reindex POST returns enqueued; the indexer bot opens the bucket named by
-`instance_id` on the event and does not copy from the platform bucket. A missing
+instance and never omits `instance_id`. Pull `PostInputSchema` requires
+`instance_id` (UUID). A missing, blank, or non-UUID `instance_id` is HTTP 400
+from validation. CLI/SDK Pull require `instance_id` (fail closed;
+loxtep-sdk#125). MCP `restore_version` posts `{ commit_sha }` only, so every
+call returns HTTP 400 until #5066. Restore in Studio. Export and unbound clone
+return that 409 when the opened dedicated bucket lacks the file. Calls that omit
+`instance_id` on export, unbound clone, GitHub push, workflow-bundle / CLI
+`loxtep push`, hosted MCP `reindex_workspace`, and SDK `projects.reindex` open
+the resolved instance bucket and do not copy from the platform bucket. Reindex
+POST returns enqueued; the indexer bot opens the bucket named by `instance_id`
+on the event and does not copy from the platform bucket. A missing
 `.loxtep/project.json` there is `RuntimeError` `Indexing failed` with the
 reader's message. `POST /workflows/deployments` passes the resolved target id
 into the same open and reads that bucket only, including when the body omitted

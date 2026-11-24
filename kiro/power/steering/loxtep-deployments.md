@@ -418,10 +418,13 @@ from the platform bucket onto a dedicated `code_bucket`. When
 `.loxtep/project.json` is missing on the opened instance bucket, readers fail
 closed with HTTP 409 `project_metadata_unavailable`, including when the platform
 bucket still has a copy. Materialize with pull from git / Studio on that
-instance. Studio Pull requires a selected instance and never omits `instance_id`
-onto the home workspace. CLI `loxtep projects pull`, SDK `github_pull`, and MCP
-`restore_version` still may omit it. The entities GET message is
-`Project metadata is unavailable at <key>`.
+instance. Pull and restore must send that instance's `instance_id`. Studio Pull
+requires a selected instance and never omits `instance_id`. Pull
+`PostInputSchema` requires `instance_id` (UUID). A missing, blank, or non-UUID
+`instance_id` is HTTP 400 from validation. CLI/SDK Pull require `instance_id`
+(fail closed; loxtep-sdk#125). MCP `restore_version` posts `{ commit_sha }`
+only, so every call returns HTTP 400 until #5066. Restore in Studio. The
+entities GET message is `Project metadata is unavailable at <key>`.
 `migratePlatformWorkspaceToDedicatedInstance` throws if called
 (`Platform→dedicated migrate-on-open is deprecated (#5024).`).
 
