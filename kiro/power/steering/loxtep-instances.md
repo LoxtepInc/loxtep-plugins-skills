@@ -356,22 +356,31 @@ A dedicated instance with no `code_bucket` fails these calls with HTTP 500
 organization has more than one live dedicated instance returns HTTP 409
 (`ambiguous_instance`) and does not insert the project. Studio workspace calls
 (entities GET, workspace PUT, single-entity GET/PUT/DELETE, workflow graph
-GET/PUT, reindex POST) accept optional `instance_id` (query; reindex also JSON
-body). Studio sends the selected instance. An explicit id must match the
+GET/PUT) and reindex POST accept optional `instance_id` (query; reindex also
+JSON body). Studio sends the selected instance. An explicit id must match the
 project's unique deployment pin or stored `projects.instance_id` when either is
-set (HTTP 409 `instance_id_mismatch` on conflict); it does not silently open
-another instance bucket or the platform bucket. When `instance_id` is omitted on
-a workspace call, a deployment pin of exactly one live dedicated instance
-selects the bucket, and otherwise the stored `projects.instance_id`. With
-neither, the same 409 applies. `POST /workflows/deployments` does not use that
-pin or the stored id: an omitted `instance_id` is one dedicated instance, or one
-active instance when none are dedicated, and several targets return HTTP 409
+set (HTTP 409 `instance_id_mismatch` on conflict). Workspace handlers do not
+silently open another instance bucket or the platform bucket. Reindex POST runs
+the full workspace instance selection (pin or binding, then live dedicated
+instances) before enqueue and does not open S3. A conflict is HTTP 409
+`instance_id_mismatch` and nothing is enqueued. An explicit id that is not a
+live instance of the organization is HTTP 404 `target_instance_missing` and
+nothing is enqueued. An omitted id on an unbound project with two or more live
+dedicated instances is HTTP 409 `ambiguous_instance` and nothing is enqueued. On
+success the event includes the resolved dedicated `instance_id`, including when
+the caller omitted it. When `instance_id` is omitted on a workspace open, a
+deployment pin of exactly one live dedicated instance selects the bucket, and
+otherwise the stored `projects.instance_id`. With neither, that open is HTTP 409
+`ambiguous_instance`. `POST /workflows/deployments` does not use that pin or the
+stored id: an omitted `instance_id` is one dedicated instance, or one active
+instance when none are dedicated, and several targets return HTTP 409
 `ambiguous_instance` before the workspace opens. Hosted MCP `reindex_workspace`,
 CLI `push` reindex, and SDK `projects.reindex` do not pass `instance_id`. An
 omitted id does not select the oldest instance. An explicit instance that is not
-a live instance of the organization is HTTP 404 (`target_instance_missing`). See
-**`loxtep-deployments`**, Dedicated instance code bucket, for the messages and
-the `code_bucket` fix (upgrade or `force_runtimes_redeploy`).
+a live instance of the organization is HTTP 404 (`target_instance_missing`) on
+workspace open. See **`loxtep-deployments`**, Dedicated instance code bucket,
+for the messages and the `code_bucket` fix (upgrade or
+`force_runtimes_redeploy`).
 
 A workspace open uses only the selected instance's `code_bucket`. It does not
 copy the project prefix from the platform bucket. When `.loxtep/project.json` is
@@ -382,14 +391,28 @@ must send that instance's `instance_id`. Studio Pull requires a selected
 instance and never omits `instance_id`. Pull `PostInputSchema` requires
 `instance_id` (UUID). A missing, blank, or non-UUID `instance_id` is HTTP 400
 from validation. CLI/SDK Pull require `instance_id` (fail closed;
-loxtep-sdk#125). MCP `restore_version` posts `{ commit_sha }` only, so every
-call returns HTTP 400 until #5066. Restore in Studio. Export and unbound clone
+loxtep-sdk#125). MCP `restore_version` requires `version_id` and `instance_id`
+(UUID of the target instance). It forwards both to Pull (`commit_sha` +
+`instance_id`) and restores into that instance's workspace bucket. A missing,
+blank, or non-UUID `instance_id` fails validation. Export and unbound clone
 return that 409 when the opened dedicated bucket lacks the file. Calls that omit
 `instance_id` on export, unbound clone, GitHub push, workflow-bundle / CLI
 `loxtep push`, hosted MCP `reindex_workspace`, and SDK `projects.reindex` open
 the resolved instance bucket and do not copy from the platform bucket. Reindex
-POST returns enqueued; the indexer bot opens the bucket named by `instance_id`
-on the event and does not copy from the platform bucket. A missing
+POST runs that full selection before enqueue, then returns
+`{ project_id, enqueued, correlation_id }` with the resolved dedicated
+`instance_id` on the event. An explicit non-live id is HTTP 404
+`target_instance_missing` and nothing is enqueued. An omitted id on an unbound
+project with two or more live dedicated instances is HTTP 409
+`ambiguous_instance` and nothing is enqueued. Hosted MCP `reindex_workspace`
+uses the same resolve in `requestWorkspaceReindex` and fails the tool call
+before enqueue on that omitted-id case (HTTP 400 `tool_failed`,
+`error.details.error_class` `validation`). A stored `projects.instance_id` that
+is no longer live is HTTP 404 `tool_failed` with `error.details.error_class`
+`not_found`. `error.details.code` stays `tool_failed`; the domain code is not
+copied. CLI `loxtep push` reindex and SDK `projects.reindex` POST `{}` and
+receive the 409 from the POST. The indexer bot opens the bucket named by
+`instance_id` on the event and does not copy from the platform bucket. A missing
 `.loxtep/project.json` there is `RuntimeError` `Indexing failed` with the
 reader's message. `POST /workflows/deployments` passes the resolved target id
 into the same open and reads that bucket only, including when the body omitted

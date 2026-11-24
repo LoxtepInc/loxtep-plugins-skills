@@ -269,11 +269,16 @@ domain. Never silently choose among multiple domains.
    an optional `description`. When multiple domains exist, `domain_id` must
    reflect the user's explicit choice. When the organization has two or more
    live dedicated instances, also send `instance_id` for the instance that
-   should own the project workspace. Omitting it returns HTTP 409
-   `ambiguous_instance` and does not create the project. One dedicated instance,
-   or none, does not need `instance_id`. The value is stored once;
-   `update_project` does not change it. An id that is not a live instance of the
-   organization is HTTP 404 `target_instance_missing`.
+   should own the project workspace. Omitting it does not create the project.
+   Over hosted MCP, tools/call is HTTP 400 with `error_class` `validation`.
+   Wrapper `error.details.code` stays `tool_failed`. Forwarded `details.code` is
+   `ambiguous_instance`. REST `POST /workflows/projects` is HTTP 409 with
+   `error.details.code` `ambiguous_instance`. One dedicated instance, or none,
+   does not need `instance_id`. The value is stored once; `update_project` does
+   not change it. An id that is not a live instance of the organization is HTTP
+   404 `target_instance_missing` on hosted MCP tools/call (`error_class`
+   `not_found`; wrapper `error.details.code` stays `tool_failed`; forwarded
+   `details.code` is `target_instance_missing`) and on REST POST.
 5. **Layer status before deep work:** `get_project_workspace_status` (or CLI
    `loxtep projects list` + `loxtep status`). If `next_action` is `clone` /
    `link`, run `plan_project_materialization` / plan `cli_commands` on the agent
@@ -835,6 +840,10 @@ catalog rule.
 
 - Pre-assign all UUIDs; wire nodes with **`upstream_entity_id`** (not separate
   connect steps).
+- `workflow_id` must be a fresh UUID or one this project already owns. Copying
+  another project's `workflow.json` (and its `workflow_id`) is refused
+  (`WORKFLOW_ID_OWNED_BY_OTHER_PROJECT`), including on `dry_run: true`. Generate
+  a new `workflow_id` and new entity ids when copying.
 - File keys use workflow-scoped paths: `connections/{id}.json`,
   `transformations/{id}.json`, etc.
 - **`patch_workflow_graph`** is for **Studio UI incremental edits only**.
@@ -1248,6 +1257,9 @@ schema rejects unknown top-level properties. Use `ingestion_config`.
   of `insert_batch_size` outside 1–10000, including 0, is refused at save
   (`invalid_insert_batch_size`) and throws at delivery.
 - **`workflow_type: "consumption"`** — Removed. Use **`delivery`**.
+- **Copied `workflow_id` from another project** —
+  `WORKFLOW_ID_OWNED_BY_OTHER_PROJECT`. Assign a new `workflow_id` and new
+  entity ids, then save again.
 - **Inline-only bundle authoring** — Composing the `files` map solely inside a
   `save_workflow_bundle` tool call with no `workflows/{workflow_id}/` files on
   disk. Write locally first; MCP upload/sync is step two. See Flow B2.
@@ -1255,17 +1267,32 @@ schema rejects unknown top-level properties. Use `ingestion_config`.
   `save_workflow_bundle` without `project_id` from **Flow B**. Create or select
   the project before any Products (bundle/deploy) work.
 - **`create_project` with two or more dedicated instances** — send `instance_id`
-  for the live instance that owns the workspace. Omitting it is HTTP 409
-  `ambiguous_instance` and the project is not created. Do not pick the oldest
-  instance or the platform bucket. `update_project` does not move the stored id.
+  for the live instance that owns the workspace. Omitting it does not create the
+  project. Over hosted MCP, tools/call is HTTP 400 with `error_class`
+  `validation`. Wrapper `error.details.code` stays `tool_failed`. Forwarded
+  `details.code` is `ambiguous_instance`. REST `POST /workflows/projects` is
+  HTTP 409 with `error.details.code` `ambiguous_instance`. Do not pick the
+  oldest instance or the platform bucket. `update_project` does not move the
+  stored id. An id that is not a live instance of the organization is HTTP 404
+  `target_instance_missing` on hosted MCP tools/call and on REST POST. MCP
+  `error_class` is `not_found`. Wrapper `error.details.code` stays
+  `tool_failed`. Forwarded `details.code` is `target_instance_missing`.
 - **Opening an existing workspace / `reindex_workspace`** — hosted MCP
   `reindex_workspace`, `get_workflow_graph`, and `patch_workflow_graph` do not
   take `instance_id`. Studio sends the selected instance on workspace HTTP
   calls. On an unbound project in an org with two or more live dedicated
-  instances, MCP `reindex_workspace` still hits 409 `ambiguous_instance` in the
-  indexer bot. `get_workflow_graph` / `patch_workflow_graph` use the platform
-  bucket via CustomerWorkspaceService, not `openProjectWorkspaceStorage`. CLI
-  `push` reindex and SDK `projects.reindex` also omit `instance_id`.
+  instances, MCP `reindex_workspace` fails the tool call before enqueue.
+  `requestWorkspaceReindex` throws before emit. The tool error text is
+  `Organization has N dedicated instances and the project workspace bucket is ambiguous. Refusing to fall back to the platform bucket.`
+  The tools/call response is HTTP 400 `tool_failed` with
+  `error.details.error_class` `validation`. `error.details.code` stays
+  `tool_failed`; the domain code is not copied. A stored `projects.instance_id`
+  that is no longer live is HTTP 404 `tool_failed` with
+  `error.details.error_class` `not_found`. `get_workflow_graph` /
+  `patch_workflow_graph` use the platform bucket via CustomerWorkspaceService,
+  not `openProjectWorkspaceStorage`. CLI `push` reindex and SDK
+  `projects.reindex` POST reindex with no `instance_id` and receive HTTP 409
+  `ambiguous_instance` from the POST. Nothing is enqueued.
 - **Product storage key** — one identity. `is_primary_key`, `schema.key` (same
   fields, field order), and the primary entity `natural_key` (those names joined
   with commas). Applying a shape writes `schema.key`. The Iceberg writer
