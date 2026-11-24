@@ -433,10 +433,9 @@ instance. Pull and restore must send that instance's `instance_id`. Studio Pull
 requires a selected instance and never omits `instance_id`. Omitting
 `instance_id` on Pull is not a supported user path. `PostInputSchema` still
 marks the field optional, so a missing `instance_id` is not HTTP 400 from
-validation. Shipped CLI `loxtep projects pull`, SDK `github_pull`, and MCP
-`restore_version` still omit `instance_id` (known lag,
-[loxtep-sdk#124](https://github.com/LoxtepInc/loxtep-sdk/issues/124)). Do not
-use those callers to choose an environment. The entities GET message is
+validation. CLI/SDK Pull require `instance_id` (fail closed; loxtep-sdk#125).
+MCP `restore_version` still omits it. Do not use those callers to choose an
+environment. The entities GET message is
 `Project metadata is unavailable at <key>`.
 `migratePlatformWorkspaceToDedicatedInstance` throws if called
 (`Platform→dedicated migrate-on-open is deprecated (#5024).`).
