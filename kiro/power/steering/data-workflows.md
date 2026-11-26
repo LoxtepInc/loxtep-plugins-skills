@@ -1271,10 +1271,12 @@ schema rejects unknown top-level properties. Use `ingestion_config`.
   `error_class` is `not_found`. Wrapper `error.details.code` stays
   `tool_failed`. Forwarded `details.code` is `target_instance_missing`.
 - **Opening an existing workspace / `reindex_workspace`** — hosted MCP
-  `reindex_workspace`, `get_workflow_graph`, and `patch_workflow_graph` do not
-  take `instance_id`. Studio sends the selected instance on workspace HTTP
-  calls. On an unbound project in an org with two or more live dedicated
-  instances, MCP `reindex_workspace` fails the tool call before enqueue.
+  `reindex_workspace` accepts optional `instance_id` and passes it to the same
+  resolve as Studio / POST reindex (fail-closed `ambiguous_instance` when
+  omitted on an ambiguous org). `get_workflow_graph` and `patch_workflow_graph`
+  do not take `instance_id`. Studio sends the selected instance on workspace
+  HTTP calls. On an unbound project in an org with two or more live dedicated
+  instances, omitted MCP `reindex_workspace` fails the tool call before enqueue.
   `requestWorkspaceReindex` throws before emit. The tool error text is
   `Organization has N dedicated instances and the project workspace bucket is ambiguous. Refusing to fall back to the platform bucket.`
   The tools/call response is HTTP 400 `tool_failed` with

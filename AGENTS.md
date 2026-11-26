@@ -178,7 +178,7 @@ key parameters.
 | `create_snapshot` | project | `project_id` | `label` |
 | `restore_version` | project | `project_id`, `version_id` | — |
 | `compare_versions` | project | `project_id`, `from`, `to` | — |
-| `reindex_workspace` | project | `project_id` | — |
+| `reindex_workspace` | project | `project_id` | `instance_id` |
 
 ```json
 { "operation": "list_versions", "project_id": "proj_…" }

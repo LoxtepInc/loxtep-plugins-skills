@@ -401,13 +401,15 @@ otherwise the stored `projects.instance_id`. With neither, that open is HTTP 409
 `ambiguous_instance`. `POST /workflows/deployments` does not use that pin or the
 stored id: an omitted `instance_id` is one dedicated instance, or one active
 instance when none are dedicated, and several targets return HTTP 409
-`ambiguous_instance` before the workspace opens. Hosted MCP `reindex_workspace`,
-CLI `push` reindex, and SDK `projects.reindex` do not pass `instance_id`. An
-omitted id does not select the oldest instance. An explicit instance that is not
-a live instance of the organization is HTTP 404 (`target_instance_missing`) on
-workspace open. See **`loxtep-deployments`**, Dedicated instance code bucket,
-for the messages and the `code_bucket` fix (upgrade or
-`force_runtimes_redeploy`).
+`ambiguous_instance` before the workspace opens. Hosted MCP `reindex_workspace`
+accepts optional `instance_id` and passes it to the same resolve (recommended
+for multi-instance orgs; omit only when unambiguous — fail-closed
+`ambiguous_instance`). CLI `push` reindex and SDK `projects.reindex` still POST
+without `instance_id`. An omitted id does not select the oldest instance. An
+explicit instance that is not a live instance of the organization is HTTP 404
+(`target_instance_missing`) on workspace open. See **`loxtep-deployments`**,
+Dedicated instance code bucket, for the messages and the `code_bucket` fix
+(upgrade or `force_runtimes_redeploy`).
 
 A workspace open uses only the selected instance's `code_bucket`. It does not
 copy the project prefix from the platform bucket. When `.loxtep/project.json` is
@@ -424,9 +426,10 @@ loxtep-sdk#125). MCP `restore_version` requires `version_id` and `instance_id`
 blank, or non-UUID `instance_id` fails validation. Export and unbound clone
 return that 409 when the opened dedicated bucket lacks the file. Calls that omit
 `instance_id` on export, unbound clone, GitHub push, workflow-bundle / CLI
-`loxtep push`, hosted MCP `reindex_workspace`, and SDK `projects.reindex` open
-the resolved instance bucket and do not copy from the platform bucket. Reindex
-POST runs that full selection before enqueue, then returns
+`loxtep push`, and SDK `projects.reindex` open the resolved instance bucket and
+do not copy from the platform bucket. Hosted MCP `reindex_workspace` accepts
+optional `instance_id` and, when omitted, uses that same resolve. Reindex POST
+runs that full selection before enqueue, then returns
 `{ project_id, enqueued, correlation_id }` with the resolved dedicated
 `instance_id` on the event. An explicit non-live id is HTTP 404
 `target_instance_missing` and nothing is enqueued. An omitted id on an unbound
