@@ -39,9 +39,10 @@ without relying on any private repo or source tree.
    org before you write, especially after a membership was removed. Multi-org
    users may belong to several orgs; API and hosted MCP calls are scoped to the
    **active** organization. Prefer header `x-loxtep-active-organization-id`
-   (cookie `loxtep_active_organization_id` in browsers). A header or cookie for
-   an org you are not a member of is ignored, and the request runs in your home
-   org with no error. `PUT /organizations/users/me/active-organization` refuses
+   (cookie `loxtep_active_organization_id` in browsers). A non-member header
+   returns HTTP 403 and does not run in home. A stale non-member cookie
+   soft-falls back to home with a structured auth log (requested org, home org,
+   `correlation_id`). `PUT /organizations/users/me/active-organization` refuses
    a non-member target (HTTP 403, `not_a_member`). Soft-deleted orgs cannot be
    activated. Studio binds the cookie to the signed-in user, clears it on logout
    and account switch, and sends the header only when that user's memberships
