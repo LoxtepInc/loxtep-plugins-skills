@@ -263,11 +263,22 @@ not reverse persisted schema or data changes.
 - If status is still `pending` or `in_progress`, back off **30s**, then **60s**,
   then **120s**, and repeat at the **120s** cap until terminal status — still
   only for that same just-returned id.
+- The `deployment_id` from `deploy_workflow` is pollable at once.
+  `get_deployment` (and `GET /workflows/deployments/{id}`) on that id reads
+  `pending`. The `deploy_workflow` response status is `requested` (the call was
+  accepted). The stored row moves `pending` → `in_progress` → `deployed` or
+  `failed`.
+- If emitting the deployment event fails, the call errors and that row is
+  `failed` with the error. An early or precheck failure in the deployment bot
+  marks the same row `failed` with the error, so the id does not stay `pending`.
 - On the first `not_found` for that just-returned id: back off **30s**, then
   **60s**, then **120s**, then **stop**. Report the id and the error. Do not
   call `get_deployment` for that id again on a later turn. Do not look up a
   different id. Do not call `deploy_workflow` / `deploy_project` again to "fix"
   `not_found`.
+- `not_found` on a `deployment_id` that `deploy_workflow` just returned is no
+  longer an expected race. Report it as a platform fault. The backoff-then-stop
+  rule above still applies.
 - Never call `deploy_workflow` again for a workflow while a deployment for it is
   `pending` or `in_progress`.
 - Always pass full UUIDs to `get_deployment` and other ops — never truncated
@@ -307,9 +318,11 @@ not reverse persisted schema or data changes.
   does not consult this flag when it uploads code.
 - **`skip_validation`** on `deploy_workflow` bypasses pre-deploy validation
   (graph completeness, connection tests). Use only for known-good redeployments.
-- **Status values:** Expect `pending`, `in_progress`, `deployed`, `failed`. Poll
-  `get_deployment` for async deploy completion. `list_deployments` filters on
-  `deployed`.
+- **Status values:** `deploy_workflow` returns status `requested`.
+  `get_deployment` on that id reads `pending` immediately, then `in_progress`,
+  then `deployed` or `failed`. A failed event emit and an early or precheck bot
+  failure show as `failed` with the error. Poll `get_deployment` for async
+  deploy completion. `list_deployments` filters on `deployed`.
 - **Customer-VPC connections** (`network_binding: customer_vpc` / `private`,
   `require_private_network: true`, or `mongodb-source` / `mongodb`) register on
   `connectors-private`. Unset memory stays `connectors-private-512`. `256`,
@@ -443,14 +456,14 @@ success the event includes the resolved dedicated `instance_id`, including when
 the caller omitted it. When omitted on a workspace open, the bucket still opens
 via a deployment-row pin of exactly one live dedicated instance, then
 `projects.instance_id` — that is workspace resolution, not deploy targeting.
-Hosted MCP `reindex_workspace` runs the same resolve before emit and fails the
-tool call on that unbound case (the `ambiguous_instance` message; HTTP 400
-`tool_failed`, `error.details.error_class` `validation`). A stored
-`projects.instance_id` that is no longer live is HTTP 404 `tool_failed` with
-`error.details.error_class` `not_found`. `error.details.code` stays
-`tool_failed`; the domain code is not copied. CLI `push` reindex and SDK
-`projects.reindex` POST reindex with no `instance_id` and receive HTTP 409
-`ambiguous_instance` from the POST.
+Hosted MCP `reindex_workspace` accepts optional `instance_id` and runs the same
+resolve before emit. Omitting it on that unbound case fails the tool call (the
+`ambiguous_instance` message; HTTP 400 `tool_failed`,
+`error.details.error_class` `validation`). A stored `projects.instance_id` that
+is no longer live is HTTP 404 `tool_failed` with `error.details.error_class`
+`not_found`. `error.details.code` stays `tool_failed`; the domain code is not
+copied. CLI `push` reindex and SDK `projects.reindex` POST reindex with no
+`instance_id` and receive HTTP 409 `ambiguous_instance` from the POST.
 
 Workspace storage is always the selected instance's bucket. Open never copies
 from the platform bucket onto a dedicated `code_bucket`. When

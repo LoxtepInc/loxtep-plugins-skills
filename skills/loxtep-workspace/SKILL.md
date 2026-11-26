@@ -1,6 +1,6 @@
 ---
 name: loxtep-workspace
-version: 1.0.0
+version: 1.0.1
 description:
   Workspace versions, snapshots, restore, and compare for Loxtep projects. Use
   when the user wants snapshot history, restore a version, or diff workspace
@@ -135,8 +135,16 @@ omitted. That default is a convenience, not a closed vocabulary.
 
 Both query params are required. The JSON projection lists design-time entity
 ids/names (from `customer_workspace_entity_index`), org connectors, and instance
-`environment_key`. **Tools still require explicit `project_id` / `instance_id`**
-— this resource does not auto-inject scope into tools/call.
+`environment_key`. Project tools still require explicit `project_id`.
+`instance_id` is not required on every project `tools/call`. Most project
+operations do not take it. Project operations that require `instance_id`:
+`deploy_project`, `deploy_workflow`, `restore_version`,
+`set_connection_instance_binding`. Project operations that take an optional
+`instance_id`: `archive_workflow`, `list_connection_instance_bindings`,
+`reindex_workspace`, `reset_backfill`, `save_delivery_grant`,
+`update_delivery_grant`. `create_project` takes an optional `instance_id`.
+`get_project_workspace_status` accepts an optional `instance_id` only inside
+`local_hint`. Hosted MCP does not auto-inject scope from the resource.
 
 ## MCP mapping
 

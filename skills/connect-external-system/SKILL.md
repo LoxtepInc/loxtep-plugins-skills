@@ -500,6 +500,16 @@ Do not treat this like ingest sync. Sync (`resolveEntitiesToSync`) covers every
 collection only when the requested entity is empty or exact `all`; `*` is
 **not** a sync all-token.
 
+Connection-node `sync_entity` is a different check
+(`validateConnectionSyncEntities` on graph and entity save). When the connector
+has a concrete `supported_entities` list (the list is not a single `*`),
+`sync_entity` values `all` and `*` (trim, then lowercase) are valid
+whole-catalog sync. They are not looked up as names in that list. An empty
+`sync_entity` is still required when that list exists. File-transfer connectors
+that omit `supported_entities` use `fileSpecs` keys as that list, and the same
+`all` / `*` values pass. `resolveEntitiesToSync` is unchanged: `*` is not its
+all-token.
+
 ```json
 {
   "operation": "capture_samples",

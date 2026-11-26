@@ -35,12 +35,17 @@ without relying on any private repo or source tree.
    Meaning). Load this before any tool that creates or changes Loxtep resources.
    The model describes Loxtep. It is not a vocabulary pack and not the
    customer's business ontology (`loxtep_meaning`).
-3. **`loxtep_session`** → **`get_current_organization`** — confirm org scope
-   matches expectations. Multi-org users may belong to several orgs; API/MCP
-   work is scoped to the **active** organization. Prefer header
-   `x-loxtep-active-organization-id` (cookie `loxtep_active_organization_id` in
-   browsers). Soft-deleted orgs cannot be activated; there is no silent fallback
-   to home. See `docs/multi-org-membership.md`.
+3. **`loxtep_session`** → **`get_current_organization`** — confirm the effective
+   org before you write, especially after a membership was removed. Multi-org
+   users may belong to several orgs; API and hosted MCP calls are scoped to the
+   **active** organization. Prefer header `x-loxtep-active-organization-id`
+   (cookie `loxtep_active_organization_id` in browsers). A header or cookie for
+   an org you are not a member of is ignored, and the request runs in your home
+   org with no error. `PUT /organizations/users/me/active-organization` refuses
+   a non-member target (HTTP 403, `not_a_member`). Soft-deleted orgs cannot be
+   activated. Studio binds the cookie to the signed-in user, clears it on logout
+   and account switch, and sends the header only when that user's memberships
+   include the org. See `docs/multi-org-membership.md`.
 4. **`loxtep_session`** → **`platform_health_check`** (optional but recommended
    on cold start) — ~5s Semantica-style doctor for auth, instance Observe
    namespace (same classifier as the proxy 409) plus public-instance deny-list,
