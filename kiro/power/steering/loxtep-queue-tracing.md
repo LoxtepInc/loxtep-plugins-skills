@@ -110,28 +110,32 @@ Unverified example of the response shape (not captured from a live instance).
 window with no matching events after `eid` is a 200 with `results: []`,
 `has_more: false`, `next_cursor: null`.
 
-A 0-event `scan_incomplete` page is a 200 with `has_more: true` and botmon's
-`resumptionToken` as `next_cursor` only when that token is not later than the
-request `eid`, or when it is later and botmon reports `slices_completed` as an
-integer greater than 0 and `scanned_through` equal to the token. That later
-cursor is progress through empty slices. Pass it unchanged as the next `eid`.
-The request start is not returned as `next_cursor`.
+A 0-event `scan_incomplete` page with a `resumptionToken` later than the request
+`eid` is **503** `scan_incomplete` (message includes `scanned_count is 0`).
+There is no page and no `next_cursor`. `slices_completed` and `scanned_through`
+do not authorize that later token when `scanned_count` is 0 — agreeing progress
+fields still refuse. The request start is not substituted for the token. Retry
+the same `eid`.
+
+A token that is not later than the request `eid` may still be published as
+`next_cursor` on a 200 with `has_more: true`. Pass it unchanged as the next
+`eid`.
 
 When the token is later than the start and `slices_completed` or
-`scanned_through` is missing, null, zero, or not the token, the call is **503**
-`scan_incomplete`. The message names the failed check. There is no page and no
-`next_cursor`. A wrong type, an empty `scanned_through`, or camelCase and
-snake_case fields that disagree is **502** `observe_search_shape_error`
-(`ReadQueueEventsContractError` when the tool shapes the page itself). Do not
-treat either error as an empty queue, and do not invent a later eid.
+`scanned_through` is missing, null, zero, or not the token, the call is still
+**503** `scan_incomplete` (the message names the failed check). A wrong type, an
+empty `scanned_through`, or camelCase and snake_case fields that disagree is
+**502** `observe_search_shape_error` (`ReadQueueEventsContractError` when the
+tool shapes the page itself). Do not treat either error as an empty queue, and
+do not invent a later eid.
 
 A `scan_incomplete` page that scanned events (`count` > 0) and matched nothing
 is also **503** `scan_incomplete` and does not publish a cursor.
 
-`has_more` is `true` on a returned page when that 0-event cursor was published,
-when the page is full (`results.length` equals `limit`), or when botmon reports
-more (for example, its 4 MB per-call response budget cut a short page). A short
-page is not the end of the window unless `has_more` is `false`.
+`has_more` is `true` on a returned page when a non-later 0-event cursor was
+published, when the page is full (`results.length` equals `limit`), or when
+botmon reports more (for example, its 4 MB per-call response budget cut a short
+page). A short page is not the end of the window unless `has_more` is `false`.
 
 There is no separate cursor input. Continue with:
 
@@ -210,12 +214,12 @@ Non-2xx Observe/botmon responses are MCP failures: `error` is
 `Observe search returned HTTP <status>`; `message` carries the downstream body
 (or a stringified `downstream_response`).
 
-| HTTP | `code`                       | What to do                                                                                                                                                                                                                                                                                                                |
-| ---- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 503  | `scan_incomplete`            | No cursor was published: the budget expired before any event was scanned, events were scanned and nothing matched, or a 0-event token later than the start lacks `slices_completed` > 0 with `scanned_through` equal to that token. Retry the same `eid`. Do not treat it as an empty queue and do not invent a later eid |
-| 502  | `stream_read_failed`         | Stream read failed (e.g. DynamoDB capacity). Retry later; do not treat as an empty queue                                                                                                                                                                                                                                  |
-| 502  | `observe_search_shape_error` | Botmon page broke the paging contract (e.g. `has_more` missing). Report it; do not treat as an empty queue                                                                                                                                                                                                                |
-| 400  | `invalid_filter_expression`  | `search_text` was treated as a bad filter expression. Drop or simplify `search_text`                                                                                                                                                                                                                                      |
+| HTTP | `code`                       | What to do                                                                                                                                                                                                                                                                                                                           |
+| ---- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 503  | `scan_incomplete`            | No cursor was published: the budget expired before any event was scanned, events were scanned and nothing matched, or a 0-event token later than the start (`scanned_count is 0`; `slices_completed` / `scanned_through` do not authorize it). Retry the same `eid`. Do not treat it as an empty queue and do not invent a later eid |
+| 502  | `stream_read_failed`         | Stream read failed (e.g. DynamoDB capacity). Retry later; do not treat as an empty queue                                                                                                                                                                                                                                             |
+| 502  | `observe_search_shape_error` | Botmon page broke the paging contract (e.g. `has_more` missing). Report it; do not treat as an empty queue                                                                                                                                                                                                                           |
+| 400  | `invalid_filter_expression`  | `search_text` was treated as a bad filter expression. Drop or simplify `search_text`                                                                                                                                                                                                                                                 |
 
 An eid refusal is not in this table: it fails input validation before HTTP (400
 `invalid_tool_input`). Direct `GET /app/observe/search` callers get 400
